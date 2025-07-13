@@ -2,8 +2,12 @@ export type Currency = 'MXN' | 'USD' | 'EUR';
 
 export interface User {
   id: string;
-  name: string;
+  nombre: string;
+  apellidos: string;
   email: string;
+  password: string;
+  pais: string;
+  edad: number;
   primaryCurrency: Currency;
   createdAt: Date;
   updatedAt: Date;

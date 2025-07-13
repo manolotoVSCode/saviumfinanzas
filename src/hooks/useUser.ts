@@ -3,8 +3,12 @@ import { User, Currency } from '@/types/user';
 
 const defaultUser: User = {
   id: '1',
-  name: 'Usuario Demo',
-  email: 'demo@ejemplo.com',
+  nombre: 'Juan',
+  apellidos: 'Pérez García',
+  email: 'juan.perez@ejemplo.com',
+  password: '********',
+  pais: 'México',
+  edad: 28,
   primaryCurrency: 'MXN',
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date()

@@ -1,0 +1,23 @@
+export const COUNTRIES = [
+  'México',
+  'Estados Unidos',
+  'España',
+  'Argentina',
+  'Colombia',
+  'Chile',
+  'Perú',
+  'Venezuela',
+  'Ecuador',
+  'Guatemala',
+  'Bolivia',
+  'Honduras',
+  'Paraguay',
+  'El Salvador',
+  'Nicaragua',
+  'Costa Rica',
+  'Panamá',
+  'Uruguay',
+  'República Dominicana',
+  'Puerto Rico',
+  'Cuba'
+].sort();
