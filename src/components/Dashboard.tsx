@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DashboardMetrics } from '@/types/finance';
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, PieChart, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, PieChart, BarChart3, Target, TrendingUpDown } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 
 interface DashboardProps {
@@ -123,9 +123,9 @@ export const Dashboard = ({ metrics }: DashboardProps) => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Categorías con Gráfico */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="flex items-center gap-2">
               <PieChart className="h-5 w-5 text-primary" />
@@ -179,36 +179,107 @@ export const Dashboard = ({ metrics }: DashboardProps) => {
           </CardContent>
         </Card>
 
-        {/* Resumen de Cuentas */}
-        <Card>
+        {/* Resumen de Inversiones */}
+        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-accent" />
-              Mis Cuentas
+              <Target className="h-5 w-5 text-success" />
+              Resumen de Inversiones
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {metrics.cuentasResumen.map((cuenta, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <DollarSign className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <Badge variant="outline" className="mb-1">{cuenta.tipo}</Badge>
-                      <p className="font-medium text-sm">{cuenta.cuenta}</p>
-                    </div>
+            <div className="space-y-4">
+              {/* Total Inversiones */}
+              <div className="p-4 rounded-lg bg-success/5 border border-success/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Invertido</p>
+                    <p className="text-2xl font-bold text-success">
+                      {formatCurrency(metrics.inversionesResumen.totalInversiones)}
+                    </p>
                   </div>
-                  <span className={`font-bold ${getBalanceColor(cuenta.saldo)}`}>
-                    {formatCurrency(cuenta.saldo)}
+                  <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
+                    <TrendingUpDown className="h-6 w-6 text-success" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Aportaciones del Mes */}
+              <div className="p-3 rounded-lg bg-muted/30">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-muted-foreground">Aportaciones del Mes</span>
+                  <span className="font-bold text-success">
+                    {formatCurrency(metrics.inversionesResumen.aportacionesMes)}
                   </span>
                 </div>
-              ))}
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-muted-foreground">vs mes anterior:</span>
+                  <span className={`text-xs font-medium flex items-center ${
+                    metrics.inversionesResumen.variacionAportaciones >= 0 ? 'text-success' : 'text-destructive'
+                  }`}>
+                    {metrics.inversionesResumen.variacionAportaciones >= 0 ? 
+                      <TrendingUp className="h-3 w-3 mr-1" /> : 
+                      <TrendingDown className="h-3 w-3 mr-1" />
+                    }
+                    {Math.abs(metrics.inversionesResumen.variacionAportaciones).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Cuentas de Inversión */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Portafolios</h4>
+                {metrics.inversionesResumen.cuentasInversion.map((cuenta, index) => (
+                  <div key={index} className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">{cuenta.cuenta}</span>
+                      <span className="font-bold text-success">{formatCurrency(cuenta.saldo)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        Inicial: {formatCurrency(cuenta.saldoInicial)}
+                      </span>
+                      <span className={`font-medium ${getBalanceColor(cuenta.rendimiento)}`}>
+                        {cuenta.rendimiento >= 0 ? '+' : ''}{formatCurrency(cuenta.rendimiento)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Resumen de Cuentas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-accent" />
+            Mis Cuentas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {metrics.cuentasResumen.map((cuenta, index) => (
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div className="flex items-center space-x-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="mb-1">{cuenta.tipo}</Badge>
+                    <p className="font-medium text-sm">{cuenta.cuenta}</p>
+                  </div>
+                </div>
+                <span className={`font-bold ${getBalanceColor(cuenta.saldo)}`}>
+                  {formatCurrency(cuenta.saldo)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tendencia Mensual con Gráfico */}
       <Card>

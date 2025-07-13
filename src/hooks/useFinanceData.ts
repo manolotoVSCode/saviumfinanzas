@@ -10,6 +10,8 @@ const initialCategories: Category[] = [
   { id: '5', subcategoria: 'Gasolina', categoria: 'Transporte', tipo: 'Gastos' },
   { id: '6', subcategoria: 'Transferencia Entre Cuentas', categoria: 'Interno', tipo: 'Aportación' },
   { id: '7', subcategoria: 'Retiro Entre Cuentas', categoria: 'Interno', tipo: 'Retiro' },
+  { id: '8', subcategoria: 'Aportación ETFs', categoria: 'Inversiones', tipo: 'Aportación' },
+  { id: '9', subcategoria: 'Aportación Acciones', categoria: 'Inversiones', tipo: 'Aportación' },
 ];
 
 const initialAccountTypes: AccountType[] = ['Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones'];
@@ -18,6 +20,8 @@ const initialAccounts: Account[] = [
   { id: '1', nombre: 'Cuenta Principal', tipo: 'Banco', saldoInicial: 50000, saldoActual: 50000 },
   { id: '2', nombre: 'Efectivo', tipo: 'Efectivo', saldoInicial: 2000, saldoActual: 2000 },
   { id: '3', nombre: 'Ahorros', tipo: 'Ahorros', saldoInicial: 25000, saldoActual: 25000 },
+  { id: '4', nombre: 'Portafolio ETFs', tipo: 'Inversiones', saldoInicial: 100000, saldoActual: 100000 },
+  { id: '5', nombre: 'Acciones Individuales', tipo: 'Inversiones', saldoInicial: 50000, saldoActual: 50000 },
 ];
 
 const initialTransactions: Transaction[] = [
@@ -173,6 +177,36 @@ const initialTransactions: Transaction[] = [
     gasto: 1800,
     subcategoriaId: '5',
     monto: -1800
+  },
+  {
+    id: '15',
+    cuentaId: '4',
+    fecha: new Date('2025-07-10'),
+    comentario: 'Aportación mensual ETFs',
+    ingreso: 15000,
+    gasto: 0,
+    subcategoriaId: '8',
+    monto: 15000
+  },
+  {
+    id: '16',
+    cuentaId: '5',
+    fecha: new Date('2025-06-05'),
+    comentario: 'Compra acciones Apple',
+    ingreso: 8000,
+    gasto: 0,
+    subcategoriaId: '9',
+    monto: 8000
+  },
+  {
+    id: '17',
+    cuentaId: '4',
+    fecha: new Date('2025-06-15'),
+    comentario: 'Aportación ETFs junio',
+    ingreso: 12000,
+    gasto: 0,
+    subcategoriaId: '8',
+    monto: 12000
   }
 ];
 
@@ -283,6 +317,39 @@ export const useFinanceData = () => {
       tipo: acc.tipo
     }));
 
+    // Métricas de inversiones
+    const cuentasInversion = accounts.filter(acc => acc.tipo === 'Inversiones');
+    const totalInversiones = cuentasInversion.reduce((sum, acc) => sum + acc.saldoActual, 0);
+    
+    const aportacionesMes = transaccionesMesActual
+      .filter(t => t.tipo === 'Aportación' && cuentasInversion.some(inv => inv.id === t.cuentaId))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    const aportacionesMesAnterior = transaccionesMesAnterior
+      .filter(t => t.tipo === 'Aportación' && cuentasInversion.some(inv => inv.id === t.cuentaId))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    const variacionAportaciones = aportacionesMesAnterior > 0 ? 
+      ((aportacionesMes - aportacionesMesAnterior) / aportacionesMesAnterior) * 100 : 0;
+    
+    const cuentasInversionResumen = cuentasInversion.map(acc => {
+      const rendimiento = acc.saldoActual - acc.saldoInicial;
+      return {
+        cuenta: acc.nombre,
+        saldo: acc.saldoActual,
+        saldoInicial: acc.saldoInicial,
+        rendimiento
+      };
+    });
+
+    const inversionesResumen = {
+      totalInversiones,
+      aportacionesMes,
+      aportacionesMesAnterior,
+      variacionAportaciones,
+      cuentasInversion: cuentasInversionResumen
+    };
+
     // Tendencia mensual (últimos 6 meses)
     const tendenciaMensual = [];
     for (let i = 5; i >= 0; i--) {
@@ -317,7 +384,8 @@ export const useFinanceData = () => {
       variacionGastos,
       topCategorias,
       cuentasResumen,
-      tendenciaMensual
+      tendenciaMensual,
+      inversionesResumen
     };
   }, [enrichedTransactions, accounts, dateFilter]);
 

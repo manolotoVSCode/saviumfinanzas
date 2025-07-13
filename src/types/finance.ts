@@ -45,4 +45,12 @@ export interface DashboardMetrics {
   topCategorias: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
   cuentasResumen: Array<{ cuenta: string; saldo: number; tipo: AccountType }>;
   tendenciaMensual: Array<{ mes: string; ingresos: number; gastos: number }>;
+  // Métricas de inversiones
+  inversionesResumen: {
+    totalInversiones: number;
+    aportacionesMes: number;
+    aportacionesMesAnterior: number;
+    variacionAportaciones: number;
+    cuentasInversion: Array<{ cuenta: string; saldo: number; saldoInicial: number; rendimiento: number }>;
+  };
 }
