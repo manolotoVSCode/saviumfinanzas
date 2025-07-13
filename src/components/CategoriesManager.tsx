@@ -27,14 +27,15 @@ export const CategoriesManager = ({
 }: CategoriesManagerProps) => {
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [selectedType, setSelectedType] = useState<TransactionType>('Gastos');
   const [formData, setFormData] = useState({
     subcategoria: '',
     categoria: '',
-    tipo: '' as TransactionType
+    tipo: 'Gastos' as TransactionType
   });
 
   const resetForm = () => {
-    setFormData({ subcategoria: '', categoria: '', tipo: '' as TransactionType });
+    setFormData({ subcategoria: '', categoria: '', tipo: selectedType });
     setEditingCategory(null);
     setIsAddingCategory(false);
   };
@@ -61,6 +62,9 @@ export const CategoriesManager = ({
     setIsAddingCategory(true);
   };
 
+  // Filtrar categorías por tipo seleccionado
+  const filteredCategories = categories.filter(category => category.tipo === selectedType);
+
   const getTypeBadgeVariant = (tipo: TransactionType) => {
     switch (tipo) {
       case 'Ingreso': return 'default';
@@ -71,21 +75,31 @@ export const CategoriesManager = ({
     }
   };
 
-  // Agrupar categorías por tipo
-  const groupedCategories = categories.reduce((acc, category) => {
-    if (!acc[category.tipo]) {
-      acc[category.tipo] = [];
-    }
-    acc[category.tipo].push(category);
-    return acc;
-  }, {} as Record<TransactionType, Category[]>);
+  const handleNewCategory = () => {
+    setFormData({ subcategoria: '', categoria: '', tipo: selectedType });
+    setIsAddingCategory(true);
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center space-x-4">
+        <div className="flex items-center space-x-4">
+          <Select value={selectedType} onValueChange={(value: TransactionType) => setSelectedType(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {transactionTypes.map((tipo) => (
+                <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Badge variant={getTypeBadgeVariant(selectedType)}>{selectedType}</Badge>
+        </div>
+        
         <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
           <DialogTrigger asChild>
-            <Button onClick={() => setIsAddingCategory(true)}>
+            <Button onClick={handleNewCategory}>
               <Plus className="h-4 w-4 mr-2" />
               Nueva Categoría
             </Button>
@@ -146,60 +160,58 @@ export const CategoriesManager = ({
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {transactionTypes.map((tipo) => (
-          <Card key={tipo}>
-            <CardHeader>
-              <CardTitle>
-                <Badge variant={getTypeBadgeVariant(tipo)}>{tipo}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Categoría</TableHead>
-                    <TableHead>Subcategoría</TableHead>
-                    <TableHead>Acciones</TableHead>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Badge variant={getTypeBadgeVariant(selectedType)}>{selectedType}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Categoría</TableHead>
+                <TableHead>Subcategoría</TableHead>
+                <TableHead>Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCategories.length > 0 ? (
+                filteredCategories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell className="font-medium">{category.categoria}</TableCell>
+                    <TableCell>{category.subcategoria}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEdit(category)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => onDeleteCategory(category.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {groupedCategories[tipo]?.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell className="font-medium">{category.categoria}</TableCell>
-                      <TableCell>{category.subcategoria}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEdit(category)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => onDeleteCategory(category.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )) || (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground">
-                        No hay categorías de este tipo
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-muted-foreground">
+                    No hay categorías de tipo {selectedType}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
