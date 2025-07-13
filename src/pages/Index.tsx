@@ -4,12 +4,14 @@ import { Dashboard } from '@/components/Dashboard';
 import { AccountsManager } from '@/components/AccountsManager';
 import { CategoriesManager } from '@/components/CategoriesManager';
 import { TransactionsManager } from '@/components/TransactionsManager';
-import { DateFilter } from '@/components/DateFilter';
+import { UserConfig } from '@/components/UserConfig';
 import { useFinanceData } from '@/hooks/useFinanceData';
+import { useUser } from '@/hooks/useUser';
 import { BarChart3, ArrowUpDown, Settings, LogOut } from 'lucide-react';
 
 const Index = () => {
   const financeData = useFinanceData();
+  const { user, updateUser, formatCurrency } = useUser();
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -40,7 +42,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <Dashboard metrics={financeData.dashboardMetrics} />
+            <Dashboard metrics={financeData.dashboardMetrics} formatCurrency={formatCurrency} />
           </TabsContent>
 
           <TabsContent value="transactions">
@@ -60,13 +62,7 @@ const Index = () => {
                 <h2 className="text-2xl font-bold mb-4">Configuración</h2>
                 
                 <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Filtros de Fecha</h3>
-                    <DateFilter
-                      dateFilter={financeData.dateFilter}
-                      onDateFilterChange={financeData.setDateFilter}
-                    />
-                  </div>
+                  <UserConfig user={user} onUpdateUser={updateUser} />
 
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Gestión de Cuentas</h3>

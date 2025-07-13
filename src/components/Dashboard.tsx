@@ -6,15 +6,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 interface DashboardProps {
   metrics: DashboardMetrics;
+  formatCurrency: (amount: number) => string;
 }
 
-export const Dashboard = ({ metrics }: DashboardProps) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(amount);
-  };
+export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
 
   const getBalanceColor = (amount: number) => {
     if (amount > 0) return 'text-success';
