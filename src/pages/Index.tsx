@@ -12,15 +12,15 @@ const Index = () => {
   const financeData = useFinanceData();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Finanzas Personales</h1>
           <p className="text-muted-foreground">Gestiona tus ingresos, gastos y cuentas de manera eficiente</p>
         </div>
 
-        <Tabs defaultValue="dashboard" className="pb-20">
-          <TabsList className="fixed bottom-0 left-0 right-0 h-16 grid grid-cols-4 bg-background border-t shadow-lg">
+        <Tabs defaultValue="dashboard">
+          <TabsList className="fixed bottom-0 left-0 right-0 h-16 grid grid-cols-4 bg-background border-t shadow-lg z-50">
             <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center space-y-1 h-full">
               <BarChart3 className="h-5 w-5" />
               <span className="text-xs">Dashboard</span>
