@@ -70,9 +70,15 @@ export const Dashboard = ({ metrics }: DashboardProps) => {
             <div className="text-2xl font-bold text-success">
               {formatCurrency(metrics.ingresosMes)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Ingresos de {new Date().toLocaleDateString('es-MX', { month: 'long' })}
-            </p>
+            <div className="flex items-center space-x-2 mt-2">
+              <span className="text-xs text-muted-foreground">vs mes anterior:</span>
+              <span className={`text-xs font-medium flex items-center ${
+                metrics.variacionIngresos >= 0 ? 'text-success' : 'text-destructive'
+              }`}>
+                {metrics.variacionIngresos >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                {Math.abs(metrics.variacionIngresos).toFixed(1)}%
+              </span>
+            </div>
           </CardContent>
         </Card>
 
@@ -87,9 +93,15 @@ export const Dashboard = ({ metrics }: DashboardProps) => {
             <div className="text-2xl font-bold text-destructive">
               {formatCurrency(metrics.gastosMes)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Gastos de {new Date().toLocaleDateString('es-MX', { month: 'long' })}
-            </p>
+            <div className="flex items-center space-x-2 mt-2">
+              <span className="text-xs text-muted-foreground">vs mes anterior:</span>
+              <span className={`text-xs font-medium flex items-center ${
+                metrics.variacionGastos <= 0 ? 'text-success' : 'text-destructive'
+              }`}>
+                {metrics.variacionGastos <= 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : <TrendingUp className="h-3 w-3 mr-1" />}
+                {Math.abs(metrics.variacionGastos).toFixed(1)}%
+              </span>
+            </div>
           </CardContent>
         </Card>
 

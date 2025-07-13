@@ -218,10 +218,34 @@ export const useFinanceData = () => {
       t.fecha >= dateFilter.start && t.fecha <= dateFilter.end
     );
 
+    console.log('Fecha filter:', dateFilter);
+    console.log('Filtered transactions:', filteredTransactions);
+    console.log('All enriched transactions:', enrichedTransactions);
+
     const balanceTotal = accounts.reduce((sum, acc) => sum + acc.saldoActual, 0);
     const ingresosMes = filteredTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMes = filteredTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     const balanceMes = ingresosMes - gastosMes;
+
+    console.log('Ingresos mes:', ingresosMes);
+    console.log('Gastos mes:', gastosMes);
+
+    // Métricas del mes anterior para comparativo
+    const mesAnteriorStart = new Date(dateFilter.start);
+    mesAnteriorStart.setMonth(mesAnteriorStart.getMonth() - 1);
+    const mesAnteriorEnd = new Date(mesAnteriorStart.getFullYear(), mesAnteriorStart.getMonth() + 1, 0);
+    
+    const transaccionesMesAnterior = enrichedTransactions.filter(t => 
+      t.fecha >= mesAnteriorStart && t.fecha <= mesAnteriorEnd
+    );
+    
+    const ingresosMesAnterior = transaccionesMesAnterior.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMesAnterior = transaccionesMesAnterior.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const balanceMesAnterior = ingresosMesAnterior - gastosMesAnterior;
+
+    // Calcular variaciones porcentuales
+    const variacionIngresos = ingresosMesAnterior > 0 ? ((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100 : 0;
+    const variacionGastos = gastosMesAnterior > 0 ? ((gastosMes - gastosMesAnterior) / gastosMesAnterior) * 100 : 0;
 
     // Top categorías
     const categoryTotals = new Map<string, { monto: number; tipo: TransactionType }>();
@@ -279,6 +303,11 @@ export const useFinanceData = () => {
       ingresosMes,
       gastosMes,
       balanceMes,
+      ingresosMesAnterior,
+      gastosMesAnterior,
+      balanceMesAnterior,
+      variacionIngresos,
+      variacionGastos,
       topCategorias,
       cuentasResumen,
       tendenciaMensual

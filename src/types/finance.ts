@@ -36,6 +36,12 @@ export interface DashboardMetrics {
   ingresosMes: number;
   gastosMes: number;
   balanceMes: number;
+  // Comparativo mes anterior
+  ingresosMesAnterior: number;
+  gastosMesAnterior: number;
+  balanceMesAnterior: number;
+  variacionIngresos: number; // porcentaje
+  variacionGastos: number; // porcentaje
   topCategorias: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
   cuentasResumen: Array<{ cuenta: string; saldo: number; tipo: AccountType }>;
   tendenciaMensual: Array<{ mes: string; ingresos: number; gastos: number }>;
