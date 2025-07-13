@@ -182,8 +182,8 @@ export const useFinanceData = () => {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [accountTypes] = useState<AccountType[]>(initialAccountTypes);
   const [dateFilter, setDateFilter] = useState<{ start: Date; end: Date }>({
-    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    end: new Date()
+    start: new Date(2025, 0, 1), // Enero 1, 2025
+    end: new Date(2025, 11, 31)  // Diciembre 31, 2025
   });
 
   // Recalcular saldos actuales cuando cambien las transacciones
@@ -214,26 +214,33 @@ export const useFinanceData = () => {
 
   // Métricas del dashboard
   const dashboardMetrics = useMemo((): DashboardMetrics => {
-    const filteredTransactions = enrichedTransactions.filter(t => 
-      t.fecha >= dateFilter.start && t.fecha <= dateFilter.end
+    // Filtrar transacciones para el mes actual (julio 2025)
+    const currentDate = new Date();
+    const currentMonth = 6; // Julio (0-indexed)
+    const currentYear = 2025;
+    
+    const mesActualStart = new Date(currentYear, currentMonth, 1);
+    const mesActualEnd = new Date(currentYear, currentMonth + 1, 0);
+    
+    const transaccionesMesActual = enrichedTransactions.filter(t => 
+      t.fecha >= mesActualStart && t.fecha <= mesActualEnd
     );
 
-    console.log('Fecha filter:', dateFilter);
-    console.log('Filtered transactions:', filteredTransactions);
-    console.log('All enriched transactions:', enrichedTransactions);
+    console.log('Mes actual:', { mesActualStart, mesActualEnd });
+    console.log('Transacciones mes actual:', transaccionesMesActual);
+    console.log('Todas las transacciones enriched:', enrichedTransactions);
 
     const balanceTotal = accounts.reduce((sum, acc) => sum + acc.saldoActual, 0);
-    const ingresosMes = filteredTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMes = filteredTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const ingresosMes = transaccionesMesActual.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMes = transaccionesMesActual.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     const balanceMes = ingresosMes - gastosMes;
 
-    console.log('Ingresos mes:', ingresosMes);
-    console.log('Gastos mes:', gastosMes);
+    console.log('Ingresos mes actual:', ingresosMes);
+    console.log('Gastos mes actual:', gastosMes);
 
-    // Métricas del mes anterior para comparativo
-    const mesAnteriorStart = new Date(dateFilter.start);
-    mesAnteriorStart.setMonth(mesAnteriorStart.getMonth() - 1);
-    const mesAnteriorEnd = new Date(mesAnteriorStart.getFullYear(), mesAnteriorStart.getMonth() + 1, 0);
+    // Métricas del mes anterior para comparativo (junio 2025)
+    const mesAnteriorStart = new Date(currentYear, currentMonth - 1, 1);
+    const mesAnteriorEnd = new Date(currentYear, currentMonth, 0);
     
     const transaccionesMesAnterior = enrichedTransactions.filter(t => 
       t.fecha >= mesAnteriorStart && t.fecha <= mesAnteriorEnd
@@ -247,9 +254,9 @@ export const useFinanceData = () => {
     const variacionIngresos = ingresosMesAnterior > 0 ? ((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100 : 0;
     const variacionGastos = gastosMesAnterior > 0 ? ((gastosMes - gastosMesAnterior) / gastosMesAnterior) * 100 : 0;
 
-    // Top categorías
+    // Top categorías (basado en transacciones del mes actual)
     const categoryTotals = new Map<string, { monto: number; tipo: TransactionType }>();
-    filteredTransactions.forEach(t => {
+    transaccionesMesActual.forEach(t => {
       if (t.categoria && t.tipo && (t.tipo === 'Ingreso' || t.tipo === 'Gastos')) {
         const key = `${t.categoria}_${t.tipo}`;
         const current = categoryTotals.get(key) || { monto: 0, tipo: t.tipo };
