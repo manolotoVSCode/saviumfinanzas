@@ -83,7 +83,6 @@ export const CategoriesManager = ({
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gestión de Categorías</h2>
         <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
           <DialogTrigger asChild>
             <Button onClick={() => setIsAddingCategory(true)}>
@@ -151,9 +150,8 @@ export const CategoriesManager = ({
         {transactionTypes.map((tipo) => (
           <Card key={tipo}>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
+              <CardTitle>
                 <Badge variant={getTypeBadgeVariant(tipo)}>{tipo}</Badge>
-                <span>({groupedCategories[tipo]?.length || 0})</span>
               </CardTitle>
             </CardHeader>
             <CardContent>

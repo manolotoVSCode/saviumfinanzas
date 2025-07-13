@@ -58,9 +58,6 @@ const Index = () => {
 
           <TabsContent value="settings" className="space-y-6">
             <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold mb-4">Configuración</h2>
-                
                 <div className="space-y-6">
                   <UserConfig user={user} onUpdateUser={updateUser} />
 
@@ -85,7 +82,6 @@ const Index = () => {
                     />
                   </div>
                 </div>
-              </div>
             </div>
           </TabsContent>
 

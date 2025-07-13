@@ -1,4 +1,4 @@
-export type Currency = 'EUR' | 'USD' | 'GBP' | 'JPY' | 'CAD' | 'AUD' | 'CHF' | 'CNY' | 'MXN' | 'ARS';
+export type Currency = 'MXN' | 'USD' | 'EUR';
 
 export interface User {
   id: string;
@@ -10,14 +10,7 @@ export interface User {
 }
 
 export const CURRENCIES: Record<Currency, { name: string; symbol: string }> = {
-  EUR: { name: 'Euro', symbol: '€' },
-  USD: { name: 'Dólar Estadounidense', symbol: '$' },
-  GBP: { name: 'Libra Esterlina', symbol: '£' },
-  JPY: { name: 'Yen Japonés', symbol: '¥' },
-  CAD: { name: 'Dólar Canadiense', symbol: 'C$' },
-  AUD: { name: 'Dólar Australiano', symbol: 'A$' },
-  CHF: { name: 'Franco Suizo', symbol: 'CHF' },
-  CNY: { name: 'Yuan Chino', symbol: '¥' },
   MXN: { name: 'Peso Mexicano', symbol: '$' },
-  ARS: { name: 'Peso Argentino', symbol: '$' }
+  USD: { name: 'Dólar Estadounidense', symbol: 'US$' },
+  EUR: { name: 'Euro', symbol: '€' }
 };
