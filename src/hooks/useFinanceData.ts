@@ -21,25 +21,158 @@ const initialAccounts: Account[] = [
 ];
 
 const initialTransactions: Transaction[] = [
+  // Enero 2024
   {
     id: '1',
     cuentaId: '1',
     fecha: new Date('2024-01-15'),
     comentario: 'Salario enero',
-    ingreso: 15000,
+    ingreso: 25000,
     gasto: 0,
     subcategoriaId: '1',
-    monto: 15000
+    monto: 25000
   },
   {
     id: '2',
     cuentaId: '1',
-    fecha: new Date('2024-01-16'),
-    comentario: 'Compra supermercado',
+    fecha: new Date('2024-01-20'),
+    comentario: 'Compras supermercado',
+    ingreso: 0,
+    gasto: 3500,
+    subcategoriaId: '3',
+    monto: -3500
+  },
+  
+  // Febrero 2024
+  {
+    id: '3',
+    cuentaId: '1',
+    fecha: new Date('2024-02-15'),
+    comentario: 'Salario febrero',
+    ingreso: 25000,
+    gasto: 0,
+    subcategoriaId: '1',
+    monto: 25000
+  },
+  {
+    id: '4',
+    cuentaId: '2',
+    fecha: new Date('2024-02-10'),
+    comentario: 'Cena restaurante',
+    ingreso: 0,
+    gasto: 1200,
+    subcategoriaId: '4',
+    monto: -1200
+  },
+  
+  // Marzo 2024
+  {
+    id: '5',
+    cuentaId: '1',
+    fecha: new Date('2024-03-15'),
+    comentario: 'Salario marzo',
+    ingreso: 25000,
+    gasto: 0,
+    subcategoriaId: '1',
+    monto: 25000
+  },
+  {
+    id: '6',
+    cuentaId: '1',
+    fecha: new Date('2024-03-25'),
+    comentario: 'Gasolina',
+    ingreso: 0,
+    gasto: 800,
+    subcategoriaId: '5',
+    monto: -800
+  },
+  
+  // Abril 2024
+  {
+    id: '7',
+    cuentaId: '1',
+    fecha: new Date('2024-04-15'),
+    comentario: 'Salario abril',
+    ingreso: 26000,
+    gasto: 0,
+    subcategoriaId: '1',
+    monto: 26000
+  },
+  {
+    id: '8',
+    cuentaId: '1',
+    fecha: new Date('2024-04-08'),
+    comentario: 'Compras varias',
+    ingreso: 0,
+    gasto: 2800,
+    subcategoriaId: '3',
+    monto: -2800
+  },
+  
+  // Mayo 2024
+  {
+    id: '9',
+    cuentaId: '1',
+    fecha: new Date('2024-05-15'),
+    comentario: 'Salario mayo',
+    ingreso: 26000,
+    gasto: 0,
+    subcategoriaId: '1',
+    monto: 26000
+  },
+  {
+    id: '10',
+    cuentaId: '2',
+    fecha: new Date('2024-05-22'),
+    comentario: 'Proyecto freelance',
+    ingreso: 8000,
+    gasto: 0,
+    subcategoriaId: '2',
+    monto: 8000
+  },
+  
+  // Junio 2024
+  {
+    id: '11',
+    cuentaId: '1',
+    fecha: new Date('2024-06-15'),
+    comentario: 'Salario junio',
+    ingreso: 27000,
+    gasto: 0,
+    subcategoriaId: '1',
+    monto: 27000
+  },
+  {
+    id: '12',
+    cuentaId: '1',
+    fecha: new Date('2024-06-30'),
+    comentario: 'Cena familiar',
     ingreso: 0,
     gasto: 1500,
-    subcategoriaId: '3',
+    subcategoriaId: '4',
     monto: -1500
+  },
+  
+  // Julio 2024
+  {
+    id: '13',
+    cuentaId: '1',
+    fecha: new Date('2024-07-15'),
+    comentario: 'Salario julio',
+    ingreso: 27000,
+    gasto: 0,
+    subcategoriaId: '1',
+    monto: 27000
+  },
+  {
+    id: '14',
+    cuentaId: '1',
+    fecha: new Date('2024-07-05'),
+    comentario: 'Gasolina y mantenimiento',
+    ingreso: 0,
+    gasto: 1800,
+    subcategoriaId: '5',
+    monto: -1800
   }
 ];
 
