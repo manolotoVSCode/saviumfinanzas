@@ -254,10 +254,10 @@ export const useFinanceData = () => {
     const variacionIngresos = ingresosMesAnterior > 0 ? ((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100 : 0;
     const variacionGastos = gastosMesAnterior > 0 ? ((gastosMes - gastosMesAnterior) / gastosMesAnterior) * 100 : 0;
 
-    // Top categorías (basado en transacciones del mes actual)
+    // Top categorías (basado en transacciones del mes actual - solo gastos)
     const categoryTotals = new Map<string, { monto: number; tipo: TransactionType }>();
     transaccionesMesActual.forEach(t => {
-      if (t.categoria && t.tipo && (t.tipo === 'Ingreso' || t.tipo === 'Gastos')) {
+      if (t.categoria && t.tipo === 'Gastos') { // Solo incluir gastos
         const key = `${t.categoria}_${t.tipo}`;
         const current = categoryTotals.get(key) || { monto: 0, tipo: t.tipo };
         categoryTotals.set(key, {

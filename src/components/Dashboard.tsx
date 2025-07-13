@@ -129,7 +129,7 @@ export const Dashboard = ({ metrics }: DashboardProps) => {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="flex items-center gap-2">
               <PieChart className="h-5 w-5 text-primary" />
-              Distribución por Categorías
+              Distribución de Gastos por Categoría
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -163,13 +163,13 @@ export const Dashboard = ({ metrics }: DashboardProps) => {
                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       />
                       <div>
-                        <Badge variant={cat.tipo === 'Ingreso' ? 'default' : 'destructive'} className="mb-1">
-                          {cat.tipo}
+                        <Badge variant="destructive" className="mb-1">
+                          Gasto
                         </Badge>
                         <p className="font-medium text-sm">{cat.categoria}</p>
                       </div>
                     </div>
-                    <span className={`font-bold ${cat.tipo === 'Ingreso' ? 'text-success' : 'text-destructive'}`}>
+                    <span className="font-bold text-destructive">
                       {formatCurrency(cat.monto)}
                     </span>
                   </div>
