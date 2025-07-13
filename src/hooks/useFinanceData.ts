@@ -21,11 +21,11 @@ const initialAccounts: Account[] = [
 ];
 
 const initialTransactions: Transaction[] = [
-  // Enero 2024
+  // Enero 2025
   {
     id: '1',
     cuentaId: '1',
-    fecha: new Date('2024-01-15'),
+    fecha: new Date('2025-01-15'),
     comentario: 'Salario enero',
     ingreso: 25000,
     gasto: 0,
@@ -35,7 +35,7 @@ const initialTransactions: Transaction[] = [
   {
     id: '2',
     cuentaId: '1',
-    fecha: new Date('2024-01-20'),
+    fecha: new Date('2025-01-20'),
     comentario: 'Compras supermercado',
     ingreso: 0,
     gasto: 3500,
@@ -43,11 +43,11 @@ const initialTransactions: Transaction[] = [
     monto: -3500
   },
   
-  // Febrero 2024
+  // Febrero 2025
   {
     id: '3',
     cuentaId: '1',
-    fecha: new Date('2024-02-15'),
+    fecha: new Date('2025-02-15'),
     comentario: 'Salario febrero',
     ingreso: 25000,
     gasto: 0,
@@ -57,7 +57,7 @@ const initialTransactions: Transaction[] = [
   {
     id: '4',
     cuentaId: '2',
-    fecha: new Date('2024-02-10'),
+    fecha: new Date('2025-02-10'),
     comentario: 'Cena restaurante',
     ingreso: 0,
     gasto: 1200,
@@ -65,11 +65,11 @@ const initialTransactions: Transaction[] = [
     monto: -1200
   },
   
-  // Marzo 2024
+  // Marzo 2025
   {
     id: '5',
     cuentaId: '1',
-    fecha: new Date('2024-03-15'),
+    fecha: new Date('2025-03-15'),
     comentario: 'Salario marzo',
     ingreso: 25000,
     gasto: 0,
@@ -79,7 +79,7 @@ const initialTransactions: Transaction[] = [
   {
     id: '6',
     cuentaId: '1',
-    fecha: new Date('2024-03-25'),
+    fecha: new Date('2025-03-25'),
     comentario: 'Gasolina',
     ingreso: 0,
     gasto: 800,
@@ -87,11 +87,11 @@ const initialTransactions: Transaction[] = [
     monto: -800
   },
   
-  // Abril 2024
+  // Abril 2025
   {
     id: '7',
     cuentaId: '1',
-    fecha: new Date('2024-04-15'),
+    fecha: new Date('2025-04-15'),
     comentario: 'Salario abril',
     ingreso: 26000,
     gasto: 0,
@@ -101,7 +101,7 @@ const initialTransactions: Transaction[] = [
   {
     id: '8',
     cuentaId: '1',
-    fecha: new Date('2024-04-08'),
+    fecha: new Date('2025-04-08'),
     comentario: 'Compras varias',
     ingreso: 0,
     gasto: 2800,
@@ -109,11 +109,11 @@ const initialTransactions: Transaction[] = [
     monto: -2800
   },
   
-  // Mayo 2024
+  // Mayo 2025
   {
     id: '9',
     cuentaId: '1',
-    fecha: new Date('2024-05-15'),
+    fecha: new Date('2025-05-15'),
     comentario: 'Salario mayo',
     ingreso: 26000,
     gasto: 0,
@@ -123,7 +123,7 @@ const initialTransactions: Transaction[] = [
   {
     id: '10',
     cuentaId: '2',
-    fecha: new Date('2024-05-22'),
+    fecha: new Date('2025-05-22'),
     comentario: 'Proyecto freelance',
     ingreso: 8000,
     gasto: 0,
@@ -131,11 +131,11 @@ const initialTransactions: Transaction[] = [
     monto: 8000
   },
   
-  // Junio 2024
+  // Junio 2025
   {
     id: '11',
     cuentaId: '1',
-    fecha: new Date('2024-06-15'),
+    fecha: new Date('2025-06-15'),
     comentario: 'Salario junio',
     ingreso: 27000,
     gasto: 0,
@@ -145,7 +145,7 @@ const initialTransactions: Transaction[] = [
   {
     id: '12',
     cuentaId: '1',
-    fecha: new Date('2024-06-30'),
+    fecha: new Date('2025-06-30'),
     comentario: 'Cena familiar',
     ingreso: 0,
     gasto: 1500,
@@ -153,11 +153,11 @@ const initialTransactions: Transaction[] = [
     monto: -1500
   },
   
-  // Julio 2024
+  // Julio 2025
   {
     id: '13',
     cuentaId: '1',
-    fecha: new Date('2024-07-15'),
+    fecha: new Date('2025-07-15'),
     comentario: 'Salario julio',
     ingreso: 27000,
     gasto: 0,
@@ -167,7 +167,7 @@ const initialTransactions: Transaction[] = [
   {
     id: '14',
     cuentaId: '1',
-    fecha: new Date('2024-07-05'),
+    fecha: new Date('2025-07-05'),
     comentario: 'Gasolina y mantenimiento',
     ingreso: 0,
     gasto: 1800,
