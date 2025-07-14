@@ -211,15 +211,6 @@ export const useFinanceData = () => {
       const ingresos = monthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
       const gastos = monthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
       
-      // Debug: Log para verificar transacciones por mes
-      console.log(`Mes ${date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' })}:`, {
-        transacciones: monthTransactions.length,
-        ingresos,
-        gastos,
-        transaccionesIngresos: monthTransactions.filter(t => t.tipo === 'Ingreso').length,
-        transaccionesGastos: monthTransactions.filter(t => t.tipo === 'Gastos').length
-      });
-      
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
         ingresos,
