@@ -417,10 +417,12 @@ export const useFinanceData = () => {
     const gastosAnio = transaccionesAnio.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     const balanceAnio = ingresosAnio - gastosAnio;
     
-    // Calcular patrimonio anterior para variación
-    const patrimonioNetoAnterior = balanceTotal; // Por simplicidad, usar el mismo valor
+    // Calcular patrimonio del mes anterior para variación
+    // Para el patrimonio anterior, restar las transacciones del mes actual
+    const patrimonioNetoAnterior = patrimonioNeto - balanceMes;
     const variacionPatrimonio = patrimonioNetoAnterior > 0 ? 
-      ((patrimonioNeto - patrimonioNetoAnterior) / patrimonioNetoAnterior) * 100 : 0;
+      ((patrimonioNeto - patrimonioNetoAnterior) / patrimonioNetoAnterior) * 100 : 
+      patrimonioNeto > 0 ? 100 : 0;
 
     // Score de salud financiera
     const ratioDeuda = pasivos.total > 0 ? (pasivos.total / activos.total) * 100 : 0;
