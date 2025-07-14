@@ -528,6 +528,23 @@ export const useFinanceData = () => {
     const gastosAnio = transaccionesAnio.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     const balanceAnio = ingresosAnio - gastosAnio;
 
+    // Métricas del año anterior (2024) para comparativo
+    const anioAnteriorStart = new Date(currentYear - 1, 0, 1);
+    const anioAnteriorEnd = new Date(currentYear - 1, 11, 31);
+    
+    const transaccionesAnioAnterior = enrichedTransactions.filter(t => 
+      t.fecha >= anioAnteriorStart && t.fecha <= anioAnteriorEnd
+    );
+    
+    const ingresosAnioAnterior = transaccionesAnioAnterior.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnioAnterior = transaccionesAnioAnterior.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const balanceAnioAnterior = ingresosAnioAnterior - gastosAnioAnterior;
+
+    // Calcular variaciones porcentuales anuales
+    const variacionIngresosAnual = ingresosAnioAnterior > 0 ? ((ingresosAnio - ingresosAnioAnterior) / ingresosAnioAnterior) * 100 : 0;
+    const variacionGastosAnual = gastosAnioAnterior > 0 ? ((gastosAnio - gastosAnioAnterior) / gastosAnioAnterior) * 100 : 0;
+    const variacionBalanceAnual = balanceAnioAnterior !== 0 ? ((balanceAnio - balanceAnioAnterior) / Math.abs(balanceAnioAnterior)) * 100 : 0;
+
     // Top categorías anuales (basado en transacciones del año - solo gastos)
     const categoryTotalsAnual = new Map<string, { monto: number; tipo: TransactionType }>();
     transaccionesAnio.forEach(t => {
@@ -702,6 +719,12 @@ export const useFinanceData = () => {
       balanceMesAnterior,
       variacionIngresos,
       variacionGastos,
+      ingresosAnioAnterior,
+      gastosAnioAnterior,
+      balanceAnioAnterior,
+      variacionIngresosAnual,
+      variacionGastosAnual,
+      variacionBalanceAnual,
       saludFinanciera,
       distribucionActivos,
       topCategorias,

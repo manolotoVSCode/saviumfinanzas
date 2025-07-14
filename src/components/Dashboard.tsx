@@ -257,11 +257,18 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
               <span>vs mayo:</span>
-              <span className={`font-medium ${
-                metrics.ingresosMesAnterior >= 0 ? 'text-success' : 'text-destructive'
-              }`}>
-                {formatCurrency(metrics.ingresosMesAnterior)}
-              </span>
+              <div className="flex items-center space-x-1">
+                {metrics.variacionIngresos >= 0 ? (
+                  <TrendingUp className="h-3 w-3 text-success" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 text-destructive" />
+                )}
+                <span className={`font-medium ${
+                  metrics.variacionIngresos >= 0 ? 'text-success' : 'text-destructive'
+                }`}>
+                  {Math.abs(metrics.variacionIngresos).toFixed(1)}%
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -277,11 +284,18 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
               <span>vs mayo:</span>
-              <span className={`font-medium ${
-                metrics.gastosMesAnterior <= 0 ? 'text-success' : 'text-destructive'
-              }`}>
-                {formatCurrency(metrics.gastosMesAnterior)}
-              </span>
+              <div className="flex items-center space-x-1">
+                {metrics.variacionGastos <= 0 ? (
+                  <TrendingDown className="h-3 w-3 text-success" />
+                ) : (
+                  <TrendingUp className="h-3 w-3 text-destructive" />
+                )}
+                <span className={`font-medium ${
+                  metrics.variacionGastos <= 0 ? 'text-success' : 'text-destructive'
+                }`}>
+                  {Math.abs(metrics.variacionGastos).toFixed(1)}%
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -348,11 +362,18 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
               <span>vs año anterior:</span>
-              <span className={`font-medium ${
-                metrics.balanceAnio >= 0 ? 'text-success' : 'text-destructive'
-              }`}>
-                {formatCurrency(metrics.balanceAnio)}
-              </span>
+              <div className="flex items-center space-x-1">
+                {metrics.variacionBalanceAnual >= 0 ? (
+                  <TrendingUp className="h-3 w-3 text-success" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 text-destructive" />
+                )}
+                <span className={`font-medium ${
+                  metrics.variacionBalanceAnual >= 0 ? 'text-success' : 'text-destructive'
+                }`}>
+                  {Math.abs(metrics.variacionBalanceAnual).toFixed(1)}%
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -367,9 +388,19 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               {formatCurrency(metrics.ingresosAnio)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span className="text-success">
-                2025
-              </span>
+              <span>vs año anterior:</span>
+              <div className="flex items-center space-x-1">
+                {metrics.variacionIngresosAnual >= 0 ? (
+                  <TrendingUp className="h-3 w-3 text-success" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 text-destructive" />
+                )}
+                <span className={`font-medium ${
+                  metrics.variacionIngresosAnual >= 0 ? 'text-success' : 'text-destructive'
+                }`}>
+                  {Math.abs(metrics.variacionIngresosAnual).toFixed(1)}%
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -384,9 +415,19 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               {formatCurrency(metrics.gastosAnio)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span className="text-destructive">
-                2025
-              </span>
+              <span>vs año anterior:</span>
+              <div className="flex items-center space-x-1">
+                {metrics.variacionGastosAnual <= 0 ? (
+                  <TrendingDown className="h-3 w-3 text-success" />
+                ) : (
+                  <TrendingUp className="h-3 w-3 text-destructive" />
+                )}
+                <span className={`font-medium ${
+                  metrics.variacionGastosAnual <= 0 ? 'text-success' : 'text-destructive'
+                }`}>
+                  {Math.abs(metrics.variacionGastosAnual).toFixed(1)}%
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>

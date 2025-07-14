@@ -68,6 +68,14 @@ export interface DashboardMetrics {
   variacionIngresos: number; // porcentaje
   variacionGastos: number; // porcentaje
   
+  // Comparativo año anterior
+  ingresosAnioAnterior: number;
+  gastosAnioAnterior: number;
+  balanceAnioAnterior: number;
+  variacionIngresosAnual: number; // porcentaje
+  variacionGastosAnual: number; // porcentaje
+  variacionBalanceAnual: number; // porcentaje
+  
   // Score de salud financiera
   saludFinanciera: {
     score: number; // 0-10
