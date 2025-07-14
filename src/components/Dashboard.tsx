@@ -134,16 +134,6 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
                 </div>
               </div>
               
-              <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/20 dark:border-amber-800/30">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">Criptomonedas</span>
-                  <span className="font-bold text-amber-600 dark:text-amber-400">{formatCurrency(metrics.activos.criptomonedas)}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Bitcoin, Ethereum y altcoins
-                </div>
-              </div>
-              
               <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-muted-foreground">Empresas Privadas</span>

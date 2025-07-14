@@ -1,6 +1,6 @@
 export type TransactionType = 'Ingreso' | 'Gastos' | 'Aportación' | 'Retiro';
 
-export type AccountType = 'Efectivo' | 'Banco' | 'Tarjeta de Crédito' | 'Ahorros' | 'Inversiones' | 'Criptomonedas' | 'Hipoteca' | 'Empresa Propia';
+export type AccountType = 'Efectivo' | 'Banco' | 'Tarjeta de Crédito' | 'Ahorros' | 'Inversiones' | 'Hipoteca' | 'Empresa Propia';
 
 export interface Category {
   id: string;
@@ -39,7 +39,6 @@ export interface DashboardMetrics {
   activos: {
     efectivoBancos: number;
     inversiones: number;
-    criptomonedas: number;
     empresasPrivadas: number;
     total: number;
   };
