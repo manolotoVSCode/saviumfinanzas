@@ -233,6 +233,7 @@ export const TransactionsManager = ({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Cuenta</TableHead>
                 <TableHead>Categoría</TableHead>
@@ -245,6 +246,9 @@ export const TransactionsManager = ({
             <TableBody>
               {sortedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground font-mono">{transaction.id.slice(-8)}</span>
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />

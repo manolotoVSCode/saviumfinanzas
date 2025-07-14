@@ -71,9 +71,10 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
 
   const parseAmount = (amountStr: string): number => {
     if (!amountStr || amountStr.trim() === '-') return 0;
-    // Remove spaces, replace comma with dot for decimal separator
-    const cleanAmount = amountStr.replace(/\s/g, '').replace(',', '.');
+    // Remove spaces, remove dots (thousand separators), replace comma with dot for decimal separator
+    const cleanAmount = amountStr.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
     const parsed = parseFloat(cleanAmount);
+    console.log(`Parsing amount: "${amountStr}" -> "${cleanAmount}" -> ${parsed}`);
     return isNaN(parsed) ? 0 : parsed;
   };
 
