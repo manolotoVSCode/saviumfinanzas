@@ -102,13 +102,16 @@ export const TransactionsManager = ({
   };
 
   const handleEdit = (transaction: Transaction) => {
+    // Verificar si la categoría aún existe
+    const categoryExists = categories.some(c => c.id === transaction.subcategoriaId);
+    
     setFormData({
       cuentaId: transaction.cuentaId,
       fecha: transaction.fecha.toISOString().split('T')[0],
       comentario: transaction.comentario,
       ingreso: transaction.ingreso,
       gasto: transaction.gasto,
-      subcategoriaId: transaction.subcategoriaId
+      subcategoriaId: categoryExists ? transaction.subcategoriaId : ''
     });
     setEditingTransaction(transaction);
     setIsAddingTransaction(true);
@@ -362,7 +365,8 @@ export const TransactionsManager = ({
                     <div className="space-y-1">
                       <div className="font-medium">{transaction.categoria}</div>
                       <div className="text-sm text-muted-foreground">
-                        {categories.find(c => c.id === transaction.subcategoriaId)?.subcategoria}
+                        {categories.find(c => c.id === transaction.subcategoriaId)?.subcategoria || 
+                         <span className="text-red-500 italic">Categoría eliminada</span>}
                       </div>
                     </div>
                   </TableCell>
