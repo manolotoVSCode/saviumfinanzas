@@ -1,0 +1,17 @@
+fecha,comentario,ingreso,gasto,cuenta,categoria,subcategoria
+2025-08-01,Salario agosto,32000,0,Cuenta Principal,Trabajo,Salario
+2025-08-02,Supermercado semanal,0,4500,Cuenta Principal,Alimentación,Supermercado
+2025-08-03,Gasolina auto,0,2800,Cuenta Principal,Transporte,Gasolina
+2025-08-05,Proyecto freelance web,15000,0,Efectivo,Trabajo,Freelance
+2025-08-06,Cena restaurante,0,1200,Tarjeta de Crédito,Alimentación,Restaurantes
+2025-08-08,Aportación mensual ETFs,28000,0,Portafolio ETFs,Inversiones,Aportación ETFs
+2025-08-10,Compra acciones Google,22000,0,Acciones Individuales,Inversiones,Aportación Acciones
+2025-08-12,Compras farmacia,0,800,Efectivo,Salud,Medicina
+2025-08-15,Consultoría marketing,18000,0,Cuenta Principal,Trabajo,Freelance
+2025-08-16,Compras supermercado,0,3200,Cuenta Principal,Alimentación,Supermercado
+2025-08-18,Pago seguro auto,0,1500,Cuenta Principal,Transporte,Seguros
+2025-08-20,Dividendos ETFs,800,0,Portafolio ETFs,Inversiones,Rendimientos
+2025-08-22,Almuerzo negocios,0,650,Tarjeta de Crédito,Alimentación,Restaurantes
+2025-08-25,Gasolina,0,2600,Cuenta Principal,Transporte,Gasolina
+2025-08-28,Compras casa,0,1800,Tarjeta de Crédito,Hogar,Varios
+2025-08-30,Transferencia ahorros,0,5000,Cuenta Principal,Interno,Transferencia Entre Cuentas
