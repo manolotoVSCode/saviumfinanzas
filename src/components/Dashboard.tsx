@@ -284,7 +284,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
       {/* DISTRIBUCIÓN DE GASTOS MENSUAL - MES ANTERIOR */}
       <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle>Distribución de Gastos - Junio 2025</CardTitle>
+          <CardTitle>Gastos - Junio 2025</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
@@ -326,7 +326,10 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         </CardContent>
       </Card>
 
-      {/* MÉTRICAS ANUALES */}
+      {/* RESUMEN ANUAL */}
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold text-center">Resumen 2025</h2>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Ingresos anuales */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
@@ -377,7 +380,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
       {/* DISTRIBUCIÓN DE GASTOS ANUAL */}
       <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle>Distribución de Gastos - Año 2025</CardTitle>
+          <CardTitle>Gastos - Año 2025</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
