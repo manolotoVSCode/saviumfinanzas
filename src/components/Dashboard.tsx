@@ -221,23 +221,26 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         </Card>
       </div>
 
-      {/* MÉTRICAS PRINCIPALES */}
+      {/* RESUMEN MENSUAL - MES ANTERIOR */}
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold text-center">Resumen Junio</h2>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado del mes */}
         <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">Resultado del Mes</CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Resultado de Junio</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceMes)}`}>
-              {formatCurrency(metrics.balanceMes)}
+            <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceMesAnterior)}`}>
+              {formatCurrency(metrics.balanceMesAnterior)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span>vs mes anterior:</span>
+              <span>vs mayo:</span>
               <span className={`font-medium ${
-                (metrics.balanceMes - metrics.balanceMesAnterior) >= 0 ? 'text-success' : 'text-destructive'
+                metrics.balanceMesAnterior >= 0 ? 'text-success' : 'text-destructive'
               }`}>
-                {formatCurrency(metrics.balanceMes - metrics.balanceMesAnterior)}
+                {formatCurrency(metrics.balanceMesAnterior)}
               </span>
             </div>
           </CardContent>
@@ -246,19 +249,16 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         {/* Ingresos del mes */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos del Mes</CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos de Junio</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {formatCurrency(metrics.ingresosMes)}
+              {formatCurrency(metrics.ingresosMesAnterior)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span className={`${
-                metrics.variacionIngresos >= 0 ? 'text-success' : 'text-destructive'
-              }`}>
-                {metrics.variacionIngresos >= 0 ? '↑' : '↓'} {Math.abs(metrics.variacionIngresos).toFixed(1)}%
+              <span className="text-success">
+                Junio 2025
               </span>
-              <span>vs mes anterior</span>
             </div>
           </CardContent>
         </Card>
@@ -266,19 +266,16 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         {/* Gastos del mes */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos del Mes</CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos de Junio</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(metrics.gastosMes)}
+              {formatCurrency(metrics.gastosMesAnterior)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span className={`${
-                metrics.variacionGastos >= 0 ? 'text-destructive' : 'text-success'
-              }`}>
-                {metrics.variacionGastos >= 0 ? '↑' : '↓'} {Math.abs(metrics.variacionGastos).toFixed(1)}%
+              <span className="text-destructive">
+                Junio 2025
               </span>
-              <span>vs mes anterior</span>
             </div>
           </CardContent>
         </Card>
