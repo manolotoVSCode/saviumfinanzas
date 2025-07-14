@@ -95,17 +95,30 @@ export const useFinanceData = () => {
 
   // Recalcular saldos actuales cuando cambien las transacciones
   useEffect(() => {
-    setAccounts(prevAccounts => 
-      prevAccounts.map(account => {
-        const accountTransactions = transactions.filter(t => t.cuentaId === account.id);
-        const totalTransactions = accountTransactions.reduce((sum, t) => sum + t.monto, 0);
+    const updatedAccounts = accounts.map(account => {
+      const accountTransactions = transactions.filter(t => t.cuentaId === account.id);
+      const totalTransactions = accountTransactions.reduce((sum, t) => sum + t.monto, 0);
+      const newSaldoActual = account.saldoInicial + totalTransactions;
+      
+      // Solo actualizar si el saldo cambió para evitar loops infinitos
+      if (account.saldoActual !== newSaldoActual) {
         return {
           ...account,
-          saldoActual: account.saldoInicial + totalTransactions
+          saldoActual: newSaldoActual
         };
-      })
+      }
+      return account;
+    });
+    
+    // Solo setState si realmente hay cambios
+    const hasChanges = updatedAccounts.some((acc, index) => 
+      acc.saldoActual !== accounts[index].saldoActual
     );
-  }, [transactions]);
+    
+    if (hasChanges) {
+      setAccounts(updatedAccounts);
+    }
+  }, [transactions]); // Removemos accounts de las dependencias para evitar loops
 
   // Añadir campos calculados a transacciones
   const enrichedTransactions = useMemo(() => {
