@@ -237,11 +237,18 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
               <span>vs mayo:</span>
-              <span className={`font-medium ${
-                metrics.balanceMesAnterior >= 0 ? 'text-success' : 'text-destructive'
-              }`}>
-                {formatCurrency(metrics.balanceMesAnterior)}
-              </span>
+              <div className="flex items-center space-x-1">
+                {metrics.balanceMesAnterior >= 0 ? (
+                  <TrendingUp className="h-3 w-3 text-success" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 text-destructive" />
+                )}
+                <span className={`font-medium ${
+                  metrics.balanceMesAnterior >= 0 ? 'text-success' : 'text-destructive'
+                }`}>
+                  {((metrics.balanceMesAnterior / Math.abs(metrics.balanceMesAnterior || 1)) * 100).toFixed(1)}%
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -304,7 +311,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
       {/* DISTRIBUCIÓN DE GASTOS MENSUAL - MES ANTERIOR */}
       <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle>Gastos - Junio 2025</CardTitle>
+          <CardTitle className="text-center">Distribución Gastos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
