@@ -80,6 +80,33 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
     gastos: Math.abs(mes.gastos) // Convertir a positivo para mejor visualización
   }));
 
+  // Calcular líneas de tendencia usando regresión lineal
+  const calculateTrendLine = (data: number[]) => {
+    const n = data.length;
+    const sumX = data.reduce((sum, _, i) => sum + i, 0);
+    const sumY = data.reduce((sum, val) => sum + val, 0);
+    const sumXY = data.reduce((sum, val, i) => sum + i * val, 0);
+    const sumXX = data.reduce((sum, _, i) => sum + i * i, 0);
+    
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+    
+    return data.map((_, i) => slope * i + intercept);
+  };
+
+  const ingresosValues = barChartData.map(d => d.ingresos);
+  const gastosValues = barChartData.map(d => d.gastos);
+  
+  const trendIngresos = calculateTrendLine(ingresosValues);
+  const trendGastos = calculateTrendLine(gastosValues);
+
+  // Combinar datos con líneas de tendencia
+  const chartDataWithTrend = barChartData.map((data, index) => ({
+    ...data,
+    tendenciaIngresos: trendIngresos[index],
+    tendenciaGastos: trendGastos[index]
+  }));
+
   const getSaludColor = (nivel: string) => {
     switch (nivel) {
       case 'Excelente': return 'text-success';
@@ -160,7 +187,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         <CardContent>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={barChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <ComposedChart data={chartDataWithTrend} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis 
                   dataKey="mes" 
