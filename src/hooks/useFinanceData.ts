@@ -14,7 +14,7 @@ const initialCategories: Category[] = [
   { id: '9', subcategoria: 'Aportación Acciones', categoria: 'Inversiones', tipo: 'Aportación' },
 ];
 
-const initialAccountTypes: AccountType[] = ['Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones'];
+const initialAccountTypes: AccountType[] = ['Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones', 'Hipoteca', 'Empresa Propia'];
 
 const initialAccounts: Account[] = [
   { id: '1', nombre: 'Cuenta Principal', tipo: 'Banco', saldoInicial: 50000, saldoActual: 50000 },
@@ -22,6 +22,8 @@ const initialAccounts: Account[] = [
   { id: '3', nombre: 'Ahorros', tipo: 'Ahorros', saldoInicial: 25000, saldoActual: 25000 },
   { id: '4', nombre: 'Portafolio ETFs', tipo: 'Inversiones', saldoInicial: 100000, saldoActual: 100000 },
   { id: '5', nombre: 'Acciones Individuales', tipo: 'Inversiones', saldoInicial: 50000, saldoActual: 50000 },
+  { id: '6', nombre: 'Hipoteca Casa', tipo: 'Hipoteca', saldoInicial: -180000, saldoActual: -180000 },
+  { id: '7', nombre: 'Mi Startup Tech', tipo: 'Empresa Propia', saldoInicial: 75000, saldoActual: 75000 },
 ];
 
 const initialTransactions: Transaction[] = [
@@ -272,18 +274,24 @@ export const useFinanceData = () => {
       inversiones: accounts
         .filter(acc => acc.tipo === 'Inversiones')
         .reduce((sum, acc) => sum + acc.saldoActual, 0),
+      empresasPrivadas: accounts
+        .filter(acc => acc.tipo === 'Empresa Propia')
+        .reduce((sum, acc) => sum + acc.saldoActual, 0),
       total: 0
     };
-    activos.total = activos.efectivoBancos + activos.inversiones;
+    activos.total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
 
     // PASIVOS (lo que debes)
     const pasivos = {
       tarjetasCredito: accounts
         .filter(acc => acc.tipo === 'Tarjeta de Crédito')
         .reduce((sum, acc) => sum + Math.abs(acc.saldoActual), 0),
+      hipoteca: accounts
+        .filter(acc => acc.tipo === 'Hipoteca')
+        .reduce((sum, acc) => sum + Math.abs(acc.saldoActual), 0),
       total: 0
     };
-    pasivos.total = pasivos.tarjetasCredito;
+    pasivos.total = pasivos.tarjetasCredito + pasivos.hipoteca;
 
     // PATRIMONIO NETO = Activos - Pasivos
     const patrimonioNeto = activos.total - pasivos.total;
@@ -397,10 +405,87 @@ export const useFinanceData = () => {
       });
     }
 
+    // Métricas anuales (año 2025 completo)
+    const anioStart = new Date(currentYear, 0, 1);
+    const anioEnd = new Date(currentYear, 11, 31);
+    
+    const transaccionesAnio = enrichedTransactions.filter(t => 
+      t.fecha >= anioStart && t.fecha <= anioEnd
+    );
+    
+    const ingresosAnio = transaccionesAnio.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnio = transaccionesAnio.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const balanceAnio = ingresosAnio - gastosAnio;
+    
     // Calcular patrimonio anterior para variación
     const patrimonioNetoAnterior = balanceTotal; // Por simplicidad, usar el mismo valor
     const variacionPatrimonio = patrimonioNetoAnterior > 0 ? 
       ((patrimonioNeto - patrimonioNetoAnterior) / patrimonioNetoAnterior) * 100 : 0;
+
+    // Score de salud financiera
+    const ratioDeuda = pasivos.total > 0 ? (pasivos.total / activos.total) * 100 : 0;
+    const ratioAhorro = ingresosMes > 0 ? ((ingresosMes - gastosMes) / ingresosMes) * 100 : 0;
+    
+    let score = 10;
+    let nivel: 'Excelente' | 'Buena' | 'Regular' | 'Mejorable' | 'Crítica' = 'Excelente';
+    let descripcion = '';
+    
+    // Penalizar por alto ratio de deuda
+    if (ratioDeuda > 80) {
+      score -= 4;
+      descripcion = 'Alto nivel de deuda';
+    } else if (ratioDeuda > 60) {
+      score -= 2;
+      descripcion = 'Nivel de deuda moderado';
+    } else if (ratioDeuda > 30) {
+      score -= 1;
+      descripcion = 'Nivel de deuda controlado';
+    } else {
+      descripcion = 'Estructura financiera sólida';
+    }
+    
+    // Penalizar por bajo ratio de ahorro
+    if (ratioAhorro < 10) {
+      score -= 3;
+      descripcion += ratioDeuda > 0 ? ', muy bajo ahorro' : 'Muy bajo nivel de ahorro';
+    } else if (ratioAhorro < 20) {
+      score -= 1;
+      descripcion += ratioDeuda > 0 ? ', ahorro mejorable' : 'Ahorro mejorable';
+    } else {
+      descripcion += ratioDeuda > 0 ? ', buen nivel de ahorro' : 'Excelente capacidad de ahorro';
+    }
+    
+    // Determinar nivel según score
+    if (score >= 9) nivel = 'Excelente';
+    else if (score >= 7) nivel = 'Buena';
+    else if (score >= 5) nivel = 'Regular';
+    else if (score >= 3) nivel = 'Mejorable';
+    else nivel = 'Crítica';
+    
+    const saludFinanciera = {
+      score: Number(score.toFixed(1)),
+      nivel,
+      descripcion
+    };
+
+    // Distribución de activos
+    const distribucionActivos = [
+      {
+        categoria: 'Efectivo y Bancos',
+        monto: activos.efectivoBancos,
+        porcentaje: activos.total > 0 ? (activos.efectivoBancos / activos.total) * 100 : 0
+      },
+      {
+        categoria: 'Inversiones',
+        monto: activos.inversiones,
+        porcentaje: activos.total > 0 ? (activos.inversiones / activos.total) * 100 : 0
+      },
+      {
+        categoria: 'Empresas Privadas',
+        monto: activos.empresasPrivadas,
+        porcentaje: activos.total > 0 ? (activos.empresasPrivadas / activos.total) * 100 : 0
+      }
+    ].filter(item => item.monto > 0);
 
     return {
       balanceTotal,
@@ -412,11 +497,16 @@ export const useFinanceData = () => {
       ingresosMes,
       gastosMes,
       balanceMes,
+      ingresosAnio,
+      gastosAnio,
+      balanceAnio,
       ingresosMesAnterior,
       gastosMesAnterior,
       balanceMesAnterior,
       variacionIngresos,
       variacionGastos,
+      saludFinanciera,
+      distribucionActivos,
       topCategorias,
       cuentasResumen,
       tendenciaMensual,

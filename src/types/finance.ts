@@ -1,6 +1,6 @@
 export type TransactionType = 'Ingreso' | 'Gastos' | 'Aportación' | 'Retiro';
 
-export type AccountType = 'Efectivo' | 'Banco' | 'Tarjeta de Crédito' | 'Ahorros' | 'Inversiones';
+export type AccountType = 'Efectivo' | 'Banco' | 'Tarjeta de Crédito' | 'Ahorros' | 'Inversiones' | 'Hipoteca' | 'Empresa Propia';
 
 export interface Category {
   id: string;
@@ -39,10 +39,12 @@ export interface DashboardMetrics {
   activos: {
     efectivoBancos: number;
     inversiones: number;
+    empresasPrivadas: number;
     total: number;
   };
   pasivos: {
     tarjetasCredito: number;
+    hipoteca: number;
     total: number;
   };
   patrimonioNeto: number;
@@ -54,12 +56,27 @@ export interface DashboardMetrics {
   gastosMes: number;
   balanceMes: number;
   
+  // Métricas anuales
+  ingresosAnio: number;
+  gastosAnio: number;
+  balanceAnio: number;
+  
   // Comparativo mes anterior
   ingresosMesAnterior: number;
   gastosMesAnterior: number;
   balanceMesAnterior: number;
   variacionIngresos: number; // porcentaje
   variacionGastos: number; // porcentaje
+  
+  // Score de salud financiera
+  saludFinanciera: {
+    score: number; // 0-10
+    nivel: 'Excelente' | 'Buena' | 'Regular' | 'Mejorable' | 'Crítica';
+    descripcion: string;
+  };
+  
+  // Distribución de activos
+  distribucionActivos: Array<{ categoria: string; monto: number; porcentaje: number }>;
   
   topCategorias: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
   cuentasResumen: Array<{ cuenta: string; saldo: number; tipo: AccountType }>;
