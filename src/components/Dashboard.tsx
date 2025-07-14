@@ -152,7 +152,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         </CardContent>
       </Card>
 
-      {/* GRÁFICO DE BARRAS - INGRESOS VS GASTOS ÚLTIMOS 12 MESES */}
+      {/* GRÁFICO DE BARRAS CON LÍNEAS DE TENDENCIA - INGRESOS VS GASTOS ÚLTIMOS 12 MESES */}
       <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
           <CardTitle>Ingresos vs Gastos - Últimos 12 Meses</CardTitle>
@@ -182,7 +182,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
                   }}
                   formatter={(value, name) => [
                     formatCurrency(Number(value)), 
-                    name === 'ingresos' ? 'Ingresos' : 'Gastos'
+                    name === 'ingresos' ? 'Ingresos' : name === 'gastos' ? 'Gastos' : name === 'tendenciaIngresos' ? 'Tendencia Ingresos' : 'Tendencia Gastos'
                   ]}
                 />
                 <Bar 
@@ -196,6 +196,22 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
                   fill="hsl(var(--destructive))" 
                   radius={[4, 4, 0, 0]}
                   name="gastos"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="ingresos" 
+                  stroke="hsl(var(--success))" 
+                  strokeWidth={2}
+                  dot={false}
+                  name="tendenciaIngresos"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="gastos" 
+                  stroke="hsl(var(--destructive))" 
+                  strokeWidth={2}
+                  dot={false}
+                  name="tendenciaGastos"
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -674,65 +690,6 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         </Card>
       </div>
 
-      {/* TENDENCIA MENSUAL */}
-      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
-        <CardHeader>
-          <CardTitle>Tendencia de los Últimos 6 Meses</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={lineData}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis 
-                  tick={{ fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value) => formatCurrency(Number(value))}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="ingresos" 
-                  stroke="hsl(var(--success))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
-                  name="Ingresos"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="gastos" 
-                  stroke="hsl(var(--destructive))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--destructive))', strokeWidth: 2, r: 4 }}
-                  name="Gastos"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="balance" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                  name="Balance"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
