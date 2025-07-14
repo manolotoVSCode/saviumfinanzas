@@ -38,10 +38,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
       {/* PATRIMONIO NETO - Métrica principal */}
       <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300 col-span-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold">💎 Patrimonio Neto</CardTitle>
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Shield className="h-6 w-6 text-primary" />
-          </div>
+          <CardTitle className="text-lg font-semibold">Patrimonio Neto</CardTitle>
         </CardHeader>
         <CardContent>
           <div className={`text-4xl font-bold ${getBalanceColor(metrics.patrimonioNeto)} mb-2`}>
@@ -49,10 +46,9 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-sm text-muted-foreground">Total Activos - Total Pasivos</span>
-            <span className={`text-sm font-medium flex items-center ${
+            <span className={`text-sm font-medium ${
               metrics.variacionPatrimonio >= 0 ? 'text-success' : 'text-destructive'
             }`}>
-              {metrics.variacionPatrimonio >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
               {Math.abs(metrics.variacionPatrimonio).toFixed(1)}%
             </span>
           </div>
@@ -64,16 +60,15 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         {/* ACTIVOS */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-success">
-              <Wallet className="h-5 w-5" />
-              ✅ ACTIVOS (lo que tienes)
+            <CardTitle className="text-success">
+              ACTIVOS (lo que tienes)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="p-4 rounded-lg bg-success/5 border border-success/20">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">💰 Efectivo y Bancos</span>
+                  <span className="text-sm text-muted-foreground">Efectivo y Bancos</span>
                   <span className="font-bold text-success">{formatCurrency(metrics.activos.efectivoBancos)}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -83,7 +78,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               
               <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">📈 Inversiones</span>
+                  <span className="text-sm text-muted-foreground">Inversiones</span>
                   <span className="font-bold text-primary">{formatCurrency(metrics.activos.inversiones)}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -93,7 +88,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               
               <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-success">🏆 TOTAL ACTIVOS</span>
+                  <span className="font-semibold text-success">TOTAL ACTIVOS</span>
                   <span className="text-xl font-bold text-success">{formatCurrency(metrics.activos.total)}</span>
                 </div>
               </div>
@@ -104,16 +99,15 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         {/* PASIVOS */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <CreditCard className="h-5 w-5" />
-              ❌ PASIVOS (lo que debes)
+            <CardTitle className="text-destructive">
+              PASIVOS (lo que debes)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">💳 Tarjetas de Crédito</span>
+                  <span className="text-sm text-muted-foreground">Tarjetas de Crédito</span>
                   <span className="font-bold text-destructive">{formatCurrency(metrics.pasivos.tarjetasCredito)}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -123,7 +117,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               
               <div className="p-4 rounded-lg bg-muted/20 border border-muted">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">🏠 Hipoteca</span>
+                  <span className="text-sm text-muted-foreground">Hipoteca</span>
                   <span className="font-bold text-muted-foreground">$0.00</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -133,7 +127,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-destructive">⚠️ TOTAL PASIVOS</span>
+                  <span className="font-semibold text-destructive">TOTAL PASIVOS</span>
                   <span className="text-xl font-bold text-destructive">{formatCurrency(metrics.pasivos.total)}</span>
                 </div>
               </div>
