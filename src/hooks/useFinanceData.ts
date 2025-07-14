@@ -1,17 +1,35 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Account, Category, Transaction, TransactionType, AccountType, DashboardMetrics } from '@/types/finance';
 
-// Datos iniciales de ejemplo
+// Categorías reales
 const initialCategories: Category[] = [
-  { id: '1', subcategoria: 'Salario', categoria: 'Trabajo', tipo: 'Ingreso' },
-  { id: '2', subcategoria: 'Freelance', categoria: 'Trabajo', tipo: 'Ingreso' },
-  { id: '3', subcategoria: 'Supermercado', categoria: 'Alimentación', tipo: 'Gastos' },
-  { id: '4', subcategoria: 'Restaurantes', categoria: 'Alimentación', tipo: 'Gastos' },
-  { id: '5', subcategoria: 'Gasolina', categoria: 'Transporte', tipo: 'Gastos' },
-  { id: '6', subcategoria: 'Transferencia Entre Cuentas', categoria: 'Interno', tipo: 'Aportación' },
-  { id: '7', subcategoria: 'Retiro Entre Cuentas', categoria: 'Interno', tipo: 'Retiro' },
-  { id: '8', subcategoria: 'Aportación ETFs', categoria: 'Inversiones', tipo: 'Aportación' },
-  { id: '9', subcategoria: 'Aportación Acciones', categoria: 'Inversiones', tipo: 'Aportación' },
+  { id: '1', subcategoria: 'Nómina', categoria: '💰 Sueldos', tipo: 'Ingreso' },
+  { id: '2', subcategoria: 'Bonos / Comisiones', categoria: '💰 Sueldos', tipo: 'Ingreso' },
+  { id: '3', subcategoria: 'Reembolsos', categoria: '💰 Ingresos adicionales', tipo: 'Ingreso' },
+  { id: '4', subcategoria: 'Ventas personales', categoria: '💰 Ingresos adicionales', tipo: 'Ingreso' },
+  { id: '5', subcategoria: 'Otros ingresos', categoria: '💰 Ingresos adicionales', tipo: 'Ingreso' },
+  { id: '6', subcategoria: 'Alquiler / Hipoteca', categoria: '🏠 Hogar', tipo: 'Gastos' },
+  { id: '7', subcategoria: 'Servicios (luz, agua, gas, mantenimiento)', categoria: '🏠 Hogar', tipo: 'Gastos' },
+  { id: '8', subcategoria: 'Supermercado, Oxxo', categoria: '🥑 Alimentación', tipo: 'Gastos' },
+  { id: '9', subcategoria: 'Uber / Taxi / Vuelos', categoria: '🎿 Ocio y tiempo libre', tipo: 'Gastos' },
+  { id: '10', subcategoria: 'Casetas / Parking / Gas / Servicios', categoria: '🚙 Transporte', tipo: 'Gastos' },
+  { id: '11', subcategoria: 'Seguro médico', categoria: '🩺 Salud', tipo: 'Gastos' },
+  { id: '12', subcategoria: 'Farmacia / Consultas / Laboratorio', categoria: '🩺 Salud', tipo: 'Gastos' },
+  { id: '13', subcategoria: 'Colegiaturas / Cursos / Material Escolar', categoria: '📚 Educación', tipo: 'Gastos' },
+  { id: '14', subcategoria: 'Restaurantes, Café, Viajes', categoria: '🎿 Ocio y tiempo libre', tipo: 'Gastos' },
+  { id: '15', subcategoria: 'Compras', categoria: '🛒 Compras personales', tipo: 'Gastos' },
+  { id: '16', subcategoria: 'Cuotas / Suscripciones', categoria: '🛒 Compras personales', tipo: 'Gastos' },
+  { id: '17', subcategoria: 'Aportación ahorro', categoria: '🏦 Inversiones', tipo: 'Aportación' },
+  { id: '18', subcategoria: 'Aportación a Sociedad', categoria: '🏦 Participaciones', tipo: 'Retiro' },
+  { id: '19', subcategoria: 'Pago tarjeta de crédito', categoria: '🔂 Transferencias internas', tipo: 'Retiro' },
+  { id: '20', subcategoria: 'A otra cuenta propia', categoria: '🔂 Transferencias internas', tipo: 'Aportación' },
+  { id: '21', subcategoria: 'Retiro Ahorro', categoria: '🏦 Inversiones', tipo: 'Retiro' },
+  { id: '22', subcategoria: 'Dividentos', categoria: '🏦 Participaciones', tipo: 'Ingreso' },
+  { id: '23', subcategoria: 'Abono tarjeta de crédito', categoria: '🔂 Transferencias internas', tipo: 'Aportación' },
+  { id: '24', subcategoria: 'Desde otra cuenta propia', categoria: '🔂 Transferencias internas', tipo: 'Retiro' },
+  { id: '25', subcategoria: 'Impuestos', categoria: '📃 Impuestos', tipo: 'Gastos' },
+  { id: '26', subcategoria: 'Pago Deuda', categoria: '🔂 Transferencias internas', tipo: 'Aportación' },
+  { id: '27', subcategoria: 'Abono Deuda', categoria: '🔂 Transferencias internas', tipo: 'Aportación' },
 ];
 
 const initialAccountTypes: AccountType[] = ['Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones', 'Hipoteca', 'Empresa Propia'];
