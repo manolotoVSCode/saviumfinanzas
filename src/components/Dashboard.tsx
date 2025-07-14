@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DashboardMetrics } from '@/types/finance';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
 
 interface DashboardProps {
@@ -74,11 +75,13 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
             {formatCurrency(metrics.patrimonioNeto)}
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground">Total Activos - Total Pasivos</span>
+            <span className="text-sm text-muted-foreground">
+              Total Activos {formatCurrency(metrics.activos.total)} - Total Pasivos {formatCurrency(metrics.pasivos.total)}
+            </span>
             <span className={`text-sm font-medium ${
               metrics.variacionPatrimonio >= 0 ? 'text-success' : 'text-destructive'
             }`}>
-              {Math.abs(metrics.variacionPatrimonio).toFixed(1)}%
+              {((metrics.activos.total - metrics.pasivos.total) / metrics.activos.total * 100).toFixed(1)}%
             </span>
           </div>
         </CardContent>
@@ -87,7 +90,25 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
       {/* SCORE DE SALUD FINANCIERA */}
       <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle>Salud Financiera</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Salud Financiera
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground hover:text-primary cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm p-3">
+                  <div className="space-y-2 text-xs">
+                    <p><strong>Cálculo del Score:</strong></p>
+                    <p>• Ratio de Deuda = Pasivos / Activos</p>
+                    <p>• Ratio de Ahorro = (Ingresos - Gastos) / Ingresos</p>
+                    <p>• Score inicial: 10 puntos</p>
+                    <p>• Se reduce según nivel de deuda y capacidad de ahorro</p>
+                  </div>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between mb-4">
@@ -197,9 +218,9 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
       {/* MÉTRICAS PRINCIPALES */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado del mes */}
-        <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resultado del Mes</CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Resultado del Mes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceMes)}`}>
@@ -260,7 +281,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
       {/* MÉTRICAS ANUALES */}
       <Card className="hover-scale border-accent/20 hover:border-accent/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle>Resumen Anual 2025</CardTitle>
+          <CardTitle>Resultado Anual 2025</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -276,7 +297,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceAnio)}`}>
                 {formatCurrency(metrics.balanceAnio)}
               </div>
-              <div className="text-sm text-muted-foreground">Balance Anual</div>
+              <div className="text-sm text-muted-foreground">Resultado Anual</div>
             </div>
           </div>
         </CardContent>
