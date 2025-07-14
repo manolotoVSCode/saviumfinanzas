@@ -338,7 +338,7 @@ export const useFinanceData = () => {
     
     // Detectar si es un pago de capital de hipoteca para crear transacción automática
     const category = categories.find(c => c.id === transaction.subcategoriaId);
-    if (category?.subcategoria === 'Capital' && category?.categoria === 'Hipoteca' && transaction.gasto > 0) {
+    if (category?.subcategoria === 'Hipoteca - Capital' && category?.categoria === 'Hipoteca' && category?.tipo === 'Aportación' && transaction.gasto > 0) {
       // Buscar cuenta de hipoteca
       const hipotecaAccount = accounts.find(a => a.tipo === 'Hipoteca');
       if (hipotecaAccount) {
