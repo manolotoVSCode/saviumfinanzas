@@ -494,6 +494,28 @@ export const useFinanceData = () => {
       .sort((a, b) => b.monto - a.monto)
       .slice(0, 5);
 
+    // Top categorías del mes anterior (para gráfica mensual)
+    const categoryTotalsMesAnterior = new Map<string, { monto: number; tipo: TransactionType }>();
+    transaccionesMesAnterior.forEach(t => {
+      if (t.categoria && t.tipo === 'Gastos') { // Solo incluir gastos
+        const key = `${t.categoria}_${t.tipo}`;
+        const current = categoryTotalsMesAnterior.get(key) || { monto: 0, tipo: t.tipo };
+        categoryTotalsMesAnterior.set(key, {
+          monto: current.monto + Math.abs(t.monto),
+          tipo: t.tipo
+        });
+      }
+    });
+
+    const topCategoriasMesAnterior = Array.from(categoryTotalsMesAnterior.entries())
+      .map(([key, value]) => ({
+        categoria: key.split('_')[0],
+        monto: value.monto,
+        tipo: value.tipo
+      }))
+      .sort((a, b) => b.monto - a.monto)
+      .slice(0, 5);
+
     // Métricas anuales (año 2025 completo)
     const anioStart = new Date(currentYear, 0, 1);
     const anioEnd = new Date(currentYear, 11, 31);
@@ -683,6 +705,7 @@ export const useFinanceData = () => {
       saludFinanciera,
       distribucionActivos,
       topCategorias,
+      topCategoriasMesAnterior,
       topCategoriasAnual,
       cuentasResumen,
       tendenciaMensual,

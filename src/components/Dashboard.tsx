@@ -32,7 +32,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
   ];
 
   // Preparar datos para gráficos
-  const pieData = metrics.topCategorias.map((cat, index) => ({
+  const pieDataMesAnterior = metrics.topCategoriasMesAnterior.map((cat, index) => ({
     name: cat.categoria,
     value: Math.abs(cat.monto),
     color: COLORS[index % COLORS.length]
@@ -284,17 +284,17 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         </Card>
       </div>
 
-      {/* DISTRIBUCIÓN DE GASTOS MENSUAL */}
+      {/* DISTRIBUCIÓN DE GASTOS MENSUAL - MES ANTERIOR */}
       <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle>Distribución de Gastos - Julio 2025</CardTitle>
+          <CardTitle>Distribución de Gastos - Junio 2025</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPieChart>
                 <Pie
-                  data={pieData}
+                  data={pieDataMesAnterior}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -302,7 +302,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {pieData.map((entry, index) => (
+                  {pieDataMesAnterior.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -313,7 +313,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
             </ResponsiveContainer>
           </div>
           <div className="mt-4 space-y-2">
-            {pieData.map((entry, index) => (
+            {pieDataMesAnterior.map((entry, index) => (
               <div key={index} className="flex items-center justify-between text-sm">
                 <div className="flex items-center space-x-2">
                   <div 
@@ -424,51 +424,6 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
 
       {/* GRÁFICOS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Distribución de gastos */}
-        <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Distribución de Gastos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
-                  />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 space-y-2">
-              {pieData.map((entry, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span>{entry.name}</span>
-                  </div>
-                  <span className="font-medium">{formatCurrency(entry.value)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Distribución de activos */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
