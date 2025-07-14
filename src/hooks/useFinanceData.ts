@@ -17,13 +17,14 @@ const initialCategories: Category[] = [
 const initialAccountTypes: AccountType[] = ['Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones', 'Hipoteca', 'Empresa Propia'];
 
 const initialAccounts: Account[] = [
-  { id: '1', nombre: 'Cuenta Principal', tipo: 'Banco', saldoInicial: 50000, saldoActual: 50000 },
-  { id: '2', nombre: 'Efectivo', tipo: 'Efectivo', saldoInicial: 2000, saldoActual: 2000 },
-  { id: '3', nombre: 'Ahorros', tipo: 'Ahorros', saldoInicial: 25000, saldoActual: 25000 },
-  { id: '4', nombre: 'Portafolio ETFs', tipo: 'Inversiones', saldoInicial: 100000, saldoActual: 100000 },
-  { id: '5', nombre: 'Acciones Individuales', tipo: 'Inversiones', saldoInicial: 50000, saldoActual: 50000 },
-  { id: '6', nombre: 'Hipoteca Casa', tipo: 'Hipoteca', saldoInicial: -180000, saldoActual: -180000 },
-  { id: '7', nombre: 'Mi Startup Tech', tipo: 'Empresa Propia', saldoInicial: 75000, saldoActual: 75000 },
+  { id: '1', nombre: 'Cuenta Principal', tipo: 'Banco', saldoInicial: 42500, saldoActual: 42500 },
+  { id: '2', nombre: 'Efectivo', tipo: 'Efectivo', saldoInicial: 3200, saldoActual: 3200 },
+  { id: '3', nombre: 'Ahorros', tipo: 'Ahorros', saldoInicial: 67800, saldoActual: 67800 },
+  { id: '4', nombre: 'Portafolio ETFs', tipo: 'Inversiones', saldoInicial: 125000, saldoActual: 125000 },
+  { id: '5', nombre: 'Acciones Individuales', tipo: 'Inversiones', saldoInicial: 89300, saldoActual: 89300 },
+  { id: '6', nombre: 'Hipoteca Casa', tipo: 'Hipoteca', saldoInicial: -245000, saldoActual: -245000 },
+  { id: '7', nombre: 'Mi Startup Tech', tipo: 'Empresa Propia', saldoInicial: 156000, saldoActual: 156000 },
+  { id: '8', nombre: 'Tarjeta de Crédito', tipo: 'Tarjeta de Crédito', saldoInicial: -4200, saldoActual: -4200 },
 ];
 
 const initialTransactions: Transaction[] = [
@@ -33,10 +34,10 @@ const initialTransactions: Transaction[] = [
     cuentaId: '1',
     fecha: new Date('2025-01-15'),
     comentario: 'Salario enero',
-    ingreso: 25000,
+    ingreso: 28500,
     gasto: 0,
     subcategoriaId: '1',
-    monto: 25000
+    monto: 28500
   },
   {
     id: '2',
@@ -44,171 +45,321 @@ const initialTransactions: Transaction[] = [
     fecha: new Date('2025-01-20'),
     comentario: 'Compras supermercado',
     ingreso: 0,
-    gasto: 3500,
+    gasto: 4200,
     subcategoriaId: '3',
-    monto: -3500
+    monto: -4200
+  },
+  {
+    id: '3',
+    cuentaId: '2',
+    fecha: new Date('2025-01-08'),
+    comentario: 'Cena restaurante',
+    ingreso: 0,
+    gasto: 1800,
+    subcategoriaId: '4',
+    monto: -1800
+  },
+  {
+    id: '4',
+    cuentaId: '8',
+    fecha: new Date('2025-01-25'),
+    comentario: 'Pago tarjeta crédito',
+    ingreso: 0,
+    gasto: 2100,
+    subcategoriaId: '3',
+    monto: -2100
   },
   
   // Febrero 2025
   {
-    id: '3',
+    id: '5',
     cuentaId: '1',
     fecha: new Date('2025-02-15'),
     comentario: 'Salario febrero',
-    ingreso: 25000,
+    ingreso: 29000,
     gasto: 0,
     subcategoriaId: '1',
-    monto: 25000
-  },
-  {
-    id: '4',
-    cuentaId: '2',
-    fecha: new Date('2025-02-10'),
-    comentario: 'Cena restaurante',
-    ingreso: 0,
-    gasto: 1200,
-    subcategoriaId: '4',
-    monto: -1200
-  },
-  
-  // Marzo 2025
-  {
-    id: '5',
-    cuentaId: '1',
-    fecha: new Date('2025-03-15'),
-    comentario: 'Salario marzo',
-    ingreso: 25000,
-    gasto: 0,
-    subcategoriaId: '1',
-    monto: 25000
+    monto: 29000
   },
   {
     id: '6',
-    cuentaId: '1',
-    fecha: new Date('2025-03-25'),
-    comentario: 'Gasolina',
-    ingreso: 0,
-    gasto: 800,
-    subcategoriaId: '5',
-    monto: -800
+    cuentaId: '2',
+    fecha: new Date('2025-02-10'),
+    comentario: 'Proyecto freelance',
+    ingreso: 12000,
+    gasto: 0,
+    subcategoriaId: '2',
+    monto: 12000
   },
-  
-  // Abril 2025
   {
     id: '7',
     cuentaId: '1',
-    fecha: new Date('2025-04-15'),
-    comentario: 'Salario abril',
-    ingreso: 26000,
-    gasto: 0,
-    subcategoriaId: '1',
-    monto: 26000
+    fecha: new Date('2025-02-22'),
+    comentario: 'Gasolina febrero',
+    ingreso: 0,
+    gasto: 2400,
+    subcategoriaId: '5',
+    monto: -2400
   },
   {
     id: '8',
     cuentaId: '1',
-    fecha: new Date('2025-04-08'),
+    fecha: new Date('2025-02-28'),
     comentario: 'Compras varias',
     ingreso: 0,
-    gasto: 2800,
+    gasto: 3600,
     subcategoriaId: '3',
-    monto: -2800
+    monto: -3600
   },
   
-  // Mayo 2025
+  // Marzo 2025
   {
     id: '9',
     cuentaId: '1',
-    fecha: new Date('2025-05-15'),
-    comentario: 'Salario mayo',
-    ingreso: 26000,
+    fecha: new Date('2025-03-15'),
+    comentario: 'Salario marzo',
+    ingreso: 29500,
     gasto: 0,
     subcategoriaId: '1',
-    monto: 26000
+    monto: 29500
   },
   {
     id: '10',
-    cuentaId: '2',
-    fecha: new Date('2025-05-22'),
-    comentario: 'Proyecto freelance',
-    ingreso: 8000,
-    gasto: 0,
-    subcategoriaId: '2',
-    monto: 8000
+    cuentaId: '1',
+    fecha: new Date('2025-03-25'),
+    comentario: 'Supermercado marzo',
+    ingreso: 0,
+    gasto: 4800,
+    subcategoriaId: '3',
+    monto: -4800
   },
-  
-  // Junio 2025
   {
     id: '11',
-    cuentaId: '1',
-    fecha: new Date('2025-06-15'),
-    comentario: 'Salario junio',
-    ingreso: 27000,
-    gasto: 0,
-    subcategoriaId: '1',
-    monto: 27000
+    cuentaId: '2',
+    fecha: new Date('2025-03-12'),
+    comentario: 'Cena familiar',
+    ingreso: 0,
+    gasto: 2200,
+    subcategoriaId: '4',
+    monto: -2200
   },
   {
     id: '12',
-    cuentaId: '1',
-    fecha: new Date('2025-06-30'),
-    comentario: 'Cena familiar',
-    ingreso: 0,
-    gasto: 1500,
-    subcategoriaId: '4',
-    monto: -1500
+    cuentaId: '4',
+    fecha: new Date('2025-03-05'),
+    comentario: 'Aportación ETFs marzo',
+    ingreso: 18000,
+    gasto: 0,
+    subcategoriaId: '8',
+    monto: 18000
   },
   
-  // Julio 2025
+  // Abril 2025
   {
     id: '13',
     cuentaId: '1',
-    fecha: new Date('2025-07-15'),
-    comentario: 'Salario julio',
-    ingreso: 27000,
+    fecha: new Date('2025-04-15'),
+    comentario: 'Salario abril',
+    ingreso: 30000,
     gasto: 0,
     subcategoriaId: '1',
-    monto: 27000
+    monto: 30000
   },
   {
     id: '14',
     cuentaId: '1',
-    fecha: new Date('2025-07-05'),
-    comentario: 'Gasolina y mantenimiento',
+    fecha: new Date('2025-04-08'),
+    comentario: 'Gasolina abril',
     ingreso: 0,
-    gasto: 1800,
+    gasto: 2600,
     subcategoriaId: '5',
-    monto: -1800
+    monto: -2600
   },
   {
     id: '15',
-    cuentaId: '4',
-    fecha: new Date('2025-07-10'),
-    comentario: 'Aportación mensual ETFs',
+    cuentaId: '2',
+    fecha: new Date('2025-04-20'),
+    comentario: 'Freelance diseño web',
     ingreso: 15000,
     gasto: 0,
-    subcategoriaId: '8',
+    subcategoriaId: '2',
     monto: 15000
   },
   {
     id: '16',
     cuentaId: '5',
-    fecha: new Date('2025-06-05'),
-    comentario: 'Compra acciones Apple',
-    ingreso: 8000,
+    fecha: new Date('2025-04-10'),
+    comentario: 'Compra acciones Tesla',
+    ingreso: 25000,
     gasto: 0,
     subcategoriaId: '9',
-    monto: 8000
+    monto: 25000
   },
+  
+  // Mayo 2025
   {
     id: '17',
+    cuentaId: '1',
+    fecha: new Date('2025-05-15'),
+    comentario: 'Salario mayo',
+    ingreso: 30500,
+    gasto: 0,
+    subcategoriaId: '1',
+    monto: 30500
+  },
+  {
+    id: '18',
+    cuentaId: '1',
+    fecha: new Date('2025-05-22'),
+    comentario: 'Supermercado mayo',
+    ingreso: 0,
+    gasto: 5200,
+    subcategoriaId: '3',
+    monto: -5200
+  },
+  {
+    id: '19',
+    cuentaId: '8',
+    fecha: new Date('2025-05-12'),
+    comentario: 'Restaurante elegante',
+    ingreso: 0,
+    gasto: 3400,
+    subcategoriaId: '4',
+    monto: -3400
+  },
+  {
+    id: '20',
+    cuentaId: '4',
+    fecha: new Date('2025-05-05'),
+    comentario: 'Aportación ETFs mayo',
+    ingreso: 20000,
+    gasto: 0,
+    subcategoriaId: '8',
+    monto: 20000
+  },
+  
+  // Junio 2025
+  {
+    id: '21',
+    cuentaId: '1',
+    fecha: new Date('2025-06-15'),
+    comentario: 'Salario junio',
+    ingreso: 31000,
+    gasto: 0,
+    subcategoriaId: '1',
+    monto: 31000
+  },
+  {
+    id: '22',
+    cuentaId: '1',
+    fecha: new Date('2025-06-30'),
+    comentario: 'Gasolina junio',
+    ingreso: 0,
+    gasto: 2800,
+    subcategoriaId: '5',
+    monto: -2800
+  },
+  {
+    id: '23',
+    cuentaId: '2',
+    fecha: new Date('2025-06-18'),
+    comentario: 'Consultoría marketing',
+    ingreso: 18000,
+    gasto: 0,
+    subcategoriaId: '2',
+    monto: 18000
+  },
+  {
+    id: '24',
+    cuentaId: '5',
+    fecha: new Date('2025-06-05'),
+    comentario: 'Compra acciones Apple',
+    ingreso: 15000,
+    gasto: 0,
+    subcategoriaId: '9',
+    monto: 15000
+  },
+  {
+    id: '25',
     cuentaId: '4',
     fecha: new Date('2025-06-15'),
     comentario: 'Aportación ETFs junio',
-    ingreso: 12000,
+    ingreso: 22000,
     gasto: 0,
     subcategoriaId: '8',
-    monto: 12000
+    monto: 22000
+  },
+  
+  // Julio 2025
+  {
+    id: '26',
+    cuentaId: '1',
+    fecha: new Date('2025-07-15'),
+    comentario: 'Salario julio',
+    ingreso: 31500,
+    gasto: 0,
+    subcategoriaId: '1',
+    monto: 31500
+  },
+  {
+    id: '27',
+    cuentaId: '1',
+    fecha: new Date('2025-07-05'),
+    comentario: 'Supermercado julio',
+    ingreso: 0,
+    gasto: 5800,
+    subcategoriaId: '3',
+    monto: -5800
+  },
+  {
+    id: '28',
+    cuentaId: '2',
+    fecha: new Date('2025-07-12'),
+    comentario: 'Cena de negocios',
+    ingreso: 0,
+    gasto: 2900,
+    subcategoriaId: '4',
+    monto: -2900
+  },
+  {
+    id: '29',
+    cuentaId: '1',
+    fecha: new Date('2025-07-20'),
+    comentario: 'Gasolina y peajes',
+    ingreso: 0,
+    gasto: 3200,
+    subcategoriaId: '5',
+    monto: -3200
+  },
+  {
+    id: '30',
+    cuentaId: '4',
+    fecha: new Date('2025-07-10'),
+    comentario: 'Aportación mensual ETFs',
+    ingreso: 25000,
+    gasto: 0,
+    subcategoriaId: '8',
+    monto: 25000
+  },
+  {
+    id: '31',
+    cuentaId: '5',
+    fecha: new Date('2025-07-08'),
+    comentario: 'Inversión acciones Microsoft',
+    ingreso: 20000,
+    gasto: 0,
+    subcategoriaId: '9',
+    monto: 20000
+  },
+  {
+    id: '32',
+    cuentaId: '2',
+    fecha: new Date('2025-07-25'),
+    comentario: 'Proyecto desarrollo app',
+    ingreso: 22000,
+    gasto: 0,
+    subcategoriaId: '2',
+    monto: 22000
   }
 ];
 
