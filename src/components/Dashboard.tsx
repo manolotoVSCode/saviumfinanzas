@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 
 interface DashboardProps {
   metrics: DashboardMetrics;
@@ -71,6 +71,13 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
     ingresos: mes.ingresos,
     gastos: mes.gastos,
     balance: mes.ingresos - mes.gastos
+  }));
+
+  // Datos para el gráfico de barras de últimos 12 meses
+  const barChartData = metrics.tendenciaMensual.map(mes => ({
+    mes: mes.mes,
+    ingresos: mes.ingresos,
+    gastos: Math.abs(mes.gastos) // Convertir a positivo para mejor visualización
   }));
 
   const getSaludColor = (nivel: string) => {
@@ -142,6 +149,57 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">{metrics.saludFinanciera.descripcion}</p>
+        </CardContent>
+      </Card>
+
+      {/* GRÁFICO DE BARRAS - INGRESOS VS GASTOS ÚLTIMOS 12 MESES */}
+      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <CardHeader>
+          <CardTitle>Ingresos vs Gastos - Últimos 12 Meses</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={barChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis 
+                  dataKey="mes" 
+                  tick={{ fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value, name) => [
+                    formatCurrency(Number(value)), 
+                    name === 'ingresos' ? 'Ingresos' : 'Gastos'
+                  ]}
+                />
+                <Bar 
+                  dataKey="ingresos" 
+                  fill="hsl(var(--success))" 
+                  radius={[4, 4, 0, 0]}
+                  name="ingresos"
+                />
+                <Bar 
+                  dataKey="gastos" 
+                  fill="hsl(var(--destructive))" 
+                  radius={[4, 4, 0, 0]}
+                  name="gastos"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
