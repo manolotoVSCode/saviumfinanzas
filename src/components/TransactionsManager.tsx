@@ -35,9 +35,9 @@ export const TransactionsManager = ({
   
   // Filtros
   const [filters, setFilters] = useState({
-    cuentaId: '',
+    cuentaId: 'all',
     mes: '',
-    categoriaId: ''
+    categoriaId: 'all'
   });
 
   const [formData, setFormData] = useState({
@@ -51,8 +51,8 @@ export const TransactionsManager = ({
 
   // Aplicar filtros a las transacciones
   const filteredTransactions = transactions.filter(transaction => {
-    if (filters.cuentaId && transaction.cuentaId !== filters.cuentaId) return false;
-    if (filters.categoriaId && transaction.subcategoriaId !== filters.categoriaId) return false;
+    if (filters.cuentaId && filters.cuentaId !== 'all' && transaction.cuentaId !== filters.cuentaId) return false;
+    if (filters.categoriaId && filters.categoriaId !== 'all' && transaction.subcategoriaId !== filters.categoriaId) return false;
     if (filters.mes) {
       const transactionMonth = transaction.fecha.toISOString().slice(0, 7); // YYYY-MM format
       if (transactionMonth !== filters.mes) return false;
@@ -68,7 +68,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: '', mes: '', categoriaId: '' });
+    setFilters({ cuentaId: 'all', mes: '', categoriaId: 'all' });
   };
 
   const resetForm = () => {
@@ -280,7 +280,7 @@ export const TransactionsManager = ({
                   <SelectValue placeholder="Todas las cuentas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las cuentas</SelectItem>
+                  <SelectItem value="all">Todas las cuentas</SelectItem>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
                       {account.nombre}
@@ -310,7 +310,7 @@ export const TransactionsManager = ({
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las categorías</SelectItem>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.categoria} - {category.subcategoria}
