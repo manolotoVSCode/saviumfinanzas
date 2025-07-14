@@ -137,7 +137,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-muted-foreground">Empresas Privadas</span>
-                  <span className="font-bold text-accent">{formatCurrency(metrics.activos.empresasPrivadas)}</span>
+                  <span className="font-bold text-primary">{formatCurrency(metrics.activos.empresasPrivadas)}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Participaciones en empresas propias
