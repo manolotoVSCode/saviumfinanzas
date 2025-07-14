@@ -15,6 +15,7 @@ export interface Account {
   tipo: AccountType;
   saldoInicial: number;
   saldoActual: number; // calculado
+  valorMercado?: number; // solo para inversiones - valor actual del mercado
 }
 
 export interface Transaction {

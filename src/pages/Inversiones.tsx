@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import Layout from '@/components/Layout';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { useUser } from '@/hooks/useUser';
-import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 
 const Inversiones = () => {
   const { dashboardMetrics, accounts } = useFinanceData();
@@ -57,10 +57,12 @@ const Inversiones = () => {
       </Card>
 
       {/* DETALLE POR CUENTA */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {cuentasInversion.map((cuenta) => {
-          const rendimiento = cuenta.saldoActual - cuenta.saldoInicial;
-          const rendimientoPorcentaje = cuenta.saldoInicial !== 0 ? (rendimiento / cuenta.saldoInicial) * 100 : 0;
+          const valorActual = cuenta.valorMercado || cuenta.saldoActual;
+          const totalAportado = cuenta.saldoActual; // El saldoActual representa lo aportado
+          const rendimiento = valorActual - totalAportado;
+          const rendimientoPorcentaje = totalAportado !== 0 ? (rendimiento / totalAportado) * 100 : 0;
           const IconComponent = getRendimientoIcon(rendimiento);
 
           return (
@@ -75,17 +77,17 @@ const Inversiones = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Valor Actual</span>
-                    <span className="text-lg font-bold">{formatCurrency(cuenta.saldoActual)}</span>
+                    <span className="text-sm text-muted-foreground">Valor Actual de Mercado</span>
+                    <span className="text-xl font-bold text-primary">{formatCurrency(valorActual)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Inversión Inicial</span>
-                    <span className="text-sm font-medium">{formatCurrency(cuenta.saldoInicial)}</span>
+                    <span className="text-sm text-muted-foreground">Total Aportado</span>
+                    <span className="text-sm font-medium">{formatCurrency(totalAportado)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Rendimiento</span>
+                    <span className="text-sm text-muted-foreground">Ganancia/Pérdida</span>
                     <span className={`text-sm font-medium ${getRendimientoColor(rendimiento)}`}>
                       {rendimiento >= 0 ? '+' : ''}{formatCurrency(rendimiento)}
                     </span>
@@ -93,13 +95,24 @@ const Inversiones = () => {
 
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Progreso</span>
-                      <span>{rendimientoPorcentaje > 0 ? '+' : ''}{rendimientoPorcentaje.toFixed(1)}%</span>
+                      <span>Rendimiento</span>
+                      <span>{rendimientoPorcentaje > 0 ? '+' : ''}{rendimientoPorcentaje.toFixed(2)}%</span>
                     </div>
                     <Progress 
                       value={Math.min(Math.abs(rendimientoPorcentaje), 100)} 
-                      className="h-2"
+                      className="h-3"
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="text-center p-3 rounded-lg bg-muted/30">
+                      <div className="text-xs text-muted-foreground">Inversión Inicial</div>
+                      <div className="text-sm font-medium">{formatCurrency(cuenta.saldoInicial)}</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-muted/30">
+                      <div className="text-xs text-muted-foreground">Aportaciones Extra</div>
+                      <div className="text-sm font-medium">{formatCurrency(totalAportado - cuenta.saldoInicial)}</div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -107,50 +120,6 @@ const Inversiones = () => {
           );
         })}
       </div>
-
-      {/* OBJETIVOS Y METAS */}
-      <Card className="hover-scale border-accent/20 hover:border-accent/40 transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-accent" />
-            Objetivos de Inversión
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-medium">Meta Anual de Inversión</span>
-                <span className="text-sm text-muted-foreground">2025</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Progreso: {formatCurrency(inversionesResumen.aportacionesMes * 7)}</span>
-                  <span>Meta: {formatCurrency(500000)}</span>
-                </div>
-                <Progress value={(inversionesResumen.aportacionesMes * 7 / 500000) * 100} className="h-2" />
-                <div className="text-xs text-muted-foreground text-center">
-                  {((inversionesResumen.aportacionesMes * 7 / 500000) * 100).toFixed(1)}% completado
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-3 rounded-lg bg-success/5 border border-success/20">
-                <div className="text-sm text-muted-foreground">Diversificación</div>
-                <div className="text-lg font-bold text-success">Buena</div>
-                <div className="text-xs text-muted-foreground">ETFs y acciones individuales</div>
-              </div>
-              
-              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="text-sm text-muted-foreground">Horizonte Temporal</div>
-                <div className="text-lg font-bold text-primary">Largo Plazo</div>
-                <div className="text-xs text-muted-foreground">5+ años</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
     </Layout>
   );

@@ -20,8 +20,8 @@ const initialAccounts: Account[] = [
   { id: '1', nombre: 'Cuenta Principal', tipo: 'Banco', saldoInicial: 42500, saldoActual: 42500 },
   { id: '2', nombre: 'Efectivo', tipo: 'Efectivo', saldoInicial: 3200, saldoActual: 3200 },
   { id: '3', nombre: 'Ahorros', tipo: 'Ahorros', saldoInicial: 67800, saldoActual: 67800 },
-  { id: '4', nombre: 'Portafolio ETFs', tipo: 'Inversiones', saldoInicial: 125000, saldoActual: 125000 },
-  { id: '5', nombre: 'Acciones Individuales', tipo: 'Inversiones', saldoInicial: 89300, saldoActual: 89300 },
+  { id: '4', nombre: 'Portafolio ETFs', tipo: 'Inversiones', saldoInicial: 125000, saldoActual: 125000, valorMercado: 142800 },
+  { id: '5', nombre: 'Acciones Individuales', tipo: 'Inversiones', saldoInicial: 89300, saldoActual: 89300, valorMercado: 103500 },
   { id: '6', nombre: 'Hipoteca Casa', tipo: 'Hipoteca', saldoInicial: -245000, saldoActual: -245000 },
   { id: '7', nombre: 'Mi Startup Tech', tipo: 'Empresa Propia', saldoInicial: 156000, saldoActual: 156000 },
   { id: '8', nombre: 'Tarjeta de Crédito', tipo: 'Tarjeta de Crédito', saldoInicial: -4200, saldoActual: -4200 },
@@ -424,7 +424,7 @@ export const useFinanceData = () => {
         .reduce((sum, acc) => sum + acc.saldoActual, 0),
       inversiones: accounts
         .filter(acc => acc.tipo === 'Inversiones')
-        .reduce((sum, acc) => sum + acc.saldoActual, 0),
+        .reduce((sum, acc) => sum + (acc.valorMercado || acc.saldoActual), 0),
       empresasPrivadas: accounts
         .filter(acc => acc.tipo === 'Empresa Propia')
         .reduce((sum, acc) => sum + acc.saldoActual, 0),
