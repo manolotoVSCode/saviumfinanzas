@@ -534,6 +534,10 @@ export const useFinanceData = () => {
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
+  const clearAllTransactions = () => {
+    setTransactions([]);
+  };
+
   return {
     // Data
     accounts,
@@ -548,12 +552,13 @@ export const useFinanceData = () => {
     updateAccount,
     deleteAccount,
     addCategory,
-    updateCategory,
     deleteCategory,
+    updateCategory,
+    deleteTransaction,
     addTransaction,
     addTransactionsBatch,
     updateTransaction,
-    deleteTransaction,
+    clearAllTransactions,
     setDateFilter
   };
 };

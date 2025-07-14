@@ -18,6 +18,7 @@ interface TransactionsManagerProps {
   onAddTransaction: (transaction: Omit<Transaction, 'id' | 'monto'>) => void;
   onUpdateTransaction: (id: string, updates: Partial<Transaction>) => void;
   onDeleteTransaction: (id: string) => void;
+  onClearAllTransactions: () => void;
 }
 
 export const TransactionsManager = ({
@@ -26,10 +27,19 @@ export const TransactionsManager = ({
   categories,
   onAddTransaction,
   onUpdateTransaction,
-  onDeleteTransaction
+  onDeleteTransaction,
+  onClearAllTransactions
 }: TransactionsManagerProps) => {
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  
+  // Filtros
+  const [filters, setFilters] = useState({
+    cuentaId: '',
+    mes: '',
+    categoriaId: ''
+  });
+
   const [formData, setFormData] = useState({
     cuentaId: '',
     fecha: new Date().toISOString().split('T')[0],
@@ -39,11 +49,26 @@ export const TransactionsManager = ({
     subcategoriaId: ''
   });
 
+  // Aplicar filtros a las transacciones
+  const filteredTransactions = transactions.filter(transaction => {
+    if (filters.cuentaId && transaction.cuentaId !== filters.cuentaId) return false;
+    if (filters.categoriaId && transaction.subcategoriaId !== filters.categoriaId) return false;
+    if (filters.mes) {
+      const transactionMonth = transaction.fecha.toISOString().slice(0, 7); // YYYY-MM format
+      if (transactionMonth !== filters.mes) return false;
+    }
+    return true;
+  });
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'MXN'
     }).format(amount);
+  };
+
+  const resetFilters = () => {
+    setFilters({ cuentaId: '', mes: '', categoriaId: '' });
   };
 
   const resetForm = () => {
@@ -103,131 +128,208 @@ export const TransactionsManager = ({
     }
   };
 
-  // Ordenar transacciones por fecha (más recientes primero)
-  const sortedTransactions = [...transactions].sort((a, b) => 
-    new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-  );
+  // Ordenar transacciones filtradas por fecha
+  const sortedTransactions = filteredTransactions.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gestión de Transacciones</h2>
-        <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsAddingTransaction(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Transacción
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingTransaction ? 'Editar Transacción' : 'Nueva Transacción'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <h2 className="text-xl font-semibold">Gestión de Transacciones</h2>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={onClearAllTransactions}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Limpiar Todo
+          </Button>
+          <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsAddingTransaction(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Transacción
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingTransaction ? 'Editar Transacción' : 'Nueva Transacción'}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="cuentaId">Cuenta</Label>
+                    <Select 
+                      value={formData.cuentaId} 
+                      onValueChange={(value) => setFormData({ ...formData, cuentaId: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una cuenta" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.nombre} ({account.tipo})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="fecha">Fecha</Label>
+                    <Input
+                      id="fecha"
+                      type="date"
+                      value={formData.fecha}
+                      onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <Label htmlFor="cuentaId">Cuenta</Label>
+                  <Label htmlFor="subcategoriaId">Categoría</Label>
                   <Select 
-                    value={formData.cuentaId} 
-                    onValueChange={(value) => setFormData({ ...formData, cuentaId: value })}
+                    value={formData.subcategoriaId} 
+                    onValueChange={(value) => setFormData({ ...formData, subcategoriaId: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una cuenta" />
+                      <SelectValue placeholder="Selecciona una categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.nombre} ({account.tipo})
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.categoria} - {category.subcategoria} ({category.tipo})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="ingreso">Ingreso</Label>
+                    <Input
+                      id="ingreso"
+                      type="number"
+                      step="0.01"
+                      value={formData.ingreso}
+                      onChange={(e) => setFormData({ ...formData, ingreso: parseFloat(e.target.value) || 0 })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="gasto">Gasto</Label>
+                    <Input
+                      id="gasto"
+                      type="number"
+                      step="0.01"
+                      value={formData.gasto}
+                      onChange={(e) => setFormData({ ...formData, gasto: parseFloat(e.target.value) || 0 })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <Label htmlFor="fecha">Fecha</Label>
-                  <Input
-                    id="fecha"
-                    type="date"
-                    value={formData.fecha}
-                    onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                    required
+                  <Label htmlFor="comentario">Comentario</Label>
+                  <Textarea
+                    id="comentario"
+                    value={formData.comentario}
+                    onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
+                    placeholder="Descripción de la transacción..."
+                    rows={3}
                   />
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="subcategoriaId">Categoría</Label>
-                <Select 
-                  value={formData.subcategoriaId} 
-                  onValueChange={(value) => setFormData({ ...formData, subcategoriaId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.categoria} - {category.subcategoria} ({category.tipo})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="ingreso">Ingreso</Label>
-                  <Input
-                    id="ingreso"
-                    type="number"
-                    step="0.01"
-                    value={formData.ingreso}
-                    onChange={(e) => setFormData({ ...formData, ingreso: parseFloat(e.target.value) || 0 })}
-                    placeholder="0.00"
-                  />
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit">
+                    {editingTransaction ? 'Actualizar' : 'Crear'}
+                  </Button>
                 </div>
-                <div>
-                  <Label htmlFor="gasto">Gasto</Label>
-                  <Input
-                    id="gasto"
-                    type="number"
-                    step="0.01"
-                    value={formData.gasto}
-                    onChange={(e) => setFormData({ ...formData, gasto: parseFloat(e.target.value) || 0 })}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="comentario">Comentario</Label>
-                <Textarea
-                  id="comentario"
-                  value={formData.comentario}
-                  onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
-                  placeholder="Descripción de la transacción..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  {editingTransaction ? 'Actualizar' : 'Crear'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            Filtros
+            <Button variant="outline" size="sm" onClick={resetFilters}>
+              Limpiar Filtros
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="filter-cuenta">Cuenta</Label>
+              <Select 
+                value={filters.cuentaId} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, cuentaId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas las cuentas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas las cuentas</SelectItem>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="filter-mes">Mes</Label>
+              <Input
+                type="month"
+                value={filters.mes}
+                onChange={(e) => setFilters(prev => ({ ...prev, mes: e.target.value }))}
+                placeholder="Seleccionar mes"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="filter-categoria">Categoría</Label>
+              <Select 
+                value={filters.categoriaId} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, categoriaId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas las categorías" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas las categorías</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.categoria} - {category.subcategoria}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Transacciones Recientes</CardTitle>
+          <CardTitle>
+            Transacciones ({filteredTransactions.length} 
+            {filteredTransactions.length !== transactions.length && 
+              ` de ${transactions.length} total`})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

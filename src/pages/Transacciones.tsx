@@ -25,6 +25,7 @@ const Transacciones = () => {
           onAddTransaction={financeData.addTransaction}
           onUpdateTransaction={financeData.updateTransaction}
           onDeleteTransaction={financeData.deleteTransaction}
+          onClearAllTransactions={financeData.clearAllTransactions}
         />
       </div>
     </Layout>
