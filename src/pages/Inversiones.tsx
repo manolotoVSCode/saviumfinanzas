@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+
 import Layout from '@/components/Layout';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { useUser } from '@/hooks/useUser';
@@ -93,26 +93,11 @@ const Inversiones = () => {
                     </span>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Rendimiento</span>
-                      <span>{rendimientoPorcentaje > 0 ? '+' : ''}{rendimientoPorcentaje.toFixed(2)}%</span>
-                    </div>
-                    <Progress 
-                      value={Math.min(Math.abs(rendimientoPorcentaje), 100)} 
-                      className="h-3"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="text-center p-3 rounded-lg bg-muted/30">
-                      <div className="text-xs text-muted-foreground">Inversión Inicial</div>
-                      <div className="text-sm font-medium">{formatCurrency(cuenta.saldoInicial)}</div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-muted/30">
-                      <div className="text-xs text-muted-foreground">Aportaciones Extra</div>
-                      <div className="text-sm font-medium">{formatCurrency(totalAportado - cuenta.saldoInicial)}</div>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Rendimiento</span>
+                    <span className={`text-lg font-bold ${getRendimientoColor(rendimiento)}`}>
+                      {rendimientoPorcentaje > 0 ? '+' : ''}{rendimientoPorcentaje.toFixed(2)}%
+                    </span>
                   </div>
                 </div>
               </CardContent>
