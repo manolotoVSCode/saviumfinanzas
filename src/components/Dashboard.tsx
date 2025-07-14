@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DashboardMetrics } from '@/types/finance';
-import { TrendingUp, TrendingDown, DollarSign, CreditCard, PieChart, BarChart3, Target, TrendingUpDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, PieChart, BarChart3, Target, TrendingUpDown, Wallet, Building2, Shield } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 
 interface DashboardProps {
@@ -35,24 +35,115 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Métricas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Balance Total</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <DollarSign className="h-4 w-4 text-primary" />
-            </div>
+      {/* PATRIMONIO NETO - Métrica principal */}
+      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300 col-span-full">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-lg font-semibold">💎 Patrimonio Neto</CardTitle>
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Shield className="h-6 w-6 text-primary" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className={`text-4xl font-bold ${getBalanceColor(metrics.patrimonioNeto)} mb-2`}>
+            {formatCurrency(metrics.patrimonioNeto)}
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground">Total Activos - Total Pasivos</span>
+            <span className={`text-sm font-medium flex items-center ${
+              metrics.variacionPatrimonio >= 0 ? 'text-success' : 'text-destructive'
+            }`}>
+              {metrics.variacionPatrimonio >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
+              {Math.abs(metrics.variacionPatrimonio).toFixed(1)}%
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* BALANCE GENERAL - Activos y Pasivos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ACTIVOS */}
+        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-success">
+              <Wallet className="h-5 w-5" />
+              ✅ ACTIVOS (lo que tienes)
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceTotal)}`}>
-              {formatCurrency(metrics.balanceTotal)}
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-success/5 border border-success/20">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-muted-foreground">💰 Efectivo y Bancos</span>
+                  <span className="font-bold text-success">{formatCurrency(metrics.activos.efectivoBancos)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Dinero disponible inmediatamente
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-muted-foreground">📈 Inversiones</span>
+                  <span className="font-bold text-primary">{formatCurrency(metrics.activos.inversiones)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Fondos, acciones y capital empresarial
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-success">🏆 TOTAL ACTIVOS</span>
+                  <span className="text-xl font-bold text-success">{formatCurrency(metrics.activos.total)}</span>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Total en todas las cuentas
-            </p>
           </CardContent>
         </Card>
+
+        {/* PASIVOS */}
+        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <CreditCard className="h-5 w-5" />
+              ❌ PASIVOS (lo que debes)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-muted-foreground">💳 Tarjetas de Crédito</span>
+                  <span className="font-bold text-destructive">{formatCurrency(metrics.pasivos.tarjetasCredito)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Saldo pendiente por pagar
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg bg-muted/20 border border-muted">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-muted-foreground">🏠 Hipoteca</span>
+                  <span className="font-bold text-muted-foreground">$0.00</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Próximamente
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-destructive">⚠️ TOTAL PASIVOS</span>
+                  <span className="text-xl font-bold text-destructive">{formatCurrency(metrics.pasivos.total)}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Métricas mensuales */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

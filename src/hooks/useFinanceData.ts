@@ -264,10 +264,32 @@ export const useFinanceData = () => {
     console.log('Transacciones mes actual:', transaccionesMesActual);
     console.log('Todas las transacciones enriched:', enrichedTransactions);
 
-    // Balance total excluyendo inversiones/capital invertido en empresa
-    const balanceTotal = accounts
-      .filter(acc => acc.tipo !== 'Inversiones')
-      .reduce((sum, acc) => sum + acc.saldoActual, 0);
+    // ACTIVOS (lo que tienes)
+    const activos = {
+      efectivoBancos: accounts
+        .filter(acc => ['Efectivo', 'Banco', 'Ahorros'].includes(acc.tipo))
+        .reduce((sum, acc) => sum + acc.saldoActual, 0),
+      inversiones: accounts
+        .filter(acc => acc.tipo === 'Inversiones')
+        .reduce((sum, acc) => sum + acc.saldoActual, 0),
+      total: 0
+    };
+    activos.total = activos.efectivoBancos + activos.inversiones;
+
+    // PASIVOS (lo que debes)
+    const pasivos = {
+      tarjetasCredito: accounts
+        .filter(acc => acc.tipo === 'Tarjeta de Crédito')
+        .reduce((sum, acc) => sum + Math.abs(acc.saldoActual), 0),
+      total: 0
+    };
+    pasivos.total = pasivos.tarjetasCredito;
+
+    // PATRIMONIO NETO = Activos - Pasivos
+    const patrimonioNeto = activos.total - pasivos.total;
+    
+    // Balance total (mantener para compatibilidad)
+    const balanceTotal = patrimonioNeto;
     const ingresosMes = transaccionesMesActual.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMes = transaccionesMesActual.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     const balanceMes = ingresosMes - gastosMes;
@@ -375,8 +397,18 @@ export const useFinanceData = () => {
       });
     }
 
+    // Calcular patrimonio anterior para variación
+    const patrimonioNetoAnterior = balanceTotal; // Por simplicidad, usar el mismo valor
+    const variacionPatrimonio = patrimonioNetoAnterior > 0 ? 
+      ((patrimonioNeto - patrimonioNetoAnterior) / patrimonioNetoAnterior) * 100 : 0;
+
     return {
       balanceTotal,
+      activos,
+      pasivos,
+      patrimonioNeto,
+      patrimonioNetoAnterior,
+      variacionPatrimonio,
       ingresosMes,
       gastosMes,
       balanceMes,
