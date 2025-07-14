@@ -90,7 +90,7 @@ export const TransactionsManager = ({
 
     const transactionData = {
       ...formData,
-      fecha: new Date(formData.fecha)
+      fecha: new Date(formData.fecha + 'T12:00:00')
     };
 
     if (editingTransaction) {
