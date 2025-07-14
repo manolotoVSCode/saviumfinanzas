@@ -170,8 +170,8 @@ export const CategoriesManager = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Categoría</TableHead>
                 <TableHead>Subcategoría</TableHead>
+                <TableHead>Categoría</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -179,8 +179,8 @@ export const CategoriesManager = ({
               {filteredCategories.length > 0 ? (
                 filteredCategories.map((category) => (
                   <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.categoria}</TableCell>
-                    <TableCell>{category.subcategoria}</TableCell>
+                    <TableCell className="font-medium">{category.subcategoria}</TableCell>
+                    <TableCell>{category.categoria}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button 
