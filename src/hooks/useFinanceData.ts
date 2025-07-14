@@ -96,21 +96,16 @@ export const useFinanceData = () => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     
-    // JUNIO específicamente (2024)
-    const startOfJune = new Date(2024, 5, 1); // Junio es mes 5 (0-indexed)
-    const endOfJune = new Date(2024, 5, 30);
-    
-    // Mes anterior a junio (Mayo)
-    const startOfMay = new Date(2024, 4, 1);
-    const endOfMay = new Date(2024, 4, 31);
+    // Mes anterior al actual
+    const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const endOfYear = new Date(now.getFullYear(), 11, 31);
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
     const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
     
     const transactionsThisMonth = enrichedTransactions.filter(t => t.fecha >= startOfMonth && t.fecha <= endOfMonth);
-    const transactionsJune = enrichedTransactions.filter(t => t.fecha >= startOfJune && t.fecha <= endOfJune);
-    const transactionsMay = enrichedTransactions.filter(t => t.fecha >= startOfMay && t.fecha <= endOfMay);
+    const transactionsPreviousMonth = enrichedTransactions.filter(t => t.fecha >= startOfPreviousMonth && t.fecha <= endOfPreviousMonth);
     const transactionsThisYear = enrichedTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
     const transactionsLastYear = enrichedTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
     
@@ -119,15 +114,10 @@ export const useFinanceData = () => {
     const gastosMes = transactionsThisMonth.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     const balanceMes = ingresosMes - gastosMes;
     
-    // JUNIO (mes específico solicitado)
-    const ingresosJunio = transactionsJune.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosJunio = transactionsJune.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
-    const balanceJunio = ingresosJunio - gastosJunio;
-    
-    // MAYO (para comparación)
-    const ingresosMayo = transactionsMay.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMayo = transactionsMay.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
-    const balanceMayo = ingresosMayo - gastosMayo;
+    // MES ANTERIOR (dinámico)
+    const ingresosMesAnterior = transactionsPreviousMonth.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMesAnterior = transactionsPreviousMonth.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const balanceMesAnterior = ingresosMesAnterior - gastosMesAnterior;
     
     // ANUALES
     const ingresosAnio = transactionsThisYear.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
@@ -139,9 +129,9 @@ export const useFinanceData = () => {
     const gastosAnioAnterior = transactionsLastYear.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     const balanceAnioAnterior = ingresosAnioAnterior - gastosAnioAnterior;
     
-    // VARIACIONES PORCENTUALES (Junio vs Mayo)
-    const variacionIngresosJunio = ingresosMayo > 0 ? ((ingresosJunio - ingresosMayo) / ingresosMayo) * 100 : 0;
-    const variacionGastosJunio = gastosMayo > 0 ? ((gastosJunio - gastosMayo) / gastosMayo) * 100 : 0;
+    // VARIACIONES PORCENTUALES (Mes actual vs Mes anterior)
+    const variacionIngresosMes = ingresosMesAnterior > 0 ? ((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100 : 0;
+    const variacionGastosMes = gastosMesAnterior > 0 ? ((gastosMes - gastosMesAnterior) / gastosMesAnterior) * 100 : 0;
     const variacionIngresosAnual = ingresosAnioAnterior > 0 ? ((ingresosAnio - ingresosAnioAnterior) / ingresosAnioAnterior) * 100 : 0;
     const variacionGastosAnual = gastosAnioAnterior > 0 ? ((gastosAnio - gastosAnioAnterior) / gastosAnioAnterior) * 100 : 0;
     const variacionBalanceAnual = balanceAnioAnterior !== 0 ? ((balanceAnio - balanceAnioAnterior) / Math.abs(balanceAnioAnterior)) * 100 : 0;
@@ -206,7 +196,7 @@ export const useFinanceData = () => {
     };
     
     const topCategorias = getCategoryTotals(transactionsThisMonth);
-    const topCategoriasMesAnterior = getCategoryTotals(transactionsJune);
+    const topCategoriasMesAnterior = getCategoryTotals(transactionsPreviousMonth);
     const topCategoriasAnual = getCategoryTotals(transactionsThisYear);
     
     // TENDENCIA MENSUAL (últimos 6 meses)
@@ -231,7 +221,7 @@ export const useFinanceData = () => {
     // INVERSIONES DETALLADAS (considerando saldo inicial)
     const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + (a.valorMercado || a.saldoActual), 0);
     const aportacionesMes = transactionsThisMonth.filter(t => t.tipo === 'Aportación').reduce((s, t) => s + t.ingreso, 0);
-    const aportacionesMesAnterior = transactionsJune.filter(t => t.tipo === 'Aportación').reduce((s, t) => s + t.ingreso, 0);
+    const aportacionesMesAnterior = transactionsPreviousMonth.filter(t => t.tipo === 'Aportación').reduce((s, t) => s + t.ingreso, 0);
     const variacionAportaciones = aportacionesMesAnterior > 0 ? ((aportacionesMes - aportacionesMesAnterior) / aportacionesMesAnterior) * 100 : 0;
     
     const cuentasInversion = accountsWithBalances
@@ -263,14 +253,11 @@ export const useFinanceData = () => {
       ingresosAnio,
       gastosAnio,
       balanceAnio,
-      ingresosJunio,
-      gastosJunio,
-      balanceJunio,
-      ingresosMayo,
-      gastosMayo,
-      balanceMayo,
-      variacionIngresosJunio,
-      variacionGastosJunio,
+      ingresosMesAnterior,
+      gastosMesAnterior,
+      balanceMesAnterior,
+      variacionIngresosMes,
+      variacionGastosMes,
       ingresosAnioAnterior,
       gastosAnioAnterior,
       balanceAnioAnterior,

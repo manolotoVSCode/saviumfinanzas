@@ -242,26 +242,26 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado del mes */}
-        <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
+         <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">Resultado de Junio</CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Resultado del Mes Anterior</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceJunio)}`}>
-              {formatCurrency(metrics.balanceJunio)}
+            <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceMesAnterior)}`}>
+              {formatCurrency(metrics.balanceMesAnterior)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span>vs mayo:</span>
+              <span>vs mes actual:</span>
               <div className="flex items-center space-x-1">
-                {metrics.balanceJunio >= 0 ? (
+                {metrics.balanceMes >= metrics.balanceMesAnterior ? (
                   <TrendingUp className="h-3 w-3 text-success" />
                 ) : (
                   <TrendingDown className="h-3 w-3 text-destructive" />
                 )}
                 <span className={`font-medium ${
-                  metrics.balanceJunio >= 0 ? 'text-success' : 'text-destructive'
+                  metrics.balanceMes >= metrics.balanceMesAnterior ? 'text-success' : 'text-destructive'
                 }`}>
-                  {Math.abs(((metrics.balanceJunio - metrics.balanceMayo) / Math.abs(metrics.balanceMayo || 1)) * 100).toFixed(1)}%
+                  {Math.abs(((metrics.balanceMes - metrics.balanceMesAnterior) / Math.abs(metrics.balanceMesAnterior || 1)) * 100).toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -271,24 +271,24 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         {/* Ingresos del mes */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos de Junio</CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos del Mes Anterior</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {formatCurrency(metrics.ingresosJunio)}
+              {formatCurrency(metrics.ingresosMesAnterior)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span>vs mayo:</span>
+              <span>vs mes actual:</span>
               <div className="flex items-center space-x-1">
-                {metrics.variacionIngresosJunio >= 0 ? (
+                {metrics.variacionIngresosMes >= 0 ? (
                   <TrendingUp className="h-3 w-3 text-success" />
                 ) : (
                   <TrendingDown className="h-3 w-3 text-destructive" />
                 )}
                 <span className={`font-medium ${
-                  metrics.variacionIngresosJunio >= 0 ? 'text-success' : 'text-destructive'
+                  metrics.variacionIngresosMes >= 0 ? 'text-success' : 'text-destructive'
                 }`}>
-                  {Math.abs(metrics.variacionIngresosJunio).toFixed(1)}%
+                  {Math.abs(metrics.variacionIngresosMes).toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -298,24 +298,24 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         {/* Gastos del mes */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos de Junio</CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos del Mes Anterior</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(metrics.gastosJunio)}
+              {formatCurrency(metrics.gastosMesAnterior)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span>vs mayo:</span>
+              <span>vs mes actual:</span>
               <div className="flex items-center space-x-1">
-                {metrics.variacionGastosJunio <= 0 ? (
+                {metrics.variacionGastosMes <= 0 ? (
                   <TrendingDown className="h-3 w-3 text-success" />
                 ) : (
                   <TrendingUp className="h-3 w-3 text-destructive" />
                 )}
                 <span className={`font-medium ${
-                  metrics.variacionGastosJunio <= 0 ? 'text-success' : 'text-destructive'
+                  metrics.variacionGastosMes <= 0 ? 'text-success' : 'text-destructive'
                 }`}>
-                  {Math.abs(metrics.variacionGastosJunio).toFixed(1)}%
+                  {Math.abs(metrics.variacionGastosMes).toFixed(1)}%
                 </span>
               </div>
             </div>
