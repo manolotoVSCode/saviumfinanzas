@@ -168,7 +168,12 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       }
 
       if (transactions.length > 0) {
+        console.log('Importando transacciones:', transactions.length);
+        console.log('Primera transacción:', transactions[0]);
         onImportTransactions(transactions);
+        console.log('onImportTransactions llamado');
+      } else {
+        console.log('No hay transacciones para importar');
       }
 
     } catch (error) {
