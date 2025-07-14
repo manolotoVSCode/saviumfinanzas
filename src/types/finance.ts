@@ -85,8 +85,9 @@ export interface DashboardMetrics {
     descripcion: string;
   };
   
-  // Distribución de activos
+  // Distribución de activos y pasivos
   distribucionActivos: Array<{ categoria: string; monto: number; porcentaje: number }>;
+  distribucionPasivos: Array<{ categoria: string; monto: number; porcentaje: number }>;
   
   topCategorias: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
   topCategoriasMesAnterior: Array<{ categoria: string; monto: number; tipo: TransactionType }>;

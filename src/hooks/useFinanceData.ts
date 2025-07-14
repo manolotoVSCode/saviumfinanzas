@@ -88,31 +88,53 @@ export const useFinanceData = () => {
     });
   }, [transactions, categories]);
 
-  // Dashboard metrics mejorado
+  // Dashboard metrics mejorado y completo
   const dashboardMetrics = useMemo((): DashboardMetrics => {
-    const totalBalance = accountsWithBalances.reduce((sum, account) => sum + account.saldoActual, 0);
-    
-    // Filtrar transacciones del mes actual
     const now = new Date();
+    
+    // Filtrar transacciones por períodos
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear(), 11, 31);
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
     
-    const transactionsThisMonth = enrichedTransactions.filter(t => 
-      t.fecha >= startOfMonth && t.fecha <= endOfMonth
-    );
+    const transactionsThisMonth = enrichedTransactions.filter(t => t.fecha >= startOfMonth && t.fecha <= endOfMonth);
+    const transactionsLastMonth = enrichedTransactions.filter(t => t.fecha >= startOfLastMonth && t.fecha <= endOfLastMonth);
+    const transactionsThisYear = enrichedTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
+    const transactionsLastYear = enrichedTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
     
-    // Calcular ingresos y gastos del mes
-    const ingresosMes = transactionsThisMonth
-      .filter(t => t.tipo === 'Ingreso')
-      .reduce((sum, t) => sum + t.ingreso, 0);
-    
-    const gastosMes = transactionsThisMonth
-      .filter(t => t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + t.gasto, 0);
-      
+    // INGRESOS Y GASTOS MENSUALES
+    const ingresosMes = transactionsThisMonth.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMes = transactionsThisMonth.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     const balanceMes = ingresosMes - gastosMes;
     
-    // Calcular activos y pasivos
+    // MES ANTERIOR
+    const ingresosMesAnterior = transactionsLastMonth.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMesAnterior = transactionsLastMonth.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const balanceMesAnterior = ingresosMesAnterior - gastosMesAnterior;
+    
+    // ANUALES
+    const ingresosAnio = transactionsThisYear.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnio = transactionsThisYear.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const balanceAnio = ingresosAnio - gastosAnio;
+    
+    // AÑO ANTERIOR
+    const ingresosAnioAnterior = transactionsLastYear.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnioAnterior = transactionsLastYear.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const balanceAnioAnterior = ingresosAnioAnterior - gastosAnioAnterior;
+    
+    // VARIACIONES PORCENTUALES
+    const variacionIngresos = ingresosMesAnterior > 0 ? ((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100 : 0;
+    const variacionGastos = gastosMesAnterior > 0 ? ((gastosMes - gastosMesAnterior) / gastosMesAnterior) * 100 : 0;
+    const variacionIngresosAnual = ingresosAnioAnterior > 0 ? ((ingresosAnio - ingresosAnioAnterior) / ingresosAnioAnterior) * 100 : 0;
+    const variacionGastosAnual = gastosAnioAnterior > 0 ? ((gastosAnio - gastosAnioAnterior) / gastosAnioAnterior) * 100 : 0;
+    const variacionBalanceAnual = balanceAnioAnterior !== 0 ? ((balanceAnio - balanceAnioAnterior) / Math.abs(balanceAnioAnterior)) * 100 : 0;
+    
+    // ACTIVOS DETALLADOS
     const activos = {
       efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo)).reduce((s, a) => s + a.saldoActual, 0),
       inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + (a.valorMercado || a.saldoActual), 0),
@@ -121,6 +143,7 @@ export const useFinanceData = () => {
     };
     activos.total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
     
+    // PASIVOS DETALLADOS (incluir transacciones de tarjetas de crédito)
     const pasivos = {
       tarjetasCredito: Math.abs(accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito').reduce((s, a) => s + Math.min(0, a.saldoActual), 0)),
       hipoteca: Math.abs(accountsWithBalances.filter(a => a.tipo === 'Hipoteca').reduce((s, a) => s + Math.min(0, a.saldoActual), 0)),
@@ -129,77 +152,124 @@ export const useFinanceData = () => {
     pasivos.total = pasivos.tarjetasCredito + pasivos.hipoteca;
     
     const patrimonioNeto = activos.total - pasivos.total;
+    const patrimonioNetoAnterior = patrimonioNeto - balanceMes;
+    const variacionPatrimonio = patrimonioNetoAnterior > 0 ? ((patrimonioNeto - patrimonioNetoAnterior) / patrimonioNetoAnterior) * 100 : 0;
     
-    // Top categorías de gastos
-    const categoryTotals = new Map<string, number>();
-    transactionsThisMonth.forEach(t => {
-      if (t.categoria && t.tipo === 'Gastos') {
-        const current = categoryTotals.get(t.categoria) || 0;
-        categoryTotals.set(t.categoria, current + t.gasto);
-      }
-    });
+    // DISTRIBUCIÓN DE ACTIVOS
+    const distribucionActivos = [
+      { categoria: 'Efectivo/Bancos', monto: activos.efectivoBancos, porcentaje: activos.total > 0 ? (activos.efectivoBancos / activos.total) * 100 : 0 },
+      { categoria: 'Inversiones', monto: activos.inversiones, porcentaje: activos.total > 0 ? (activos.inversiones / activos.total) * 100 : 0 },
+      { categoria: 'Empresas', monto: activos.empresasPrivadas, porcentaje: activos.total > 0 ? (activos.empresasPrivadas / activos.total) * 100 : 0 }
+    ].filter(item => item.monto > 0);
     
-    const topCategorias = Array.from(categoryTotals.entries())
-      .map(([categoria, monto]) => ({ categoria, monto, tipo: 'Gastos' as TransactionType }))
-      .sort((a, b) => b.monto - a.monto)
-      .slice(0, 5);
+    // DISTRIBUCIÓN DE PASIVOS
+    const distribucionPasivos = [
+      { categoria: 'Tarjetas de Crédito', monto: pasivos.tarjetasCredito, porcentaje: pasivos.total > 0 ? (pasivos.tarjetasCredito / pasivos.total) * 100 : 0 },
+      { categoria: 'Hipoteca', monto: pasivos.hipoteca, porcentaje: pasivos.total > 0 ? (pasivos.hipoteca / pasivos.total) * 100 : 0 }
+    ].filter(item => item.monto > 0);
     
-    // Resumen de inversiones
+    // TOP CATEGORÍAS
+    const getCategoryTotals = (transactions: typeof enrichedTransactions) => {
+      const categoryTotals = new Map<string, number>();
+      transactions.forEach(t => {
+        if (t.categoria && t.tipo === 'Gastos') {
+          const current = categoryTotals.get(t.categoria) || 0;
+          categoryTotals.set(t.categoria, current + t.gasto);
+        }
+      });
+      return Array.from(categoryTotals.entries())
+        .map(([categoria, monto]) => ({ categoria, monto, tipo: 'Gastos' as TransactionType }))
+        .sort((a, b) => b.monto - a.monto)
+        .slice(0, 5);
+    };
+    
+    const topCategorias = getCategoryTotals(transactionsThisMonth);
+    const topCategoriasMesAnterior = getCategoryTotals(transactionsLastMonth);
+    const topCategoriasAnual = getCategoryTotals(transactionsThisYear);
+    
+    // TENDENCIA MENSUAL (últimos 6 meses)
+    const tendenciaMensual = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      
+      const monthTransactions = enrichedTransactions.filter(t => t.fecha >= monthStart && t.fecha <= monthEnd);
+      const ingresos = monthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+      const gastos = monthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+      
+      tendenciaMensual.push({
+        mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
+        ingresos,
+        gastos
+      });
+    }
+    
+    // INVERSIONES DETALLADAS (considerando saldo inicial)
     const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + (a.valorMercado || a.saldoActual), 0);
     const aportacionesMes = transactionsThisMonth.filter(t => t.tipo === 'Aportación').reduce((s, t) => s + t.ingreso, 0);
+    const aportacionesMesAnterior = transactionsLastMonth.filter(t => t.tipo === 'Aportación').reduce((s, t) => s + t.ingreso, 0);
+    const variacionAportaciones = aportacionesMesAnterior > 0 ? ((aportacionesMes - aportacionesMesAnterior) / aportacionesMesAnterior) * 100 : 0;
     
+    const cuentasInversion = accountsWithBalances
+      .filter(a => a.tipo === 'Inversiones')
+      .map(a => {
+        const aportaciones = enrichedTransactions.filter(t => t.cuentaId === a.id && t.tipo === 'Aportación').reduce((sum, t) => sum + t.ingreso, 0);
+        const retiros = enrichedTransactions.filter(t => t.cuentaId === a.id && t.tipo === 'Retiro').reduce((sum, t) => sum + Math.abs(t.gasto), 0);
+        const valorActual = a.valorMercado || a.saldoActual;
+        const rendimiento = valorActual - a.saldoInicial - aportaciones + retiros;
+        
+        return {
+          cuenta: a.nombre,
+          saldo: valorActual,
+          saldoInicial: a.saldoInicial,
+          rendimiento
+        };
+      });
+
     return {
-      balanceTotal: totalBalance,
+      balanceTotal: activos.total,
       activos,
       pasivos,
       patrimonioNeto,
-      patrimonioNetoAnterior: patrimonioNeto,
-      variacionPatrimonio: 0,
+      patrimonioNetoAnterior,
+      variacionPatrimonio,
       ingresosMes,
       gastosMes,
       balanceMes,
-      ingresosAnio: enrichedTransactions.filter(t => t.tipo === 'Ingreso' && t.fecha.getFullYear() === now.getFullYear()).reduce((s, t) => s + t.ingreso, 0),
-      gastosAnio: enrichedTransactions.filter(t => t.tipo === 'Gastos' && t.fecha.getFullYear() === now.getFullYear()).reduce((s, t) => s + t.gasto, 0),
-      balanceAnio: 0,
-      ingresosMesAnterior: 0,
-      gastosMesAnterior: 0,
-      balanceMesAnterior: 0,
-      variacionIngresos: 0,
-      variacionGastos: 0,
-      ingresosAnioAnterior: 0,
-      gastosAnioAnterior: 0,
-      balanceAnioAnterior: 0,
-      variacionIngresosAnual: 0,
-      variacionGastosAnual: 0,
-      variacionBalanceAnual: 0,
+      ingresosAnio,
+      gastosAnio,
+      balanceAnio,
+      ingresosMesAnterior,
+      gastosMesAnterior,
+      balanceMesAnterior,
+      variacionIngresos,
+      variacionGastos,
+      ingresosAnioAnterior,
+      gastosAnioAnterior,
+      balanceAnioAnterior,
+      variacionIngresosAnual,
+      variacionGastosAnual,
+      variacionBalanceAnual,
       saludFinanciera: {
-        score: patrimonioNeto > 0 ? 8 : 6,
-        nivel: patrimonioNeto > 0 ? 'Buena' : 'Regular',
-        descripcion: patrimonioNeto > 0 ? 'Patrimonio neto positivo' : 'Necesita mejorar patrimonio'
+        score: patrimonioNeto > 0 ? (activos.total > pasivos.total * 2 ? 9 : 7) : 5,
+        nivel: patrimonioNeto > 0 ? (activos.total > pasivos.total * 2 ? 'Excelente' : 'Buena') : 'Regular',
+        descripcion: patrimonioNeto > 0 ? 'Patrimonio neto positivo' : 'Necesita reducir deudas'
       },
-      distribucionActivos: [
-        { categoria: 'Efectivo/Bancos', monto: activos.efectivoBancos, porcentaje: activos.total > 0 ? (activos.efectivoBancos / activos.total) * 100 : 0 },
-        { categoria: 'Inversiones', monto: activos.inversiones, porcentaje: activos.total > 0 ? (activos.inversiones / activos.total) * 100 : 0 },
-        { categoria: 'Empresas', monto: activos.empresasPrivadas, porcentaje: activos.total > 0 ? (activos.empresasPrivadas / activos.total) * 100 : 0 }
-      ],
+      distribucionActivos,
+      distribucionPasivos,
       topCategorias,
-      topCategoriasMesAnterior: [],
-      topCategoriasAnual: [],
+      topCategoriasMesAnterior,
+      topCategoriasAnual,
       cuentasResumen: accountsWithBalances.map(a => ({ cuenta: a.nombre, saldo: a.saldoActual, tipo: a.tipo })),
-      tendenciaMensual: [],
+      tendenciaMensual,
       inversionesResumen: {
         totalInversiones,
         aportacionesMes,
-        aportacionesMesAnterior: 0,
-        variacionAportaciones: 0,
-        cuentasInversion: accountsWithBalances
-          .filter(a => a.tipo === 'Inversiones')
-          .map(a => ({
-            cuenta: a.nombre,
-            saldo: a.valorMercado || a.saldoActual,
-            saldoInicial: a.saldoInicial,
-            rendimiento: (a.valorMercado || a.saldoActual) - a.saldoInicial
-          }))
+        aportacionesMesAnterior,
+        variacionAportaciones,
+        cuentasInversion
       }
     };
   }, [accountsWithBalances, enrichedTransactions]);
