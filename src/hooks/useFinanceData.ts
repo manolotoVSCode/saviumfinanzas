@@ -13,7 +13,8 @@ const initialAccounts: Account[] = [
   { id: '4', nombre: 'Ahorros', tipo: 'Ahorros', saldoInicial: 0, saldoActual: 0 },
   { id: '5', nombre: 'QUANT', tipo: 'Inversiones', saldoInicial: 48000, saldoActual: 48000, valorMercado: 48000 },
   { id: '6', nombre: 'AMEX', tipo: 'Tarjeta de Crédito', saldoInicial: 0, saldoActual: 0 },
-  { id: '7', nombre: 'Mastercard', tipo: 'Tarjeta de Crédito', saldoInicial: 0, saldoActual: 0 }
+  { id: '7', nombre: 'Mastercard', tipo: 'Tarjeta de Crédito', saldoInicial: 0, saldoActual: 0 },
+  { id: '8', nombre: 'Hipoteca Casa', tipo: 'Hipoteca', saldoInicial: 0, saldoActual: 0 }
 ];
 
 const initialCategories: Category[] = [
@@ -23,6 +24,7 @@ const initialCategories: Category[] = [
   { id: '4', subcategoria: 'Entretenimiento', categoria: 'Ocio', tipo: 'Gastos' },
   { id: '5', subcategoria: 'Bonos / Comisiones', categoria: 'Ingresos', tipo: 'Ingreso' },
   { id: '6', subcategoria: 'Aportaciones', categoria: 'Inversiones', tipo: 'Aportación' },
+  { id: '7', subcategoria: 'Capital', categoria: 'Hipoteca', tipo: 'Gastos' },
 ];
 
 export const useFinanceData = () => {
