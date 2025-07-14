@@ -44,14 +44,54 @@ const initialAccounts: Account[] = [
 const initialTransactions: Transaction[] = [];
 
 export const useFinanceData = () => {
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  // Cargar datos desde localStorage al iniciar
+  const loadFromStorage = (key: string, defaultValue: any) => {
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Convertir fechas de vuelta a objetos Date si es necesario
+        if (key === 'financeTransactions') {
+          return parsed.map((t: any) => ({
+            ...t,
+            fecha: new Date(t.fecha)
+          }));
+        }
+        return parsed;
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
+
+  const [accounts, setAccounts] = useState<Account[]>(() => 
+    loadFromStorage('financeAccounts', initialAccounts)
+  );
+  const [categories, setCategories] = useState<Category[]>(() => 
+    loadFromStorage('financeCategories', initialCategories)
+  );
+  const [transactions, setTransactions] = useState<Transaction[]>(() => 
+    loadFromStorage('financeTransactions', initialTransactions)
+  );
   const [accountTypes] = useState<AccountType[]>(initialAccountTypes);
   const [dateFilter, setDateFilter] = useState<{ start: Date; end: Date }>({
     start: new Date(2025, 0, 1), // Enero 1, 2025
     end: new Date(2025, 11, 31)  // Diciembre 31, 2025
   });
+
+  // Guardar en localStorage cuando cambien los datos
+  useEffect(() => {
+    localStorage.setItem('financeAccounts', JSON.stringify(accounts));
+  }, [accounts]);
+
+  useEffect(() => {
+    localStorage.setItem('financeCategories', JSON.stringify(categories));
+  }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem('financeTransactions', JSON.stringify(transactions));
+  }, [transactions]);
 
   // Recalcular saldos actuales cuando cambien las transacciones
   useEffect(() => {
