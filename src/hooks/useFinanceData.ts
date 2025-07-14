@@ -12,9 +12,13 @@ const initialCategories: Category[] = [
   { id: '7', subcategoria: 'Retiro Entre Cuentas', categoria: 'Interno', tipo: 'Retiro' },
   { id: '8', subcategoria: 'Aportación ETFs', categoria: 'Inversiones', tipo: 'Aportación' },
   { id: '9', subcategoria: 'Aportación Acciones', categoria: 'Inversiones', tipo: 'Aportación' },
+  { id: '10', subcategoria: 'Compra Bitcoin', categoria: 'Criptomonedas', tipo: 'Aportación' },
+  { id: '11', subcategoria: 'Compra Ethereum', categoria: 'Criptomonedas', tipo: 'Aportación' },
+  { id: '12', subcategoria: 'Compra Altcoins', categoria: 'Criptomonedas', tipo: 'Aportación' },
+  { id: '13', subcategoria: 'Venta Cripto', categoria: 'Criptomonedas', tipo: 'Retiro' },
 ];
 
-const initialAccountTypes: AccountType[] = ['Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones', 'Hipoteca', 'Empresa Propia'];
+const initialAccountTypes: AccountType[] = ['Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones', 'Criptomonedas', 'Hipoteca', 'Empresa Propia'];
 
 const initialAccounts: Account[] = [
   { id: '1', nombre: 'Cuenta Principal', tipo: 'Banco', saldoInicial: 50000, saldoActual: 50000 },
@@ -24,6 +28,8 @@ const initialAccounts: Account[] = [
   { id: '5', nombre: 'Acciones Individuales', tipo: 'Inversiones', saldoInicial: 50000, saldoActual: 50000 },
   { id: '6', nombre: 'Hipoteca Casa', tipo: 'Hipoteca', saldoInicial: -180000, saldoActual: -180000 },
   { id: '7', nombre: 'Mi Startup Tech', tipo: 'Empresa Propia', saldoInicial: 75000, saldoActual: 75000 },
+  { id: '8', nombre: 'Bitcoin & Ethereum', tipo: 'Criptomonedas', saldoInicial: 45000, saldoActual: 45000 },
+  { id: '9', nombre: 'Altcoins Portfolio', tipo: 'Criptomonedas', saldoInicial: 15000, saldoActual: 15000 },
 ];
 
 const initialTransactions: Transaction[] = [
@@ -274,12 +280,15 @@ export const useFinanceData = () => {
       inversiones: accounts
         .filter(acc => acc.tipo === 'Inversiones')
         .reduce((sum, acc) => sum + acc.saldoActual, 0),
+      criptomonedas: accounts
+        .filter(acc => acc.tipo === 'Criptomonedas')
+        .reduce((sum, acc) => sum + acc.saldoActual, 0),
       empresasPrivadas: accounts
         .filter(acc => acc.tipo === 'Empresa Propia')
         .reduce((sum, acc) => sum + acc.saldoActual, 0),
       total: 0
     };
-    activos.total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
+    activos.total = activos.efectivoBancos + activos.inversiones + activos.criptomonedas + activos.empresasPrivadas;
 
     // PASIVOS (lo que debes)
     const pasivos = {
@@ -481,6 +490,11 @@ export const useFinanceData = () => {
         categoria: 'Inversiones',
         monto: activos.inversiones,
         porcentaje: activos.total > 0 ? (activos.inversiones / activos.total) * 100 : 0
+      },
+      {
+        categoria: 'Criptomonedas',
+        monto: activos.criptomonedas,
+        porcentaje: activos.total > 0 ? (activos.criptomonedas / activos.total) * 100 : 0
       },
       {
         categoria: 'Empresas Privadas',
