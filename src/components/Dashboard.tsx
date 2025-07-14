@@ -51,6 +51,21 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
     color: COLORS[index % COLORS.length]
   }));
 
+  const pasivosData = [
+    {
+      name: 'Tarjetas de Crédito',
+      value: metrics.pasivos.tarjetasCredito,
+      porcentaje: metrics.pasivos.total > 0 ? (metrics.pasivos.tarjetasCredito / metrics.pasivos.total) * 100 : 0,
+      color: COLORS[0]
+    },
+    {
+      name: 'Hipoteca',
+      value: metrics.pasivos.hipoteca,
+      porcentaje: metrics.pasivos.total > 0 ? (metrics.pasivos.hipoteca / metrics.pasivos.total) * 100 : 0,
+      color: COLORS[1]
+    }
+  ].filter(item => item.value > 0);
+
   const lineData = metrics.tendenciaMensual.map(mes => ({
     name: mes.mes,
     ingresos: mes.ingresos,
@@ -535,6 +550,68 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Distribución de pasivos */}
+        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+          <CardHeader>
+            <CardTitle>Distribución de Pasivos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pasivosData.length > 0 ? (
+              <>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPieChart>
+                      <Pie
+                        data={pasivosData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {pasivosData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any, name: any, props: any) => [
+                          formatCurrency(Number(value)), 
+                          `${props.payload.porcentaje.toFixed(1)}%`
+                        ]}
+                      />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {pasivosData.map((entry, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span>{entry.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium">{formatCurrency(entry.value)}</div>
+                        <div className="text-xs text-muted-foreground">{entry.porcentaje.toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="h-80 flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <p className="text-lg font-medium">🎉 ¡Sin pasivos!</p>
+                  <p className="text-sm">No tienes deudas registradas</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
