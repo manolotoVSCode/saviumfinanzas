@@ -38,7 +38,7 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       
       if (char === '"') {
         inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
+      } else if (char === ';' && !inQuotes) {
         result.push(current.trim());
         current = '';
       } else {
@@ -213,10 +213,11 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
               <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-medium">Formato esperado:</p>
-                <p>id,cuentaId,fecha,comentario,ingreso,gasto,subcategoriaId</p>
+                <p>id;cuentaId;fecha;comentario;ingreso;gasto;subcategoriaId</p>
                 <p className="text-xs mt-1">
+                  • Separador: punto y coma (;)<br/>
                   • Fecha: DD/MM/YY<br/>
-                  • Cuenta y subcategoría: por nombre (se hace equivalencia automática)<br/>
+                  • Cuenta y subcategoría: por nombre exacto<br/>
                   • Montos: usar coma como decimal, "-" para vacío
                 </p>
               </div>
