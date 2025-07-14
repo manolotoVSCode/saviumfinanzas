@@ -63,12 +63,19 @@ export interface DashboardMetrics {
   gastosAnio: number;
   balanceAnio: number;
   
-  // Comparativo mes anterior
-  ingresosMesAnterior: number;
-  gastosMesAnterior: number;
-  balanceMesAnterior: number;
-  variacionIngresos: number; // porcentaje
-  variacionGastos: number; // porcentaje
+  // Datos específicos de Junio
+  ingresosJunio: number;
+  gastosJunio: number;
+  balanceJunio: number;
+  
+  // Datos de Mayo para comparación
+  ingresosMayo: number;
+  gastosMayo: number;
+  balanceMayo: number;
+  
+  // Variaciones Junio vs Mayo
+  variacionIngresosJunio: number; // porcentaje
+  variacionGastosJunio: number; // porcentaje
   
   // Comparativo año anterior
   ingresosAnioAnterior: number;

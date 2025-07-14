@@ -247,21 +247,21 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
             <CardTitle className="text-sm font-medium text-primary">Resultado de Junio</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceMesAnterior)}`}>
-              {formatCurrency(metrics.balanceMesAnterior)}
+            <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceJunio)}`}>
+              {formatCurrency(metrics.balanceJunio)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
               <span>vs mayo:</span>
               <div className="flex items-center space-x-1">
-                {metrics.balanceMesAnterior >= 0 ? (
+                {metrics.balanceJunio >= 0 ? (
                   <TrendingUp className="h-3 w-3 text-success" />
                 ) : (
                   <TrendingDown className="h-3 w-3 text-destructive" />
                 )}
                 <span className={`font-medium ${
-                  metrics.balanceMesAnterior >= 0 ? 'text-success' : 'text-destructive'
+                  metrics.balanceJunio >= 0 ? 'text-success' : 'text-destructive'
                 }`}>
-                  {((metrics.balanceMesAnterior / Math.abs(metrics.balanceMesAnterior || 1)) * 100).toFixed(1)}%
+                  {Math.abs(((metrics.balanceJunio - metrics.balanceMayo) / Math.abs(metrics.balanceMayo || 1)) * 100).toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -275,20 +275,20 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {formatCurrency(metrics.ingresosMesAnterior)}
+              {formatCurrency(metrics.ingresosJunio)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
               <span>vs mayo:</span>
               <div className="flex items-center space-x-1">
-                {metrics.variacionIngresos >= 0 ? (
+                {metrics.variacionIngresosJunio >= 0 ? (
                   <TrendingUp className="h-3 w-3 text-success" />
                 ) : (
                   <TrendingDown className="h-3 w-3 text-destructive" />
                 )}
                 <span className={`font-medium ${
-                  metrics.variacionIngresos >= 0 ? 'text-success' : 'text-destructive'
+                  metrics.variacionIngresosJunio >= 0 ? 'text-success' : 'text-destructive'
                 }`}>
-                  {Math.abs(metrics.variacionIngresos).toFixed(1)}%
+                  {Math.abs(metrics.variacionIngresosJunio).toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -302,20 +302,20 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(metrics.gastosMesAnterior)}
+              {formatCurrency(metrics.gastosJunio)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
               <span>vs mayo:</span>
               <div className="flex items-center space-x-1">
-                {metrics.variacionGastos <= 0 ? (
+                {metrics.variacionGastosJunio <= 0 ? (
                   <TrendingDown className="h-3 w-3 text-success" />
                 ) : (
                   <TrendingUp className="h-3 w-3 text-destructive" />
                 )}
                 <span className={`font-medium ${
-                  metrics.variacionGastos <= 0 ? 'text-success' : 'text-destructive'
+                  metrics.variacionGastosJunio <= 0 ? 'text-success' : 'text-destructive'
                 }`}>
-                  {Math.abs(metrics.variacionGastos).toFixed(1)}%
+                  {Math.abs(metrics.variacionGastosJunio).toFixed(1)}%
                 </span>
               </div>
             </div>
