@@ -494,6 +494,40 @@ export const useFinanceData = () => {
       .sort((a, b) => b.monto - a.monto)
       .slice(0, 5);
 
+    // Métricas anuales (año 2025 completo)
+    const anioStart = new Date(currentYear, 0, 1);
+    const anioEnd = new Date(currentYear, 11, 31);
+    
+    const transaccionesAnio = enrichedTransactions.filter(t => 
+      t.fecha >= anioStart && t.fecha <= anioEnd
+    );
+    
+    const ingresosAnio = transaccionesAnio.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnio = transaccionesAnio.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const balanceAnio = ingresosAnio - gastosAnio;
+
+    // Top categorías anuales (basado en transacciones del año - solo gastos)
+    const categoryTotalsAnual = new Map<string, { monto: number; tipo: TransactionType }>();
+    transaccionesAnio.forEach(t => {
+      if (t.categoria && t.tipo === 'Gastos') { // Solo incluir gastos
+        const key = `${t.categoria}_${t.tipo}`;
+        const current = categoryTotalsAnual.get(key) || { monto: 0, tipo: t.tipo };
+        categoryTotalsAnual.set(key, {
+          monto: current.monto + Math.abs(t.monto),
+          tipo: t.tipo
+        });
+      }
+    });
+
+    const topCategoriasAnual = Array.from(categoryTotalsAnual.entries())
+      .map(([key, value]) => ({
+        categoria: key.split('_')[0],
+        monto: value.monto,
+        tipo: value.tipo
+      }))
+      .sort((a, b) => b.monto - a.monto)
+      .slice(0, 5);
+
     // Resumen cuentas
     const cuentasResumen = accounts.map(acc => ({
       cuenta: acc.nombre,
@@ -555,18 +589,6 @@ export const useFinanceData = () => {
         gastos
       });
     }
-
-    // Métricas anuales (año 2025 completo)
-    const anioStart = new Date(currentYear, 0, 1);
-    const anioEnd = new Date(currentYear, 11, 31);
-    
-    const transaccionesAnio = enrichedTransactions.filter(t => 
-      t.fecha >= anioStart && t.fecha <= anioEnd
-    );
-    
-    const ingresosAnio = transaccionesAnio.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosAnio = transaccionesAnio.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
-    const balanceAnio = ingresosAnio - gastosAnio;
     
     // Calcular patrimonio del mes anterior para variación
     // Para el patrimonio anterior, restar las transacciones del mes actual
@@ -661,6 +683,7 @@ export const useFinanceData = () => {
       saludFinanciera,
       distribucionActivos,
       topCategorias,
+      topCategoriasAnual,
       cuentasResumen,
       tendenciaMensual,
       inversionesResumen

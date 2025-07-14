@@ -79,6 +79,7 @@ export interface DashboardMetrics {
   distribucionActivos: Array<{ categoria: string; monto: number; porcentaje: number }>;
   
   topCategorias: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
+  topCategoriasAnual: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
   cuentasResumen: Array<{ cuenta: string; saldo: number; tipo: AccountType }>;
   tendenciaMensual: Array<{ mes: string; ingresos: number; gastos: number }>;
   

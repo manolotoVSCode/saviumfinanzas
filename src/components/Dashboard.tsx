@@ -38,6 +38,12 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
     color: COLORS[index % COLORS.length]
   }));
 
+  const pieDataAnual = metrics.topCategoriasAnual.map((cat, index) => ({
+    name: cat.categoria,
+    value: Math.abs(cat.monto),
+    color: COLORS[index % COLORS.length]
+  }));
+
   const activosData = metrics.distribucionActivos.map((activo, index) => ({
     name: activo.categoria,
     value: activo.monto,
@@ -278,6 +284,51 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         </Card>
       </div>
 
+      {/* DISTRIBUCIÓN DE GASTOS MENSUAL */}
+      <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
+        <CardHeader>
+          <CardTitle>Distribución de Gastos - Julio 2025</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsPieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
+                />
+              </RechartsPieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-4 space-y-2">
+            {pieData.map((entry, index) => (
+              <div key={index} className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: entry.color }}
+                  />
+                  <span>{entry.name}</span>
+                </div>
+                <span className="font-medium">{formatCurrency(entry.value)}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* MÉTRICAS ANUALES */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Ingresos anuales */}
@@ -325,6 +376,51 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
           </CardContent>
         </Card>
       </div>
+
+      {/* DISTRIBUCIÓN DE GASTOS ANUAL */}
+      <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
+        <CardHeader>
+          <CardTitle>Distribución de Gastos - Año 2025</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsPieChart>
+                <Pie
+                  data={pieDataAnual}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {pieDataAnual.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
+                />
+              </RechartsPieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-4 space-y-2">
+            {pieDataAnual.map((entry, index) => (
+              <div key={index} className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: entry.color }}
+                  />
+                  <span>{entry.name}</span>
+                </div>
+                <span className="font-medium">{formatCurrency(entry.value)}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* GRÁFICOS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
