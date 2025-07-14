@@ -1,17 +1,27 @@
-import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dashboard } from '@/components/Dashboard';
-import { AccountsManager } from '@/components/AccountsManager';
-import { CategoriesManager } from '@/components/CategoriesManager';
-import { TransactionsManager } from '@/components/TransactionsManager';
-import { UserConfig } from '@/components/UserConfig';
-import { useFinanceData } from '@/hooks/useFinanceData';
-import { useUser } from '@/hooks/useUser';
-import { BarChart3, ArrowUpDown, Settings, LogOut } from 'lucide-react';
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings } from 'lucide-react';
 
 const Index = () => {
-  const financeData = useFinanceData();
-  const { user, updateUser, formatCurrency } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirigir automáticamente al dashboard en la carga inicial
+  useEffect(() => {
+    if (location.pathname === '/') {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  const isActive = (path: string) => location.pathname === path;
+
+  const navigationItems = [
+    { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
+    { path: '/transacciones', icon: ArrowUpDown, label: 'Transacciones' },
+    { path: '/inversiones', icon: TrendingUp, label: 'Inversiones' },
+    { path: '/configuracion', icon: Settings, label: 'Configuración' },
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -21,78 +31,49 @@ const Index = () => {
           <p className="text-muted-foreground">Finanzas Personales</p>
         </div>
 
-        <Tabs defaultValue="dashboard">
-          <TabsList className="fixed bottom-0 left-0 right-0 h-16 grid grid-cols-4 bg-background border-t shadow-lg z-50">
-            <TabsTrigger value="dashboard" className="flex flex-col items-center justify-center space-y-1 h-full">
-              <BarChart3 className="h-5 w-5" />
-              <span className="text-xs">Dashboard</span>
-            </TabsTrigger>
-            <TabsTrigger value="transactions" className="flex flex-col items-center justify-center space-y-1 h-full">
-              <ArrowUpDown className="h-5 w-5" />
-              <span className="text-xs">Transacciones</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex flex-col items-center justify-center space-y-1 h-full">
-              <Settings className="h-5 w-5" />
-              <span className="text-xs">Configuración</span>
-            </TabsTrigger>
-            <TabsTrigger value="logout" className="flex flex-col items-center justify-center space-y-1 h-full">
-              <LogOut className="h-5 w-5" />
-              <span className="text-xs">Logout</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="dashboard">
-            <Dashboard metrics={financeData.dashboardMetrics} formatCurrency={formatCurrency} />
-          </TabsContent>
-
-          <TabsContent value="transactions">
-            <TransactionsManager
-              transactions={financeData.transactions}
-              accounts={financeData.accounts}
-              categories={financeData.categories}
-              onAddTransaction={financeData.addTransaction}
-              onUpdateTransaction={financeData.updateTransaction}
-              onDeleteTransaction={financeData.deleteTransaction}
-            />
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <div className="space-y-6">
-                <div className="space-y-6">
-                  <UserConfig user={user} onUpdateUser={updateUser} />
-
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Gestión de Cuentas</h3>
-                    <AccountsManager
-                      accounts={financeData.accounts}
-                      accountTypes={financeData.accountTypes}
-                      onAddAccount={financeData.addAccount}
-                      onUpdateAccount={financeData.updateAccount}
-                      onDeleteAccount={financeData.deleteAccount}
-                    />
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Gestión de Categorías</h3>
-                    <CategoriesManager
-                      categories={financeData.categories}
-                      onAddCategory={financeData.addCategory}
-                      onUpdateCategory={financeData.updateCategory}
-                      onDeleteCategory={financeData.deleteCategory}
-                    />
-                  </div>
-                </div>
+        {/* CONTENIDO PRINCIPAL */}
+        <div className="space-y-6">
+          {/* Placeholder content - el contenido real se mostrará en las rutas específicas */}
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-4">Bienvenido a Savium</h2>
+            <p className="text-muted-foreground mb-6">
+              Tu plataforma integral para la gestión de finanzas personales
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+              {navigationItems.map(({ path, icon: Icon, label }) => (
+                <Button
+                  key={path}
+                  variant="outline"
+                  className="h-20 flex flex-col items-center gap-2"
+                  onClick={() => navigate(path)}
+                >
+                  <Icon className="h-6 w-6" />
+                  <span className="text-xs">{label}</span>
+                </Button>
+              ))}
             </div>
-          </TabsContent>
+          </div>
+        </div>
 
-          <TabsContent value="logout">
-            <div className="flex flex-col items-center justify-center h-64 space-y-4">
-              <LogOut className="h-12 w-12 text-muted-foreground" />
-              <p className="text-lg text-muted-foreground">Funcionalidad de logout pendiente</p>
-              <p className="text-sm text-muted-foreground">Se implementará con el sistema de autenticación</p>
-            </div>
-          </TabsContent>
-        </Tabs>
+        {/* NAVEGACIÓN INFERIOR FIJA */}
+        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
+          <div className="grid grid-cols-4 h-full">
+            {navigationItems.map(({ path, icon: Icon, label }) => (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                className={`flex flex-col items-center justify-center space-y-1 h-full transition-colors ${
+                  isActive(path)
+                    ? 'text-primary bg-primary/5 border-t-2 border-primary'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-xs">{label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
       </div>
     </div>
   );
