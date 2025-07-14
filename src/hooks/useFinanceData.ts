@@ -327,7 +327,7 @@ export const useFinanceData = () => {
     localStorage.setItem('financeCategories', JSON.stringify(updated));
   };
 
-  const addTransaction = (transaction: Omit<Transaction, 'id' | 'monto'>) => {
+  const addTransaction = (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string }) => {
     const newTransaction: Transaction = {
       ...transaction,
       id: Date.now().toString(),
@@ -336,24 +336,24 @@ export const useFinanceData = () => {
     
     const transactionsToAdd = [newTransaction];
     
-    // Detectar si es un pago de capital de hipoteca para crear transacción automática
-    const category = categories.find(c => c.id === transaction.subcategoriaId);
-    if (category?.subcategoria === 'Hipoteca - Capital' && category?.categoria === 'Hipoteca' && category?.tipo === 'Aportación' && transaction.gasto > 0) {
-      // Buscar cuenta de hipoteca
-      const hipotecaAccount = accounts.find(a => a.tipo === 'Hipoteca');
-      if (hipotecaAccount) {
-        // Crear transacción automática de abono a hipoteca
-        const abonoHipoteca: Transaction = {
+    // Crear transacción automática si está habilitada
+    if (autoContribution?.targetAccountId) {
+      const category = categories.find(c => c.id === transaction.subcategoriaId);
+      const targetAccount = accounts.find(a => a.id === autoContribution.targetAccountId);
+      
+      if (category?.tipo === 'Aportación' && targetAccount && transaction.gasto > 0) {
+        // Crear transacción automática en la cuenta destino
+        const automaticTransaction: Transaction = {
           id: (Date.now() + 1).toString(),
-          cuentaId: hipotecaAccount.id,
+          cuentaId: targetAccount.id,
           fecha: transaction.fecha,
-          comentario: `Abono automático - ${transaction.comentario}`,
-          ingreso: transaction.gasto, // El gasto se convierte en ingreso para la hipoteca (reduce la deuda)
+          comentario: `Aportación automática - ${transaction.comentario}`,
+          ingreso: transaction.gasto, // El gasto se convierte en ingreso para la cuenta destino
           gasto: 0,
           subcategoriaId: transaction.subcategoriaId,
           monto: transaction.gasto
         };
-        transactionsToAdd.push(abonoHipoteca);
+        transactionsToAdd.push(automaticTransaction);
       }
     }
     

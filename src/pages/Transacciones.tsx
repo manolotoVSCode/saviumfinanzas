@@ -22,7 +22,7 @@ const Transacciones = () => {
           transactions={financeData.transactions}
           accounts={financeData.accounts}
           categories={financeData.categories}
-          onAddTransaction={financeData.addTransaction}
+          onAddTransaction={(transaction, autoContribution) => financeData.addTransaction(transaction, autoContribution)}
           onUpdateTransaction={financeData.updateTransaction}
           onDeleteTransaction={financeData.deleteTransaction}
           onClearAllTransactions={financeData.clearAllTransactions}

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Transaction, Account, Category } from '@/types/finance';
 import { Plus, Edit, Trash2, Calendar } from 'lucide-react';
 
@@ -16,7 +17,7 @@ interface TransactionsManagerProps {
   transactions: Transaction[];
   accounts: Account[];
   categories: Category[];
-  onAddTransaction: (transaction: Omit<Transaction, 'id' | 'monto'>) => void;
+  onAddTransaction: (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string }) => void;
   onUpdateTransaction: (id: string, updates: Partial<Transaction>) => void;
   onDeleteTransaction: (id: string) => void;
   onClearAllTransactions: () => void;
@@ -51,6 +52,11 @@ export const TransactionsManager = ({
     subcategoriaId: ''
   });
 
+  const [autoContribution, setAutoContribution] = useState({
+    enabled: false,
+    targetAccountId: ''
+  });
+
   // Aplicar filtros a las transacciones
   const filteredTransactions = transactions.filter(transaction => {
     if (filters.cuentaId && filters.cuentaId !== 'all' && transaction.cuentaId !== filters.cuentaId) return false;
@@ -82,6 +88,10 @@ export const TransactionsManager = ({
       ingreso: 0,
       gasto: 0,
       subcategoriaId: ''
+    });
+    setAutoContribution({
+      enabled: false,
+      targetAccountId: ''
     });
     setEditingTransaction(null);
     setIsAddingTransaction(false);
@@ -117,7 +127,10 @@ export const TransactionsManager = ({
     if (editingTransaction) {
       onUpdateTransaction(editingTransaction.id, transactionData);
     } else {
-      onAddTransaction(transactionData);
+      const autoContrib = autoContribution.enabled && autoContribution.targetAccountId 
+        ? { targetAccountId: autoContribution.targetAccountId }
+        : undefined;
+      onAddTransaction(transactionData, autoContrib);
     }
     resetForm();
   };
@@ -246,6 +259,14 @@ export const TransactionsManager = ({
                       }
                       
                       setFormData(newFormData);
+                      
+                      // Reset auto contribution if not an Aportación
+                      if (category?.tipo !== 'Aportación') {
+                        setAutoContribution({
+                          enabled: false,
+                          targetAccountId: ''
+                        });
+                      }
                     }}
                   >
                     <SelectTrigger>
@@ -300,6 +321,53 @@ export const TransactionsManager = ({
                     rows={3}
                   />
                 </div>
+
+                {/* Sección de aportación automática */}
+                {getSelectedCategoryType() === 'Aportación' && (
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="auto-contribution"
+                        checked={autoContribution.enabled}
+                        onCheckedChange={(checked) => 
+                          setAutoContribution(prev => ({ 
+                            ...prev, 
+                            enabled: !!checked,
+                            targetAccountId: checked ? prev.targetAccountId : ''
+                          }))
+                        }
+                      />
+                      <Label htmlFor="auto-contribution" className="text-sm font-medium">
+                        Crear aportación automática en cuenta destino
+                      </Label>
+                    </div>
+                    
+                    {autoContribution.enabled && (
+                      <div>
+                        <Label htmlFor="target-account">Cuenta destino</Label>
+                        <Select 
+                          value={autoContribution.targetAccountId} 
+                          onValueChange={(value) => 
+                            setAutoContribution(prev => ({ ...prev, targetAccountId: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona cuenta destino" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accounts
+                              .filter(account => account.id !== formData.cuentaId)
+                              .map((account) => (
+                                <SelectItem key={account.id} value={account.id}>
+                                  {account.nombre} ({account.tipo})
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex justify-end space-x-2">
                   <Button type="button" variant="outline" onClick={resetForm}>
