@@ -331,7 +331,31 @@ export const useFinanceData = () => {
       id: Date.now().toString(),
       monto: transaction.ingreso - transaction.gasto
     };
-    const updated = [...transactions, newTransaction];
+    
+    const transactionsToAdd = [newTransaction];
+    
+    // Detectar si es un pago de capital de hipoteca para crear transacción automática
+    const category = categories.find(c => c.id === transaction.subcategoriaId);
+    if (category?.subcategoria === 'Capital' && category?.categoria === 'Hipoteca' && transaction.gasto > 0) {
+      // Buscar cuenta de hipoteca
+      const hipotecaAccount = accounts.find(a => a.tipo === 'Hipoteca');
+      if (hipotecaAccount) {
+        // Crear transacción automática de abono a hipoteca
+        const abonoHipoteca: Transaction = {
+          id: (Date.now() + 1).toString(),
+          cuentaId: hipotecaAccount.id,
+          fecha: transaction.fecha,
+          comentario: `Abono automático - ${transaction.comentario}`,
+          ingreso: transaction.gasto, // El gasto se convierte en ingreso para la hipoteca (reduce la deuda)
+          gasto: 0,
+          subcategoriaId: transaction.subcategoriaId,
+          monto: transaction.gasto
+        };
+        transactionsToAdd.push(abonoHipoteca);
+      }
+    }
+    
+    const updated = [...transactions, ...transactionsToAdd];
     setTransactions(updated);
     localStorage.setItem('financeTransactions', JSON.stringify(updated));
   };
