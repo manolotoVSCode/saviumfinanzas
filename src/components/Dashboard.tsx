@@ -256,8 +256,11 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               {formatCurrency(metrics.ingresosMesAnterior)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span className="text-success">
-                Junio 2025
+              <span>vs mayo:</span>
+              <span className={`font-medium ${
+                metrics.ingresosMesAnterior >= 0 ? 'text-success' : 'text-destructive'
+              }`}>
+                {formatCurrency(metrics.ingresosMesAnterior)}
               </span>
             </div>
           </CardContent>
@@ -273,8 +276,11 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
               {formatCurrency(metrics.gastosMesAnterior)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span className="text-destructive">
-                Junio 2025
+              <span>vs mayo:</span>
+              <span className={`font-medium ${
+                metrics.gastosMesAnterior <= 0 ? 'text-success' : 'text-destructive'
+              }`}>
+                {formatCurrency(metrics.gastosMesAnterior)}
               </span>
             </div>
           </CardContent>
