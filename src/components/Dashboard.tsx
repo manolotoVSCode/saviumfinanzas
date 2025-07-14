@@ -331,17 +331,39 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         <h2 className="text-xl font-semibold text-center">Resumen 2025</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Resultado anual */}
+        <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-primary">Resultado 2025</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceAnio)}`}>
+              {formatCurrency(metrics.balanceAnio)}
+            </div>
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
+              <span>vs año anterior:</span>
+              <span className={`font-medium ${
+                metrics.balanceAnio >= 0 ? 'text-success' : 'text-destructive'
+              }`}>
+                {formatCurrency(metrics.balanceAnio)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Ingresos anuales */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos Anuales</CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos 2025</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
               {formatCurrency(metrics.ingresosAnio)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span>Acumulado 2025</span>
+              <span className="text-success">
+                2025
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -349,29 +371,16 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         {/* Gastos anuales */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos Anuales</CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos 2025</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
               {formatCurrency(metrics.gastosAnio)}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span>Acumulado 2025</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Resultado anual */}
-        <Card className="hover-scale border-2 border-accent/50 bg-accent/5 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-accent">Resultado Anual</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceAnio)}`}>
-              {formatCurrency(metrics.balanceAnio)}
-            </div>
-            <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span>Flujo acumulado 2025</span>
+              <span className="text-destructive">
+                2025
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -380,7 +389,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
       {/* DISTRIBUCIÓN DE GASTOS ANUAL */}
       <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle>Gastos - Año 2025</CardTitle>
+          <CardTitle className="text-center">Distribución Gastos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
