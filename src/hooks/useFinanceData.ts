@@ -88,31 +88,78 @@ export const useFinanceData = () => {
     });
   }, [transactions, categories]);
 
-  // Dashboard metrics básico
+  // Dashboard metrics mejorado
   const dashboardMetrics = useMemo((): DashboardMetrics => {
     const totalBalance = accountsWithBalances.reduce((sum, account) => sum + account.saldoActual, 0);
     
+    // Filtrar transacciones del mes actual
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const transactionsThisMonth = enrichedTransactions.filter(t => 
+      t.fecha >= startOfMonth && t.fecha <= endOfMonth
+    );
+    
+    // Calcular ingresos y gastos del mes
+    const ingresosMes = transactionsThisMonth
+      .filter(t => t.tipo === 'Ingreso')
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    const gastosMes = transactionsThisMonth
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + t.gasto, 0);
+      
+    const balanceMes = ingresosMes - gastosMes;
+    
+    // Calcular activos y pasivos
+    const activos = {
+      efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo)).reduce((s, a) => s + a.saldoActual, 0),
+      inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + (a.valorMercado || a.saldoActual), 0),
+      empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia').reduce((s, a) => s + a.saldoActual, 0),
+      total: 0
+    };
+    activos.total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
+    
+    const pasivos = {
+      tarjetasCredito: Math.abs(accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito').reduce((s, a) => s + Math.min(0, a.saldoActual), 0)),
+      hipoteca: Math.abs(accountsWithBalances.filter(a => a.tipo === 'Hipoteca').reduce((s, a) => s + Math.min(0, a.saldoActual), 0)),
+      total: 0
+    };
+    pasivos.total = pasivos.tarjetasCredito + pasivos.hipoteca;
+    
+    const patrimonioNeto = activos.total - pasivos.total;
+    
+    // Top categorías de gastos
+    const categoryTotals = new Map<string, number>();
+    transactionsThisMonth.forEach(t => {
+      if (t.categoria && t.tipo === 'Gastos') {
+        const current = categoryTotals.get(t.categoria) || 0;
+        categoryTotals.set(t.categoria, current + t.gasto);
+      }
+    });
+    
+    const topCategorias = Array.from(categoryTotals.entries())
+      .map(([categoria, monto]) => ({ categoria, monto, tipo: 'Gastos' as TransactionType }))
+      .sort((a, b) => b.monto - a.monto)
+      .slice(0, 5);
+    
+    // Resumen de inversiones
+    const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + (a.valorMercado || a.saldoActual), 0);
+    const aportacionesMes = transactionsThisMonth.filter(t => t.tipo === 'Aportación').reduce((s, t) => s + t.ingreso, 0);
+    
     return {
       balanceTotal: totalBalance,
-      activos: {
-        efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo)).reduce((s, a) => s + a.saldoActual, 0),
-        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoActual, 0),
-        empresasPrivadas: 0,
-        total: totalBalance > 0 ? totalBalance : 0
-      },
-      pasivos: {
-        tarjetasCredito: Math.abs(accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito').reduce((s, a) => s + Math.min(0, a.saldoActual), 0)),
-        hipoteca: 0,
-        total: 0
-      },
-      patrimonioNeto: totalBalance,
-      patrimonioNetoAnterior: totalBalance,
+      activos,
+      pasivos,
+      patrimonioNeto,
+      patrimonioNetoAnterior: patrimonioNeto,
       variacionPatrimonio: 0,
-      ingresosMes: enrichedTransactions.filter(t => t.tipo === 'Ingreso').reduce((s, t) => s + t.ingreso, 0),
-      gastosMes: enrichedTransactions.filter(t => t.tipo === 'Gastos').reduce((s, t) => s + t.gasto, 0),
-      balanceMes: 0,
-      ingresosAnio: 0,
-      gastosAnio: 0,
+      ingresosMes,
+      gastosMes,
+      balanceMes,
+      ingresosAnio: enrichedTransactions.filter(t => t.tipo === 'Ingreso' && t.fecha.getFullYear() === now.getFullYear()).reduce((s, t) => s + t.ingreso, 0),
+      gastosAnio: enrichedTransactions.filter(t => t.tipo === 'Gastos' && t.fecha.getFullYear() === now.getFullYear()).reduce((s, t) => s + t.gasto, 0),
       balanceAnio: 0,
       ingresosMesAnterior: 0,
       gastosMesAnterior: 0,
@@ -126,22 +173,33 @@ export const useFinanceData = () => {
       variacionGastosAnual: 0,
       variacionBalanceAnual: 0,
       saludFinanciera: {
-        score: 8,
-        nivel: 'Buena',
-        descripcion: 'Situación financiera estable'
+        score: patrimonioNeto > 0 ? 8 : 6,
+        nivel: patrimonioNeto > 0 ? 'Buena' : 'Regular',
+        descripcion: patrimonioNeto > 0 ? 'Patrimonio neto positivo' : 'Necesita mejorar patrimonio'
       },
-      distribucionActivos: [],
-      topCategorias: [],
+      distribucionActivos: [
+        { categoria: 'Efectivo/Bancos', monto: activos.efectivoBancos, porcentaje: activos.total > 0 ? (activos.efectivoBancos / activos.total) * 100 : 0 },
+        { categoria: 'Inversiones', monto: activos.inversiones, porcentaje: activos.total > 0 ? (activos.inversiones / activos.total) * 100 : 0 },
+        { categoria: 'Empresas', monto: activos.empresasPrivadas, porcentaje: activos.total > 0 ? (activos.empresasPrivadas / activos.total) * 100 : 0 }
+      ],
+      topCategorias,
       topCategoriasMesAnterior: [],
       topCategoriasAnual: [],
       cuentasResumen: accountsWithBalances.map(a => ({ cuenta: a.nombre, saldo: a.saldoActual, tipo: a.tipo })),
       tendenciaMensual: [],
       inversionesResumen: {
-        totalInversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoActual, 0),
-        aportacionesMes: 0,
+        totalInversiones,
+        aportacionesMes,
         aportacionesMesAnterior: 0,
         variacionAportaciones: 0,
-        cuentasInversion: []
+        cuentasInversion: accountsWithBalances
+          .filter(a => a.tipo === 'Inversiones')
+          .map(a => ({
+            cuenta: a.nombre,
+            saldo: a.valorMercado || a.saldoActual,
+            saldoInicial: a.saldoInicial,
+            rendimiento: (a.valorMercado || a.saldoActual) - a.saldoInicial
+          }))
       }
     };
   }, [accountsWithBalances, enrichedTransactions]);
@@ -197,15 +255,15 @@ export const useFinanceData = () => {
   };
 
   const addTransactionsBatch = (newTransactions: Omit<Transaction, 'id' | 'monto'>[]) => {
-    const transactions: Transaction[] = newTransactions.map(transaction => {
-      const id = (transaction as any).csvId || Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    const processedTransactions: Transaction[] = newTransactions.map(transaction => {
+      const id = (transaction as any).csvId || (Date.now().toString() + Math.random().toString(36).substr(2, 9));
       return {
         ...transaction,
         id: id,
         monto: transaction.ingreso - transaction.gasto,
       };
     });
-    const updated = [...transactions, ...transactions];
+    const updated = [...transactions, ...processedTransactions];
     setTransactions(updated);
     localStorage.setItem('financeTransactions', JSON.stringify(updated));
   };
