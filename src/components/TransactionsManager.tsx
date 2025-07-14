@@ -247,7 +247,7 @@ export const TransactionsManager = ({
               {sortedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell>
-                    <span className="text-xs text-muted-foreground font-mono">{transaction.id.slice(-8)}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{transaction.id}</span>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">

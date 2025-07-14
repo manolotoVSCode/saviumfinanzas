@@ -26,6 +26,7 @@ export interface Transaction {
   ingreso: number;
   gasto: number;
   subcategoriaId: string;
+  csvId?: string; // ID original del CSV (opcional)
   // campos calculados
   categoria?: string;
   monto: number; // ingreso - gasto

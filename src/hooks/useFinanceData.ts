@@ -506,11 +506,17 @@ export const useFinanceData = () => {
   };
 
   const addTransactionsBatch = (transactions: Omit<Transaction, 'id' | 'monto'>[]) => {
-    const newTransactions: Transaction[] = transactions.map(transaction => ({
-      ...transaction,
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      monto: transaction.ingreso - transaction.gasto,
-    }));
+    const newTransactions: Transaction[] = transactions.map(transaction => {
+      // Usar el csvId si existe, sino generar uno
+      const id = (transaction as any).csvId || (Date.now().toString() + Math.random().toString(36).substr(2, 9));
+      return {
+        ...transaction,
+        id: id,
+        monto: transaction.ingreso - transaction.gasto,
+      };
+    });
+    console.log('Adding transactions batch:', newTransactions.length, 'transactions');
+    console.log('Sample transaction:', newTransactions[0]);
     setTransactions(prev => [...prev, ...newTransactions]);
   };
 

@@ -125,7 +125,7 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
           const columns = parseCSVLine(line);
           if (columns.length < 7) return; // Skip invalid lines
 
-          const [, cuentaNombre, fecha, comentario, ingreso, gasto, subcategoriaNombre] = columns;
+          const [csvId, cuentaNombre, fecha, comentario, ingreso, gasto, subcategoriaNombre] = columns;
           
           const cuentaId = findAccountByName(cuentaNombre);
           const subcategoriaId = findCategoryBySubcategoria(subcategoriaNombre);
@@ -143,7 +143,10 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
           const ingresoAmount = parseAmount(ingreso);
           const gastoAmount = parseAmount(gasto);
           
+          console.log(`Línea ${csvId}: ${cuentaNombre}, Ingreso: ${ingresoAmount}, Gasto: ${gastoAmount}, Monto: ${ingresoAmount - gastoAmount}`);
+          
           transactions.push({
+            csvId: csvId, // Preservar el ID original del CSV
             cuentaId,
             fecha: new Date(parseDateDDMMYY(fecha)),
             comentario: comentario.trim(),
