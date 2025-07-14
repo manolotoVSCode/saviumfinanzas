@@ -199,9 +199,9 @@ export const useFinanceData = () => {
     const topCategoriasMesAnterior = getCategoryTotals(transactionsPreviousMonth);
     const topCategoriasAnual = getCategoryTotals(transactionsThisYear);
     
-    // TENDENCIA MENSUAL (últimos 6 meses)
+    // TENDENCIA MENSUAL (últimos 12 meses)
     const tendenciaMensual = [];
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 11; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -210,6 +210,15 @@ export const useFinanceData = () => {
       const monthTransactions = enrichedTransactions.filter(t => t.fecha >= monthStart && t.fecha <= monthEnd);
       const ingresos = monthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
       const gastos = monthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+      
+      // Debug: Log para verificar transacciones por mes
+      console.log(`Mes ${date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' })}:`, {
+        transacciones: monthTransactions.length,
+        ingresos,
+        gastos,
+        transaccionesIngresos: monthTransactions.filter(t => t.tipo === 'Ingreso').length,
+        transaccionesGastos: monthTransactions.filter(t => t.tipo === 'Gastos').length
+      });
       
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
