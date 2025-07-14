@@ -93,32 +93,17 @@ export const useFinanceData = () => {
     localStorage.setItem('financeTransactions', JSON.stringify(transactions));
   }, [transactions]);
 
-  // Recalcular saldos actuales cuando cambien las transacciones
-  useEffect(() => {
-    const updatedAccounts = accounts.map(account => {
+  // Calcular saldos actuales basado en transacciones (sin useEffect para evitar loops)
+  const accountsWithBalances = useMemo(() => {
+    return accounts.map(account => {
       const accountTransactions = transactions.filter(t => t.cuentaId === account.id);
       const totalTransactions = accountTransactions.reduce((sum, t) => sum + t.monto, 0);
-      const newSaldoActual = account.saldoInicial + totalTransactions;
-      
-      // Solo actualizar si el saldo cambió para evitar loops infinitos
-      if (account.saldoActual !== newSaldoActual) {
-        return {
-          ...account,
-          saldoActual: newSaldoActual
-        };
-      }
-      return account;
+      return {
+        ...account,
+        saldoActual: account.saldoInicial + totalTransactions
+      };
     });
-    
-    // Solo setState si realmente hay cambios
-    const hasChanges = updatedAccounts.some((acc, index) => 
-      acc.saldoActual !== accounts[index].saldoActual
-    );
-    
-    if (hasChanges) {
-      setAccounts(updatedAccounts);
-    }
-  }, [transactions]); // Removemos accounts de las dependencias para evitar loops
+  }, [accounts, transactions]);
 
   // Añadir campos calculados a transacciones
   const enrichedTransactions = useMemo(() => {
@@ -132,7 +117,7 @@ export const useFinanceData = () => {
     });
   }, [transactions, categories]);
 
-  // Métricas del dashboard
+  // Calcular dashboard metrics usando accountsWithBalances
   const dashboardMetrics = useMemo((): DashboardMetrics => {
     // Filtrar transacciones para el mes actual (julio 2025)
     const currentDate = new Date();
@@ -150,27 +135,27 @@ export const useFinanceData = () => {
     console.log('Transacciones mes actual:', transaccionesMesActual);
     console.log('Todas las transacciones enriched:', enrichedTransactions);
 
-    // ACTIVOS (lo que tienes)
+    // ACTIVOS (lo que tienes) usando accountsWithBalances
     const activos = {
-      efectivoBancos: accounts
+      efectivoBancos: accountsWithBalances
         .filter(acc => ['Efectivo', 'Banco', 'Ahorros'].includes(acc.tipo))
         .reduce((sum, acc) => sum + acc.saldoActual, 0),
-      inversiones: accounts
+      inversiones: accountsWithBalances
         .filter(acc => acc.tipo === 'Inversiones')
         .reduce((sum, acc) => sum + (acc.valorMercado || acc.saldoActual), 0),
-      empresasPrivadas: accounts
+      empresasPrivadas: accountsWithBalances
         .filter(acc => acc.tipo === 'Empresa Propia')
         .reduce((sum, acc) => sum + acc.saldoActual, 0),
       total: 0
     };
     activos.total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
 
-    // PASIVOS (lo que debes)
+    // PASIVOS (lo que debes) usando accountsWithBalances
     const pasivos = {
-      tarjetasCredito: accounts
+      tarjetasCredito: accountsWithBalances
         .filter(acc => acc.tipo === 'Tarjeta de Crédito')
         .reduce((sum, acc) => sum + Math.abs(acc.saldoActual), 0),
-      hipoteca: accounts
+      hipoteca: accountsWithBalances
         .filter(acc => acc.tipo === 'Hipoteca')
         .reduce((sum, acc) => sum + Math.abs(acc.saldoActual), 0),
       total: 0
@@ -300,15 +285,15 @@ export const useFinanceData = () => {
       .sort((a, b) => b.monto - a.monto)
       .slice(0, 5);
 
-    // Resumen cuentas
-    const cuentasResumen = accounts.map(acc => ({
+    // Resumen cuentas usando accountsWithBalances
+    const cuentasResumen = accountsWithBalances.map(acc => ({
       cuenta: acc.nombre,
       saldo: acc.saldoActual,
       tipo: acc.tipo
     }));
 
-    // Métricas de inversiones
-    const cuentasInversion = accounts.filter(acc => acc.tipo === 'Inversiones');
+    // Métricas de inversiones usando accountsWithBalances
+    const cuentasInversion = accountsWithBalances.filter(acc => acc.tipo === 'Inversiones');
     const totalInversiones = cuentasInversion.reduce((sum, acc) => sum + acc.saldoActual, 0);
     
     const aportacionesMes = transaccionesMesActual
@@ -467,7 +452,7 @@ export const useFinanceData = () => {
       tendenciaMensual,
       inversionesResumen
     };
-  }, [enrichedTransactions, accounts, dateFilter]);
+  }, [enrichedTransactions, accountsWithBalances, dateFilter]);
 
   // Funciones CRUD
   const addAccount = (account: Omit<Account, 'id' | 'saldoActual'>) => {
@@ -553,7 +538,7 @@ export const useFinanceData = () => {
 
   return {
     // Data
-    accounts,
+    accounts: accountsWithBalances, // Usar accountsWithBalances en lugar de accounts
     categories,
     transactions: enrichedTransactions,
     accountTypes,
