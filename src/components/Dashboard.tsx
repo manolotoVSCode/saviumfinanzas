@@ -18,16 +18,16 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
   };
 
   const COLORS = [
-    'hsl(var(--primary))', 
-    'hsl(var(--secondary))', 
-    'hsl(var(--accent))', 
-    'hsl(var(--muted))',
-    'hsl(220, 91%, 60%)',
-    'hsl(162, 63%, 65%)', 
-    'hsl(30, 100%, 70%)',
-    'hsl(349, 89%, 74%)',
-    'hsl(200, 50%, 65%)',
-    'hsl(280, 60%, 70%)'
+    '#3B82F6', // Azul brillante
+    '#10B981', // Verde esmeralda
+    '#F59E0B', // Ámbar/Dorado
+    '#EF4444', // Rojo vibrante
+    '#8B5CF6', // Púrpura
+    '#06B6D4', // Cyan
+    '#84CC16', // Lima
+    '#F97316', // Naranja
+    '#EC4899', // Rosa
+    '#6366F1', // Índigo
   ];
 
   // Preparar datos para gráficos
