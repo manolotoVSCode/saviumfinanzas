@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import Layout from '@/components/Layout';
 import { AccountsManager } from '@/components/AccountsManager';
 import { CategoriesManager } from '@/components/CategoriesManager';
 import { UserConfig } from '@/components/UserConfig';
@@ -18,7 +19,8 @@ const Configuracion = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <Layout>
+      <div className="space-y-6 animate-fade-in">
       {/* CONFIGURACIÓN DE USUARIO */}
       <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
@@ -122,6 +124,7 @@ const Configuracion = () => {
         </CardContent>
       </Card>
     </div>
+    </Layout>
   );
 };
 

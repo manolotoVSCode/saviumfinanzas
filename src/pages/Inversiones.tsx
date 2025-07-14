@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import Layout from '@/components/Layout';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { useUser } from '@/hooks/useUser';
 import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
@@ -23,7 +24,8 @@ const Inversiones = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <Layout>
+      <div className="space-y-6 animate-fade-in">
       {/* RESUMEN GENERAL */}
       <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
@@ -150,6 +152,7 @@ const Inversiones = () => {
         </CardContent>
       </Card>
     </div>
+    </Layout>
   );
 };
 
