@@ -37,7 +37,8 @@ export const TransactionsManager = ({
   const [filters, setFilters] = useState({
     cuentaId: 'all',
     mes: '',
-    categoriaId: 'all'
+    categoriaId: 'all',
+    tipo: 'all'
   });
 
   const [formData, setFormData] = useState({
@@ -53,6 +54,7 @@ export const TransactionsManager = ({
   const filteredTransactions = transactions.filter(transaction => {
     if (filters.cuentaId && filters.cuentaId !== 'all' && transaction.cuentaId !== filters.cuentaId) return false;
     if (filters.categoriaId && filters.categoriaId !== 'all' && transaction.subcategoriaId !== filters.categoriaId) return false;
+    if (filters.tipo && filters.tipo !== 'all' && transaction.tipo !== filters.tipo) return false;
     if (filters.mes) {
       const transactionMonth = transaction.fecha.toISOString().slice(0, 7); // YYYY-MM format
       if (transactionMonth !== filters.mes) return false;
@@ -68,7 +70,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: '', categoriaId: 'all' });
+    setFilters({ cuentaId: 'all', mes: '', categoriaId: 'all', tipo: 'all' });
   };
 
   const resetForm = () => {
@@ -272,7 +274,7 @@ export const TransactionsManager = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="filter-cuenta">Cuenta</Label>
               <Select 
@@ -282,7 +284,7 @@ export const TransactionsManager = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las cuentas" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background z-50">
                   <SelectItem value="all">Todas las cuentas</SelectItem>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
@@ -312,13 +314,32 @@ export const TransactionsManager = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background z-50">
                   <SelectItem value="all">Todas las categorías</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.categoria} - {category.subcategoria}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="filter-tipo">Tipo</Label>
+              <Select 
+                value={filters.tipo} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, tipo: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos los tipos" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">Todos los tipos</SelectItem>
+                  <SelectItem value="Ingreso">Ingreso</SelectItem>
+                  <SelectItem value="Gastos">Gastos</SelectItem>
+                  <SelectItem value="Aportación">Aportación</SelectItem>
+                  <SelectItem value="Retiro">Retiro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
