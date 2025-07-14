@@ -17,7 +17,18 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
     return 'text-muted-foreground';
   };
 
-  const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
+  const COLORS = [
+    'hsl(var(--primary))', 
+    'hsl(var(--secondary))', 
+    'hsl(var(--accent))', 
+    'hsl(var(--muted))',
+    'hsl(220, 91%, 60%)',
+    'hsl(162, 63%, 65%)', 
+    'hsl(30, 100%, 70%)',
+    'hsl(349, 89%, 74%)',
+    'hsl(200, 50%, 65%)',
+    'hsl(280, 60%, 70%)'
+  ];
 
   // Preparar datos para gráficos
   const pieData = metrics.topCategorias.map((cat, index) => ({
