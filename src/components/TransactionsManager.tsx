@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Transaction, Account, Category } from '@/types/finance';
@@ -86,6 +87,24 @@ export const TransactionsManager = ({
     setIsAddingTransaction(false);
   };
 
+  // Obtener tipo de categoría seleccionada
+  const getSelectedCategoryType = () => {
+    if (!formData.subcategoriaId) return null;
+    const category = categories.find(c => c.id === formData.subcategoriaId);
+    return category?.tipo || null;
+  };
+
+  // Verificar si un campo debe estar bloqueado
+  const isFieldDisabled = (fieldType: 'ingreso' | 'gasto') => {
+    const categoryType = getSelectedCategoryType();
+    if (!categoryType) return false;
+    
+    if (fieldType === 'gasto' && categoryType === 'Ingreso') return true;
+    if (fieldType === 'ingreso' && (categoryType === 'Gastos' || categoryType === 'Aportación' || categoryType === 'Retiro')) return true;
+    
+    return false;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.cuentaId || !formData.subcategoriaId) return;
@@ -141,14 +160,31 @@ export const TransactionsManager = ({
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-xl font-semibold">Gestión de Transacciones</h2>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={onClearAllTransactions}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Limpiar Todo
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Limpiar Todo
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción eliminará todas las transacciones permanentemente. Esta acción no se puede deshacer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={onClearAllTransactions} className="bg-red-600 hover:bg-red-700">
+                  Eliminar todo
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
             <DialogTrigger asChild>
               <Button onClick={() => setIsAddingTransaction(true)}>
@@ -198,7 +234,19 @@ export const TransactionsManager = ({
                   <Label htmlFor="subcategoriaId">Categoría</Label>
                   <Select 
                     value={formData.subcategoriaId} 
-                    onValueChange={(value) => setFormData({ ...formData, subcategoriaId: value })}
+                    onValueChange={(value) => {
+                      const category = categories.find(c => c.id === value);
+                      const newFormData = { ...formData, subcategoriaId: value };
+                      
+                      // Resetear campos según el tipo de categoría
+                      if (category?.tipo === 'Ingreso') {
+                        newFormData.gasto = 0;
+                      } else if (category?.tipo === 'Gastos' || category?.tipo === 'Aportación' || category?.tipo === 'Retiro') {
+                        newFormData.ingreso = 0;
+                      }
+                      
+                      setFormData(newFormData);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona una categoría" />
@@ -223,6 +271,8 @@ export const TransactionsManager = ({
                       value={formData.ingreso}
                       onChange={(e) => setFormData({ ...formData, ingreso: parseFloat(e.target.value) || 0 })}
                       placeholder="0.00"
+                      disabled={isFieldDisabled('ingreso')}
+                      className={isFieldDisabled('ingreso') ? 'opacity-50 cursor-not-allowed' : ''}
                     />
                   </div>
                   <div>
@@ -234,6 +284,8 @@ export const TransactionsManager = ({
                       value={formData.gasto}
                       onChange={(e) => setFormData({ ...formData, gasto: parseFloat(e.target.value) || 0 })}
                       placeholder="0.00"
+                      disabled={isFieldDisabled('gasto')}
+                      className={isFieldDisabled('gasto') ? 'opacity-50 cursor-not-allowed' : ''}
                     />
                   </div>
                 </div>
@@ -409,13 +461,33 @@ export const TransactionsManager = ({
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => onDeleteTransaction(transaction.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar transacción?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta acción eliminará permanentemente esta transacción. Esta acción no se puede deshacer.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => onDeleteTransaction(transaction.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Eliminar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
