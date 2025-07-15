@@ -64,7 +64,7 @@ export const TransactionsManager = ({
     if (filters.cuentaId && filters.cuentaId !== 'all' && transaction.cuentaId !== filters.cuentaId) return false;
     if (filters.categoriaId && filters.categoriaId !== 'all' && transaction.subcategoriaId !== filters.categoriaId) return false;
     if (filters.tipo && filters.tipo !== 'all' && transaction.tipo !== filters.tipo) return false;
-    if (filters.mes) {
+    if (filters.mes && filters.mes !== 'all') {
       const transactionMonth = transaction.fecha.toISOString().slice(0, 7); // YYYY-MM format
       if (transactionMonth !== filters.mes) return false;
     }
@@ -79,7 +79,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: '', categoriaId: 'all', tipo: 'all' });
+    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all' });
   };
 
   const resetForm = () => {
@@ -467,7 +467,7 @@ export const TransactionsManager = ({
                   <SelectValue placeholder="Todos los meses" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  <SelectItem value="">Todos los meses</SelectItem>
+                  <SelectItem value="all">Todos los meses</SelectItem>
                   <SelectItem value={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 7)}>
                     Este mes
                   </SelectItem>
