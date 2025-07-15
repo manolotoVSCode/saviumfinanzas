@@ -459,12 +459,59 @@ export const TransactionsManager = ({
             
             <div>
               <Label htmlFor="filter-mes">Mes</Label>
-              <Input
-                type="month"
-                value={filters.mes}
-                onChange={(e) => setFilters(prev => ({ ...prev, mes: e.target.value }))}
-                placeholder="Seleccionar mes"
-              />
+              <Select 
+                value={filters.mes} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, mes: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos los meses" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="">Todos los meses</SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 7)}>
+                    Este mes
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7)}>
+                    Mes anterior
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 7)}>
+                    Enero {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 1, 1).toISOString().slice(0, 7)}>
+                    Febrero {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 2, 1).toISOString().slice(0, 7)}>
+                    Marzo {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 3, 1).toISOString().slice(0, 7)}>
+                    Abril {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 4, 1).toISOString().slice(0, 7)}>
+                    Mayo {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 5, 1).toISOString().slice(0, 7)}>
+                    Junio {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 6, 1).toISOString().slice(0, 7)}>
+                    Julio {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 7, 1).toISOString().slice(0, 7)}>
+                    Agosto {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 8, 1).toISOString().slice(0, 7)}>
+                    Septiembre {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 9, 1).toISOString().slice(0, 7)}>
+                    Octubre {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 10, 1).toISOString().slice(0, 7)}>
+                    Noviembre {new Date().getFullYear()}
+                  </SelectItem>
+                  <SelectItem value={new Date(new Date().getFullYear(), 11, 1).toISOString().slice(0, 7)}>
+                    Diciembre {new Date().getFullYear()}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div>
