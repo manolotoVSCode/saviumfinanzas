@@ -3,12 +3,18 @@ import { Badge } from '@/components/ui/badge';
 
 import Layout from '@/components/Layout';
 import { useFinanceData } from '@/hooks/useFinanceData';
-import { useUser } from '@/hooks/useUser';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+
+// Función simple para formatear moneda
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN'
+  }).format(amount);
+};
 
 const Inversiones = () => {
   const { dashboardMetrics, accounts } = useFinanceData();
-  const { formatCurrency } = useUser();
 
   const inversionesResumen = dashboardMetrics.inversionesResumen;
   const cuentasInversion = accounts.filter(acc => acc.tipo === 'Inversiones');
