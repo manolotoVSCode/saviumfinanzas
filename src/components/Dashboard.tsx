@@ -8,9 +8,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface DashboardProps {
   metrics: DashboardMetrics;
   formatCurrency: (amount: number) => string;
+  currencyCode?: string;
 }
 
-export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
+export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: DashboardProps) => {
 
   const getBalanceColor = (amount: number) => {
     if (amount > 0) return 'text-success';
@@ -120,139 +121,13 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* PATRIMONIO NETO - Métrica principal */}
-      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300 col-span-full">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold">Patrimonio Neto</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={`text-4xl font-bold ${getBalanceColor(metrics.patrimonioNeto)} mb-2`}>
-            {formatCurrency(metrics.patrimonioNeto)}
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground">
-              Total Activos {formatCurrency(metrics.activos.total)} - Total Pasivos {formatCurrency(metrics.pasivos.total)}
-            </span>
-            <span className={`text-sm font-medium ${
-              metrics.variacionPatrimonio >= 0 ? 'text-success' : 'text-destructive'
-            }`}>
-              {((metrics.activos.total - metrics.pasivos.total) / metrics.activos.total * 100).toFixed(1)}%
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* SCORE DE SALUD FINANCIERA */}
-      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Salud Financiera
-            <TooltipProvider>
-              <UITooltip>
-                <TooltipTrigger>
-                  <Info className="h-4 w-4 text-muted-foreground hover:text-primary cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-sm p-3">
-                  <div className="space-y-2 text-xs">
-                    <p><strong>Cálculo del Score:</strong></p>
-                    <p>• Ratio de Deuda = Pasivos / Activos</p>
-                    <p>• Ratio de Ahorro = (Ingresos - Gastos) / Ingresos</p>
-                    <p>• Score inicial: 10 puntos</p>
-                    <p>• Se reduce según nivel de deuda y capacidad de ahorro</p>
-                  </div>
-                </TooltipContent>
-              </UITooltip>
-            </TooltipProvider>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <span className={`text-4xl font-bold ${getSaludColor(metrics.saludFinanciera.nivel)}`}>
-              {metrics.saludFinanciera.score}
-            </span>
-            <Badge variant={metrics.saludFinanciera.nivel === 'Excelente' ? 'default' : 
-                            metrics.saludFinanciera.nivel === 'Buena' ? 'secondary' : 'destructive'}>
-              {metrics.saludFinanciera.nivel}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">{metrics.saludFinanciera.descripcion}</p>
-        </CardContent>
-      </Card>
-
-      {/* GRÁFICO DE BARRAS CON LÍNEAS DE TENDENCIA - INGRESOS VS GASTOS ÚLTIMOS 12 MESES */}
-      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
-        <CardHeader>
-          <CardTitle>Ingresos vs Gastos - Últimos 12 Meses</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartDataWithTrend} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="mes" 
-                  tick={{ fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis 
-                  tick={{ fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value, name) => [
-                    formatCurrency(Number(value)), 
-                    name === 'ingresos' ? 'Ingresos' : name === 'gastos' ? 'Gastos' : name === 'tendenciaIngresos' ? 'Tendencia Ingresos' : 'Tendencia Gastos'
-                  ]}
-                />
-                <Bar 
-                  dataKey="ingresos" 
-                  fill="hsl(var(--success))" 
-                  radius={[4, 4, 0, 0]}
-                  name="ingresos"
-                />
-                <Bar 
-                  dataKey="gastos" 
-                  fill="hsl(var(--destructive))" 
-                  radius={[4, 4, 0, 0]}
-                  name="gastos"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="ingresos" 
-                  stroke="hsl(var(--success))" 
-                  strokeWidth={2}
-                  dot={false}
-                  name="tendenciaIngresos"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="gastos" 
-                  stroke="hsl(var(--destructive))" 
-                  strokeWidth={2}
-                  dot={false}
-                  name="tendenciaGastos"
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* BALANCE GENERAL - Activos y Pasivos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ACTIVOS */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-success">
-              ACTIVOS (lo que tienes)
+              ACTIVOS (lo que tienes) - {currencyCode}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -301,7 +176,7 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-destructive">
-              PASIVOS (lo que debes)
+              PASIVOS (lo que debes) - {currencyCode}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -332,10 +207,127 @@ export const Dashboard = ({ metrics, formatCurrency }: DashboardProps) => {
                   <span className="text-xl font-bold text-destructive">{formatCurrency(metrics.pasivos.total)}</span>
                 </div>
               </div>
+
+              {/* PATRIMONIO NETO CALCULADO */}
+              <div className="p-4 rounded-lg bg-primary/10 border-2 border-primary/30 mt-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-primary">PATRIMONIO NETO</span>
+                  <span className={`text-xl font-bold ${getBalanceColor(metrics.patrimonioNeto)}`}>
+                    {formatCurrency(metrics.patrimonioNeto)}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Activos - Pasivos = Patrimonio neto
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* GRÁFICO DE BARRAS CON LÍNEAS DE TENDENCIA - INGRESOS VS GASTOS ÚLTIMOS 12 MESES */}
+      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <CardHeader>
+          <CardTitle>Ingresos vs Gastos - Últimos 12 Meses ({currencyCode})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={chartDataWithTrend} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis 
+                  dataKey="mes" 
+                  tick={{ fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(value) => `${currencyCode} ${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value, name) => [
+                    formatCurrency(Number(value)), 
+                    name === 'ingresos' ? 'Ingresos' : name === 'gastos' ? 'Gastos' : name === 'tendenciaIngresos' ? 'Tendencia Ingresos' : 'Tendencia Gastos'
+                  ]}
+                />
+                <Bar 
+                  dataKey="ingresos" 
+                  fill="hsl(var(--success))" 
+                  radius={[4, 4, 0, 0]}
+                  name="ingresos"
+                />
+                <Bar 
+                  dataKey="gastos" 
+                  fill="hsl(var(--destructive))" 
+                  radius={[4, 4, 0, 0]}
+                  name="gastos"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="ingresos" 
+                  stroke="hsl(var(--success))" 
+                  strokeWidth={2}
+                  dot={false}
+                  name="tendenciaIngresos"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="gastos" 
+                  stroke="hsl(var(--destructive))" 
+                  strokeWidth={2}
+                  dot={false}
+                  name="tendenciaGastos"
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* SCORE DE SALUD FINANCIERA */}
+      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Salud Financiera
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground hover:text-primary cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm p-3">
+                  <div className="space-y-2 text-xs">
+                    <p><strong>Cálculo del Score:</strong></p>
+                    <p>• Ratio de Deuda = Pasivos / Activos</p>
+                    <p>• Ratio de Ahorro = (Ingresos - Gastos) / Ingresos</p>
+                    <p>• Score inicial: 10 puntos</p>
+                    <p>• Se reduce según nivel de deuda y capacidad de ahorro</p>
+                  </div>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <span className={`text-4xl font-bold ${getSaludColor(metrics.saludFinanciera.nivel)}`}>
+              {metrics.saludFinanciera.score}
+            </span>
+            <Badge variant={metrics.saludFinanciera.nivel === 'Excelente' ? 'default' : 
+                            metrics.saludFinanciera.nivel === 'Buena' ? 'secondary' : 'destructive'}>
+              {metrics.saludFinanciera.nivel}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">{metrics.saludFinanciera.descripcion}</p>
+        </CardContent>
+      </Card>
 
       {/* RESUMEN MENSUAL - MES ANTERIOR */}
       <div className="mb-4">

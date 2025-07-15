@@ -18,7 +18,8 @@ const Dashboard = () => {
       <div className="animate-fade-in">
         <DashboardComponent 
           metrics={financeData.dashboardMetrics} 
-          formatCurrency={formatCurrency} 
+          formatCurrency={formatCurrency}
+          currencyCode="MXN"
         />
       </div>
     </Layout>
