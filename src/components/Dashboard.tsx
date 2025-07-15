@@ -181,25 +181,33 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">Tarjetas de Crédito</span>
-                  <span className="font-bold text-destructive">{formatCurrency(metrics.pasivos.tarjetasCredito)}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Saldo pendiente por pagar
-                </div>
-              </div>
+              {/* Mostrar cada tarjeta de crédito por separado */}
+              {metrics.cuentasResumen
+                .filter(cuenta => cuenta.tipo === 'Tarjeta de Crédito' && Math.abs(Math.min(0, cuenta.saldo)) > 0)
+                .map((cuenta, index) => (
+                  <div key={index} className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-muted-foreground">{cuenta.cuenta}</span>
+                      <span className="font-bold text-destructive">{formatCurrency(Math.abs(Math.min(0, cuenta.saldo)))}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Saldo pendiente por pagar
+                    </div>
+                  </div>
+                ))}
               
-              <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">Hipoteca</span>
-                  <span className="font-bold text-destructive">{formatCurrency(metrics.pasivos.hipoteca)}</span>
+              {/* Hipoteca */}
+              {metrics.pasivos.hipoteca > 0 && (
+                <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-muted-foreground">Hipoteca</span>
+                    <span className="font-bold text-destructive">{formatCurrency(metrics.pasivos.hipoteca)}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Saldo pendiente del préstamo hipotecario
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Saldo pendiente del préstamo hipotecario
-                </div>
-              </div>
+              )}
               
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
