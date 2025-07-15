@@ -207,19 +207,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                   <span className="text-xl font-bold text-destructive">{formatCurrency(metrics.pasivos.total)}</span>
                 </div>
               </div>
-
-              {/* PATRIMONIO NETO CALCULADO */}
-              <div className="p-4 rounded-lg bg-primary/10 border-2 border-primary/30 mt-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-primary">PATRIMONIO NETO</span>
-                  <span className={`text-xl font-bold ${getBalanceColor(metrics.patrimonioNeto)}`}>
-                    {formatCurrency(metrics.patrimonioNeto)}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  Activos - Pasivos = Patrimonio neto
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>

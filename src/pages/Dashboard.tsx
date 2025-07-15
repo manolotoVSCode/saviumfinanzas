@@ -1,17 +1,11 @@
 import { Dashboard as DashboardComponent } from '@/components/Dashboard';
 import Layout from '@/components/Layout';
 import { useFinanceData } from '@/hooks/useFinanceData';
-
-// Función simple para formatear moneda
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN'
-  }).format(amount);
-};
+import { useAppConfig } from '@/hooks/useAppConfig';
 
 const Dashboard = () => {
   const financeData = useFinanceData();
+  const { formatCurrency, config } = useAppConfig();
 
   return (
     <Layout>
@@ -19,7 +13,7 @@ const Dashboard = () => {
         <DashboardComponent 
           metrics={financeData.dashboardMetrics} 
           formatCurrency={formatCurrency}
-          currencyCode="MXN"
+          currencyCode={config.currency}
         />
       </div>
     </Layout>
