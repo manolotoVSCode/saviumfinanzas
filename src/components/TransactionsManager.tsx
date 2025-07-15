@@ -57,6 +57,8 @@ export const TransactionsManager = ({
     targetAccountId: ''
   });
 
+  const [categoryTypeFilter, setCategoryTypeFilter] = useState<string>('all');
+
   // Aplicar filtros a las transacciones
   const filteredTransactions = transactions.filter(transaction => {
     if (filters.cuentaId && filters.cuentaId !== 'all' && transaction.cuentaId !== filters.cuentaId) return false;
@@ -93,8 +95,15 @@ export const TransactionsManager = ({
       enabled: false,
       targetAccountId: ''
     });
+    setCategoryTypeFilter('all');
     setEditingTransaction(null);
     setIsAddingTransaction(false);
+  };
+
+  // Obtener categorías filtradas por tipo
+  const getFilteredCategories = () => {
+    if (categoryTypeFilter === 'all') return categories;
+    return categories.filter(c => c.tipo === categoryTypeFilter);
   };
 
   // Obtener tipo de categoría seleccionada
@@ -118,6 +127,12 @@ export const TransactionsManager = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.cuentaId || !formData.subcategoriaId) return;
+    
+    // Validar que si el checkbox está marcado, haya una cuenta destino seleccionada
+    if (autoContribution.enabled && !autoContribution.targetAccountId) {
+      alert('Debes seleccionar una cuenta destino para la aportación automática');
+      return;
+    }
 
     const transactionData = {
       ...formData,
@@ -244,6 +259,33 @@ export const TransactionsManager = ({
                 </div>
 
                 <div>
+                  <Label htmlFor="category-type">Tipo de Categoría</Label>
+                  <Select 
+                    value={categoryTypeFilter} 
+                    onValueChange={(value) => {
+                      setCategoryTypeFilter(value);
+                      // Reset subcategory when changing type filter
+                      setFormData(prev => ({ ...prev, subcategoriaId: '' }));
+                      setAutoContribution({
+                        enabled: false,
+                        targetAccountId: ''
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos los tipos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los tipos</SelectItem>
+                      <SelectItem value="Ingreso">Ingreso</SelectItem>
+                      <SelectItem value="Gastos">Gastos</SelectItem>
+                      <SelectItem value="Aportación">Aportación</SelectItem>
+                      <SelectItem value="Retiro">Retiro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
                   <Label htmlFor="subcategoriaId">Categoría</Label>
                   <Select 
                     value={formData.subcategoriaId} 
@@ -260,7 +302,7 @@ export const TransactionsManager = ({
                       
                       setFormData(newFormData);
                       
-                      // Reset auto contribution if not an Aportación
+                      // Reset category type filter when changing category
                       if (category?.tipo !== 'Aportación') {
                         setAutoContribution({
                           enabled: false,
@@ -273,7 +315,7 @@ export const TransactionsManager = ({
                       <SelectValue placeholder="Selecciona una categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((category) => (
+                      {getFilteredCategories().map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.categoria} - {category.subcategoria} ({category.tipo})
                         </SelectItem>
