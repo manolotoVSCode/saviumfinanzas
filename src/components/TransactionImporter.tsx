@@ -62,11 +62,11 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
   };
 
   const parseAmount = (amountStr: string): number => {
-    if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '-' || amountStr.trim() === '0') return 0;
+    if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '-') return 0;
     // Remove spaces and replace comma with dot for decimal separator
     const cleanAmount = amountStr.replace(/\s/g, '').replace('.', '').replace(',', '.');
     const parsed = parseFloat(cleanAmount);
-    return isNaN(parsed) ? 0 : Math.abs(parsed);
+    return isNaN(parsed) ? 0 : parsed; // No usar Math.abs, mantener signo original
   };
 
   const parseDateDDMMYY = (dateStr: string): string => {
@@ -170,14 +170,27 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       return;
     }
 
-    // Función para encontrar o crear categoría "SIN ASIGNAR"
-    const getSinAsignarCategory = () => {
-      const sinAsignar = categories.find(cat => 
-        cat.subcategoria.toLowerCase().includes('sin asignar') || 
-        cat.subcategoria.toLowerCase().includes('sin categoría') ||
-        cat.categoria.toLowerCase().includes('sin categoría')
+    // Función para encontrar subcategoría por nombre
+    const findSubcategoryByName = (nombreSubcategoria: string) => {
+      // Buscar categoría que coincida con el nombre
+      const categoria = categories.find(cat => 
+        cat.subcategoria.toLowerCase().includes(nombreSubcategoria.toLowerCase()) ||
+        cat.categoria.toLowerCase().includes(nombreSubcategoria.toLowerCase()) ||
+        nombreSubcategoria.toLowerCase().includes(cat.subcategoria.toLowerCase()) ||
+        nombreSubcategoria.toLowerCase().includes(cat.categoria.toLowerCase())
       );
-      return sinAsignar?.id || 'cat-1'; // Fallback al primer category ID
+      
+      // Si no encuentra, usar SIN ASIGNAR como fallback
+      if (!categoria) {
+        const sinAsignar = categories.find(cat => 
+          cat.subcategoria.toLowerCase().includes('sin asignar') || 
+          cat.subcategoria.toLowerCase().includes('sin categoría') ||
+          cat.categoria.toLowerCase().includes('sin categoría')
+        );
+        return sinAsignar?.id || categories[0]?.id || 'cat-1';
+      }
+      
+      return categoria.id;
     };
 
     // Función para encontrar cuenta por nombre
@@ -186,11 +199,27 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
         acc.nombre.toLowerCase().includes(nombreCuenta.toLowerCase()) ||
         nombreCuenta.toLowerCase().includes(acc.nombre.toLowerCase())
       );
-      return cuenta?.id || accounts[0]?.id || ''; // Fallback a la primera cuenta
+      
+      if (!cuenta) {
+        console.warn(`No se encontró cuenta para: ${nombreCuenta}, usando primera cuenta disponible`);
+        return accounts[0]?.id || '';
+      }
+      
+      return cuenta.id;
     };
 
     const transactions: Omit<Transaction, 'id' | 'monto'>[] = parsedTransactions.map((transaction, index) => {
       const cuentaId = findAccountByName(transaction.cuentaNombre);
+      const subcategoriaId = findSubcategoryByName(transaction.subcategoriaNombre);
+      
+      console.log(`Transacción ${index + 1}:`, {
+        cuenta: transaction.cuentaNombre,
+        cuentaId,
+        subcategoria: transaction.subcategoriaNombre,
+        subcategoriaId,
+        ingreso: transaction.ingreso,
+        gasto: transaction.gasto
+      });
       
       return {
         csvId: `import_${Date.now()}_${index}`,
@@ -199,7 +228,7 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
         comentario: transaction.comentario,
         ingreso: transaction.ingreso,
         gasto: transaction.gasto,
-        subcategoriaId: getSinAsignarCategory(),
+        subcategoriaId: subcategoriaId,
         divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
       };
     });
@@ -317,8 +346,8 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
               <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
                 <p className="font-medium mb-1">Importación automática</p>
                 <p>• Las cuentas se asignarán automáticamente por nombre del CSV</p>
-                <p>• Las categorías se asignarán como "SIN ASIGNAR" automáticamente</p>
-                <p>• Podrás categorizar manualmente después de la importación</p>
+                <p>• Las subcategorías se buscarán por nombre del CSV</p>
+                <p>• Si no se encuentra la subcategoría, se asignará "SIN ASIGNAR"</p>
               </div>
             </div>
 
