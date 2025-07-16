@@ -152,7 +152,8 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
             comentario: comentario.trim(),
             ingreso: ingresoAmount,
             gasto: gastoAmount,
-            subcategoriaId
+            subcategoriaId,
+            divisa: 'MXN' // Por defecto todas las importaciones son MXN
           });
         } catch (error) {
           errors.push(`Línea ${index + 2}: Error al procesar - ${error}`);

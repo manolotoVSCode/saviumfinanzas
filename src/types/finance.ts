@@ -28,6 +28,7 @@ export interface Transaction {
   ingreso: number;
   gasto: number;
   subcategoriaId: string;
+  divisa: 'MXN' | 'USD' | 'EUR'; // Nueva propiedad
   csvId?: string; // ID original del CSV (opcional)
   // campos calculados
   categoria?: string;

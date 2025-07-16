@@ -62,7 +62,8 @@ export const useFinanceData = () => {
         const parsed = JSON.parse(stored);
         return parsed.map((t: any) => ({
           ...t,
-          fecha: new Date(t.fecha)
+          fecha: new Date(t.fecha),
+          divisa: t.divisa || 'MXN' // Default a MXN si no tiene divisa
         }));
       }
     } catch {}
@@ -115,10 +116,13 @@ export const useFinanceData = () => {
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
     const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
     
-    const transactionsThisMonth = enrichedTransactions.filter(t => t.fecha >= startOfMonth && t.fecha <= endOfMonth);
-    const transactionsPreviousMonth = enrichedTransactions.filter(t => t.fecha >= startOfPreviousMonth && t.fecha <= endOfPreviousMonth);
-    const transactionsThisYear = enrichedTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
-    const transactionsLastYear = enrichedTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
+    // Filtrar solo transacciones en MXN para los dashboards
+    const dashboardTransactions = enrichedTransactions.filter(t => t.divisa === 'MXN');
+    
+    const transactionsThisMonth = dashboardTransactions.filter(t => t.fecha >= startOfMonth && t.fecha <= endOfMonth);
+    const transactionsPreviousMonth = dashboardTransactions.filter(t => t.fecha >= startOfPreviousMonth && t.fecha <= endOfPreviousMonth);
+    const transactionsThisYear = dashboardTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
+    const transactionsLastYear = dashboardTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
     
     // INGRESOS Y GASTOS MENSUALES
     const ingresosMes = transactionsThisMonth.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
@@ -518,6 +522,7 @@ export const useFinanceData = () => {
           ingreso: transaction.gasto, // El gasto se convierte en ingreso para la cuenta destino
           gasto: 0,
           subcategoriaId: transaction.subcategoriaId,
+          divisa: transaction.divisa || 'MXN',
           monto: transaction.gasto
         };
         transactionsToAdd.push(automaticTransaction);

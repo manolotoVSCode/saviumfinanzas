@@ -49,7 +49,8 @@ export const TransactionsManager = ({
     comentario: '',
     ingreso: 0,
     gasto: 0,
-    subcategoriaId: ''
+    subcategoriaId: '',
+    divisa: 'MXN' as 'MXN' | 'USD' | 'EUR'
   });
 
   const [autoContribution, setAutoContribution] = useState({
@@ -96,7 +97,8 @@ export const TransactionsManager = ({
       comentario: '',
       ingreso: 0,
       gasto: 0,
-      subcategoriaId: ''
+      subcategoriaId: '',
+      divisa: 'MXN' as 'MXN' | 'USD' | 'EUR'
     });
     setAutoContribution({
       enabled: false,
@@ -167,7 +169,8 @@ export const TransactionsManager = ({
       comentario: transaction.comentario,
       ingreso: transaction.ingreso,
       gasto: transaction.gasto,
-      subcategoriaId: categoryExists ? transaction.subcategoriaId : ''
+      subcategoriaId: categoryExists ? transaction.subcategoriaId : '',
+      divisa: transaction.divisa || 'MXN'
     });
     setEditingTransaction(transaction);
     setIsAddingTransaction(true);
@@ -358,6 +361,23 @@ export const TransactionsManager = ({
                       className={isFieldDisabled('gasto') ? 'opacity-50 cursor-not-allowed' : ''}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="divisa">Divisa</Label>
+                  <Select 
+                    value={formData.divisa} 
+                    onValueChange={(value) => setFormData({ ...formData, divisa: value as 'MXN' | 'USD' | 'EUR' })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona divisa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MXN">MXN - Peso Mexicano</SelectItem>
+                      <SelectItem value="USD">USD - Dólar Americano</SelectItem>
+                      <SelectItem value="EUR">EUR - Euro</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
