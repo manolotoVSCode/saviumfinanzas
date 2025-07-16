@@ -75,10 +75,7 @@ export const TransactionsManager = ({
     if (filters.tipo && filters.tipo !== 'all' && transaction.tipo !== filters.tipo) return false;
     if (filters.divisa && filters.divisa !== 'all' && transaction.divisa !== filters.divisa) return false;
     if (filters.mes && filters.mes !== 'all') {
-      // Usar fecha local para evitar problemas de timezone
-      const year = transaction.fecha.getFullYear();
-      const month = String(transaction.fecha.getMonth() + 1).padStart(2, '0');
-      const transactionMonth = `${year}-${month}`;
+      const transactionMonth = transaction.fecha.toISOString().slice(0, 7); // YYYY-MM format
       if (transactionMonth !== filters.mes) return false;
     }
     return true;
@@ -150,7 +147,7 @@ export const TransactionsManager = ({
 
     const transactionData = {
       ...formData,
-      fecha: new Date(formData.fecha + 'T12:00:00') // Usar mediodía para evitar problemas de timezone
+      fecha: new Date(formData.fecha + 'T12:00:00')
     };
 
     if (editingTransaction) {

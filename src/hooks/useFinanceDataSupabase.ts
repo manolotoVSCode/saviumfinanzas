@@ -76,7 +76,7 @@ export const useFinanceDataSupabase = () => {
 
       const mappedTransactions: Transaction[] = transaccionesData.map(transaccion => ({
         id: transaccion.id,
-        fecha: new Date(transaccion.fecha),
+        fecha: new Date(transaccion.fecha + 'T12:00:00'), // Agregar hora para evitar problemas de timezone
         comentario: transaccion.comentario,
         monto: Number(transaccion.ingreso) - Number(transaccion.gasto),
         ingreso: Number(transaccion.ingreso),
