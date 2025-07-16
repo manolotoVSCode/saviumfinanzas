@@ -126,6 +126,47 @@ export const useFinanceDataSupabase = () => {
     });
   }, [transactions, categories]);
 
+  // Funciones auxiliares para el cálculo de score financiero (definidas antes del useMemo)
+  const calcularScoreFinanciero = (activos: any, pasivos: any, balanceMes: number, ahorroTarget: number) => {
+    let score = 0;
+    
+    // Ratio de liquidez (30 puntos máximo)
+    const ratioLiquidez = activos.efectivoBancos / (pasivos.total || 1);
+    if (ratioLiquidez >= 3) score += 30;
+    else if (ratioLiquidez >= 1) score += 20;
+    else score += 10;
+    
+    // Capacidad de ahorro (40 puntos máximo)
+    const ratioAhorro = balanceMes / ahorroTarget;
+    if (ratioAhorro >= 1) score += 40;
+    else if (ratioAhorro >= 0.5) score += 25;
+    else if (ratioAhorro > 0) score += 15;
+    
+    // Diversificación (30 puntos máximo)
+    if (activos.inversiones > 0) score += 20;
+    if (activos.total > activos.efectivoBancos) score += 10;
+    
+    return Math.min(100, score);
+  };
+
+  const generateRecommendations = (activos: any, pasivos: any, balanceMes: number, ahorroTarget: number) => {
+    const recommendations = [];
+    
+    if (balanceMes < ahorroTarget) {
+      recommendations.push('Considera reducir gastos para alcanzar tu meta de ahorro mensual');
+    }
+    
+    if (pasivos.total > activos.efectivoBancos * 2) {
+      recommendations.push('Tu nivel de deuda es alto, prioriza reducir pasivos');
+    }
+    
+    if (activos.inversiones === 0) {
+      recommendations.push('Considera diversificar con inversiones para hacer crecer tu patrimonio');
+    }
+    
+    return recommendations;
+  };
+
   // Dashboard metrics (reutilizar la misma lógica del hook original)
   const dashboardMetrics = useMemo((): DashboardMetrics => {
     const now = new Date();
@@ -480,47 +521,6 @@ export const useFinanceDataSupabase = () => {
       saludFinanciera
     };
   }, [accountsWithBalances, enrichedTransactions, convertCurrency, config.currency]);
-
-  // Funciones auxiliares para el cálculo de score financiero
-  const calcularScoreFinanciero = (activos: any, pasivos: any, balanceMes: number, ahorroTarget: number) => {
-    let score = 0;
-    
-    // Ratio de liquidez (30 puntos máximo)
-    const ratioLiquidez = activos.efectivoBancos / (pasivos.total || 1);
-    if (ratioLiquidez >= 3) score += 30;
-    else if (ratioLiquidez >= 1) score += 20;
-    else score += 10;
-    
-    // Capacidad de ahorro (40 puntos máximo)
-    const ratioAhorro = balanceMes / ahorroTarget;
-    if (ratioAhorro >= 1) score += 40;
-    else if (ratioAhorro >= 0.5) score += 25;
-    else if (ratioAhorro > 0) score += 15;
-    
-    // Diversificación (30 puntos máximo)
-    if (activos.inversiones > 0) score += 20;
-    if (activos.total > activos.efectivoBancos) score += 10;
-    
-    return Math.min(100, score);
-  };
-
-  const generateRecommendations = (activos: any, pasivos: any, balanceMes: number, ahorroTarget: number) => {
-    const recommendations = [];
-    
-    if (balanceMes < ahorroTarget) {
-      recommendations.push('Considera reducir gastos para alcanzar tu meta de ahorro mensual');
-    }
-    
-    if (pasivos.total > activos.efectivoBancos * 2) {
-      recommendations.push('Tu nivel de deuda es alto, prioriza reducir pasivos');
-    }
-    
-    if (activos.inversiones === 0) {
-      recommendations.push('Considera diversificar con inversiones para hacer crecer tu patrimonio');
-    }
-    
-    return recommendations;
-  };
 
   // CRUD operations placeholder (para futuras implementaciones)
   const addAccount = async (account: Omit<Account, 'id'>) => {
