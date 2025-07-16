@@ -250,7 +250,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
   // Función para formatear moneda consistentemente
   const formatCurrencyConsistent = (amount: number, currency: string) => {
-    return `${new Intl.NumberFormat('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(amount)} $ ${currency}`;
+    return `${new Intl.NumberFormat('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(amount)} ${currency}`;
   };
 
   // Calcular cambios en balance
@@ -291,7 +291,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   return `${new Intl.NumberFormat('es-MX', {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0,
-                  }).format(amount || 0)} $ ${moneda}`;
+                  }).format(amount || 0)} ${moneda}`;
                 };
 
                 const hasAssets = (activos?.efectivoBancos || 0) > 0 || (activos?.inversiones || 0) > 0 || (activos?.empresasPrivadas || 0) > 0;
@@ -300,10 +300,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
                 return (
                   <div key={moneda} className="space-y-3">
-                    {(activos?.efectivoBancos || 0) > 0 && (
+                     {(activos?.efectivoBancos || 0) > 0 && (
                        <div className="p-4 rounded-lg bg-success/5 border border-success/20">
                          <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm text-muted-foreground">Efectivo y Bancos <strong>{moneda}</strong></span>
+                           <span className="text-sm text-muted-foreground">Efectivo y Bancos</span>
                            <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -315,36 +315,52 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     {(activos?.inversiones || 0) > 0 && (
                        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                          <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm text-muted-foreground">Inversiones <strong>{moneda}</strong></span>
+                           <span className="text-sm text-muted-foreground">Inversiones</span>
                            <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Fondos, acciones y ETFs
                         </div>
                       </div>
-                    )}
-
-                    {(activos?.empresasPrivadas || 0) > 0 && (
-                       <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                         <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm text-muted-foreground">Empresas Privadas <strong>{moneda}</strong></span>
-                           <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Participaciones en empresas propias
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                     )}
+                   </div>
+                 );
+               })}
               
               <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-success">TOTAL ACTIVOS MXN</span>
-                  <span className="text-xl font-bold text-success">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.activos?.total || 0)} $ MXN</span>
+                  <span className="font-semibold text-success">TOTAL ACTIVOS</span>
+                  <span className="text-xl font-bold text-success">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.activos?.total || 0)} MXN</span>
                 </div>
               </div>
+
+              {/* Empresas Privadas - debajo del total */}
+              {Object.entries(metrics.activosPorMoneda || {}).map(([moneda, activos]) => {
+                const formatNumberOnly = (amount: number) => {
+                  return `${new Intl.NumberFormat('es-MX', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  }).format(amount || 0)} ${moneda}`;
+                };
+
+                const hasPrivateCompanies = (activos?.empresasPrivadas || 0) > 0;
+                
+                if (!hasPrivateCompanies) return null;
+
+                return (
+                  <div key={`private-${moneda}`} className="space-y-3 mt-4">
+                    <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-muted-foreground">Empresas Privadas</span>
+                        <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Participaciones en empresas propias
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -364,7 +380,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   return `${new Intl.NumberFormat('es-MX', {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0,
-                  }).format(amount || 0)} $ ${moneda}`;
+                  }).format(amount || 0)} ${moneda}`;
                 };
 
                 const hasLiabilities = (pasivos?.total || 0) > 0;
@@ -373,10 +389,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
                 return (
                   <div key={moneda} className="space-y-3">
-                    {(pasivos?.tarjetasCredito || 0) > 0 && (
+                     {(pasivos?.tarjetasCredito || 0) > 0 && (
                        <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
                          <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm text-muted-foreground">Tarjetas de Crédito <strong>{moneda}</strong></span>
+                           <span className="text-sm text-muted-foreground">Tarjetas de Crédito</span>
                            <span className="font-bold text-destructive">{formatNumberOnly(pasivos.tarjetasCredito)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -388,7 +404,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     {(pasivos?.hipoteca || 0) > 0 && (
                        <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
                          <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm text-muted-foreground">Hipoteca <strong>{moneda}</strong></span>
+                           <span className="text-sm text-muted-foreground">Hipoteca</span>
                            <span className="font-bold text-destructive">{formatNumberOnly(pasivos.hipoteca)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -402,8 +418,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-destructive">TOTAL PASIVOS MXN</span>
-                  <span className="text-xl font-bold text-destructive">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.pasivos?.total || 0)} $ MXN</span>
+                  <span className="font-semibold text-destructive">TOTAL PASIVOS</span>
+                  <span className="text-xl font-bold text-destructive">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.pasivos?.total || 0)} MXN</span>
                 </div>
               </div>
             </div>
@@ -475,7 +491,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       {/* GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES */}
       <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle className="text-center">Ingresos vs Gastos - Últimos 12 Meses <strong>{selectedCurrency}</strong></CardTitle>
+          <CardTitle className="text-center">Ingresos vs Gastos - Últimos 12 Meses ({selectedCurrency})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
@@ -541,13 +557,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
       {/* RESUMEN MENSUAL */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">Resumen del Mes <strong>{selectedCurrency}</strong></h2>
+        <h2 className="text-xl font-semibold text-center">Resumen del Mes ({selectedCurrency})</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado del mes */}
         <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">Resultado del Mes <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Resultado del Mes ({selectedCurrency})</CardTitle>
             {getTrendIcon(cambioBalanceMes)}
           </CardHeader>
           <CardContent>
@@ -563,7 +579,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Ingresos del mes */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos del Mes <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos del Mes ({selectedCurrency})</CardTitle>
             {getTrendIcon(filteredMetrics.cambioIngresosMes)}
           </CardHeader>
           <CardContent>
@@ -579,7 +595,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Gastos del mes */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos del Mes <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos del Mes ({selectedCurrency})</CardTitle>
             {getTrendIcon(filteredMetrics.cambioGastosMes)}
           </CardHeader>
           <CardContent>
@@ -598,7 +614,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Distribución de Gastos */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Gastos <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-center">Distribución Gastos ({selectedCurrency})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -648,7 +664,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Distribución de Ingresos */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Ingresos <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-center">Distribución Ingresos ({selectedCurrency})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -698,13 +714,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
       {/* RESUMEN ANUAL */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">Resumen del Año <strong>{selectedCurrency}</strong></h2>
+        <h2 className="text-xl font-semibold text-center">Resumen del Año ({selectedCurrency})</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado anual */}
         <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">Resultado del Año <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Resultado del Año ({selectedCurrency})</CardTitle>
             {getTrendIcon(cambioBalanceAnio)}
           </CardHeader>
           <CardContent>
@@ -720,7 +736,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Ingresos anuales */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos del Año <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos del Año ({selectedCurrency})</CardTitle>
             {getTrendIcon(filteredMetrics.cambioIngresosAnio)}
           </CardHeader>
           <CardContent>
@@ -736,7 +752,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Gastos anuales */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos del Año <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos del Año ({selectedCurrency})</CardTitle>
             {getTrendIcon(filteredMetrics.cambioGastosAnio)}
           </CardHeader>
           <CardContent>
@@ -755,7 +771,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Distribución de Gastos Anual */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Gastos <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-center">Distribución Gastos ({selectedCurrency})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -805,7 +821,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Distribución de Ingresos Anual */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Ingresos <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-center">Distribución Ingresos ({selectedCurrency})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -865,16 +881,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 rounded-lg bg-success/5 border border-success/20">
               <div className="text-lg font-semibold text-success">Activos Totales</div>
-              <div className="text-2xl font-bold">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.activos?.total || 0)} $ MXN</div>
+              <div className="text-2xl font-bold">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.activos?.total || 0)} MXN</div>
             </div>
             <div className="text-center p-4 rounded-lg bg-destructive/5 border border-destructive/20">
               <div className="text-lg font-semibold text-destructive">Pasivos Totales</div>
-              <div className="text-2xl font-bold">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.pasivos?.total || 0)} $ MXN</div>
+              <div className="text-2xl font-bold">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.pasivos?.total || 0)} MXN</div>
             </div>
             <div className="text-center p-4 rounded-lg bg-primary/5 border border-primary/20">
               <div className="text-lg font-semibold text-primary">Patrimonio Neto</div>
               <div className={`text-2xl font-bold ${getBalanceColor(metrics.patrimonioNeto || 0)}`}>
-                {new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.patrimonioNeto || 0)} $ MXN
+                {new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.patrimonioNeto || 0)} MXN
               </div>
             </div>
           </div>
@@ -894,17 +910,17 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Ingresos</span>
-                <span className="font-semibold text-success">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.ingresosMes || 0)} $ MXN</span>
+                <span className="font-semibold text-success">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.ingresosMes || 0)} MXN</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Gastos</span>
-                <span className="font-semibold text-destructive">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.gastosMes || 0)} $ MXN</span>
+                <span className="font-semibold text-destructive">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.gastosMes || 0)} MXN</span>
               </div>
               <div className="border-t pt-2">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold">Balance</span>
                   <span className={`font-bold ${getBalanceColor(metrics.balanceMes || 0)}`}>
-                    {new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.balanceMes || 0)} $ MXN
+                    {new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.balanceMes || 0)} MXN
                   </span>
                 </div>
               </div>
@@ -923,17 +939,17 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Ingresos</span>
-                <span className="font-semibold text-success">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.ingresosAnio || 0)} $ MXN</span>
+                <span className="font-semibold text-success">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.ingresosAnio || 0)} MXN</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Gastos</span>
-                <span className="font-semibold text-destructive">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.gastosAnio || 0)} $ MXN</span>
+                <span className="font-semibold text-destructive">{new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.gastosAnio || 0)} MXN</span>
               </div>
               <div className="border-t pt-2">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold">Balance</span>
                   <span className={`font-bold ${getBalanceColor(metrics.balanceAnio || 0)}`}>
-                    {new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.balanceAnio || 0)} $ MXN
+                    {new Intl.NumberFormat('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(metrics.balanceAnio || 0)} MXN
                   </span>
                 </div>
               </div>
