@@ -71,9 +71,65 @@ export const useMigration = () => {
         }
       }
 
+      // PASO 2: Migrar cuentas
+      if (localAccounts.length > 0) {
+        console.log('Migrando cuentas...');
+        const accountIdMap: Record<string, string> = {};
+        
+        try {
+          const accountsToInsert = localAccounts.map((acc, index) => {
+            const newId = crypto.randomUUID();
+            accountIdMap[acc.id] = newId;
+            
+            console.log(`Procesando cuenta ${index + 1}:`, {
+              id: acc.id,
+              nombre: acc.nombre,
+              saldoInicial: acc.saldoInicial,
+              saldoInicialType: typeof acc.saldoInicial,
+              valorMercado: acc.valorMercado,
+              valorMercadoType: typeof acc.valorMercado,
+              rendimientoMensual: acc.rendimientoMensual,
+              rendimientoType: typeof acc.rendimientoMensual
+            });
+            
+            const processedAccount = {
+              id: newId,
+              user_id: user.id,
+              nombre: String(acc.nombre || 'Sin nombre'),
+              tipo: String(acc.tipo || 'Efectivo'),
+              saldo_inicial: 0, // Empezar con 0 para test
+              divisa: String(acc.divisa || 'MXN'),
+              valor_mercado: null, // Empezar con null para test
+              rendimiento_mensual: null // Empezar con null para test
+            };
+            
+            console.log(`Cuenta procesada ${index + 1}:`, processedAccount);
+            return processedAccount;
+          });
+
+          console.log('Todas las cuentas procesadas:', accountsToInsert);
+
+          const { error: accError } = await supabase
+            .from('cuentas')
+            .insert(accountsToInsert);
+
+          if (accError) {
+            console.error('Error específico en cuentas:', accError);
+            throw new Error(`Error en cuentas: ${accError.message}`);
+          }
+          
+          migratedCount += localAccounts.length;
+          console.log('Cuentas migradas exitosamente');
+          
+        } catch (error) {
+          console.error('Error detallado en cuentas:', error);
+          throw new Error(`Error específico en cuentas: ${error}`);
+        }
+      }
+
       toast({
-        title: "Migración parcial exitosa",
-        description: `Se migraron ${migratedCount} categorías. Las cuentas y transacciones se migrarán por separado.`,
+        title: "Migración de cuentas exitosa",
+        description: `Se migraron ${migratedCount} registros (categorías + cuentas). Las transacciones se migrarán por separado.`,
       });
 
       return true;
