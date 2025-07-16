@@ -18,45 +18,36 @@ interface DashboardProps {
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
   
-  // Debug básico - ESTO DEBE APARECER EN LA CONSOLA
-  alert('Dashboard se está ejecutando!');
   console.log('DASHBOARD EJECUTANDOSE');
   console.log('Número de transacciones:', transactions.length);
-  console.log('Transacciones completas:', transactions);
-  // Force re-compile to clear any cached references
-  console.log('=== DASHBOARD DEBUG ===');
-  
-  // Debug marzo específicamente
+
+  // Filtrar transacciones de marzo 2025
   const marzoTransactions = transactions.filter(t => {
     const fecha = new Date(t.fecha);
-    return fecha.getMonth() === 2 && fecha.getFullYear() === 2025; // marzo = 2
+    return fecha.getFullYear() === 2025 && fecha.getMonth() === 2; // marzo = mes 2
   });
-  
-  console.log('TRANSACCIONES DE MARZO 2025:', marzoTransactions.length);
-  console.log('TODAS LAS TRANSACCIONES DE MARZO:', marzoTransactions);
+
+  console.log('=== ANÁLISIS MARZO 2025 ===');
+  console.log('Total transacciones marzo:', marzoTransactions.length);
   
   if (marzoTransactions.length > 0) {
-    // Ver algunas transacciones de ejemplo
-    console.log('PRIMERAS 5 TRANSACCIONES MARZO:', marzoTransactions.slice(0, 5));
-    
     const ingresosMarzo = marzoTransactions
       .reduce((sum, t) => sum + t.ingreso, 0);
     
     const gastosMarzo = marzoTransactions
       .reduce((sum, t) => sum + t.gasto, 0);
-      
-    console.log('INGRESOS MARZO SIN FILTROS:', ingresosMarzo);
-    console.log('GASTOS MARZO SIN FILTROS:', gastosMarzo);
-    console.log('DEBERIAN SER - Ingresos: 108577, Gastos: 95823');
+
+    console.log('INGRESOS calculados:', ingresosMarzo);
+    console.log('GASTOS calculados:', gastosMarzo);
+    console.log('ESPERADOS - Ingresos: 108577, Gastos: 95823');
     
-    // Ver qué tipos de categorías tienen los ingresos
-    const ingresosMarzoTrans = marzoTransactions.filter(t => t.tipo === 'Ingreso');
-    console.log('INGRESOS MARZO - TODAS LAS TRANSACCIONES:', ingresosMarzoTrans);
-    console.log('CATEGORIAS DE INGRESOS MARZO:', ingresosMarzoTrans.map(t => ({
-      categoria: t.categoria,
-      subcategoria: t.subcategoria, 
-      monto: t.ingreso,
-      comentario: t.comentario
+    // Ver algunas transacciones para entender el problema
+    console.log('Primeras 3 transacciones marzo:', marzoTransactions.slice(0, 3).map(t => ({
+      fecha: t.fecha,
+      comentario: t.comentario.substring(0, 30),
+      ingreso: t.ingreso,
+      gasto: t.gasto,
+      tipo: t.tipo
     })));
   }
 
