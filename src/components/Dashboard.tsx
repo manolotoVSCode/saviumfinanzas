@@ -96,93 +96,51 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     '#6366F1', // Índigo
   ];
 
-  // Preparar datos para gráficos
-  const pieDataGastosMesAnterior = metrics.topCategoriasGastosMesAnterior.map((cat, index) => ({
-    name: cat.categoria,
-    value: Math.abs(cat.monto),
-    color: COLORS[index % COLORS.length]
-  }));
-
-  const pieDataGastosAnual = metrics.topCategoriasGastosAnual.map((cat, index) => ({
-    name: cat.categoria,
-    value: Math.abs(cat.monto),
-    color: COLORS[index % COLORS.length]
-  }));
-
-  const pieDataIngresosMesAnterior = metrics.topCategoriasIngresosMesAnterior.map((cat, index) => ({
-    name: cat.categoria,
-    value: Math.abs(cat.monto),
-    color: COLORS[index % COLORS.length]
-  }));
-
-  const pieDataIngresosAnual = metrics.topCategoriasIngresosAnual.map((cat, index) => ({
-    name: cat.categoria,
-    value: Math.abs(cat.monto),
-    color: COLORS[index % COLORS.length]
-  }));
-
-  const activosData = metrics.distribucionActivos.map((activo, index) => ({
-    name: activo.categoria,
-    value: activo.monto,
-    porcentaje: activo.porcentaje,
-    color: COLORS[index % COLORS.length]
-  }));
-
-  const pasivosData = [
-    {
-      name: 'Tarjetas de Crédito',
-      value: metrics.pasivos.tarjetasCredito,
-      porcentaje: metrics.pasivos.total > 0 ? (metrics.pasivos.tarjetasCredito / metrics.pasivos.total) * 100 : 0,
-      color: COLORS[0]
-    },
-    {
-      name: 'Hipoteca',
-      value: metrics.pasivos.hipoteca,
-      porcentaje: metrics.pasivos.total > 0 ? (metrics.pasivos.hipoteca / metrics.pasivos.total) * 100 : 0,
-      color: COLORS[1]
+  // Función para obtener distribución por categorías filtrada por moneda
+  const getFilteredDistribution = (currency: 'MXN' | 'USD' | 'EUR', type: 'Ingreso' | 'Gastos', period: 'month' | 'year') => {
+    const filteredTransactions = transactions.filter(t => t.divisa === currency && t.tipo === type);
+    
+    const now = new Date();
+    let filteredByPeriod;
+    
+    if (period === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      filteredByPeriod = filteredTransactions.filter(t => 
+        new Date(t.fecha) >= startOfMonth && new Date(t.fecha) <= endOfMonth
+      );
+    } else {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      filteredByPeriod = filteredTransactions.filter(t => 
+        new Date(t.fecha) >= startOfYear
+      );
     }
-  ].filter(item => item.value > 0);
-
-  const lineData = metrics.tendenciaMensual.map(mes => ({
-    name: mes.mes,
-    ingresos: mes.ingresos,
-    gastos: mes.gastos,
-    balance: mes.ingresos - mes.gastos
-  }));
-
-  // Datos para el gráfico de barras de últimos 12 meses
-  const barChartData = metrics.tendenciaMensual.map(mes => ({
-    mes: mes.mes,
-    ingresos: mes.ingresos,
-    gastos: Math.abs(mes.gastos) // Convertir a positivo para mejor visualización
-  }));
-
-  // Calcular líneas de tendencia usando regresión lineal
-  const calculateTrendLine = (data: number[]) => {
-    const n = data.length;
-    const sumX = data.reduce((sum, _, i) => sum + i, 0);
-    const sumY = data.reduce((sum, val) => sum + val, 0);
-    const sumXY = data.reduce((sum, val, i) => sum + i * val, 0);
-    const sumXX = data.reduce((sum, _, i) => sum + i * i, 0);
     
-    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-    const intercept = (sumY - slope * sumX) / n;
+    // Agrupar por categoría
+    const categoryTotals: Record<string, number> = {};
+    filteredByPeriod.forEach(t => {
+      const categoria = t.categoria || 'Sin categoría';
+      const amount = type === 'Ingreso' ? t.ingreso : t.gasto;
+      categoryTotals[categoria] = (categoryTotals[categoria] || 0) + Math.abs(amount);
+    });
     
-    return data.map((_, i) => slope * i + intercept);
+    // Convertir a array y ordenar
+    return Object.entries(categoryTotals)
+      .map(([categoria, monto], index) => ({
+        name: categoria,
+        value: monto,
+        color: COLORS[index % COLORS.length]
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10); // Top 10 categorías
   };
 
-  const ingresosValues = barChartData.map(d => d.ingresos);
-  const gastosValues = barChartData.map(d => d.gastos);
-  
-  const trendIngresos = calculateTrendLine(ingresosValues);
-  const trendGastos = calculateTrendLine(gastosValues);
+  // Preparar datos para gráficos filtrados por moneda seleccionada
+  const pieDataGastosMesAnterior = getFilteredDistribution(selectedCurrency, 'Gastos', 'month');
+  const pieDataGastosAnual = getFilteredDistribution(selectedCurrency, 'Gastos', 'year');
+  const pieDataIngresosMesAnterior = getFilteredDistribution(selectedCurrency, 'Ingreso', 'month');
+  const pieDataIngresosAnual = getFilteredDistribution(selectedCurrency, 'Ingreso', 'year');
 
-  // Combinar datos con líneas de tendencia
-  const chartDataWithTrend = barChartData.map((data, index) => ({
-    ...data,
-    tendenciaIngresos: trendIngresos[index],
-    tendenciaGastos: trendGastos[index]
-  }));
 
   const getSaludColor = (nivel: string) => {
     switch (nivel) {
@@ -458,7 +416,11 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
+                    formatter={(value: any) => [
+                      selectedCurrency === 'MXN' ? formatCurrency(Number(value)) : 
+                      `${Number(value).toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`, 
+                      'Monto'
+                    ]}
                   />
                 </RechartsPieChart>
               </ResponsiveContainer>
@@ -473,7 +435,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     />
                     <span>{entry.name}</span>
                   </div>
-                  <span className="font-medium">{formatCurrency(entry.value)}</span>
+                   <span className="font-medium">
+                     {selectedCurrency === 'MXN' ? formatCurrency(entry.value) : 
+                      `${entry.value.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+                   </span>
                 </div>
               ))}
             </div>
@@ -503,7 +468,11 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
+                    formatter={(value: any) => [
+                      selectedCurrency === 'MXN' ? formatCurrency(Number(value)) : 
+                      `${Number(value).toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`, 
+                      'Monto'
+                    ]}
                   />
                 </RechartsPieChart>
               </ResponsiveContainer>
@@ -518,7 +487,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     />
                     <span>{entry.name}</span>
                   </div>
-                  <span className="font-medium">{formatCurrency(entry.value)}</span>
+                   <span className="font-medium">
+                     {selectedCurrency === 'MXN' ? formatCurrency(entry.value) : 
+                      `${entry.value.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+                   </span>
                 </div>
               ))}
             </div>
@@ -597,7 +569,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   </Pie>
                    <Tooltip 
                      formatter={(value: any) => [
-                       new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(value)), 
+                       selectedCurrency === 'MXN' ? formatCurrency(Number(value)) : 
+                       `${Number(value).toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`, 
                        'Monto'
                      ]}
                    />
@@ -614,7 +587,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     />
                     <span>{entry.name}</span>
                   </div>
-                   <span className="font-medium">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(entry.value)}</span>
+                    <span className="font-medium">
+                      {selectedCurrency === 'MXN' ? formatCurrency(entry.value) : 
+                       `${entry.value.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+                    </span>
                 </div>
               ))}
             </div>
@@ -645,7 +621,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   </Pie>
                    <Tooltip 
                      formatter={(value: any) => [
-                       new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(value)), 
+                       selectedCurrency === 'MXN' ? formatCurrency(Number(value)) : 
+                       `${Number(value).toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`, 
                        'Monto'
                      ]}
                    />
@@ -662,7 +639,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     />
                     <span>{entry.name}</span>
                   </div>
-                   <span className="font-medium">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(entry.value)}</span>
+                    <span className="font-medium">
+                      {selectedCurrency === 'MXN' ? formatCurrency(entry.value) : 
+                       `${entry.value.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+                    </span>
                 </div>
               ))}
             </div>
@@ -670,121 +650,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </Card>
       </div>
 
-      {/* GRÁFICOS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Distribución de activos */}
-        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Distribución de Activos <strong>MXN</strong></CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie
-                    data={activosData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {activosData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                   <Tooltip 
-                     formatter={(value: any, name: any, props: any) => [
-                       new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(value)), 
-                       `${props.payload.porcentaje.toFixed(1)}%`
-                     ]}
-                   />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 space-y-2">
-              {activosData.map((entry, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span>{entry.name}</span>
-                  </div>
-                  <div className="text-right">
-                     <div className="font-medium">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(entry.value)}</div>
-                    <div className="text-xs text-muted-foreground">{entry.porcentaje.toFixed(1)}%</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Distribución de pasivos */}
-        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Distribución de Pasivos <strong>MXN</strong></CardTitle>
-          </CardHeader>
-          <CardContent>
-            {pasivosData.length > 0 ? (
-              <>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={pasivosData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {pasivosData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                       <Tooltip 
-                         formatter={(value: any, name: any, props: any) => [
-                           new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(value)), 
-                           `${props.payload.porcentaje.toFixed(1)}%`
-                         ]}
-                       />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="mt-4 space-y-2">
-                  {pasivosData.map((entry, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span>{entry.name}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(entry.value)}</div>
-                        <div className="text-xs text-muted-foreground">{entry.porcentaje.toFixed(1)}%</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="h-80 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <p className="text-lg font-medium">🎉 ¡Sin pasivos!</p>
-                  <p className="text-sm">No tienes deudas registradas</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
     </div>
   );
