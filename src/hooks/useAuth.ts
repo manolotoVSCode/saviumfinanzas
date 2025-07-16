@@ -102,14 +102,30 @@ export const useAuthProvider = () => {
   }) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl,
-        data: userData
+        emailRedirectTo: redirectUrl
       }
     });
+    
+    // Si el registro fue exitoso, crear el perfil manualmente
+    if (!error && data.user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: data.user.id,
+          nombre: userData.nombre,
+          apellidos: userData.apellidos,
+          edad: userData.edad
+        });
+      
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        // No devolvemos error aquí porque el usuario ya se creó exitosamente
+      }
+    }
     
     return { error };
   };
