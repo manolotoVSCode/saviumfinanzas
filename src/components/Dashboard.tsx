@@ -217,6 +217,11 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     return `${new Intl.NumberFormat('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(amount)} ${currency}`;
   };
 
+  // Función para formatear totales sin decimales
+  const formatCurrencyTotals = (amount: number, currency: string) => {
+    return `${new Intl.NumberFormat('es-ES', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(amount)} ${currency}`;
+  };
+
   // Calcular cambios en balance
   const cambioBalanceMes = filteredMetrics.balanceMesAnterior !== 0 ? 
     ((filteredMetrics.balanceMes - filteredMetrics.balanceMesAnterior) / Math.abs(filteredMetrics.balanceMesAnterior)) * 100 : 0;
@@ -263,38 +268,51 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 if (!hasAssets) return null;
 
                 return (
-                  <div key={moneda} className="space-y-3">
-                    {activos.efectivoBancos > 0 && (
-                       <div className="p-4 rounded-lg bg-success/5 border border-success/20">
-                         <div className="flex justify-between items-center mb-2">
+                   <div key={moneda} className="space-y-3">
+                     {activos.efectivoBancos > 0 && (
+                        <div className="p-4 rounded-lg bg-success/5 border border-success/20">
+                          <div className="flex justify-between items-center mb-2">
                             <span className="text-sm text-muted-foreground">Efectivo y Bancos</span>
                             <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Dinero disponible inmediatamente
-                        </div>
-                      </div>
-                    )}
-                    
-                    {activos.inversiones > 0 && (
-                       <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                         <div className="flex justify-between items-center mb-2">
+                         </div>
+                         <div className="text-xs text-muted-foreground">
+                           Dinero disponible inmediatamente
+                         </div>
+                       </div>
+                     )}
+                     
+                     {activos.inversiones > 0 && (
+                        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                          <div className="flex justify-between items-center mb-2">
                             <span className="text-sm text-muted-foreground">Inversiones</span>
                             <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Fondos, acciones y ETFs
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                         </div>
+                         <div className="text-xs text-muted-foreground">
+                           Fondos, acciones y ETFs
+                         </div>
+                       </div>
+                     )}
+                     
+                     {/* Mostrar tarjetas de crédito en activos para mejor visibilidad */}
+                     {metrics.pasivosPorMoneda[moneda]?.tarjetasCredito > 0 && (
+                        <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-muted-foreground">Tarjetas de Crédito (Deuda)</span>
+                            <span className="font-bold text-destructive">-{formatNumberOnly(metrics.pasivosPorMoneda[moneda].tarjetasCredito)} {moneda}</span>
+                         </div>
+                         <div className="text-xs text-muted-foreground">
+                           Saldo pendiente por pagar
+                         </div>
+                       </div>
+                     )}
+                   </div>
                 );
               })}
               
               <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
                 <div className="flex justify-between items-center">
                    <span className="font-semibold text-success">TOTAL ACTIVOS</span>
-                   <span className="text-xl font-bold text-success">{formatCurrencyConsistent(metrics.activos.total, 'MXN')}</span>
+                   <span className="text-xl font-bold text-success">{formatCurrencyTotals(metrics.activos.total, 'MXN')}</span>
                 </div>
               </div>
 
@@ -368,7 +386,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
                    <span className="font-semibold text-destructive">TOTAL PASIVOS</span>
-                   <span className="text-xl font-bold text-destructive">{formatCurrencyConsistent(metrics.pasivos.total, 'MXN')}</span>
+                   <span className="text-xl font-bold text-destructive">{formatCurrencyTotals(metrics.pasivos.total, 'MXN')}</span>
                 </div>
               </div>
             </div>
