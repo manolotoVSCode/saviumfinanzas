@@ -40,7 +40,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     console.log('PRIMERAS 5 TRANSACCIONES MARZO:', marzoTransactions.slice(0, 5));
     
     const ingresosMarzo = marzoTransactions
-      .filter(t => t.tipo === 'Ingreso')
+      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Inversiones')
       .reduce((sum, t) => sum + t.ingreso, 0);
       
     const gastosMarzo = marzoTransactions
