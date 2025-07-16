@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Account, Category, Transaction, DashboardMetrics, AccountType, TransactionType } from '@/types/finance';
+import { useExchangeRates } from './useExchangeRates';
+import { useAppConfig } from './useAppConfig';
 
 // Data inicial simple
 const initialAccountTypes: AccountType[] = [
@@ -28,6 +30,8 @@ const initialCategories: Category[] = [
 ];
 
 export const useFinanceData = () => {
+  const { convertCurrency } = useExchangeRates();
+  const { config } = useAppConfig();
   const [accounts, setAccounts] = useState<Account[]>(() => {
     try {
       const stored = localStorage.getItem('financeAccounts');
@@ -163,14 +167,21 @@ export const useFinanceData = () => {
       (activos as any).total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
     });
     
-    // Para compatibilidad con código existente
+    // Para compatibilidad con código existente - EXCLUYENDO EMPRESAS PRIVADAS del total
     const activos = {
-      efectivoBancos: Object.values(activosPorMoneda).reduce((s, a) => s + a.efectivoBancos, 0),
-      inversiones: Object.values(activosPorMoneda).reduce((s, a) => s + a.inversiones, 0),
-      empresasPrivadas: Object.values(activosPorMoneda).reduce((s, a) => s + a.empresasPrivadas, 0),
+      efectivoBancos: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
+        return total + convertCurrency(activos.efectivoBancos, moneda as any, config.currency);
+      }, 0),
+      inversiones: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
+        return total + convertCurrency(activos.inversiones, moneda as any, config.currency);
+      }, 0),
+      empresasPrivadas: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
+        return total + convertCurrency(activos.empresasPrivadas, moneda as any, config.currency);
+      }, 0),
       total: 0
     };
-    activos.total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
+    // TOTAL ACTIVOS = SOLO efectivo + inversiones (SIN empresas privadas)
+    activos.total = activos.efectivoBancos + activos.inversiones;
     
     // PASIVOS DETALLADOS POR MONEDA
     const pasivosPorMoneda = {
@@ -194,10 +205,14 @@ export const useFinanceData = () => {
       (pasivos as any).total = pasivos.tarjetasCredito + pasivos.hipoteca;
     });
     
-    // Para compatibilidad con código existente
+    // Para compatibilidad con código existente - convertir a moneda configurada
     const pasivos = {
-      tarjetasCredito: Object.values(pasivosPorMoneda).reduce((s, p) => s + p.tarjetasCredito, 0),
-      hipoteca: Object.values(pasivosPorMoneda).reduce((s, p) => s + p.hipoteca, 0),
+      tarjetasCredito: Object.entries(pasivosPorMoneda).reduce((total, [moneda, pasivos]) => {
+        return total + convertCurrency(pasivos.tarjetasCredito, moneda as any, config.currency);
+      }, 0),
+      hipoteca: Object.entries(pasivosPorMoneda).reduce((total, [moneda, pasivos]) => {
+        return total + convertCurrency(pasivos.hipoteca, moneda as any, config.currency);
+      }, 0),
       total: 0
     };
     pasivos.total = pasivos.tarjetasCredito + pasivos.hipoteca;
