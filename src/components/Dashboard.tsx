@@ -18,40 +18,6 @@ interface DashboardProps {
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
 
-  // Calcular activos y pasivos por moneda desde las cuentas
-  const getBalancesByType = () => {
-    const balancesByType: Record<string, Record<string, number>> = {
-      'MXN': { activosEfectivoBancos: 0, activosInversiones: 0, pasivos: 0 },
-      'USD': { activosEfectivoBancos: 0, activosInversiones: 0, pasivos: 0 },
-      'EUR': { activosEfectivoBancos: 0, activosInversiones: 0, pasivos: 0 }
-    };
-
-    accounts.forEach(account => {
-      const saldo = account.valorMercado ?? account.saldoInicial;
-      const currency = account.divisa || 'MXN';
-      
-      if (account.tipo === 'Efectivo' || account.tipo === 'Banco' || account.tipo === 'Ahorros') {
-        if (saldo >= 0) {
-          balancesByType[currency].activosEfectivoBancos += saldo;
-        } else {
-          balancesByType[currency].pasivos += Math.abs(saldo);
-        }
-      } else if (account.tipo === 'Empresa Propia') {
-        if (saldo >= 0) {
-          balancesByType[currency].activosInversiones += saldo;
-        } else {
-          balancesByType[currency].pasivos += Math.abs(saldo);
-        }
-      } else if (account.tipo === 'Tarjeta de Crédito' || account.tipo === 'Hipoteca') {
-        balancesByType[currency].pasivos += Math.abs(saldo);
-      }
-    });
-
-    return balancesByType;
-  };
-
-  const balancesByType = getBalancesByType();
-
   // Función para filtrar métricas por moneda
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
     // Filtrar transacciones por moneda seleccionada
@@ -277,26 +243,26 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Mostrar categorías por moneda - solo Efectivo/Bancos e Inversiones */}
-              {Object.entries(balancesByType).map(([moneda, balances]) => {
+              {/* Mostrar categorías por moneda - usando metrics directamente */}
+              {Object.entries(metrics.activosPorMoneda || {}).map(([moneda, activos]) => {
                 const formatNumberOnly = (amount: number) => {
                   return new Intl.NumberFormat('es-MX', {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0,
-                  }).format(amount);
+                  }).format(amount || 0);
                 };
 
-                const hasAssets = balances.activosEfectivoBancos > 0 || balances.activosInversiones > 0;
+                const hasAssets = (activos?.efectivoBancos || 0) > 0 || (activos?.inversiones || 0) > 0 || (activos?.empresasPrivadas || 0) > 0;
                 
                 if (!hasAssets) return null;
 
                 return (
                   <div key={moneda} className="space-y-3">
-                    {balances.activosEfectivoBancos > 0 && (
+                    {(activos?.efectivoBancos || 0) > 0 && (
                        <div className="p-4 rounded-lg bg-success/5 border border-success/20">
                          <div className="flex justify-between items-center mb-2">
                            <span className="text-sm text-muted-foreground">Efectivo y Bancos <strong>{moneda}</strong></span>
-                           <span className="font-bold text-success">{formatNumberOnly(balances.activosEfectivoBancos)}</span>
+                           <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Dinero disponible inmediatamente
@@ -304,14 +270,26 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                       </div>
                     )}
                     
-                    {balances.activosInversiones > 0 && (
+                    {(activos?.inversiones || 0) > 0 && (
                        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                          <div className="flex justify-between items-center mb-2">
                            <span className="text-sm text-muted-foreground">Inversiones <strong>{moneda}</strong></span>
-                           <span className="font-bold text-primary">{formatNumberOnly(balances.activosInversiones)}</span>
+                           <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Fondos, acciones y ETFs
+                        </div>
+                      </div>
+                    )}
+
+                    {(activos?.empresasPrivadas || 0) > 0 && (
+                       <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
+                         <div className="flex justify-between items-center mb-2">
+                           <span className="text-sm text-muted-foreground">Empresas Privadas <strong>{moneda}</strong></span>
+                           <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Participaciones en empresas propias
                         </div>
                       </div>
                     )}
@@ -338,30 +316,44 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Mostrar categorías por moneda */}
-              {Object.entries(balancesByType).map(([moneda, balances]) => {
+              {/* Mostrar categorías por moneda - usando metrics directamente */}
+              {Object.entries(metrics.pasivosPorMoneda || {}).map(([moneda, pasivos]) => {
                 const formatNumberOnly = (amount: number) => {
                   return new Intl.NumberFormat('es-MX', {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0,
-                  }).format(amount);
+                  }).format(amount || 0);
                 };
 
-                const hasLiabilities = balances.pasivos > 0;
+                const hasLiabilities = (pasivos?.total || 0) > 0;
                 
                 if (!hasLiabilities) return null;
 
                 return (
                   <div key={moneda} className="space-y-3">
-                    <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-muted-foreground">Pasivos <strong>{moneda}</strong></span>
-                        <span className="font-bold text-destructive">{formatNumberOnly(balances.pasivos)}</span>
+                    {(pasivos?.tarjetasCredito || 0) > 0 && (
+                       <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                         <div className="flex justify-between items-center mb-2">
+                           <span className="text-sm text-muted-foreground">Tarjetas de Crédito <strong>{moneda}</strong></span>
+                           <span className="font-bold text-destructive">{formatNumberOnly(pasivos.tarjetasCredito)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Saldo pendiente por pagar
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Deudas y obligaciones
+                    )}
+                    
+                    {(pasivos?.hipoteca || 0) > 0 && (
+                       <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                         <div className="flex justify-between items-center mb-2">
+                           <span className="text-sm text-muted-foreground">Hipoteca <strong>{moneda}</strong></span>
+                           <span className="font-bold text-destructive">{formatNumberOnly(pasivos.hipoteca)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Saldo pendiente del préstamo hipotecario
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })}
@@ -392,7 +384,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     <p><strong>Cálculo del Score:</strong></p>
                     <p>• Ratio de Deuda = Pasivos / Activos</p>
                     <p>• Balance mensual = Ingresos - Gastos</p>
-                    <p>• Se reduce según nivel de deuda y capacidad de ahorro</p>
+                    <p>• El score va de 0 a 10</p>
                   </div>
                 </TooltipContent>
               </UITooltip>
@@ -400,18 +392,113 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <span className={`text-4xl font-bold ${getSaludColor(metrics.saludFinanciera.nivel)}`}>
-              {metrics.saludFinanciera.score}
-            </span>
-            <Badge variant={metrics.saludFinanciera.nivel === 'Excelente' ? 'default' : 
-                            metrics.saludFinanciera.nivel === 'Buena' ? 'secondary' : 'destructive'}>
-              {metrics.saludFinanciera.nivel}
-            </Badge>
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl font-bold text-primary">{metrics.saludFinanciera?.score || 0}/10</div>
+                <Badge variant={
+                  (metrics.saludFinanciera?.nivel === 'Excelente') ? 'default' :
+                  (metrics.saludFinanciera?.nivel === 'Buena') ? 'secondary' :
+                  (metrics.saludFinanciera?.nivel === 'Regular') ? 'outline' : 'destructive'
+                } className="text-sm">
+                  {metrics.saludFinanciera?.nivel || 'N/A'}
+                </Badge>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                {metrics.saludFinanciera?.descripcion || 'Calculando...'}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">{metrics.saludFinanciera.descripcion}</p>
         </CardContent>
       </Card>
+
+      {/* PATRIMONIO NETO */}
+      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <CardHeader>
+          <CardTitle>
+            Patrimonio Neto
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 rounded-lg bg-success/5 border border-success/20">
+              <div className="text-lg font-semibold text-success">Activos Totales</div>
+              <div className="text-2xl font-bold">{formatCurrency(metrics.activos?.total || 0)}</div>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+              <div className="text-lg font-semibold text-destructive">Pasivos Totales</div>
+              <div className="text-2xl font-bold">{formatCurrency(metrics.pasivos?.total || 0)}</div>
+            </div>
+            <div className="text-center p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <div className="text-lg font-semibold text-primary">Patrimonio Neto</div>
+              <div className={`text-2xl font-bold ${getBalanceColor(metrics.patrimonioNeto || 0)}`}>
+                {formatCurrency(metrics.patrimonioNeto || 0)}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* RESUMEN MENSUAL Y ANUAL */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* RESUMEN MENSUAL */}
+        <Card className="hover-scale border-blue-200 hover:border-blue-300 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="text-blue-600">
+              Resumen Mensual
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Ingresos</span>
+                <span className="font-semibold text-success">{formatCurrency(metrics.ingresosMes || 0)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Gastos</span>
+                <span className="font-semibold text-destructive">{formatCurrency(metrics.gastosMes || 0)}</span>
+              </div>
+              <div className="border-t pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Balance</span>
+                  <span className={`font-bold ${getBalanceColor(metrics.balanceMes || 0)}`}>
+                    {formatCurrency(metrics.balanceMes || 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* RESUMEN ANUAL */}
+        <Card className="hover-scale border-purple-200 hover:border-purple-300 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="text-purple-600">
+              Resumen Anual
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Ingresos</span>
+                <span className="font-semibold text-success">{formatCurrency(metrics.ingresosAnio || 0)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Gastos</span>
+                <span className="font-semibold text-destructive">{formatCurrency(metrics.gastosAnio || 0)}</span>
+              </div>
+              <div className="border-t pt-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Balance</span>
+                  <span className={`font-bold ${getBalanceColor(metrics.balanceAnio || 0)}`}>
+                    {formatCurrency(metrics.balanceAnio || 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* BOTONES DE SELECCIÓN DE MONEDA */}
       <div className="flex justify-center mb-6">

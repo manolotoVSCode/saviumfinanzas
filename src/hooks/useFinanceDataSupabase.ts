@@ -512,6 +512,43 @@ export const useFinanceData = () => {
     const totalPasivos = tarjetasCredito + hipoteca;
     const patrimonioNeto = totalActivos - totalPasivos;
     
+    // Calcular activos y pasivos por moneda
+    const activosPorMoneda = {
+      MXN: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0, total: 0 },
+      USD: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0, total: 0 },
+      EUR: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0, total: 0 }
+    };
+
+    const pasivosPorMoneda = {
+      MXN: { tarjetasCredito: 0, hipoteca: 0, total: 0 },
+      USD: { tarjetasCredito: 0, hipoteca: 0, total: 0 },
+      EUR: { tarjetasCredito: 0, hipoteca: 0, total: 0 }
+    };
+
+    accountsWithBalances.forEach(acc => {
+      const currency = acc.divisa || 'MXN';
+      const saldo = acc.saldoActual;
+      
+      if (['Efectivo', 'Banco', 'Ahorros'].includes(acc.tipo) && saldo > 0) {
+        activosPorMoneda[currency].efectivoBancos += saldo;
+        activosPorMoneda[currency].total += saldo;
+      } else if (acc.tipo === 'Inversiones' && saldo > 0) {
+        activosPorMoneda[currency].inversiones += saldo;
+        activosPorMoneda[currency].total += saldo;
+      } else if (acc.tipo === 'Empresa Propia' && saldo > 0) {
+        activosPorMoneda[currency].empresasPrivadas += saldo;
+        activosPorMoneda[currency].total += saldo;
+      } else if (acc.tipo === 'Tarjeta de Crédito') {
+        const deuda = Math.abs(saldo);
+        pasivosPorMoneda[currency].tarjetasCredito += deuda;
+        pasivosPorMoneda[currency].total += deuda;
+      } else if (acc.tipo === 'Hipoteca') {
+        const deuda = Math.abs(saldo);
+        pasivosPorMoneda[currency].hipoteca += deuda;
+        pasivosPorMoneda[currency].total += deuda;
+      }
+    });
+    
     // Top categorías del mes
     const categoriesThisMonth = thisMonthTransactions.reduce((acc, trans) => {
       const key = trans.categoria || 'Sin categoría';
@@ -534,21 +571,13 @@ export const useFinanceData = () => {
         empresasPrivadas,
         total: totalActivos
       },
-      activosPorMoneda: {
-        MXN: { efectivoBancos, inversiones, empresasPrivadas, total: totalActivos },
-        USD: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0, total: 0 },
-        EUR: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0, total: 0 }
-      },
+      activosPorMoneda,
       pasivos: {
         tarjetasCredito,
         hipoteca,
         total: totalPasivos
       },
-      pasivosPorMoneda: {
-        MXN: { tarjetasCredito, hipoteca, total: totalPasivos },
-        USD: { tarjetasCredito: 0, hipoteca: 0, total: 0 },
-        EUR: { tarjetasCredito: 0, hipoteca: 0, total: 0 }
-      },
+      pasivosPorMoneda,
       patrimonioNeto,
       patrimonioNetoAnterior: 0,
       variacionPatrimonio: 0,
