@@ -83,6 +83,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          apellidos: string
+          created_at: string
+          edad: number | null
+          id: string
+          nombre: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apellidos: string
+          created_at?: string
+          edad?: number | null
+          id?: string
+          nombre: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apellidos?: string
+          created_at?: string
+          edad?: number | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transacciones: {
         Row: {
           comentario: string
