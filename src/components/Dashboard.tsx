@@ -294,7 +294,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
                 <div className="flex justify-between items-center">
                    <span className="font-semibold text-success">TOTAL ACTIVOS</span>
-                   <span className="text-xl font-bold text-success">{formatCurrency(metrics.activos.total)}</span>
+                   <span className="text-xl font-bold text-success">{formatCurrencyConsistent(metrics.activos.total, 'MXN')}</span>
                 </div>
               </div>
 
@@ -368,7 +368,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
                    <span className="font-semibold text-destructive">TOTAL PASIVOS</span>
-                   <span className="text-xl font-bold text-destructive">{formatCurrency(metrics.pasivos.total)}</span>
+                   <span className="text-xl font-bold text-destructive">{formatCurrencyConsistent(metrics.pasivos.total, 'MXN')}</span>
                 </div>
               </div>
             </div>
@@ -498,7 +498,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
       {/* RESUMEN MENSUAL */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">Resumen (mes anterior al mes en curso)</h2>
+        <h2 className="text-xl font-semibold text-center">Resumen ({new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })})</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado del mes */}
@@ -655,7 +655,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
       {/* RESUMEN ANUAL */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">Resumen del Año</h2>
+        <h2 className="text-xl font-semibold text-center">Resumen del Año {new Date().getFullYear()}</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado anual */}
