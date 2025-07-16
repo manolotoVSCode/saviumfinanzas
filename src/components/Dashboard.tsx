@@ -19,7 +19,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
   
   // Force re-compile to clear any cached references
-  console.log('Dashboard component loaded successfully');
+  console.log('=== DASHBOARD DEBUG ===');
   
   // Debug marzo específicamente
   const marzoTransactions = transactions.filter(t => {
@@ -27,34 +27,22 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     return fecha.getMonth() === 2 && fecha.getFullYear() === 2025; // marzo = 2
   });
   
-  console.log('🔍 Transacciones de Marzo 2025:', marzoTransactions);
+  console.log('TRANSACCIONES DE MARZO 2025:', marzoTransactions.length);
+  console.log('TODAS LAS TRANSACCIONES DE MARZO:', marzoTransactions);
   
-  const ingresosMarzo = marzoTransactions
-    .filter(t => t.tipo === 'Ingreso' && !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') && !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || ''))
-    .reduce((sum, t) => sum + t.ingreso, 0);
-    
-  const gastosMarzo = marzoTransactions
-    .filter(t => t.tipo === 'Gastos' && !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') && !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || ''))
-    .reduce((sum, t) => sum + t.gasto, 0);
-    
-  console.log('💰 Ingresos Marzo calculados:', ingresosMarzo, '(debería ser 108,577)');
-  console.log('💸 Gastos Marzo calculados:', gastosMarzo, '(debería ser 95,823)');
-  
-  // Debug las transacciones filtradas
-  const ingresosMarzoTrans = marzoTransactions.filter(t => 
-    t.tipo === 'Ingreso' && 
-    !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') && 
-    !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-  );
-  
-  const gastosMarzoTrans = marzoTransactions.filter(t => 
-    t.tipo === 'Gastos' && 
-    !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') && 
-    !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-  );
-  
-  console.log('📊 Transacciones de Ingresos Marzo filtradas:', ingresosMarzoTrans);
-  console.log('📊 Transacciones de Gastos Marzo filtradas:', gastosMarzoTrans);
+  if (marzoTransactions.length > 0) {
+    const ingresosMarzo = marzoTransactions
+      .filter(t => t.tipo === 'Ingreso')
+      .reduce((sum, t) => sum + t.ingreso, 0);
+      
+    const gastosMarzo = marzoTransactions
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + t.gasto, 0);
+      
+    console.log('INGRESOS MARZO SIN FILTROS:', ingresosMarzo);
+    console.log('GASTOS MARZO SIN FILTROS:', gastosMarzo);
+    console.log('DEBERIAN SER - Ingresos: 108577, Gastos: 95823');
+  }
 
   // Función para filtrar métricas por moneda
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
