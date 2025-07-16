@@ -1,5 +1,6 @@
 import { Dashboard as DashboardComponent } from '@/components/Dashboard';
 import Layout from '@/components/Layout';
+import { CompleteProfileBanner } from '@/components/CompleteProfileBanner';
 import { MigrationBanner } from '@/components/MigrationBanner';
 import { useFinanceData } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -20,6 +21,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
+      <CompleteProfileBanner />
       <MigrationBanner />
       <div className="animate-fade-in">
         <DashboardComponent 

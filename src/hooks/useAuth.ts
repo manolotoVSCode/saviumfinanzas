@@ -23,6 +23,11 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<{ error: any }>;
+  completeProfile: (userData: {
+    nombre: string;
+    apellidos: string;
+    edad?: number;
+  }) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -161,6 +166,30 @@ export const useAuthProvider = () => {
     return { error };
   };
 
+  const completeProfile = async (userData: {
+    nombre: string;
+    apellidos: string;
+    edad?: number;
+  }) => {
+    if (!user) return { error: 'No user logged in' };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        nombre: userData.nombre,
+        apellidos: userData.apellidos,
+        edad: userData.edad
+      })
+      .eq('user_id', user.id);
+
+    if (!error) {
+      // Refrescar el perfil
+      await fetchProfile(user.id);
+    }
+
+    return { error };
+  };
+
   return {
     user,
     session,
@@ -169,7 +198,8 @@ export const useAuthProvider = () => {
     signUp,
     signIn,
     signOut,
-    updateProfile
+    updateProfile,
+    completeProfile
   };
 };
 
