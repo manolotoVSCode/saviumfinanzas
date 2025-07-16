@@ -439,9 +439,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   className="text-muted-foreground"
                 />
                 <YAxis 
-                  tick={{ fontSize: 12 }}
+                  tick={false}
                   className="text-muted-foreground"
-                  tickFormatter={(value) => formatCurrencyConsistent(value, selectedCurrency).replace(` ${selectedCurrency}`, '')}
                 />
                 <Tooltip 
                   formatter={(value: any, name: string) => [
