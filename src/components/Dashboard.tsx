@@ -17,6 +17,9 @@ interface DashboardProps {
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+  
+  // Force re-compile to clear any cached references
+  console.log('Dashboard component loaded successfully');
 
   // Función para filtrar métricas por moneda
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
