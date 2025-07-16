@@ -12,8 +12,7 @@ const Transacciones = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Gestión de Transacciones</h1>
+        <div className="flex justify-end items-center">
           <div className="flex items-center gap-2">
             <TransactionImporter
               accounts={financeData.accounts}
