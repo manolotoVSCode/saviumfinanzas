@@ -21,8 +21,11 @@ export const MigrationBanner = () => {
     const success = await migrateFromLocalStorage();
     if (success) {
       setMigrationComplete(true);
-      // Recargar la página para que use los nuevos datos de Supabase
+      // Actualizar los archivos para usar Supabase después de la migración
       setTimeout(() => {
+        // Aquí podrías hacer el cambio automático al hook de Supabase
+        // Por ahora, simplemente recargamos para mostrar el mensaje de éxito
+        alert('¡Migración completada! Ahora tus datos están en Supabase y sincronizados en la nube.');
         window.location.reload();
       }, 2000);
     }

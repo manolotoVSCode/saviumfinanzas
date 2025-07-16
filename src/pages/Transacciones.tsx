@@ -1,7 +1,7 @@
 import { TransactionsManager } from '@/components/TransactionsManager';
 import TransactionImporter from '@/components/TransactionImporter';
 import Layout from '@/components/Layout';
-import { useFinanceData } from '@/hooks/useFinanceDataSupabase';
+import { useFinanceData } from '@/hooks/useFinanceData';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Info } from 'lucide-react';

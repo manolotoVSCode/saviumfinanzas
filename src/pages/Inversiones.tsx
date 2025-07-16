@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList } from 'recharts';
 
 import Layout from '@/components/Layout';
-import { useFinanceData } from '@/hooks/useFinanceDataSupabase';
+import { useFinanceData } from '@/hooks/useFinanceData';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { TrendingUp, TrendingDown, DollarSign, Edit3 } from 'lucide-react';
