@@ -5,6 +5,22 @@ import { useToast } from '@/hooks/use-toast';
 export const useMigration = () => {
   const { toast } = useToast();
 
+  const clearExistingData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Limpiar datos existentes del usuario actual
+      await supabase.from('transacciones').delete().eq('user_id', user.id);
+      await supabase.from('cuentas').delete().eq('user_id', user.id);
+      await supabase.from('categorias').delete().eq('user_id', user.id);
+      
+      console.log('Datos existentes limpiados');
+    } catch (error) {
+      console.error('Error limpiando datos:', error);
+    }
+  };
+
   const migrateFromLocalStorage = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -12,6 +28,9 @@ export const useMigration = () => {
         throw new Error('Usuario no autenticado');
       }
 
+      console.log('Limpiando datos existentes...');
+      await clearExistingData();
+      
       console.log('Iniciando migración para usuario:', user.id);
 
       // Obtener datos del localStorage
@@ -97,10 +116,10 @@ export const useMigration = () => {
               user_id: user.id,
               nombre: String(acc.nombre || 'Sin nombre'),
               tipo: String(acc.tipo || 'Efectivo'),
-              saldo_inicial: 0, // Empezar con 0 para test
+              saldo_inicial: parseFloat(String(acc.saldoInicial || 0)),
               divisa: String(acc.divisa || 'MXN'),
-              valor_mercado: null, // Empezar con null para test
-              rendimiento_mensual: null // Empezar con null para test
+              valor_mercado: acc.valorMercado ? parseFloat(String(acc.valorMercado)) : null,
+              rendimiento_mensual: acc.rendimientoMensual ? parseFloat(String(acc.rendimientoMensual)) : null
             };
             
             console.log(`Cuenta procesada ${index + 1}:`, processedAccount);
@@ -155,6 +174,7 @@ export const useMigration = () => {
 
   return {
     migrateFromLocalStorage,
+    clearExistingData,
     checkMigrationNeeded
   };
 };
