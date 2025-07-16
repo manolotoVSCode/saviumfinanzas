@@ -267,8 +267,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     {activos.efectivoBancos > 0 && (
                        <div className="p-4 rounded-lg bg-success/5 border border-success/20">
                          <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm text-muted-foreground">Efectivo y Bancos <strong>{moneda}</strong></span>
-                           <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)}</span>
+                            <span className="text-sm text-muted-foreground">Efectivo y Bancos</span>
+                            <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Dinero disponible inmediatamente
@@ -279,8 +279,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     {activos.inversiones > 0 && (
                        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                          <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm text-muted-foreground">Inversiones <strong>{moneda}</strong></span>
-                           <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)}</span>
+                            <span className="text-sm text-muted-foreground">Inversiones</span>
+                            <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Fondos, acciones y ETFs
@@ -293,8 +293,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               
               <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-success">TOTAL ACTIVOS MXN</span>
-                  <span className="text-xl font-bold text-success">{formatCurrency(metrics.activos.total)}</span>
+                   <span className="font-semibold text-success">TOTAL ACTIVOS</span>
+                   <span className="text-xl font-bold text-success">{formatCurrency(metrics.activos.total)}</span>
                 </div>
               </div>
 
@@ -302,8 +302,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               {metrics.activos.empresasPrivadas > 0 && (
                  <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
                    <div className="flex justify-between items-center mb-2">
-                     <span className="text-sm text-muted-foreground">Empresas Privadas <strong>MXN</strong></span>
-                     <span className="font-bold text-primary">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(metrics.activos.empresasPrivadas)}</span>
+                      <span className="text-sm text-muted-foreground">Empresas Privadas</span>
+                      <span className="font-bold text-primary">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(metrics.activos.empresasPrivadas)} MXN</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Participaciones en empresas propias
@@ -341,8 +341,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     {pasivos.tarjetasCredito > 0 && (
                        <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
                          <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm text-muted-foreground">Tarjetas de Crédito <strong>{moneda}</strong></span>
-                           <span className="font-bold text-destructive">{formatNumberOnly(pasivos.tarjetasCredito)}</span>
+                            <span className="text-sm text-muted-foreground">Tarjetas de Crédito</span>
+                            <span className="font-bold text-destructive">{formatNumberOnly(pasivos.tarjetasCredito)} {moneda}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Saldo pendiente por pagar
@@ -353,8 +353,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     {pasivos.hipoteca > 0 && (
                        <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
                          <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm text-muted-foreground">Hipoteca <strong>{moneda}</strong></span>
-                           <span className="font-bold text-destructive">{formatNumberOnly(pasivos.hipoteca)}</span>
+                            <span className="text-sm text-muted-foreground">Hipoteca</span>
+                            <span className="font-bold text-destructive">{formatNumberOnly(pasivos.hipoteca)} {moneda}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Saldo pendiente del préstamo hipotecario
@@ -367,8 +367,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-destructive">TOTAL PASIVOS <strong>MXN</strong></span>
-                  <span className="text-xl font-bold text-destructive">{formatCurrency(metrics.pasivos.total)}</span>
+                   <span className="font-semibold text-destructive">TOTAL PASIVOS</span>
+                   <span className="text-xl font-bold text-destructive">{formatCurrency(metrics.pasivos.total)}</span>
                 </div>
               </div>
             </div>
@@ -498,13 +498,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
       {/* RESUMEN MENSUAL */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">Resumen del Mes <strong>{selectedCurrency}</strong></h2>
+        <h2 className="text-xl font-semibold text-center">Resumen (mes anterior al mes en curso)</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado del mes */}
         <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">Resultado del Mes <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Resultado del Mes</CardTitle>
             {getTrendIcon(cambioBalanceMes)}
           </CardHeader>
           <CardContent>
@@ -520,7 +520,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Ingresos del mes */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos del Mes <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos del Mes</CardTitle>
             {getTrendIcon(filteredMetrics.cambioIngresosMes)}
           </CardHeader>
           <CardContent>
@@ -536,7 +536,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Gastos del mes */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos del Mes <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos del Mes</CardTitle>
             {getTrendIcon(filteredMetrics.cambioGastosMes)}
           </CardHeader>
           <CardContent>
@@ -555,7 +555,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Distribución de Gastos */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Gastos <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-center">Distribución Gastos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -605,7 +605,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Distribución de Ingresos */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Ingresos <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-center">Distribución Ingresos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -655,13 +655,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
       {/* RESUMEN ANUAL */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">Resumen del Año <strong>{selectedCurrency}</strong></h2>
+        <h2 className="text-xl font-semibold text-center">Resumen del Año</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado anual */}
         <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">Resultado del Año <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Resultado del Año</CardTitle>
             {getTrendIcon(cambioBalanceAnio)}
           </CardHeader>
           <CardContent>
@@ -677,7 +677,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Ingresos anuales */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos del Año <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos del Año</CardTitle>
             {getTrendIcon(filteredMetrics.cambioIngresosAnio)}
           </CardHeader>
           <CardContent>
@@ -693,7 +693,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Gastos anuales */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos del Año <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos del Año</CardTitle>
             {getTrendIcon(filteredMetrics.cambioGastosAnio)}
           </CardHeader>
           <CardContent>
@@ -712,7 +712,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Distribución de Gastos Anual */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Gastos <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-center">Distribución Gastos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -762,7 +762,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* Distribución de Ingresos Anual */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Ingresos <strong>{selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-center">Distribución Ingresos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
