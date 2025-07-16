@@ -35,7 +35,7 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
   const [parsedTransactions, setParsedTransactions] = useState<ParsedCSVTransaction[]>([]);
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR' | ''>('');
   const [selectedAccount, setSelectedAccount] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -161,8 +161,8 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
   };
 
   const handleImport = () => {
-    if (!selectedCurrency || !selectedAccount || !selectedCategory) {
-      setImportStatus({ type: 'error', message: 'Debe seleccionar divisa, cuenta y categoría' });
+    if (!selectedCurrency || !selectedAccount) {
+      setImportStatus({ type: 'error', message: 'Debe seleccionar divisa y cuenta' });
       return;
     }
 
@@ -173,7 +173,7 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       comentario: transaction.comentario,
       ingreso: transaction.ingreso,
       gasto: transaction.gasto,
-      subcategoriaId: selectedCategory,
+      subcategoriaId: 'sin-asignar',
       divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
     }));
 
@@ -191,7 +191,6 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       setParsedTransactions([]);
       setSelectedCurrency('');
       setSelectedAccount('');
-      setSelectedCategory('');
       setImportStatus(null);
     }, 2000);
   };
@@ -202,7 +201,6 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
     setParsedTransactions([]);
     setSelectedCurrency('');
     setSelectedAccount('');
-    setSelectedCategory('');
     setImportStatus(null);
   };
 
@@ -303,20 +301,9 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label>Categoría por defecto</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.subcategoria}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                <p className="font-medium mb-1">Categoría automática</p>
+                <p>Las transacciones se asignarán automáticamente a "SIN ASIGNAR" y podrán ser categorizadas manualmente después.</p>
               </div>
             </div>
 
