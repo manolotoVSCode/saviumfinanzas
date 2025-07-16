@@ -35,9 +35,7 @@ const Transacciones = () => {
                     <p className="mb-2">El archivo debe contener las siguientes columnas en orden:</p>
                     <ol className="list-decimal list-inside space-y-1 ml-4">
                       <li><strong>Fecha:</strong> Formato DD/MM/AA (ejemplo: 15/03/25)</li>
-                      <li><strong>Cuenta:</strong> Nombre exacto de la cuenta existente</li>
                       <li><strong>Comentario:</strong> Descripción de la transacción</li>
-                      <li><strong>Subcategoría:</strong> Nombre exacto de la subcategoría existente</li>
                       <li><strong>Ingreso:</strong> Monto de ingreso (usar 0 si no aplica)</li>
                       <li><strong>Gasto:</strong> Monto de gasto (usar 0 si no aplica)</li>
                     </ol>
@@ -45,19 +43,17 @@ const Transacciones = () => {
                   <div>
                     <h4 className="font-semibold mb-2">Ejemplo de formato:</h4>
                     <div className="bg-muted p-3 rounded font-mono text-xs">
-                      15/03/25,Efectivo,Compra de comida,Comida,0,250<br/>
-                      16/03/25,Cuenta de Cheques,Salario marzo,Salario,15000,0<br/>
-                      17/03/25,QUANT,Aportación mensual,Aportaciones,0,5000
+                      15/03/25;Compra de comida;0;250
                     </div>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Notas importantes:</h4>
                     <ul className="list-disc list-inside space-y-1 ml-4">
-                      <li>Todas las transacciones importadas serán en MXN por defecto</li>
-                      <li>Las cuentas y subcategorías deben existir previamente</li>
+                      <li>Al importar las transacciones, se aplicarán con la divisa elegida en el proceso</li>
+                      <li>Al importar, se le asignará una cuenta en el proceso</li>
                       <li>No incluir encabezados en el archivo</li>
-                      <li>Usar coma (,) como separador</li>
-                      <li>Los decimales se pueden usar con punto (.)</li>
+                      <li>Usar punto y coma (;) como separador</li>
+                      <li>Los decimales se pueden usar con coma (,)</li>
                     </ul>
                   </div>
                 </div>

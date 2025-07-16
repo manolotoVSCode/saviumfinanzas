@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, FileText } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Account, Category, Transaction } from '@/types/finance';
 
 interface TransactionImporterProps {
@@ -13,20 +14,28 @@ interface TransactionImporterProps {
   onImportTransactions: (transactions: Omit<Transaction, 'id' | 'monto'>[]) => void;
 }
 
-interface RawTransaction {
-  id: string;
-  cuentaId: string;
+interface ParsedCSVTransaction {
   fecha: string;
   comentario: string;
-  ingreso: string;
-  gasto: string;
-  subcategoriaId: string;
+  ingreso: number;
+  gasto: number;
 }
+
+const CURRENCIES: Array<{ value: 'MXN' | 'USD' | 'EUR'; label: string }> = [
+  { value: 'MXN', label: 'Peso Mexicano (MXN)' },
+  { value: 'USD', label: 'Dólar Americano (USD)' },
+  { value: 'EUR', label: 'Euro (EUR)' }
+];
 
 const TransactionImporter = ({ accounts, categories, onImportTransactions }: TransactionImporterProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState<'upload' | 'configure'>('upload');
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [parsedTransactions, setParsedTransactions] = useState<ParsedCSVTransaction[]>([]);
+  const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR' | ''>('');
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -50,31 +59,11 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
     return result;
   };
 
-  const findAccountByName = (accountName: string): string | null => {
-    const normalizedName = accountName.trim().toLowerCase();
-    const account = accounts.find(acc => 
-      acc.nombre.toLowerCase().includes(normalizedName) || 
-      normalizedName.includes(acc.nombre.toLowerCase())
-    );
-    return account?.id || null;
-  };
-
-  const findCategoryBySubcategoria = (subcategoriaName: string): string | null => {
-    const normalizedName = subcategoriaName.trim().toLowerCase();
-    const category = categories.find(cat => 
-      cat.subcategoria.toLowerCase() === normalizedName ||
-      cat.subcategoria.toLowerCase().includes(normalizedName) ||
-      normalizedName.includes(cat.subcategoria.toLowerCase())
-    );
-    return category?.id || null;
-  };
-
   const parseAmount = (amountStr: string): number => {
-    if (!amountStr || amountStr.trim() === '-') return 0;
-    // Remove spaces, remove dots (thousand separators), replace comma with dot for decimal separator
-    const cleanAmount = amountStr.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+    if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '0') return 0;
+    // Replace comma with dot for decimal separator
+    const cleanAmount = amountStr.replace(/\s/g, '').replace(',', '.');
     const parsed = parseFloat(cleanAmount);
-    console.log(`Parsing amount: "${amountStr}" -> "${cleanAmount}" -> ${parsed}`);
     return isNaN(parsed) ? 0 : parsed;
   };
 
@@ -110,75 +99,53 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       const text = await file.text();
       const lines = text.split('\n').filter(line => line.trim());
       
-      if (lines.length < 2) {
-        setImportStatus({ type: 'error', message: 'El archivo debe tener al menos 2 líneas (encabezado y datos)' });
+      if (lines.length === 0) {
+        setImportStatus({ type: 'error', message: 'El archivo está vacío' });
         return;
       }
 
-      // Skip header line
-      const dataLines = lines.slice(1);
-      const transactions: Omit<Transaction, 'id' | 'monto'>[] = [];
+      const transactions: ParsedCSVTransaction[] = [];
       const errors: string[] = [];
 
-      dataLines.forEach((line, index) => {
+      lines.forEach((line, index) => {
         try {
           const columns = parseCSVLine(line);
-          if (columns.length < 7) return; // Skip invalid lines
-
-          const [csvId, cuentaNombre, fecha, comentario, ingreso, gasto, subcategoriaNombre] = columns;
-          
-          const cuentaId = findAccountByName(cuentaNombre);
-          const subcategoriaId = findCategoryBySubcategoria(subcategoriaNombre);
-          
-          if (!cuentaId) {
-            errors.push(`Línea ${index + 2}: Cuenta "${cuentaNombre}" no encontrada`);
-            return;
-          }
-          
-          if (!subcategoriaId) {
-            errors.push(`Línea ${index + 2}: Subcategoría "${subcategoriaNombre}" no encontrada`);
+          if (columns.length < 4) {
+            errors.push(`Línea ${index + 1}: Formato incorrecto (se esperan 4 columnas)`);
             return;
           }
 
+          const [fecha, comentario, ingreso, gasto] = columns;
+          
           const ingresoAmount = parseAmount(ingreso);
           const gastoAmount = parseAmount(gasto);
           
-          console.log(`Línea ${csvId}: ${cuentaNombre}, Ingreso: ${ingresoAmount}, Gasto: ${gastoAmount}, Monto: ${ingresoAmount - gastoAmount}`);
-          
           transactions.push({
-            csvId: csvId, // Preservar el ID original del CSV
-            cuentaId,
-            fecha: new Date(parseDateDDMMYY(fecha)),
+            fecha: parseDateDDMMYY(fecha),
             comentario: comentario.trim(),
             ingreso: ingresoAmount,
-            gasto: gastoAmount,
-            subcategoriaId,
-            divisa: 'MXN' // Por defecto todas las importaciones son MXN
+            gasto: gastoAmount
           });
         } catch (error) {
-          errors.push(`Línea ${index + 2}: Error al procesar - ${error}`);
+          errors.push(`Línea ${index + 1}: Error al procesar - ${error}`);
         }
       });
 
       if (errors.length > 0) {
         setImportStatus({ 
           type: 'warning', 
-          message: `Se importaron ${transactions.length} transacciones con ${errors.length} errores. Primeros errores: ${errors.slice(0, 3).join(', ')}` 
+          message: `Se procesaron ${transactions.length} transacciones con ${errors.length} errores. Primeros errores: ${errors.slice(0, 3).join(', ')}` 
         });
       } else {
         setImportStatus({ 
           type: 'success', 
-          message: `Se importaron exitosamente ${transactions.length} transacciones` 
+          message: `Se procesaron exitosamente ${transactions.length} transacciones` 
         });
       }
 
       if (transactions.length > 0) {
-        console.log('Importando transacciones:', transactions.length);
-        console.log('Primera transacción:', transactions[0]);
-        onImportTransactions(transactions);
-        console.log('onImportTransactions llamado');
-      } else {
-        console.log('No hay transacciones para importar');
+        setParsedTransactions(transactions);
+        setStep('configure');
       }
 
     } catch (error) {
@@ -193,6 +160,52 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
     }
   };
 
+  const handleImport = () => {
+    if (!selectedCurrency || !selectedAccount || !selectedCategory) {
+      setImportStatus({ type: 'error', message: 'Debe seleccionar divisa, cuenta y categoría' });
+      return;
+    }
+
+    const transactions: Omit<Transaction, 'id' | 'monto'>[] = parsedTransactions.map((transaction, index) => ({
+      csvId: `import_${Date.now()}_${index}`,
+      cuentaId: selectedAccount,
+      fecha: new Date(transaction.fecha),
+      comentario: transaction.comentario,
+      ingreso: transaction.ingreso,
+      gasto: transaction.gasto,
+      subcategoriaId: selectedCategory,
+      divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
+    }));
+
+    onImportTransactions(transactions);
+    
+    setImportStatus({ 
+      type: 'success', 
+      message: `Se importaron exitosamente ${transactions.length} transacciones` 
+    });
+
+    // Reset form
+    setTimeout(() => {
+      setIsOpen(false);
+      setStep('upload');
+      setParsedTransactions([]);
+      setSelectedCurrency('');
+      setSelectedAccount('');
+      setSelectedCategory('');
+      setImportStatus(null);
+    }, 2000);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setStep('upload');
+    setParsedTransactions([]);
+    setSelectedCurrency('');
+    setSelectedAccount('');
+    setSelectedCategory('');
+    setImportStatus(null);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -203,51 +216,138 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Importar Transacciones desde CSV</DialogTitle>
+          <DialogTitle>
+            {step === 'upload' ? 'Importar Transacciones desde CSV' : 'Configurar Importación'}
+          </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="csv-file">Seleccionar archivo CSV</Label>
-            <Input
-              id="csv-file"
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              disabled={isProcessing}
-            />
-          </div>
+        {step === 'upload' ? (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="csv-file">Seleccionar archivo CSV</Label>
+              <Input
+                id="csv-file"
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                disabled={isProcessing}
+              />
+            </div>
 
-          <div className="text-sm text-muted-foreground space-y-2">
-            <div className="flex items-start gap-2">
-              <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium">Formato esperado:</p>
-                <p>id;cuentaId;fecha;comentario;ingreso;gasto;subcategoriaId</p>
-                <p className="text-xs mt-1">
-                  • Separador: punto y coma (;)<br/>
-                  • Fecha: DD/MM/YY<br/>
-                  • Cuenta y subcategoría: por nombre exacto<br/>
-                  • Montos: usar coma como decimal, "-" para vacío
-                </p>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <div className="flex items-start gap-2">
+                <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Formato esperado:</p>
+                  <p>Fecha;Comentario;Ingreso;Gasto</p>
+                  <p className="text-xs mt-1">
+                    • Separador: punto y coma (;)<br/>
+                    • Fecha: DD/MM/AA<br/>
+                    • Montos: usar coma como decimal<br/>
+                    • Ejemplo: 15/03/25;Compra de comida;0;250
+                  </p>
+                </div>
               </div>
             </div>
+
+            {importStatus && (
+              <Alert className={importStatus.type === 'error' ? 'border-destructive' : importStatus.type === 'warning' ? 'border-orange-500' : 'border-green-500'}>
+                <AlertDescription>
+                  {importStatus.message}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {isProcessing && (
+              <div className="text-center text-sm text-muted-foreground">
+                Procesando archivo...
+              </div>
+            )}
           </div>
-
-          {importStatus && (
-            <Alert className={importStatus.type === 'error' ? 'border-destructive' : importStatus.type === 'warning' ? 'border-orange-500' : 'border-green-500'}>
-              <AlertDescription>
-                {importStatus.message}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {isProcessing && (
-            <div className="text-center text-sm text-muted-foreground">
-              Procesando archivo...
+        ) : (
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Se procesaron {parsedTransactions.length} transacciones. Configure los siguientes parámetros:
             </div>
-          )}
-        </div>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>Divisa de las transacciones</Label>
+                <Select value={selectedCurrency} onValueChange={(value: string) => setSelectedCurrency(value as 'MXN' | 'USD' | 'EUR')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una divisa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.value} value={currency.value}>
+                        {currency.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Cuenta de destino</Label>
+                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una cuenta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.nombre} ({account.divisa})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Categoría por defecto</Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.subcategoria}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {importStatus && (
+              <Alert className={importStatus.type === 'error' ? 'border-destructive' : 'border-green-500'}>
+                <AlertDescription>
+                  {importStatus.message}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setStep('upload')} className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Volver
+              </Button>
+              <Button onClick={handleImport} className="gap-2 flex-1">
+                <ArrowRight className="h-4 w-4" />
+                Importar Transacciones
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 'upload' && (
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={handleClose}>
+              Cancelar
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
