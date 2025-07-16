@@ -40,7 +40,8 @@ export const TransactionsManager = ({
     cuentaId: 'all',
     mes: '',
     categoriaId: 'all',
-    tipo: 'all'
+    tipo: 'all',
+    divisa: 'all'
   });
 
   const [formData, setFormData] = useState({
@@ -72,6 +73,7 @@ export const TransactionsManager = ({
     }
     
     if (filters.tipo && filters.tipo !== 'all' && transaction.tipo !== filters.tipo) return false;
+    if (filters.divisa && filters.divisa !== 'all' && transaction.divisa !== filters.divisa) return false;
     if (filters.mes && filters.mes !== 'all') {
       const transactionMonth = transaction.fecha.toISOString().slice(0, 7); // YYYY-MM format
       if (transactionMonth !== filters.mes) return false;
@@ -87,7 +89,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all' });
+    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all' });
   };
 
   const resetForm = () => {
@@ -463,7 +465,7 @@ export const TransactionsManager = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
             <div>
               <Label htmlFor="filter-cuenta">Cuenta</Label>
               <Select 
@@ -582,6 +584,24 @@ export const TransactionsManager = ({
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label htmlFor="filter-divisa">Divisa</Label>
+              <Select 
+                value={filters.divisa} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, divisa: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas las divisas" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">Todas las divisas</SelectItem>
+                  <SelectItem value="MXN">MXN</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -604,6 +624,7 @@ export const TransactionsManager = ({
                 <TableHead>Categoría</TableHead>
                 <TableHead>Comentario</TableHead>
                 <TableHead>Monto</TableHead>
+                <TableHead>Divisa</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
@@ -645,7 +666,12 @@ export const TransactionsManager = ({
                   </TableCell>
                   <TableCell className="max-w-xs truncate">{transaction.comentario}</TableCell>
                   <TableCell className={transaction.monto >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    {formatCurrency(Math.abs(transaction.monto))}
+                    {new Intl.NumberFormat('es-ES').format(Math.abs(transaction.monto))}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">
+                      {transaction.divisa || 'MXN'}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getTypeBadgeVariant(transaction.tipo)}>
