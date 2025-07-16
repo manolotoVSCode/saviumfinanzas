@@ -21,33 +21,29 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   console.log('DASHBOARD EJECUTANDOSE');
   console.log('Número de transacciones:', transactions.length);
 
-  // Filtrar transacciones de marzo 2025
-  const marzoTransactions = transactions.filter(t => {
+  // Debug para comparar con la página de transacciones - JUNIO 2025
+  const junioTransactions = transactions.filter(t => {
     const fecha = new Date(t.fecha);
-    return fecha.getFullYear() === 2025 && fecha.getMonth() === 2; // marzo = mes 2
+    return fecha.getFullYear() === 2025 && fecha.getMonth() === 5; // junio = mes 5
   });
 
-  console.log('=== ANÁLISIS MARZO 2025 ===');
-  console.log('Total transacciones marzo:', marzoTransactions.length);
+  console.log('=== ANÁLISIS JUNIO 2025 ===');
+  console.log('Total transacciones junio:', junioTransactions.length);
   
-  if (marzoTransactions.length > 0) {
-    const ingresosMarzo = marzoTransactions
-      .reduce((sum, t) => sum + t.ingreso, 0);
-    
-    const gastosMarzo = marzoTransactions
-      .reduce((sum, t) => sum + t.gasto, 0);
+  if (junioTransactions.length > 0) {
+    const ingresosJunio = junioTransactions.reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosJunio = junioTransactions.reduce((sum, t) => sum + t.gasto, 0);
 
-    console.log('INGRESOS calculados:', ingresosMarzo);
-    console.log('GASTOS calculados:', gastosMarzo);
-    console.log('ESPERADOS - Ingresos: 108577, Gastos: 95823');
+    console.log('INGRESOS JUNIO (suma directa):', ingresosJunio);
+    console.log('GASTOS JUNIO (suma directa):', gastosJunio);
     
-    // Ver algunas transacciones para entender el problema
-    console.log('Primeras 3 transacciones marzo:', marzoTransactions.slice(0, 3).map(t => ({
+    // Ver solo transacciones con ingresos > 0
+    const transaccionesConIngresos = junioTransactions.filter(t => t.ingreso > 0);
+    console.log('Transacciones con ingresos > 0:', transaccionesConIngresos.map(t => ({
       fecha: t.fecha,
-      comentario: t.comentario.substring(0, 30),
+      comentario: t.comentario.substring(0, 40),
       ingreso: t.ingreso,
-      gasto: t.gasto,
-      tipo: t.tipo
+      monto: t.monto
     })));
   }
 
