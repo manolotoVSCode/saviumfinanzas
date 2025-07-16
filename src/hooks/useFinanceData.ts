@@ -138,27 +138,66 @@ export const useFinanceData = () => {
     const variacionGastosAnual = gastosAnioAnterior > 0 ? ((gastosAnio - gastosAnioAnterior) / gastosAnioAnterior) * 100 : 0;
     const variacionBalanceAnual = balanceAnioAnterior !== 0 ? ((balanceAnio - balanceAnioAnterior) / Math.abs(balanceAnioAnterior)) * 100 : 0;
     
-    // ACTIVOS DETALLADOS (asegurar incluir saldos iniciales)
+    // ACTIVOS DETALLADOS POR MONEDA
+    const activosPorMoneda = {
+      MXN: {
+        efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
+        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
+        empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
+      },
+      USD: {
+        efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
+        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
+        empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
+      },
+      EUR: {
+        efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
+        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
+        empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
+      }
+    };
+    
+    // Calcular totales por moneda
+    Object.keys(activosPorMoneda).forEach(moneda => {
+      const activos = activosPorMoneda[moneda as keyof typeof activosPorMoneda];
+      (activos as any).total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
+    });
+    
+    // Para compatibilidad con código existente
     const activos = {
-      efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo)).reduce((s, a) => s + a.saldoActual, 0),
-      inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => {
-        // Para inversiones, usar solo el saldo actual (saldo inicial + transacciones)
-        return s + a.saldoActual;
-      }, 0),
-      empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia').reduce((s, a) => s + a.saldoActual, 0),
+      efectivoBancos: Object.values(activosPorMoneda).reduce((s, a) => s + a.efectivoBancos, 0),
+      inversiones: Object.values(activosPorMoneda).reduce((s, a) => s + a.inversiones, 0),
+      empresasPrivadas: Object.values(activosPorMoneda).reduce((s, a) => s + a.empresasPrivadas, 0),
       total: 0
     };
     activos.total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
     
-    // PASIVOS DETALLADOS (incluir tarjetas de crédito con saldos negativos)
+    // PASIVOS DETALLADOS POR MONEDA
+    const pasivosPorMoneda = {
+      MXN: {
+        tarjetasCredito: accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
+        hipoteca: accountsWithBalances.filter(a => a.tipo === 'Hipoteca' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
+      },
+      USD: {
+        tarjetasCredito: accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito' && a.divisa === 'USD').reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
+        hipoteca: accountsWithBalances.filter(a => a.tipo === 'Hipoteca' && a.divisa === 'USD').reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
+      },
+      EUR: {
+        tarjetasCredito: accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito' && a.divisa === 'EUR').reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
+        hipoteca: accountsWithBalances.filter(a => a.tipo === 'Hipoteca' && a.divisa === 'EUR').reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
+      }
+    };
+    
+    // Calcular totales por moneda
+    Object.keys(pasivosPorMoneda).forEach(moneda => {
+      const pasivos = pasivosPorMoneda[moneda as keyof typeof pasivosPorMoneda];
+      (pasivos as any).total = pasivos.tarjetasCredito + pasivos.hipoteca;
+    });
+    
+    // Para compatibilidad con código existente
     const pasivos = {
-      tarjetasCredito: accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito').reduce((s, a) => {
-        // Para tarjetas de crédito, el saldo negativo indica deuda
-        return s + Math.abs(Math.min(0, a.saldoActual));
-      }, 0),
-      hipoteca: accountsWithBalances.filter(a => a.tipo === 'Hipoteca').reduce((s, a) => {
-        return s + Math.abs(Math.min(0, a.saldoActual));
-      }, 0),
+      tarjetasCredito: Object.values(pasivosPorMoneda).reduce((s, p) => s + p.tarjetasCredito, 0),
+      hipoteca: Object.values(pasivosPorMoneda).reduce((s, p) => s + p.hipoteca, 0),
       total: 0
     };
     pasivos.total = pasivos.tarjetasCredito + pasivos.hipoteca;
@@ -333,7 +372,9 @@ export const useFinanceData = () => {
     return {
       balanceTotal: activos.total,
       activos,
+      activosPorMoneda,
       pasivos,
+      pasivosPorMoneda,
       patrimonioNeto,
       patrimonioNetoAnterior,
       variacionPatrimonio,

@@ -139,45 +139,71 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-success">
-              ACTIVOS (lo que tienes) - {currencyCode}
+              ACTIVOS (lo que tienes)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="p-4 rounded-lg bg-success/5 border border-success/20">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">Efectivo y Bancos</span>
-                  <span className="font-bold text-success">{formatCurrency(metrics.activos.efectivoBancos)}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Dinero disponible inmediatamente
-                </div>
-              </div>
-              
-               <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">Inversiones</span>
-                  <span className="font-bold text-primary">{formatCurrency(metrics.activos.inversiones)}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Fondos, acciones y ETFs
-                </div>
-              </div>
+              {/* Mostrar categorías por moneda */}
+              {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
+                const formatCurrencyForCurrency = (amount: number) => {
+                  return new Intl.NumberFormat('es-MX', {
+                    style: 'currency',
+                    currency: moneda,
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  }).format(amount);
+                };
+
+                const hasAssets = activos.efectivoBancos > 0 || activos.inversiones > 0 || activos.empresasPrivadas > 0;
+                
+                if (!hasAssets) return null;
+
+                return (
+                  <div key={moneda} className="space-y-3">
+                    {activos.efectivoBancos > 0 && (
+                      <div className="p-4 rounded-lg bg-success/5 border border-success/20">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-muted-foreground">Efectivo y Bancos {moneda}</span>
+                          <span className="font-bold text-success">{formatCurrencyForCurrency(activos.efectivoBancos)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Dinero disponible inmediatamente
+                        </div>
+                      </div>
+                    )}
+                    
+                    {activos.inversiones > 0 && (
+                      <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-muted-foreground">Inversiones {moneda}</span>
+                          <span className="font-bold text-primary">{formatCurrencyForCurrency(activos.inversiones)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Fondos, acciones y ETFs
+                        </div>
+                      </div>
+                    )}
+                    
+                    {activos.empresasPrivadas > 0 && (
+                      <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-muted-foreground">Empresas Privadas {moneda}</span>
+                          <span className="font-bold text-primary">{formatCurrencyForCurrency(activos.empresasPrivadas)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Participaciones en empresas propias
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               
               <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-success">TOTAL ACTIVOS</span>
                   <span className="text-xl font-bold text-success">{formatCurrency(metrics.activos.total)}</span>
-                </div>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">Empresas Privadas</span>
-                  <span className="font-bold text-primary">{formatCurrency(metrics.activos.empresasPrivadas)}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Participaciones en empresas propias
                 </div>
               </div>
             </div>
@@ -188,38 +214,54 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-destructive">
-              PASIVOS (lo que debes) - {currencyCode}
+              PASIVOS (lo que debes)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Mostrar cada tarjeta de crédito por separado */}
-              {metrics.cuentasResumen
-                .filter(cuenta => cuenta.tipo === 'Tarjeta de Crédito' && Math.abs(Math.min(0, cuenta.saldo)) > 0)
-                .map((cuenta, index) => (
-                  <div key={index} className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-muted-foreground">{cuenta.cuenta}</span>
-                      <span className="font-bold text-destructive">{formatCurrency(Math.abs(Math.min(0, cuenta.saldo)))}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Saldo pendiente por pagar
-                    </div>
+              {/* Mostrar categorías por moneda */}
+              {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
+                const formatCurrencyForCurrency = (amount: number) => {
+                  return new Intl.NumberFormat('es-MX', {
+                    style: 'currency',
+                    currency: moneda,
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  }).format(amount);
+                };
+
+                const hasLiabilities = pasivos.tarjetasCredito > 0 || pasivos.hipoteca > 0;
+                
+                if (!hasLiabilities) return null;
+
+                return (
+                  <div key={moneda} className="space-y-3">
+                    {pasivos.tarjetasCredito > 0 && (
+                      <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-muted-foreground">Tarjetas de Crédito {moneda}</span>
+                          <span className="font-bold text-destructive">{formatCurrencyForCurrency(pasivos.tarjetasCredito)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Saldo pendiente por pagar
+                        </div>
+                      </div>
+                    )}
+                    
+                    {pasivos.hipoteca > 0 && (
+                      <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-muted-foreground">Hipoteca {moneda}</span>
+                          <span className="font-bold text-destructive">{formatCurrencyForCurrency(pasivos.hipoteca)}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Saldo pendiente del préstamo hipotecario
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
-              
-              {/* Hipoteca */}
-              {metrics.pasivos.hipoteca > 0 && (
-                <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-muted-foreground">Hipoteca</span>
-                    <span className="font-bold text-destructive">{formatCurrency(metrics.pasivos.hipoteca)}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Saldo pendiente del préstamo hipotecario
-                  </div>
-                </div>
-              )}
+                );
+              })}
               
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
