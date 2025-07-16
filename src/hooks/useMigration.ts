@@ -12,15 +12,17 @@ export const useMigration = () => {
         throw new Error('Usuario no autenticado');
       }
 
+      console.log('Iniciando migración para usuario:', user.id);
+
       // Obtener datos del localStorage
       const localAccounts = JSON.parse(localStorage.getItem('financeAccounts') || '[]') as Account[];
       const localCategories = JSON.parse(localStorage.getItem('financeCategories') || '[]') as Category[];
       const localTransactions = JSON.parse(localStorage.getItem('financeTransactions') || '[]') as Transaction[];
 
-      console.log('Datos a migrar:', {
-        accounts: localAccounts,
-        categories: localCategories,
-        transactions: localTransactions.slice(0, 2) // Solo primeras 2 para debug
+      console.log('Datos encontrados:', {
+        accounts: localAccounts.length,
+        categories: localCategories.length,
+        transactions: localTransactions.length
       });
 
       if (localAccounts.length === 0 && localCategories.length === 0 && localTransactions.length === 0) {
@@ -32,117 +34,51 @@ export const useMigration = () => {
       }
 
       let migratedCount = 0;
-      const categoryIdMap: Record<string, string> = {};
-      const accountIdMap: Record<string, string> = {};
 
-      // Migrar categorías primero (las transacciones las referencian)
+      // PASO 1: Solo migrar categorías primero
       if (localCategories.length > 0) {
-        const categoriesToInsert = localCategories.map(cat => {
-          const newId = crypto.randomUUID();
-          categoryIdMap[cat.id] = newId;
-          return {
-            id: newId,
-            user_id: user.id,
-            subcategoria: cat.subcategoria,
-            categoria: cat.categoria,
-            tipo: cat.tipo
-          };
-        });
-
-        console.log('Categorías a insertar:', categoriesToInsert.slice(0, 2));
-
-        const { error: catError } = await supabase
-          .from('categorias')
-          .insert(categoriesToInsert);
-
-        if (catError) throw catError;
-        migratedCount += localCategories.length;
-      }
-
-      // Migrar cuentas
-      if (localAccounts.length > 0) {
-        const accountsToInsert = localAccounts.map(acc => {
-          const newId = crypto.randomUUID();
-          accountIdMap[acc.id] = newId;
-          
-          // Debug detallado de cada cuenta
-          console.log('Procesando cuenta:', {
-            original: acc,
-            saldoInicial: acc.saldoInicial,
-            saldoInicialType: typeof acc.saldoInicial,
-            saldoInicialConverted: Number(acc.saldoInicial),
-            valorMercado: acc.valorMercado,
-            valorMercadoType: typeof acc.valorMercado
+        console.log('Migrando categorías...');
+        const categoryIdMap: Record<string, string> = {};
+        
+        try {
+          const categoriesToInsert = localCategories.map(cat => {
+            const newId = crypto.randomUUID();
+            categoryIdMap[cat.id] = newId;
+            return {
+              id: newId,
+              user_id: user.id,
+              subcategoria: String(cat.subcategoria || ''),
+              categoria: String(cat.categoria || ''),
+              tipo: String(cat.tipo || 'Gastos')
+            };
           });
+
+          const { error: catError } = await supabase
+            .from('categorias')
+            .insert(categoriesToInsert);
+
+          if (catError) {
+            console.error('Error en categorías:', catError);
+            throw new Error(`Error en categorías: ${catError.message}`);
+          }
           
-          return {
-            id: newId,
-            user_id: user.id,
-            nombre: acc.nombre || 'Sin nombre',
-            tipo: acc.tipo,
-            saldo_inicial: isNaN(Number(acc.saldoInicial)) ? 0 : Number(acc.saldoInicial),
-            divisa: acc.divisa || 'MXN',
-            valor_mercado: acc.valorMercado && !isNaN(Number(acc.valorMercado)) ? Number(acc.valorMercado) : null,
-            rendimiento_mensual: acc.rendimientoMensual && !isNaN(Number(acc.rendimientoMensual)) ? Number(acc.rendimientoMensual) : null
-          };
-        });
-
-        console.log('Cuentas a insertar:', accountsToInsert);
-
-        const { error: accError } = await supabase
-          .from('cuentas')
-          .insert(accountsToInsert);
-
-        if (accError) {
-          console.error('Error detallado en cuentas:', accError);
-          throw accError;
+          migratedCount += localCategories.length;
+          console.log('Categorías migradas exitosamente');
+          
+        } catch (error) {
+          console.error('Error detallado en categorías:', error);
+          throw new Error(`Error específico en categorías: ${error}`);
         }
-        migratedCount += localAccounts.length;
       }
-
-      // Migrar transacciones (usando los nuevos UUIDs)
-      if (localTransactions.length > 0) {
-        const transactionsToInsert = localTransactions
-          .filter(trans => 
-            accountIdMap[trans.cuentaId] && categoryIdMap[trans.subcategoriaId]
-          )
-          .map(trans => ({
-            id: crypto.randomUUID(),
-            user_id: user.id,
-            cuenta_id: accountIdMap[trans.cuentaId],
-            subcategoria_id: categoryIdMap[trans.subcategoriaId],
-            fecha: trans.fecha instanceof Date ? trans.fecha.toISOString().split('T')[0] : trans.fecha,
-            comentario: trans.comentario || '',
-            ingreso: Number(trans.ingreso) || 0,
-            gasto: Number(trans.gasto) || 0,
-            divisa: trans.divisa || 'MXN' as const,
-            csv_id: trans.csvId || null
-          }));
-
-        const { error: transError } = await supabase
-          .from('transacciones')
-          .insert(transactionsToInsert);
-
-        if (transError) {
-          console.error('Transaction error details:', transError);
-          throw transError;
-        }
-        migratedCount += transactionsToInsert.length;
-      }
-
-      // Limpiar localStorage después de migración exitosa
-      localStorage.removeItem('financeAccounts');
-      localStorage.removeItem('financeCategories');
-      localStorage.removeItem('financeTransactions');
 
       toast({
-        title: "¡Migración exitosa!",
-        description: `Se migraron ${migratedCount} registros a Supabase.`,
+        title: "Migración parcial exitosa",
+        description: `Se migraron ${migratedCount} categorías. Las cuentas y transacciones se migrarán por separado.`,
       });
 
       return true;
     } catch (error: any) {
-      console.error('Error en migración:', error);
+      console.error('Error completo en migración:', error);
       toast({
         title: "Error en migración",
         description: error.message || "Ocurrió un error durante la migración.",
