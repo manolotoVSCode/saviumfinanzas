@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 
 import Layout from '@/components/Layout';
 import { useFinanceData } from '@/hooks/useFinanceData';
@@ -65,7 +65,7 @@ const Inversiones = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{formatCurrency(inversionesResumen.totalInversiones)}</div>
               <div className="text-sm text-muted-foreground">Total Invertido</div>
@@ -77,6 +77,14 @@ const Inversiones = () => {
             <div className="text-center">
               <div className="text-2xl font-bold text-destructive">{formatCurrency(inversionesResumen.totalRetiradoAnual)}</div>
               <div className="text-sm text-muted-foreground">Total Retirado {new Date().getFullYear()}</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${
+                inversionesResumen.rendimientoAnualPorcentaje >= 0 ? 'text-success' : 'text-destructive'
+              }`}>
+                {inversionesResumen.rendimientoAnualPorcentaje >= 0 ? '+' : ''}{inversionesResumen.rendimientoAnualPorcentaje.toFixed(2)}%
+              </div>
+              <div className="text-sm text-muted-foreground">Rendimiento Anual</div>
             </div>
           </div>
         </CardContent>
@@ -103,10 +111,10 @@ const Inversiones = () => {
                   <div className="flex flex-col items-end gap-1">
                     <Badge variant={rendimiento >= 0 ? 'default' : 'destructive'} className="text-xs">
                       <IconComponent className="h-3 w-3 mr-1" />
-                      {rendimiento >= 0 ? '+' : ''}{rendimientoMensualPorcentaje.toFixed(2)}% NETO Mensual
+                      {rendimiento >= 0 ? '+' : ''}{rendimientoMensualPorcentaje.toFixed(2)}% Mensual
                     </Badge>
                     <Badge variant="outline" className="text-xs">
-                      {rendimientoAnualPorcentaje >= 0 ? '+' : ''}{rendimientoAnualPorcentaje.toFixed(2)}% NETO Anual
+                      {rendimientoAnualPorcentaje >= 0 ? '+' : ''}{rendimientoAnualPorcentaje.toFixed(2)}% Anual
                     </Badge>
                   </div>
                   <Button
@@ -140,6 +148,19 @@ const Inversiones = () => {
                     </span>
                   </div>
 
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Rendimiento Mensual</span>
+                    <span className={`text-lg font-bold ${getRendimientoColor(rendimiento)}`}>
+                      {rendimientoMensualPorcentaje > 0 ? '+' : ''}{rendimientoMensualPorcentaje.toFixed(2)}%
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Rendimiento Anual (Proyectado)</span>
+                    <span className={`text-sm font-bold ${getRendimientoColor(rendimiento)}`}>
+                      {rendimientoAnualPorcentaje > 0 ? '+' : ''}{rendimientoAnualPorcentaje.toFixed(2)}%
+                    </span>
+                  </div>
 
                   {/* Formulario para agregar rendimientos */}
                   {editingAccount === cuenta.id && (
@@ -187,13 +208,12 @@ const Inversiones = () => {
                             tick={{ fontSize: 12 }}
                             className="text-muted-foreground"
                           />
-                          <YAxis hide />
-                          <Bar dataKey="aportaciones" fill="hsl(var(--success))" radius={[2, 2, 0, 0]}>
-                            <LabelList dataKey="aportaciones" position="top" fontSize={10} />
-                          </Bar>
-                          <Bar dataKey="retiros" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]}>
-                            <LabelList dataKey="retiros" position="top" fontSize={10} />
-                          </Bar>
+                          <YAxis 
+                            tick={{ fontSize: 12 }}
+                            className="text-muted-foreground"
+                          />
+                          <Bar dataKey="aportaciones" fill="hsl(var(--success))" radius={[2, 2, 0, 0]} />
+                          <Bar dataKey="retiros" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
