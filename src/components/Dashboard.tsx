@@ -164,6 +164,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                 </div>
               </div>
               
+              <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-success">TOTAL ACTIVOS</span>
+                  <span className="text-xl font-bold text-success">{formatCurrency(metrics.activos.total)}</span>
+                </div>
+              </div>
+              
               <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-muted-foreground">Empresas Privadas</span>
@@ -171,13 +178,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Participaciones en empresas propias
-                </div>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-success">TOTAL ACTIVOS</span>
-                  <span className="text-xl font-bold text-success">{formatCurrency(metrics.activos.total)}</span>
                 </div>
               </div>
             </div>
