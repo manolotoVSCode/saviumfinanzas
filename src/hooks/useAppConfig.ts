@@ -11,28 +11,8 @@ const defaultConfig: AppConfig = {
 };
 
 export const useAppConfig = () => {
-  const [config, setConfig] = useState<AppConfig>(defaultConfig);
-
-  // Cargar configuración desde localStorage al inicializar
-  useEffect(() => {
-    const savedConfig = localStorage.getItem('savium-app-config');
-    if (savedConfig) {
-      try {
-        const parsedConfig = JSON.parse(savedConfig);
-        setConfig({ ...defaultConfig, ...parsedConfig });
-      } catch (error) {
-        console.error('Error loading app config:', error);
-        setConfig(defaultConfig);
-      }
-    }
-  }, []);
-
-  // Guardar configuración en localStorage cuando cambie
-  const updateConfig = (updates: Partial<AppConfig>) => {
-    const newConfig = { ...config, ...updates };
-    setConfig(newConfig);
-    localStorage.setItem('savium-app-config', JSON.stringify(newConfig));
-  };
+  // Configuración fija en MXN
+  const config: AppConfig = defaultConfig;
 
   // Función para formatear moneda según la configuración
   const formatCurrency = (amount: number): string => {
@@ -50,7 +30,6 @@ export const useAppConfig = () => {
 
   return {
     config,
-    updateConfig,
     formatCurrency
   };
 };
