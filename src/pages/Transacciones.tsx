@@ -1,13 +1,26 @@
 import { TransactionsManager } from '@/components/TransactionsManager';
 import TransactionImporter from '@/components/TransactionImporter';
 import Layout from '@/components/Layout';
-import { useFinanceData } from '@/hooks/useFinanceData';
+import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Info } from 'lucide-react';
 
 const Transacciones = () => {
-  const financeData = useFinanceData();
+  const financeData = useFinanceDataSupabase();
+
+  if (financeData.loading) {
+    return (
+      <Layout>
+        <div className="animate-fade-in flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Cargando transacciones...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
