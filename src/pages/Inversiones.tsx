@@ -9,10 +9,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelL
 import Layout from '@/components/Layout';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { useAppConfig } from '@/hooks/useAppConfig';
+import { TransactionType } from '@/types/finance';
 import { TrendingUp, TrendingDown, DollarSign, Edit3 } from 'lucide-react';
 
 const Inversiones = () => {
-  const { dashboardMetrics, accounts, updateAccount } = useFinanceData();
+  const { dashboardMetrics, accounts, addCategory, addTransaction, categories, transactions } = useFinanceData();
   const { formatCurrency } = useAppConfig();
   const [editingAccount, setEditingAccount] = useState<string | null>(null);
   const [rendimientoManual, setRendimientoManual] = useState<string>('');
@@ -33,11 +34,64 @@ const Inversiones = () => {
   const handleRendimientoSubmit = (cuentaId: string) => {
     const rendimientoIngresado = parseFloat(rendimientoManual);
     if (!isNaN(rendimientoIngresado)) {
-      // Guardamos directamente el rendimiento mensual ingresado
-      updateAccount(cuentaId, { rendimientoMensual: rendimientoIngresado });
-      setEditingAccount(null);
-      setRendimientoManual('');
+      const cuenta = accounts.find(a => a.id === cuentaId);
+      if (cuenta) {
+        // Buscar o crear la subcategoría con el nombre de la cuenta
+        let subcategoria = categories.find(c => 
+          c.categoria === 'Inversiones' && 
+          c.subcategoria === cuenta.nombre && 
+          c.tipo === 'Ingreso'
+        );
+        
+        if (!subcategoria) {
+          // Crear nueva subcategoría
+          const nuevaSubcategoria = {
+            subcategoria: cuenta.nombre,
+            categoria: 'Inversiones', 
+            tipo: (rendimientoIngresado >= 0 ? 'Ingreso' : 'Gastos') as TransactionType
+          };
+          addCategory(nuevaSubcategoria);
+          // Buscar la subcategoría recién creada
+          subcategoria = categories.find(c => 
+            c.categoria === 'Inversiones' && 
+            c.subcategoria === cuenta.nombre
+          );
+        }
+        
+        // Crear transacción de rendimiento que NO afecta el saldo de la cuenta
+        if (subcategoria) {
+          const nuevaTransaccion = {
+            cuentaId: 'rendimientos', // ID especial para que no afecte ninguna cuenta
+            fecha: new Date(),
+            comentario: `Rendimiento mensual - ${cuenta.nombre}`,
+            ingreso: rendimientoIngresado >= 0 ? Math.abs(rendimientoIngresado) : 0,
+            gasto: rendimientoIngresado < 0 ? Math.abs(rendimientoIngresado) : 0,
+            subcategoriaId: subcategoria.id,
+            cuentaInversionId: cuentaId // Campo especial para vincular con la cuenta de inversión
+          };
+          
+          addTransaction(nuevaTransaccion);
+        }
+        setEditingAccount(null);
+        setRendimientoManual('');
+      }
     }
+  };
+
+  const calcularRendimientoMensual = (cuentaId: string) => {
+    // Obtener rendimientos del mes actual desde las transacciones
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const rendimientosMes = transactions.filter(t => 
+      t.cuentaInversionId === cuentaId &&
+      t.cuentaId === 'rendimientos' &&
+      t.fecha >= startOfMonth && 
+      t.fecha <= endOfMonth
+    );
+    
+    return rendimientosMes.reduce((sum, t) => sum + t.monto, 0);
   };
 
   const calcularPorcentajeRendimiento = (rendimientoMensual: number, totalAportado: number) => {
@@ -84,8 +138,9 @@ const Inversiones = () => {
           const cuenta = cuentasInversion.find(c => c.id === inversion.id);
           if (!cuenta) return null;
           
+          
           const totalAportado = cuenta.saldoActual;
-          const rendimiento = cuenta.rendimientoMensual || 0;
+          const rendimiento = calcularRendimientoMensual(cuenta.id);
           const rendimientoMensualPorcentaje = calcularPorcentajeRendimiento(rendimiento, totalAportado);
           const rendimientoAnualPorcentaje = calcularRendimientoAnual(rendimientoMensualPorcentaje);
           const IconComponent = getRendimientoIcon(rendimiento);
