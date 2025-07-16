@@ -63,48 +63,56 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       new Date(t.fecha) >= startOfLastYear && new Date(t.fecha) <= endOfLastYear
     );
     
-    // Cálculos del mes anterior - excluyendo aportaciones y retiros
+    // Cálculos del mes anterior - excluyendo aportaciones, retiros, transferencias e inversiones
     const ingresosMes = lastMonthTransactions.filter(t => 
       t.tipo === 'Ingreso' && 
-      !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
     ).reduce((sum, t) => sum + t.ingreso, 0);
     
     const gastosMes = lastMonthTransactions.filter(t => 
       t.tipo === 'Gastos' && 
-      !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
     ).reduce((sum, t) => sum + t.gasto, 0);
     
-    // Cálculos de dos meses atrás (para comparativo) - excluyendo aportaciones y retiros
+    // Cálculos de dos meses atrás (para comparativo) - excluyendo aportaciones, retiros, transferencias e inversiones
     const ingresosMesAnterior = twoMonthsAgoTransactions.filter(t => 
       t.tipo === 'Ingreso' && 
-      !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
     ).reduce((sum, t) => sum + t.ingreso, 0);
     
     const gastosMesAnterior = twoMonthsAgoTransactions.filter(t => 
       t.tipo === 'Gastos' && 
-      !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
     ).reduce((sum, t) => sum + t.gasto, 0);
     
-    // Cálculos del año actual - excluyendo aportaciones y retiros
+    // Cálculos del año actual - excluyendo aportaciones, retiros, transferencias e inversiones
     const ingresosAnio = yearTransactions.filter(t => 
       t.tipo === 'Ingreso' && 
-      !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
     ).reduce((sum, t) => sum + t.ingreso, 0);
     
     const gastosAnio = yearTransactions.filter(t => 
       t.tipo === 'Gastos' && 
-      !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
     ).reduce((sum, t) => sum + t.gasto, 0);
     
-    // Cálculos del año anterior (para comparativo) - excluyendo aportaciones y retiros
+    // Cálculos del año anterior (para comparativo) - excluyendo aportaciones, retiros, transferencias e inversiones
     const ingresosAnioAnterior = lastYearTransactions.filter(t => 
       t.tipo === 'Ingreso' && 
-      !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
     ).reduce((sum, t) => sum + t.ingreso, 0);
     
     const gastosAnioAnterior = lastYearTransactions.filter(t => 
       t.tipo === 'Gastos' && 
-      !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
     ).reduce((sum, t) => sum + t.gasto, 0);
     
     // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses incluyendo actual)
@@ -122,12 +130,14 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       
       const ingresos = monthTrans.filter(t => 
         t.tipo === 'Ingreso' && 
-        !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
       ).reduce((sum, t) => sum + t.ingreso, 0);
       
       const gastos = Math.abs(monthTrans.filter(t => 
         t.tipo === 'Gastos' && 
-        !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
       ).reduce((sum, t) => sum + t.gasto, 0));
       
       tendenciaMensual.push({
@@ -189,7 +199,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const filteredTransactions = transactions.filter(t => 
       t.divisa === currency && 
       t.tipo === type && 
-      !['Aportación', 'Retiro', 'Transferencia'].includes(t.subcategoria)
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
+      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
     );
     
     const now = new Date();
