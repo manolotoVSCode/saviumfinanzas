@@ -10,11 +10,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelL
 import Layout from '@/components/Layout';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { useAppConfig } from '@/hooks/useAppConfig';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { TrendingUp, TrendingDown, DollarSign, Edit3 } from 'lucide-react';
 
 const Inversiones = () => {
   const { dashboardMetrics, accounts, updateAccount } = useFinanceData();
   const { formatCurrency } = useAppConfig();
+  const { convertCurrency } = useExchangeRates();
   const [editingAccount, setEditingAccount] = useState<string | null>(null);
   const [rendimientoManual, setRendimientoManual] = useState<string>('');
   const [mostrarMovimientos, setMostrarMovimientos] = useState<{[key: string]: boolean}>({});
@@ -22,6 +24,14 @@ const Inversiones = () => {
 
   const inversionesResumen = dashboardMetrics.inversionesResumen;
   const cuentasInversion = accounts.filter(acc => acc.tipo === 'Inversiones');
+
+  // Calcular totales en MXN
+  const totalInvertidoMXN = cuentasInversion.reduce((total, cuenta) => {
+    return total + convertCurrency(cuenta.saldoActual, cuenta.divisa, 'MXN');
+  }, 0);
+
+  const totalAportadoAnualMXN = inversionesResumen.totalAportadoAnual; // Ya está en MXN
+  const totalRetiradoAnualMXN = inversionesResumen.totalRetiradoAnual; // Ya está en MXN
 
   const getRendimientoColor = (rendimiento: number) => {
     if (rendimiento > 0) return 'text-success';
@@ -65,21 +75,21 @@ const Inversiones = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
-            Resumen de Inversiones
+            Resumen de Inversiones <strong>MXN</strong>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{formatCurrency(inversionesResumen.totalInversiones)}</div>
+              <div className="text-2xl font-bold text-primary">{formatCurrency(totalInvertidoMXN)}</div>
               <div className="text-sm text-muted-foreground">Total Invertido</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-success">{formatCurrency(inversionesResumen.totalAportadoAnual)}</div>
+              <div className="text-2xl font-bold text-success">{formatCurrency(totalAportadoAnualMXN)}</div>
               <div className="text-sm text-muted-foreground">Total Aportado {new Date().getFullYear()}</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-destructive">{formatCurrency(inversionesResumen.totalRetiradoAnual)}</div>
+              <div className="text-2xl font-bold text-destructive">{formatCurrency(totalRetiradoAnualMXN)}</div>
               <div className="text-sm text-muted-foreground">Total Retirado {new Date().getFullYear()}</div>
             </div>
           </div>
