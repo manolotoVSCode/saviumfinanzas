@@ -146,10 +146,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
             <div className="space-y-4">
               {/* Mostrar categorías por moneda - solo Efectivo/Bancos e Inversiones */}
               {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
-                const formatCurrencyForCurrency = (amount: number) => {
+                const formatNumberOnly = (amount: number) => {
                   return new Intl.NumberFormat('es-MX', {
-                    style: 'currency',
-                    currency: moneda,
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0,
                   }).format(amount);
@@ -162,10 +160,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                 return (
                   <div key={moneda} className="space-y-3">
                     {activos.efectivoBancos > 0 && (
-                      <div className="p-4 rounded-lg bg-success/5 border border-success/20">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-muted-foreground">Efectivo y Bancos {moneda}</span>
-                          <span className="font-bold text-success">{formatCurrencyForCurrency(activos.efectivoBancos)}</span>
+                       <div className="p-4 rounded-lg bg-success/5 border border-success/20">
+                         <div className="flex justify-between items-center mb-2">
+                           <span className="text-sm text-muted-foreground">Efectivo y Bancos <strong>{moneda}</strong></span>
+                           <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Dinero disponible inmediatamente
@@ -174,10 +172,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                     )}
                     
                     {activos.inversiones > 0 && (
-                      <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-muted-foreground">Inversiones {moneda}</span>
-                          <span className="font-bold text-primary">{formatCurrencyForCurrency(activos.inversiones)}</span>
+                       <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                         <div className="flex justify-between items-center mb-2">
+                           <span className="text-sm text-muted-foreground">Inversiones <strong>{moneda}</strong></span>
+                           <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Fondos, acciones y ETFs
@@ -197,10 +195,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
 
               {/* Empresas Privadas después del total */}
               {metrics.activos.empresasPrivadas > 0 && (
-                <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-muted-foreground">Empresas Privadas MXN</span>
-                    <span className="font-bold text-primary">{formatCurrency(metrics.activos.empresasPrivadas)}</span>
+                 <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
+                   <div className="flex justify-between items-center mb-2">
+                     <span className="text-sm text-muted-foreground">Empresas Privadas <strong>MXN</strong></span>
+                     <span className="font-bold text-primary">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(metrics.activos.empresasPrivadas)}</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Participaciones en empresas propias
@@ -222,10 +220,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
             <div className="space-y-4">
               {/* Mostrar categorías por moneda */}
               {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
-                const formatCurrencyForCurrency = (amount: number) => {
+                const formatNumberOnly = (amount: number) => {
                   return new Intl.NumberFormat('es-MX', {
-                    style: 'currency',
-                    currency: moneda,
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0,
                   }).format(amount);
@@ -238,10 +234,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                 return (
                   <div key={moneda} className="space-y-3">
                     {pasivos.tarjetasCredito > 0 && (
-                      <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-muted-foreground">Tarjetas de Crédito {moneda}</span>
-                          <span className="font-bold text-destructive">{formatCurrencyForCurrency(pasivos.tarjetasCredito)}</span>
+                       <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                         <div className="flex justify-between items-center mb-2">
+                           <span className="text-sm text-muted-foreground">Tarjetas de Crédito <strong>{moneda}</strong></span>
+                           <span className="font-bold text-destructive">{formatNumberOnly(pasivos.tarjetasCredito)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Saldo pendiente por pagar
@@ -250,10 +246,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                     )}
                     
                     {pasivos.hipoteca > 0 && (
-                      <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-muted-foreground">Hipoteca {moneda}</span>
-                          <span className="font-bold text-destructive">{formatCurrencyForCurrency(pasivos.hipoteca)}</span>
+                       <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                         <div className="flex justify-between items-center mb-2">
+                           <span className="text-sm text-muted-foreground">Hipoteca <strong>{moneda}</strong></span>
+                           <span className="font-bold text-destructive">{formatNumberOnly(pasivos.hipoteca)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Saldo pendiente del préstamo hipotecario
@@ -670,9 +666,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
-                  />
+                   <Tooltip 
+                     formatter={(value: any) => [
+                       new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(value)), 
+                       'Monto'
+                     ]}
+                   />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </div>
@@ -686,7 +685,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                     />
                     <span>{entry.name}</span>
                   </div>
-                  <span className="font-medium">{formatCurrency(entry.value)}</span>
+                   <span className="font-medium">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(entry.value)}</span>
                 </div>
               ))}
             </div>
@@ -715,9 +714,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
-                  />
+                   <Tooltip 
+                     formatter={(value: any) => [
+                       new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(value)), 
+                       'Monto'
+                     ]}
+                   />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </div>
@@ -731,7 +733,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                     />
                     <span>{entry.name}</span>
                   </div>
-                  <span className="font-medium">{formatCurrency(entry.value)}</span>
+                   <span className="font-medium">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(entry.value)}</span>
                 </div>
               ))}
             </div>
@@ -763,12 +765,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    formatter={(value: any, name: any, props: any) => [
-                      formatCurrency(Number(value)), 
-                      `${props.payload.porcentaje.toFixed(1)}%`
-                    ]}
-                  />
+                   <Tooltip 
+                     formatter={(value: any, name: any, props: any) => [
+                       new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(value)), 
+                       `${props.payload.porcentaje.toFixed(1)}%`
+                     ]}
+                   />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </div>
@@ -783,7 +785,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                     <span>{entry.name}</span>
                   </div>
                   <div className="text-right">
-                    <div className="font-medium">{formatCurrency(entry.value)}</div>
+                     <div className="font-medium">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(entry.value)}</div>
                     <div className="text-xs text-muted-foreground">{entry.porcentaje.toFixed(1)}%</div>
                   </div>
                 </div>
@@ -816,12 +818,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        formatter={(value: any, name: any, props: any) => [
-                          formatCurrency(Number(value)), 
-                          `${props.payload.porcentaje.toFixed(1)}%`
-                        ]}
-                      />
+                       <Tooltip 
+                         formatter={(value: any, name: any, props: any) => [
+                           new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(value)), 
+                           `${props.payload.porcentaje.toFixed(1)}%`
+                         ]}
+                       />
                     </RechartsPieChart>
                   </ResponsiveContainer>
                 </div>
@@ -836,7 +838,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                         <span>{entry.name}</span>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium">{formatCurrency(entry.value)}</div>
+                        <div className="font-medium">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(entry.value)}</div>
                         <div className="text-xs text-muted-foreground">{entry.porcentaje.toFixed(1)}%</div>
                       </div>
                     </div>
