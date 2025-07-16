@@ -41,24 +41,28 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
     
     // Transacciones del mes anterior
-    const lastMonthTransactions = filteredTransactions.filter(t => 
-      new Date(t.fecha) >= startOfLastMonth && new Date(t.fecha) <= endOfLastMonth
-    );
+    const lastMonthTransactions = filteredTransactions.filter(t => {
+      const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
+      return adjustedDate >= startOfLastMonth && adjustedDate <= endOfLastMonth;
+    });
     
     // Transacciones de dos meses atrás
-    const twoMonthsAgoTransactions = filteredTransactions.filter(t => 
-      new Date(t.fecha) >= startOfTwoMonthsAgo && new Date(t.fecha) <= endOfTwoMonthsAgo
-    );
+    const twoMonthsAgoTransactions = filteredTransactions.filter(t => {
+      const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
+      return adjustedDate >= startOfTwoMonthsAgo && adjustedDate <= endOfTwoMonthsAgo;
+    });
     
     // Transacciones del año actual
-    const yearTransactions = filteredTransactions.filter(t => 
-      new Date(t.fecha) >= startOfYear
-    );
+    const yearTransactions = filteredTransactions.filter(t => {
+      const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
+      return adjustedDate >= startOfYear;
+    });
     
     // Transacciones del año anterior
-    const lastYearTransactions = filteredTransactions.filter(t => 
-      new Date(t.fecha) >= startOfLastYear && new Date(t.fecha) <= endOfLastYear
-    );
+    const lastYearTransactions = filteredTransactions.filter(t => {
+      const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
+      return adjustedDate >= startOfLastYear && adjustedDate <= endOfLastYear;
+    });
     
     // Cálculos del mes anterior
     const ingresosMes = lastMonthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
@@ -85,8 +89,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
       
       const monthTrans = filteredTransactions.filter(t => {
-        const tDate = new Date(t.fecha);
-        return tDate >= monthStart && tDate <= monthEnd;
+        const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
+        return adjustedDate >= monthStart && adjustedDate <= monthEnd;
       });
       
       const ingresos = monthTrans.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
@@ -157,15 +161,17 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       // Mes anterior (no mes actual)
       const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-      filteredByPeriod = filteredTransactions.filter(t => 
-        new Date(t.fecha) >= startOfLastMonth && new Date(t.fecha) <= endOfLastMonth
-      );
+      filteredByPeriod = filteredTransactions.filter(t => {
+        const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
+        return adjustedDate >= startOfLastMonth && adjustedDate <= endOfLastMonth;
+      });
     } else {
       // Año actual
       const startOfYear = new Date(now.getFullYear(), 0, 1);
-      filteredByPeriod = filteredTransactions.filter(t => 
-        new Date(t.fecha) >= startOfYear
-      );
+      filteredByPeriod = filteredTransactions.filter(t => {
+        const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
+        return adjustedDate >= startOfYear;
+      });
     }
     
     // Agrupar por categoría
