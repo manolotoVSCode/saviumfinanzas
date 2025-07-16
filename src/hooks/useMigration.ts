@@ -61,10 +61,10 @@ export const useMigration = () => {
             user_id: user.id,
             nombre: acc.nombre,
             tipo: acc.tipo,
-            saldo_inicial: acc.saldoInicial,
+            saldo_inicial: Number(acc.saldoInicial) || 0,
             divisa: acc.divisa || 'MXN',
-            valor_mercado: acc.valorMercado,
-            rendimiento_mensual: acc.rendimientoMensual
+            valor_mercado: acc.valorMercado ? Number(acc.valorMercado) : null,
+            rendimiento_mensual: acc.rendimientoMensual ? Number(acc.rendimientoMensual) : null
           };
         });
 
@@ -78,25 +78,32 @@ export const useMigration = () => {
 
       // Migrar transacciones (usando los nuevos UUIDs)
       if (localTransactions.length > 0) {
-        const transactionsToInsert = localTransactions.map(trans => ({
-          id: crypto.randomUUID(),
-          user_id: user.id,
-          cuenta_id: accountIdMap[trans.cuentaId] || crypto.randomUUID(),
-          subcategoria_id: categoryIdMap[trans.subcategoriaId] || crypto.randomUUID(),
-          fecha: trans.fecha instanceof Date ? trans.fecha.toISOString().split('T')[0] : trans.fecha,
-          comentario: trans.comentario,
-          ingreso: trans.ingreso,
-          gasto: trans.gasto,
-          divisa: trans.divisa || 'MXN' as const,
-          csv_id: trans.csvId || null
-        }));
+        const transactionsToInsert = localTransactions
+          .filter(trans => 
+            accountIdMap[trans.cuentaId] && categoryIdMap[trans.subcategoriaId]
+          )
+          .map(trans => ({
+            id: crypto.randomUUID(),
+            user_id: user.id,
+            cuenta_id: accountIdMap[trans.cuentaId],
+            subcategoria_id: categoryIdMap[trans.subcategoriaId],
+            fecha: trans.fecha instanceof Date ? trans.fecha.toISOString().split('T')[0] : trans.fecha,
+            comentario: trans.comentario || '',
+            ingreso: Number(trans.ingreso) || 0,
+            gasto: Number(trans.gasto) || 0,
+            divisa: trans.divisa || 'MXN' as const,
+            csv_id: trans.csvId || null
+          }));
 
         const { error: transError } = await supabase
           .from('transacciones')
           .insert(transactionsToInsert);
 
-        if (transError) throw transError;
-        migratedCount += localTransactions.length;
+        if (transError) {
+          console.error('Transaction error details:', transError);
+          throw transError;
+        }
+        migratedCount += transactionsToInsert.length;
       }
 
       // Limpiar localStorage después de migración exitosa
