@@ -38,7 +38,7 @@ export const TransactionsManager = ({
   // Filtros
   const [filters, setFilters] = useState({
     cuentaId: 'all',
-    mes: '',
+    mes: 'all',
     categoriaId: 'all',
     tipo: 'all',
     divisa: 'all'
