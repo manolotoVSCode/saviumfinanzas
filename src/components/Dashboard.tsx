@@ -36,6 +36,9 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   console.log('TODAS LAS TRANSACCIONES DE MARZO:', marzoTransactions);
   
   if (marzoTransactions.length > 0) {
+    // Ver algunas transacciones de ejemplo
+    console.log('PRIMERAS 5 TRANSACCIONES MARZO:', marzoTransactions.slice(0, 5));
+    
     const ingresosMarzo = marzoTransactions
       .filter(t => t.tipo === 'Ingreso')
       .reduce((sum, t) => sum + t.ingreso, 0);
@@ -47,6 +50,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     console.log('INGRESOS MARZO SIN FILTROS:', ingresosMarzo);
     console.log('GASTOS MARZO SIN FILTROS:', gastosMarzo);
     console.log('DEBERIAN SER - Ingresos: 108577, Gastos: 95823');
+    
+    // Ver qué tipos de categorías tienen los ingresos
+    const ingresosMarzoTrans = marzoTransactions.filter(t => t.tipo === 'Ingreso');
+    console.log('INGRESOS MARZO - TODAS LAS TRANSACCIONES:', ingresosMarzoTrans);
+    console.log('CATEGORIAS DE INGRESOS MARZO:', ingresosMarzoTrans.map(t => ({
+      categoria: t.categoria,
+      subcategoria: t.subcategoria, 
+      monto: t.ingreso,
+      comentario: t.comentario
+    })));
   }
 
   // Función para filtrar métricas por moneda
