@@ -446,7 +446,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 <Tooltip 
                   formatter={(value: any, name: string) => [
                     formatCurrencyConsistent(Number(value), selectedCurrency), 
-                    name === 'ingresos' ? 'Ingresos' : 'Gastos'
+                    name === 'ingresos' ? 'Ingresos' : name === 'gastos' ? 'Gastos' : 'Balance'
                   ]}
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
                   contentStyle={{ 
