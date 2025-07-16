@@ -634,7 +634,7 @@ export const TransactionsManager = ({
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{transaction.fecha.toLocaleDateString('es-MX')}</span>
+                      <span>{new Date(transaction.fecha.getTime() + transaction.fecha.getTimezoneOffset() * 60000).toLocaleDateString('es-MX')}</span>
                     </div>
                   </TableCell>
                   <TableCell>{getAccountName(transaction.cuentaId)}</TableCell>
