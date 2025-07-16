@@ -15,10 +15,12 @@ interface TransactionImporterProps {
 }
 
 interface ParsedCSVTransaction {
+  cuentaNombre: string;
   fecha: string;
   comentario: string;
   ingreso: number;
   gasto: number;
+  subcategoriaNombre: string;
 }
 
 const CURRENCIES: Array<{ value: 'MXN' | 'USD' | 'EUR'; label: string }> = [
@@ -60,11 +62,11 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
   };
 
   const parseAmount = (amountStr: string): number => {
-    if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '0') return 0;
-    // Replace comma with dot for decimal separator
-    const cleanAmount = amountStr.replace(/\s/g, '').replace(',', '.');
+    if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '-' || amountStr.trim() === '0') return 0;
+    // Remove spaces and replace comma with dot for decimal separator
+    const cleanAmount = amountStr.replace(/\s/g, '').replace('.', '').replace(',', '.');
     const parsed = parseFloat(cleanAmount);
-    return isNaN(parsed) ? 0 : parsed;
+    return isNaN(parsed) ? 0 : Math.abs(parsed);
   };
 
   const parseDateDDMMYY = (dateStr: string): string => {
@@ -110,21 +112,23 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       lines.forEach((line, index) => {
         try {
           const columns = parseCSVLine(line);
-          if (columns.length < 4) {
-            errors.push(`Línea ${index + 1}: Formato incorrecto (se esperan 4 columnas)`);
+          if (columns.length < 7) {
+            errors.push(`Línea ${index + 1}: Formato incorrecto (se esperan 7 columnas: id;cuentaId;fecha;comentario;ingreso;gasto;subcategoriaId)`);
             return;
           }
 
-          const [fecha, comentario, ingreso, gasto] = columns;
+          const [id, cuentaId, fecha, comentario, ingreso, gasto, subcategoriaId] = columns;
           
           const ingresoAmount = parseAmount(ingreso);
           const gastoAmount = parseAmount(gasto);
           
           transactions.push({
+            cuentaNombre: cuentaId.trim(),
             fecha: parseDateDDMMYY(fecha),
             comentario: comentario.trim(),
             ingreso: ingresoAmount,
-            gasto: gastoAmount
+            gasto: gastoAmount,
+            subcategoriaNombre: subcategoriaId.trim()
           });
         } catch (error) {
           errors.push(`Línea ${index + 1}: Error al procesar - ${error}`);
@@ -161,21 +165,44 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
   };
 
   const handleImport = () => {
-    if (!selectedCurrency || !selectedAccount) {
-      setImportStatus({ type: 'error', message: 'Debe seleccionar divisa y cuenta' });
+    if (!selectedCurrency) {
+      setImportStatus({ type: 'error', message: 'Debe seleccionar divisa' });
       return;
     }
 
-    const transactions: Omit<Transaction, 'id' | 'monto'>[] = parsedTransactions.map((transaction, index) => ({
-      csvId: `import_${Date.now()}_${index}`,
-      cuentaId: selectedAccount,
-      fecha: new Date(transaction.fecha),
-      comentario: transaction.comentario,
-      ingreso: transaction.ingreso,
-      gasto: transaction.gasto,
-      subcategoriaId: 'sin-asignar',
-      divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
-    }));
+    // Función para encontrar o crear categoría "SIN ASIGNAR"
+    const getSinAsignarCategory = () => {
+      const sinAsignar = categories.find(cat => 
+        cat.subcategoria.toLowerCase().includes('sin asignar') || 
+        cat.subcategoria.toLowerCase().includes('sin categoría') ||
+        cat.categoria.toLowerCase().includes('sin categoría')
+      );
+      return sinAsignar?.id || 'cat-1'; // Fallback al primer category ID
+    };
+
+    // Función para encontrar cuenta por nombre
+    const findAccountByName = (nombreCuenta: string) => {
+      const cuenta = accounts.find(acc => 
+        acc.nombre.toLowerCase().includes(nombreCuenta.toLowerCase()) ||
+        nombreCuenta.toLowerCase().includes(acc.nombre.toLowerCase())
+      );
+      return cuenta?.id || accounts[0]?.id || ''; // Fallback a la primera cuenta
+    };
+
+    const transactions: Omit<Transaction, 'id' | 'monto'>[] = parsedTransactions.map((transaction, index) => {
+      const cuentaId = findAccountByName(transaction.cuentaNombre);
+      
+      return {
+        csvId: `import_${Date.now()}_${index}`,
+        cuentaId: cuentaId,
+        fecha: new Date(transaction.fecha),
+        comentario: transaction.comentario,
+        ingreso: transaction.ingreso,
+        gasto: transaction.gasto,
+        subcategoriaId: getSinAsignarCategory(),
+        divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
+      };
+    });
 
     onImportTransactions(transactions);
     
@@ -236,13 +263,15 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
               <div className="flex items-start gap-2">
                 <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Formato esperado:</p>
-                  <p>Fecha;Comentario;Ingreso;Gasto</p>
+                  <p className="font-medium">Formato esperado (7 columnas):</p>
+                  <p>id;cuentaId;fecha;comentario;ingreso;gasto;subcategoriaId</p>
                   <p className="text-xs mt-1">
                     • Separador: punto y coma (;)<br/>
-                    • Fecha: DD/MM/AA<br/>
-                    • Montos: usar coma como decimal<br/>
-                    • Ejemplo: 15/03/25;Compra de comida;0;250
+                    • Fecha: DD/M/YY (ej: 30/4/25)<br/>
+                    • Montos: usar coma como decimal y espacios para miles<br/>
+                    • Ejemplo: 1;HSBC;30/4/25;MT RENDIMIENTO 0425; 94.591,88 ; -   ;Nómina<br/>
+                    • El ID se ignora (puede ser cualquier valor)<br/>
+                    • Las cuentas y categorías se asignan automáticamente
                   </p>
                 </div>
               </div>
@@ -285,25 +314,11 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label>Cuenta de destino</Label>
-                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.nombre} ({account.divisa})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                <p className="font-medium mb-1">Categoría automática</p>
-                <p>Las transacciones se asignarán automáticamente a "SIN ASIGNAR" y podrán ser categorizadas manualmente después.</p>
+                <p className="font-medium mb-1">Importación automática</p>
+                <p>• Las cuentas se asignarán automáticamente por nombre del CSV</p>
+                <p>• Las categorías se asignarán como "SIN ASIGNAR" automáticamente</p>
+                <p>• Podrás categorizar manualmente después de la importación</p>
               </div>
             </div>
 
