@@ -49,6 +49,11 @@ const Inversiones = () => {
     return ((Math.pow(1 + (rendimientoMensual / 100), 12) - 1) * 100);
   };
 
+  const formatAmount = (value: number) => {
+    if (value === 0) return '';
+    return new Intl.NumberFormat('es-ES').format(Math.round(value));
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -179,10 +184,10 @@ const Inversiones = () => {
                           />
                           <YAxis hide />
                           <Bar dataKey="aportaciones" fill="hsl(var(--success))" radius={[2, 2, 0, 0]}>
-                            <LabelList dataKey="aportaciones" position="top" fontSize={10} />
+                            <LabelList dataKey="aportaciones" position="top" fontSize={10} formatter={formatAmount} />
                           </Bar>
                           <Bar dataKey="retiros" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]}>
-                            <LabelList dataKey="retiros" position="top" fontSize={10} />
+                            <LabelList dataKey="retiros" position="top" fontSize={10} formatter={formatAmount} />
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
