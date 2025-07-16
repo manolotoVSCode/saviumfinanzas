@@ -487,10 +487,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
               <span>Gastos</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }}></div>
-              <span>Balance</span>
-            </div>
           </div>
         </CardContent>
       </Card>
