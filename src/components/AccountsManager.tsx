@@ -30,25 +30,33 @@ export const AccountsManager = ({
   const [formData, setFormData] = useState({
     nombre: '',
     tipo: '' as AccountType,
-    saldoInicial: 0
+    saldoInicial: 0,
+    divisa: 'MXN' as 'MXN' | 'USD' | 'EUR'
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
+  const formatCurrency = (amount: number, currency: 'MXN' | 'USD' | 'EUR' = 'MXN') => {
+    const currencyInfo = {
+      'MXN': { code: 'MXN', locale: 'es-MX' },
+      'USD': { code: 'USD', locale: 'en-US' },
+      'EUR': { code: 'EUR', locale: 'de-DE' }
+    };
+    
+    const { code, locale } = currencyInfo[currency];
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'MXN'
+      currency: code
     }).format(amount);
   };
 
   const resetForm = () => {
-    setFormData({ nombre: '', tipo: '' as AccountType, saldoInicial: 0 });
+    setFormData({ nombre: '', tipo: '' as AccountType, saldoInicial: 0, divisa: 'MXN' });
     setEditingAccount(null);
     setIsAddingAccount(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre || !formData.tipo) return;
+    if (!formData.nombre || !formData.tipo || !formData.divisa) return;
 
     if (editingAccount) {
       onUpdateAccount(editingAccount.id, formData);
@@ -62,7 +70,8 @@ export const AccountsManager = ({
     setFormData({
       nombre: account.nombre,
       tipo: account.tipo,
-      saldoInicial: account.saldoInicial
+      saldoInicial: account.saldoInicial,
+      divisa: account.divisa || 'MXN' // Valor por defecto para cuentas existentes
     });
     setEditingAccount(account);
     setIsAddingAccount(true);
@@ -123,6 +132,37 @@ export const AccountsManager = ({
                 </Select>
               </div>
               <div>
+                <Label htmlFor="divisa">Divisa</Label>
+                <Select 
+                  value={formData.divisa} 
+                  onValueChange={(value) => setFormData({ ...formData, divisa: value as 'MXN' | 'USD' | 'EUR' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una divisa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MXN">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">MXN</span>
+                        <span>$ - Peso Mexicano</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="USD">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">USD</span>
+                        <span>$ - Dólar Estadounidense</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="EUR">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">EUR</span>
+                        <span>€ - Euro</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label htmlFor="saldoInicial">Saldo Inicial</Label>
                 <Input
                   id="saldoInicial"
@@ -156,6 +196,7 @@ export const AccountsManager = ({
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Tipo</TableHead>
+                <TableHead>Divisa</TableHead>
                 <TableHead>Saldo Inicial</TableHead>
                 <TableHead>Saldo Actual</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -170,9 +211,14 @@ export const AccountsManager = ({
                       {account.tipo}
                     </Badge>
                   </TableCell>
-                  <TableCell>{formatCurrency(account.saldoInicial)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono">
+                      {account.divisa || 'MXN'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatCurrency(account.saldoInicial, account.divisa || 'MXN')}</TableCell>
                   <TableCell className={account.saldoActual >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    {formatCurrency(account.saldoActual)}
+                    {formatCurrency(account.saldoActual, account.divisa || 'MXN')}
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">

@@ -7,14 +7,14 @@ const initialAccountTypes: AccountType[] = [
 ];
 
 const initialAccounts: Account[] = [
-  { id: '1', nombre: 'Efectivo', tipo: 'Efectivo', saldoInicial: 0, saldoActual: 0 },
-  { id: '2', nombre: 'Cuenta de Cheques', tipo: 'Banco', saldoInicial: 0, saldoActual: 0 },
-  { id: '3', nombre: 'Tarjeta de Crédito', tipo: 'Tarjeta de Crédito', saldoInicial: 0, saldoActual: 0 },
-  { id: '4', nombre: 'Ahorros', tipo: 'Ahorros', saldoInicial: 0, saldoActual: 0 },
-  { id: '5', nombre: 'QUANT', tipo: 'Inversiones', saldoInicial: 48000, saldoActual: 48000, valorMercado: 48000 },
-  { id: '6', nombre: 'AMEX', tipo: 'Tarjeta de Crédito', saldoInicial: 0, saldoActual: 0 },
-  { id: '7', nombre: 'Mastercard', tipo: 'Tarjeta de Crédito', saldoInicial: 0, saldoActual: 0 },
-  { id: '8', nombre: 'Hipoteca Casa', tipo: 'Hipoteca', saldoInicial: 0, saldoActual: 0 }
+  { id: '1', nombre: 'Efectivo', tipo: 'Efectivo', saldoInicial: 0, saldoActual: 0, divisa: 'MXN' },
+  { id: '2', nombre: 'Cuenta de Cheques', tipo: 'Banco', saldoInicial: 0, saldoActual: 0, divisa: 'MXN' },
+  { id: '3', nombre: 'Tarjeta de Crédito', tipo: 'Tarjeta de Crédito', saldoInicial: 0, saldoActual: 0, divisa: 'MXN' },
+  { id: '4', nombre: 'Ahorros', tipo: 'Ahorros', saldoInicial: 0, saldoActual: 0, divisa: 'MXN' },
+  { id: '5', nombre: 'QUANT', tipo: 'Inversiones', saldoInicial: 48000, saldoActual: 48000, valorMercado: 48000, divisa: 'MXN' },
+  { id: '6', nombre: 'AMEX', tipo: 'Tarjeta de Crédito', saldoInicial: 0, saldoActual: 0, divisa: 'MXN' },
+  { id: '7', nombre: 'Mastercard', tipo: 'Tarjeta de Crédito', saldoInicial: 0, saldoActual: 0, divisa: 'MXN' },
+  { id: '8', nombre: 'Hipoteca Casa', tipo: 'Hipoteca', saldoInicial: 0, saldoActual: 0, divisa: 'MXN' }
 ];
 
 const initialCategories: Category[] = [
