@@ -175,6 +175,7 @@ export const useFinanceData = () => {
       return {
         ...transaction,
         categoria: category?.categoria || 'Sin categoría',
+        subcategoria: category?.subcategoria || 'Sin subcategoría',
         tipo,
         cuenta: account?.nombre || 'Cuenta desconocida'
       };
@@ -469,22 +470,49 @@ export const useFinanceData = () => {
       t.fecha.getFullYear() === currentYear
     );
     
-    // Calcular métricas mensuales
-    const ingresosMes = thisMonthTransactions
-      .filter(t => t.ingreso > 0)
+    // Calcular métricas mensuales (mes anterior completo, no mes actual)
+    const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    
+    const lastMonthTransactions = enrichedTransactions.filter(t => 
+      t.fecha.getMonth() === lastMonth && t.fecha.getFullYear() === lastMonthYear
+    );
+    
+    const ingresosMes = lastMonthTransactions
+      .filter(t => 
+        t.ingreso > 0 && 
+        t.tipo === 'Ingreso' &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '') &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '')
+      )
       .reduce((sum, t) => sum + t.ingreso, 0);
     
-    const gastosMes = thisMonthTransactions
-      .filter(t => t.gasto > 0)
+    const gastosMes = lastMonthTransactions
+      .filter(t => 
+        t.gasto > 0 &&
+        t.tipo === 'Gastos' &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '') &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '')
+      )
       .reduce((sum, t) => sum + t.gasto, 0);
     
-    // Calcular métricas anuales
+    // Calcular métricas anuales (año actual completo)
     const ingresosAnio = thisYearTransactions
-      .filter(t => t.ingreso > 0)
+      .filter(t => 
+        t.ingreso > 0 && 
+        t.tipo === 'Ingreso' &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '') &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '')
+      )
       .reduce((sum, t) => sum + t.ingreso, 0);
     
     const gastosAnio = thisYearTransactions
-      .filter(t => t.gasto > 0)
+      .filter(t => 
+        t.gasto > 0 &&
+        t.tipo === 'Gastos' &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '') &&
+        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '')
+      )
       .reduce((sum, t) => sum + t.gasto, 0);
     
     // Calcular balances por tipo de cuenta
