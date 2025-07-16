@@ -94,7 +94,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       });
       
       const ingresos = monthTrans.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-      const gastos = Math.abs(monthTrans.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0));
+      const gastosRaw = monthTrans.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+      const gastos = Math.abs(gastosRaw);
+      
+      // Debug para abril 2025
+      if (date.getMonth() === 3 && date.getFullYear() === 2025) {
+        console.log('=== DEBUG GASTOS ABRIL 2025 ===');
+        console.log('monthTrans gastos:', monthTrans.filter(t => t.tipo === 'Gastos').map(t => ({ comentario: t.comentario, gasto: t.gasto, fecha: t.fecha })));
+        console.log('gastosRaw:', gastosRaw);
+        console.log('gastos final:', gastos);
+      }
       
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
