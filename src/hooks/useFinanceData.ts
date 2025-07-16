@@ -284,11 +284,33 @@ export const useFinanceData = () => {
         const valorActual = a.valorMercado || a.saldoActual;
         const rendimiento = valorActual - a.saldoInicial - aportaciones + retiros;
         
+        // Calcular movimientos por mes para esta cuenta específica
+        const movimientosPorMes = [];
+        for (let mes = 0; mes < 12; mes++) {
+          const mesStart = new Date(currentYear, mes, 1);
+          const mesEnd = new Date(currentYear, mes + 1, 0);
+          
+          const transaccionesMesCuenta = enrichedTransactions.filter(t => 
+            t.cuentaId === a.id && t.fecha >= mesStart && t.fecha <= mesEnd
+          );
+          
+          const aportacionesMes = transaccionesMesCuenta.filter(t => t.tipo === 'Aportación').reduce((sum, t) => sum + t.ingreso, 0);
+          const retirosMes = transaccionesMesCuenta.filter(t => t.tipo === 'Retiro').reduce((sum, t) => sum + Math.abs(t.gasto), 0);
+          
+          movimientosPorMes.push({
+            mes: mesStart.toLocaleDateString('es-MX', { month: 'short' }),
+            aportaciones: aportacionesMes,
+            retiros: retirosMes
+          });
+        }
+        
         return {
           cuenta: a.nombre,
+          id: a.id,
           saldo: valorActual,
           saldoInicial: a.saldoInicial,
-          rendimiento
+          rendimiento,
+          movimientosPorMes
         };
       });
 

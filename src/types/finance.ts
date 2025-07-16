@@ -109,6 +109,6 @@ export interface DashboardMetrics {
     totalRetiradoAnual: number;
     rendimientoAnualTotal: number;
     rendimientoAnualPorcentaje: number;
-    cuentasInversion: Array<{ cuenta: string; saldo: number; saldoInicial: number; rendimiento: number }>;
+    cuentasInversion: Array<{ cuenta: string; id: string; saldo: number; saldoInicial: number; rendimiento: number; movimientosPorMes: Array<{ mes: string; aportaciones: number; retiros: number }> }>;
   };
 }

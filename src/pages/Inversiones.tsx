@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 
 import Layout from '@/components/Layout';
 import { useFinanceData } from '@/hooks/useFinanceData';
@@ -47,6 +48,11 @@ const Inversiones = () => {
     return totalAportado !== 0 ? (rendimiento / totalAportado) * 100 : 0;
   };
 
+  const calcularRendimientoAnual = (rendimientoMensual: number) => {
+    // Fórmula de capitalización compuesta: (1 + r_mensual)^12 - 1
+    return ((Math.pow(1 + (rendimientoMensual / 100), 12) - 1) * 100);
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
@@ -84,48 +90,17 @@ const Inversiones = () => {
         </CardContent>
       </Card>
 
-      {/* DETALLE MENSUAL */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Aportaciones por Mes - {new Date().getFullYear()}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {inversionesResumen.aportacionesPorMes.map((item, index) => (
-                <div key={index} className="flex justify-between items-center py-1">
-                  <span className="text-sm text-muted-foreground capitalize">{item.mes}</span>
-                  <span className="font-medium">{formatCurrency(item.monto)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Retiros por Mes - {new Date().getFullYear()}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {inversionesResumen.retirosPorMes.map((item, index) => (
-                <div key={index} className="flex justify-between items-center py-1">
-                  <span className="text-sm text-muted-foreground capitalize">{item.mes}</span>
-                  <span className="font-medium text-destructive">{formatCurrency(item.monto)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* DETALLE POR CUENTA */}
       <div className="grid grid-cols-1 gap-6">
-        {cuentasInversion.map((cuenta) => {
+        {inversionesResumen.cuentasInversion.map((inversion) => {
+          const cuenta = cuentasInversion.find(c => c.id === inversion.id);
+          if (!cuenta) return null;
+          
           const valorActual = cuenta.valorMercado || cuenta.saldoActual;
-          const totalAportado = cuenta.saldoActual; // El saldoActual representa lo aportado
+          const totalAportado = cuenta.saldoActual;
           const rendimiento = valorActual - totalAportado;
-          const rendimientoPorcentaje = calcularPorcentajeRendimiento(valorActual, totalAportado);
+          const rendimientoMensualPorcentaje = calcularPorcentajeRendimiento(valorActual, totalAportado);
+          const rendimientoAnualPorcentaje = calcularRendimientoAnual(rendimientoMensualPorcentaje);
           const IconComponent = getRendimientoIcon(rendimiento);
 
           return (
@@ -133,10 +108,15 @@ const Inversiones = () => {
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg">{cuenta.nombre}</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Badge variant={rendimiento >= 0 ? 'default' : 'destructive'}>
-                    <IconComponent className="h-3 w-3 mr-1" />
-                    {rendimiento >= 0 ? '+' : ''}{rendimientoPorcentaje.toFixed(2)}%
-                  </Badge>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge variant={rendimiento >= 0 ? 'default' : 'destructive'} className="text-xs">
+                      <IconComponent className="h-3 w-3 mr-1" />
+                      {rendimiento >= 0 ? '+' : ''}{rendimientoMensualPorcentaje.toFixed(2)}% Mensual
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {rendimientoAnualPorcentaje >= 0 ? '+' : ''}{rendimientoAnualPorcentaje.toFixed(2)}% Anual
+                    </Badge>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -169,9 +149,16 @@ const Inversiones = () => {
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Rendimiento</span>
+                    <span className="text-sm text-muted-foreground">Rendimiento Mensual</span>
                     <span className={`text-lg font-bold ${getRendimientoColor(rendimiento)}`}>
-                      {rendimientoPorcentaje > 0 ? '+' : ''}{rendimientoPorcentaje.toFixed(2)}%
+                      {rendimientoMensualPorcentaje > 0 ? '+' : ''}{rendimientoMensualPorcentaje.toFixed(2)}%
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Rendimiento Anual (Proyectado)</span>
+                    <span className={`text-sm font-bold ${getRendimientoColor(rendimiento)}`}>
+                      {rendimientoAnualPorcentaje > 0 ? '+' : ''}{rendimientoAnualPorcentaje.toFixed(2)}%
                     </span>
                   </div>
 
@@ -204,10 +191,43 @@ const Inversiones = () => {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Ingrese el monto del rendimiento mensual en número. El porcentaje se calculará automáticamente.
+                        Ingrese el monto del rendimiento mensual en número. El porcentaje mensual y anual se calculará automáticamente.
                       </p>
                     </div>
                   )}
+
+                  {/* Gráfica de movimientos mensuales */}
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium mb-3">Movimientos Mensuales {new Date().getFullYear()}</h4>
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={inversion.movimientosPorMes}>
+                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                          <XAxis 
+                            dataKey="mes" 
+                            tick={{ fontSize: 12 }}
+                            className="text-muted-foreground"
+                          />
+                          <YAxis 
+                            tick={{ fontSize: 12 }}
+                            className="text-muted-foreground"
+                          />
+                          <Bar dataKey="aportaciones" fill="hsl(var(--success))" radius={[2, 2, 0, 0]} />
+                          <Bar dataKey="retiros" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex justify-center gap-4 mt-2 text-xs">
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
+                        <span>Aportaciones</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
+                        <span>Retiros</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
