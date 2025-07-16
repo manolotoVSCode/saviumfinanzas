@@ -297,7 +297,12 @@ export const useFinanceData = () => {
     
     // INVERSIONES DETALLADAS (considerando saldo inicial)
     const cuentasInversionIds = accountsWithBalances.filter(a => a.tipo === 'Inversiones').map(a => a.id);
-    const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + convertCurrency(a.saldoActual, a.divisa, 'MXN'), 0);
+    const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => {
+      const convertedAmount = convertCurrency(a.saldoActual, a.divisa, 'MXN');
+      console.log(`Cuenta: ${a.nombre}, Saldo: ${a.saldoActual} ${a.divisa}, Convertido: ${convertedAmount} MXN`);
+      return s + convertedAmount;
+    }, 0);
+    console.log(`Total inversiones en MXN: ${totalInversiones}`);
     
     // Filtrar aportaciones solo a cuentas de inversión
     const aportacionesMes = transactionsThisMonth.filter(t => 
@@ -345,8 +350,8 @@ export const useFinanceData = () => {
     // Calcular rendimiento anual total
     const totalAportadoAnual = aportacionesPorMes.reduce((sum, item) => sum + item.monto, 0);
     const totalRetiradoAnual = retirosPorMes.reduce((sum, item) => sum + item.monto, 0);
-    const valorActualInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoActual, 0);
-    const saldoInicialInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoInicial, 0);
+    const valorActualInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + convertCurrency(a.saldoActual, a.divisa, 'MXN'), 0);
+    const saldoInicialInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + convertCurrency(a.saldoInicial, a.divisa, 'MXN'), 0);
     const rendimientoAnualTotal = valorActualInversiones - saldoInicialInversiones - totalAportadoAnual + totalRetiradoAnual;
     const rendimientoAnualPorcentaje = (saldoInicialInversiones + totalAportadoAnual - totalRetiradoAnual) > 0 ? 
       (rendimientoAnualTotal / (saldoInicialInversiones + totalAportadoAnual - totalRetiradoAnual)) * 100 : 0;
