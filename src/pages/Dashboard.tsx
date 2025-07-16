@@ -14,6 +14,8 @@ const Dashboard = () => {
           metrics={financeData.dashboardMetrics} 
           formatCurrency={formatCurrency}
           currencyCode={config.currency}
+          transactions={financeData.transactions}
+          accounts={financeData.accounts}
         />
       </div>
     </Layout>

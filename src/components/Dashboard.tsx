@@ -11,10 +11,71 @@ interface DashboardProps {
   metrics: DashboardMetrics;
   formatCurrency: (amount: number) => string;
   currencyCode?: string;
+  transactions?: any[]; // Agregamos las transacciones para filtrar
+  accounts?: any[]; // Agregamos las cuentas para filtrar
 }
 
-export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: DashboardProps) => {
+export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+
+  // Función para filtrar métricas por moneda
+  const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
+    // Filtrar transacciones por moneda seleccionada
+    const filteredTransactions = transactions.filter(t => t.divisa === currency);
+    
+    // Calcular métricas básicas para la moneda seleccionada
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    
+    const monthTransactions = filteredTransactions.filter(t => 
+      new Date(t.fecha) >= startOfMonth && new Date(t.fecha) <= endOfMonth
+    );
+    const yearTransactions = filteredTransactions.filter(t => 
+      new Date(t.fecha) >= startOfYear
+    );
+    
+    const ingresosMes = monthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMes = monthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const ingresosAnio = yearTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnio = yearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    
+    // Generar datos de tendencia mensual para la moneda seleccionada
+    const tendenciaMensual = [];
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      
+      const monthTrans = filteredTransactions.filter(t => {
+        const tDate = new Date(t.fecha);
+        return tDate >= monthStart && tDate <= monthEnd;
+      });
+      
+      const ingresos = monthTrans.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+      const gastos = monthTrans.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+      
+      tendenciaMensual.push({
+        mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
+        ingresos,
+        gastos
+      });
+    }
+    
+    return {
+      ingresosMes,
+      gastosMes,
+      ingresosAnio,
+      gastosAnio,
+      balanceMes: ingresosMes - gastosMes,
+      balanceAnio: ingresosAnio - gastosAnio,
+      tendenciaMensual
+    };
+  };
+
+  const filteredMetrics = getFilteredMetrics(selectedCurrency);
 
   const getBalanceColor = (amount: number) => {
     if (amount > 0) return 'text-success';
@@ -273,6 +334,42 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
           </CardContent>
         </Card>
       </div>
+
+      {/* SCORE DE SALUD FINANCIERA */}
+      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Salud Financiera
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground hover:text-primary cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm p-3">
+                  <div className="space-y-2 text-xs">
+                    <p><strong>Cálculo del Score:</strong></p>
+                    <p>• Ratio de Deuda = Pasivos / Activos</p>
+                    <p>• Balance mensual = Ingresos - Gastos</p>
+                    <p>• Se reduce según nivel de deuda y capacidad de ahorro</p>
+                  </div>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <span className={`text-4xl font-bold ${getSaludColor(metrics.saludFinanciera.nivel)}`}>
+              {metrics.saludFinanciera.score}
+            </span>
+            <Badge variant={metrics.saludFinanciera.nivel === 'Excelente' ? 'default' : 
+                            metrics.saludFinanciera.nivel === 'Buena' ? 'secondary' : 'destructive'}>
+              {metrics.saludFinanciera.nivel}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">{metrics.saludFinanciera.descripcion}</p>
+        </CardContent>
+      </Card>
 
       {/* BOTONES DE SELECCIÓN DE MONEDA */}
       <div className="flex justify-center mb-6">
@@ -610,26 +707,11 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Ingresos anuales */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos 2025 <strong>MXN</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos 2025 <strong>{selectedCurrency}</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {formatCurrency(metrics.ingresosAnio)}
-            </div>
-            <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span>vs año anterior:</span>
-              <div className="flex items-center space-x-1">
-                {metrics.variacionIngresosAnual >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-success" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 text-destructive" />
-                )}
-                <span className={`font-medium ${
-                  metrics.variacionIngresosAnual >= 0 ? 'text-success' : 'text-destructive'
-                }`}>
-                  {Math.abs(metrics.variacionIngresosAnual).toFixed(1)}%
-                </span>
-              </div>
+              {formatCurrency(filteredMetrics.ingresosAnio)}
             </div>
           </CardContent>
         </Card>
@@ -637,26 +719,11 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Gastos anuales */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos 2025 <strong>MXN</strong></CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos 2025 <strong>{selectedCurrency}</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(metrics.gastosAnio)}
-            </div>
-            <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-              <span>vs año anterior:</span>
-              <div className="flex items-center space-x-1">
-                {metrics.variacionGastosAnual <= 0 ? (
-                  <TrendingDown className="h-3 w-3 text-success" />
-                ) : (
-                  <TrendingUp className="h-3 w-3 text-destructive" />
-                )}
-                <span className={`font-medium ${
-                  metrics.variacionGastosAnual <= 0 ? 'text-success' : 'text-destructive'
-                }`}>
-                  {Math.abs(metrics.variacionGastosAnual).toFixed(1)}%
-                </span>
-              </div>
+              {formatCurrency(filteredMetrics.gastosAnio)}
             </div>
           </CardContent>
         </Card>
