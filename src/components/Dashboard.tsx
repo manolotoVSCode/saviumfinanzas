@@ -89,18 +89,9 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       new Date(t.fecha) >= startOfLastYear && new Date(t.fecha) <= endOfLastYear
     );
     
-    // Cálculos del mes anterior - excluyendo aportaciones, retiros, transferencias e inversiones
-    const ingresosMes = lastMonthTransactions.filter(t => 
-      t.tipo === 'Ingreso' && 
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-    ).reduce((sum, t) => sum + t.ingreso, 0);
-    
-    const gastosMes = lastMonthTransactions.filter(t => 
-      t.tipo === 'Gastos' && 
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-    ).reduce((sum, t) => sum + t.gasto, 0);
+    // Cálculos del mes anterior - SUMA DIRECTA sin filtros por categoría
+    const ingresosMes = lastMonthTransactions.reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMes = lastMonthTransactions.reduce((sum, t) => sum + t.gasto, 0);
     
     // Cálculos de dos meses atrás (para comparativo) - excluyendo aportaciones, retiros, transferencias e inversiones
     const ingresosMesAnterior = twoMonthsAgoTransactions.filter(t => 
