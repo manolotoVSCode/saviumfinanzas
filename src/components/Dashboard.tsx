@@ -116,6 +116,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       cambioIngresosAnio: ingresosAnioAnterior > 0 ? ((ingresosAnio - ingresosAnioAnterior) / ingresosAnioAnterior) * 100 : 0,
       cambioGastosAnio: gastosAnioAnterior > 0 ? ((gastosAnio - gastosAnioAnterior) / gastosAnioAnterior) * 100 : 0,
       
+      // Comparativos de balance
+      balanceMesAnterior: ingresosMesAnterior - gastosMesAnterior,
+      balanceAnioAnterior: ingresosAnioAnterior - gastosAnioAnterior,
+      
       tendenciaMensual
     };
   };
@@ -200,6 +204,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     if (change < 0) return 'text-destructive';
     return 'text-muted-foreground';
   };
+
+  // Función para formatear moneda consistentemente
+  const formatCurrencyConsistent = (amount: number, currency: string) => {
+    return `${amount.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${currency}`;
+  };
+
+  // Calcular cambios en balance
+  const cambioBalanceMes = filteredMetrics.balanceMesAnterior !== 0 ? 
+    ((filteredMetrics.balanceMes - filteredMetrics.balanceMesAnterior) / Math.abs(filteredMetrics.balanceMesAnterior)) * 100 : 0;
+  
+  const cambioBalanceAnio = filteredMetrics.balanceAnioAnterior !== 0 ? 
+    ((filteredMetrics.balanceAnio - filteredMetrics.balanceAnioAnterior) / Math.abs(filteredMetrics.balanceAnioAnterior)) * 100 : 0;
 
 
   const getSaludColor = (nivel: string) => {
@@ -415,12 +431,15 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-primary">Resultado del Mes <strong>{selectedCurrency}</strong></CardTitle>
+            {getTrendIcon(cambioBalanceMes)}
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${getBalanceColor(filteredMetrics.balanceMes)}`}>
-              {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.balanceMes) : 
-               `${filteredMetrics.balanceMes.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+              {formatCurrencyConsistent(filteredMetrics.balanceMes, selectedCurrency)}
             </div>
+            <p className={`text-xs ${getTrendColor(cambioBalanceMes)}`}>
+              {cambioBalanceMes > 0 ? '+' : ''}{cambioBalanceMes.toFixed(1)}% vs mes anterior
+            </p>
           </CardContent>
         </Card>
 
@@ -432,8 +451,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.ingresosMes) : 
-               `${filteredMetrics.ingresosMes.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+              {formatCurrencyConsistent(filteredMetrics.ingresosMes, selectedCurrency)}
             </div>
             <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosMes)}`}>
               {filteredMetrics.cambioIngresosMes > 0 ? '+' : ''}{filteredMetrics.cambioIngresosMes.toFixed(1)}% vs mes anterior
@@ -449,8 +467,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.gastosMes) : 
-               `${filteredMetrics.gastosMes.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+              {formatCurrencyConsistent(filteredMetrics.gastosMes, selectedCurrency)}
             </div>
             <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosMes)}`}>
               {filteredMetrics.cambioGastosMes > 0 ? '+' : ''}{filteredMetrics.cambioGastosMes.toFixed(1)}% vs mes anterior
@@ -483,13 +500,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    formatter={(value: any) => [
-                      selectedCurrency === 'MXN' ? formatCurrency(Number(value)) : 
-                      `${Number(value).toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`, 
-                      'Monto'
-                    ]}
-                  />
+                   <Tooltip 
+                     formatter={(value: any) => [
+                       formatCurrencyConsistent(Number(value), selectedCurrency), 
+                       'Monto'
+                     ]}
+                   />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </div>
@@ -503,10 +519,9 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     />
                     <span>{entry.name}</span>
                   </div>
-                   <span className="font-medium">
-                     {selectedCurrency === 'MXN' ? formatCurrency(entry.value) : 
-                      `${entry.value.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
-                   </span>
+                    <span className="font-medium">
+                      {formatCurrencyConsistent(entry.value, selectedCurrency)}
+                    </span>
                 </div>
               ))}
             </div>
@@ -537,8 +552,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   </Pie>
                   <Tooltip 
                     formatter={(value: any) => [
-                      selectedCurrency === 'MXN' ? formatCurrency(Number(value)) : 
-                      `${Number(value).toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`, 
+                      formatCurrencyConsistent(Number(value), selectedCurrency), 
                       'Monto'
                     ]}
                   />
@@ -556,8 +570,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     <span>{entry.name}</span>
                   </div>
                    <span className="font-medium">
-                     {selectedCurrency === 'MXN' ? formatCurrency(entry.value) : 
-                      `${entry.value.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+                     {formatCurrencyConsistent(entry.value, selectedCurrency)}
                    </span>
                 </div>
               ))}
@@ -575,12 +588,15 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-primary">Resultado del Año <strong>{selectedCurrency}</strong></CardTitle>
+            {getTrendIcon(cambioBalanceAnio)}
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${getBalanceColor(filteredMetrics.balanceAnio)}`}>
-              {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.balanceAnio) : 
-               `${filteredMetrics.balanceAnio.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+              {formatCurrencyConsistent(filteredMetrics.balanceAnio, selectedCurrency)}
             </div>
+            <p className={`text-xs ${getTrendColor(cambioBalanceAnio)}`}>
+              {cambioBalanceAnio > 0 ? '+' : ''}{cambioBalanceAnio.toFixed(1)}% vs año anterior
+            </p>
           </CardContent>
         </Card>
 
@@ -592,8 +608,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
-              {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.ingresosAnio) : 
-               `${filteredMetrics.ingresosAnio.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+              {formatCurrencyConsistent(filteredMetrics.ingresosAnio, selectedCurrency)}
             </div>
             <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosAnio)}`}>
               {filteredMetrics.cambioIngresosAnio > 0 ? '+' : ''}{filteredMetrics.cambioIngresosAnio.toFixed(1)}% vs año anterior
@@ -609,8 +624,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.gastosAnio) : 
-               `${filteredMetrics.gastosAnio.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+              {formatCurrencyConsistent(filteredMetrics.gastosAnio, selectedCurrency)}
             </div>
             <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosAnio)}`}>
               {filteredMetrics.cambioGastosAnio > 0 ? '+' : ''}{filteredMetrics.cambioGastosAnio.toFixed(1)}% vs año anterior
@@ -643,13 +657,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                   <Tooltip 
-                     formatter={(value: any) => [
-                       selectedCurrency === 'MXN' ? formatCurrency(Number(value)) : 
-                       `${Number(value).toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`, 
-                       'Monto'
-                     ]}
-                   />
+                  <Tooltip 
+                    formatter={(value: any) => [
+                      formatCurrencyConsistent(Number(value), selectedCurrency), 
+                      'Monto'
+                    ]}
+                  />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </div>
@@ -663,10 +676,9 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     />
                     <span>{entry.name}</span>
                   </div>
-                    <span className="font-medium">
-                      {selectedCurrency === 'MXN' ? formatCurrency(entry.value) : 
-                       `${entry.value.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
-                    </span>
+                   <span className="font-medium">
+                     {formatCurrencyConsistent(entry.value, selectedCurrency)}
+                   </span>
                 </div>
               ))}
             </div>
@@ -697,8 +709,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   </Pie>
                    <Tooltip 
                      formatter={(value: any) => [
-                       selectedCurrency === 'MXN' ? formatCurrency(Number(value)) : 
-                       `${Number(value).toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`, 
+                       formatCurrencyConsistent(Number(value), selectedCurrency), 
                        'Monto'
                      ]}
                    />
@@ -716,8 +727,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     <span>{entry.name}</span>
                   </div>
                     <span className="font-medium">
-                      {selectedCurrency === 'MXN' ? formatCurrency(entry.value) : 
-                       `${entry.value.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
+                      {formatCurrencyConsistent(entry.value, selectedCurrency)}
                     </span>
                 </div>
               ))}
