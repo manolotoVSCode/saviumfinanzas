@@ -61,7 +61,10 @@ const Inversiones = () => {
 
   const formatAmount = (value: number) => {
     if (value === 0) return '';
-    return new Intl.NumberFormat('es-ES').format(Math.round(value));
+    return new Intl.NumberFormat('es-ES', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Math.round(value));
   };
 
   return (
@@ -134,16 +137,28 @@ const Inversiones = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total Aportado</span>
-                    <span className="text-xl font-bold text-primary">{formatCurrency(totalAportado)}</span>
+                  {/* Total Aportado en cuadro verde */}
+                  <div className="p-4 rounded-lg bg-success/5 border border-success/20">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-muted-foreground">Total Aportado</span>
+                      <span className="text-xl font-bold text-success">{formatCurrency(totalAportado)}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Valor total de la inversión
+                    </div>
                   </div>
                   
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Rendimiento Mensual</span>
-                    <span className={`text-sm font-medium ${getRendimientoColor(rendimiento)}`}>
-                      {rendimiento >= 0 ? '+' : ''}{formatCurrency(rendimiento)}
-                    </span>
+                  {/* Rendimiento Mensual en cuadro gris */}
+                  <div className="p-4 rounded-lg bg-muted/5 border border-muted/20">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-muted-foreground">Rendimiento Mensual</span>
+                      <span className={`text-sm font-medium ${getRendimientoColor(rendimiento)}`}>
+                        {rendimiento >= 0 ? '+' : ''}{formatCurrency(rendimiento)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Ganancias/pérdidas del mes
+                    </div>
                   </div>
 
                   {/* Checkboxes de configuración */}

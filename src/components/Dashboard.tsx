@@ -207,7 +207,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
   // Función para formatear moneda consistentemente
   const formatCurrencyConsistent = (amount: number, currency: string) => {
-    return `${amount.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${currency}`;
+    return `${new Intl.NumberFormat('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(amount)} ${currency}`;
   };
 
   // Calcular cambios en balance
