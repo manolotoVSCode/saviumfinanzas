@@ -347,7 +347,7 @@ export const useFinanceDataSupabase = () => {
     const topCategoriasIngresosMesAnterior = getCategoryTotalsIngresos(transactionsPreviousMonth);
     const topCategoriasIngresosAnual = getCategoryTotalsIngresos(transactionsThisYear);
     
-    // TENDENCIA MENSUAL (últimos 12 meses)
+    // TENDENCIA MENSUAL (últimos 12 meses) - CONVERTIDO A MXN PARA DASHBOARD
     const tendenciaMensual = [];
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
@@ -356,8 +356,14 @@ export const useFinanceDataSupabase = () => {
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
       
       const monthTransactions = enrichedTransactions.filter(t => t.fecha >= monthStart && t.fecha <= monthEnd);
-      const ingresos = monthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-      const gastos = monthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+      
+      // Convertir todos los ingresos y gastos a MXN para el dashboard
+      const ingresos = monthTransactions
+        .filter(t => t.tipo === 'Ingreso')
+        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      const gastos = monthTransactions
+        .filter(t => t.tipo === 'Gastos')
+        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
       
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
