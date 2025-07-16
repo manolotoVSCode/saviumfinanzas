@@ -454,16 +454,22 @@ export const useFinanceData = () => {
     setTransactions([]);
   };
 
-  // Simplified dashboardMetrics - you can expand this later
+  // Cálculo completo de métricas del dashboard
   const dashboardMetrics: DashboardMetrics = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
+    // Filtrar transacciones por períodos
     const thisMonthTransactions = enrichedTransactions.filter(t => 
       t.fecha.getMonth() === currentMonth && t.fecha.getFullYear() === currentYear
     );
     
+    const thisYearTransactions = enrichedTransactions.filter(t => 
+      t.fecha.getFullYear() === currentYear
+    );
+    
+    // Calcular métricas mensuales
     const ingresosMes = thisMonthTransactions
       .filter(t => t.ingreso > 0)
       .reduce((sum, t) => sum + t.ingreso, 0);
@@ -472,23 +478,86 @@ export const useFinanceData = () => {
       .filter(t => t.gasto > 0)
       .reduce((sum, t) => sum + t.gasto, 0);
     
-    const balanceTotal = accountsWithBalances.reduce((sum, acc) => sum + acc.saldoActual, 0);
+    // Calcular métricas anuales
+    const ingresosAnio = thisYearTransactions
+      .filter(t => t.ingreso > 0)
+      .reduce((sum, t) => sum + t.ingreso, 0);
     
+    const gastosAnio = thisYearTransactions
+      .filter(t => t.gasto > 0)
+      .reduce((sum, t) => sum + t.gasto, 0);
+    
+    // Calcular balances por tipo de cuenta
+    const efectivoBancos = accountsWithBalances
+      .filter(acc => ['Efectivo', 'Banco', 'Ahorros'].includes(acc.tipo))
+      .reduce((sum, acc) => sum + acc.saldoActual, 0);
+    
+    const inversiones = accountsWithBalances
+      .filter(acc => acc.tipo === 'Inversiones')
+      .reduce((sum, acc) => sum + acc.saldoActual, 0);
+    
+    const empresasPrivadas = accountsWithBalances
+      .filter(acc => acc.tipo === 'Empresa Propia')
+      .reduce((sum, acc) => sum + acc.saldoActual, 0);
+    
+    const tarjetasCredito = accountsWithBalances
+      .filter(acc => acc.tipo === 'Tarjeta de Crédito')
+      .reduce((sum, acc) => sum + Math.abs(acc.saldoActual), 0);
+    
+    const hipoteca = accountsWithBalances
+      .filter(acc => acc.tipo === 'Hipoteca')
+      .reduce((sum, acc) => sum + Math.abs(acc.saldoActual), 0);
+    
+    const totalActivos = efectivoBancos + inversiones + empresasPrivadas;
+    const totalPasivos = tarjetasCredito + hipoteca;
+    const patrimonioNeto = totalActivos - totalPasivos;
+    
+    // Top categorías del mes
+    const categoriesThisMonth = thisMonthTransactions.reduce((acc, trans) => {
+      const key = trans.categoria || 'Sin categoría';
+      if (!acc[key]) {
+        acc[key] = { categoria: key, monto: 0, tipo: trans.tipo || 'Gastos' };
+      }
+      acc[key].monto += trans.gasto > 0 ? trans.gasto : trans.ingreso;
+      return acc;
+    }, {} as Record<string, { categoria: string; monto: number; tipo: TransactionType }>);
+    
+    const topCategorias = Object.values(categoriesThisMonth)
+      .sort((a, b) => b.monto - a.monto)
+      .slice(0, 5);
+
     return {
-      balanceTotal,
-      activos: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0, total: balanceTotal },
-      activosPorMoneda: { MXN: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0 }, USD: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0 }, EUR: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0 } },
-      pasivos: { tarjetasCredito: 0, hipoteca: 0, total: 0 },
-      pasivosPorMoneda: { MXN: { tarjetasCredito: 0, hipoteca: 0 }, USD: { tarjetasCredito: 0, hipoteca: 0 }, EUR: { tarjetasCredito: 0, hipoteca: 0 } },
-      patrimonioNeto: balanceTotal,
+      balanceTotal: patrimonioNeto,
+      activos: {
+        efectivoBancos,
+        inversiones,
+        empresasPrivadas,
+        total: totalActivos
+      },
+      activosPorMoneda: {
+        MXN: { efectivoBancos, inversiones, empresasPrivadas, total: totalActivos },
+        USD: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0, total: 0 },
+        EUR: { efectivoBancos: 0, inversiones: 0, empresasPrivadas: 0, total: 0 }
+      },
+      pasivos: {
+        tarjetasCredito,
+        hipoteca,
+        total: totalPasivos
+      },
+      pasivosPorMoneda: {
+        MXN: { tarjetasCredito, hipoteca, total: totalPasivos },
+        USD: { tarjetasCredito: 0, hipoteca: 0, total: 0 },
+        EUR: { tarjetasCredito: 0, hipoteca: 0, total: 0 }
+      },
+      patrimonioNeto,
       patrimonioNetoAnterior: 0,
       variacionPatrimonio: 0,
       ingresosMes,
       gastosMes,
       balanceMes: ingresosMes - gastosMes,
-      ingresosAnio: 0,
-      gastosAnio: 0,
-      balanceAnio: 0,
+      ingresosAnio,
+      gastosAnio,
+      balanceAnio: ingresosAnio - gastosAnio,
       ingresosMesAnterior: 0,
       gastosMesAnterior: 0,
       balanceMesAnterior: 0,
@@ -500,22 +569,37 @@ export const useFinanceData = () => {
       variacionIngresosAnual: 0,
       variacionGastosAnual: 0,
       variacionBalanceAnual: 0,
-      saludFinanciera: { score: 7, nivel: 'Buena', descripcion: 'Finanzas estables' },
-      distribucionActivos: [],
-      distribucionPasivos: [],
-      topCategorias: [],
+      saludFinanciera: {
+        score: patrimonioNeto > 0 ? 8 : 5,
+        nivel: patrimonioNeto > 0 ? 'Buena' : 'Regular',
+        descripcion: patrimonioNeto > 0 ? 'Patrimonio neto positivo' : 'Mejorar patrimonio neto'
+      },
+      distribucionActivos: [
+        { categoria: 'Efectivo y Bancos', monto: efectivoBancos, porcentaje: totalActivos > 0 ? (efectivoBancos / totalActivos) * 100 : 0 },
+        { categoria: 'Inversiones', monto: inversiones, porcentaje: totalActivos > 0 ? (inversiones / totalActivos) * 100 : 0 },
+        { categoria: 'Empresas Privadas', monto: empresasPrivadas, porcentaje: totalActivos > 0 ? (empresasPrivadas / totalActivos) * 100 : 0 }
+      ],
+      distribucionPasivos: [
+        { categoria: 'Tarjetas de Crédito', monto: tarjetasCredito, porcentaje: totalPasivos > 0 ? (tarjetasCredito / totalPasivos) * 100 : 0 },
+        { categoria: 'Hipoteca', monto: hipoteca, porcentaje: totalPasivos > 0 ? (hipoteca / totalPasivos) * 100 : 0 }
+      ],
+      topCategorias,
       topCategoriasMesAnterior: [],
       topCategoriasAnual: [],
-      topCategoriasGastos: [],
+      topCategoriasGastos: topCategorias.filter(c => c.tipo === 'Gastos'),
       topCategoriasGastosMesAnterior: [],
       topCategoriasGastosAnual: [],
-      topCategoriasIngresos: [],
+      topCategoriasIngresos: topCategorias.filter(c => c.tipo === 'Ingreso'),
       topCategoriasIngresosMesAnterior: [],
       topCategoriasIngresosAnual: [],
-      cuentasResumen: [],
+      cuentasResumen: accountsWithBalances.map(acc => ({
+        cuenta: acc.nombre,
+        saldo: acc.saldoActual,
+        tipo: acc.tipo
+      })),
       tendenciaMensual: [],
       inversionesResumen: {
-        totalInversiones: 0,
+        totalInversiones: inversiones,
         aportacionesMes: 0,
         aportacionesMesAnterior: 0,
         variacionAportaciones: 0,
@@ -525,7 +609,16 @@ export const useFinanceData = () => {
         totalRetiradoAnual: 0,
         rendimientoAnualTotal: 0,
         rendimientoAnualPorcentaje: 0,
-        cuentasInversion: []
+        cuentasInversion: accountsWithBalances
+          .filter(acc => acc.tipo === 'Inversiones')
+          .map(acc => ({
+            cuenta: acc.nombre,
+            id: acc.id,
+            saldo: acc.saldoActual,
+            saldoInicial: acc.saldoInicial,
+            rendimiento: acc.saldoActual - acc.saldoInicial,
+            movimientosPorMes: []
+          }))
       }
     };
   }, [enrichedTransactions, accountsWithBalances]);
