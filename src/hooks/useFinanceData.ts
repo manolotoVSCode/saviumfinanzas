@@ -142,10 +142,8 @@ export const useFinanceData = () => {
     const activos = {
       efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo)).reduce((s, a) => s + a.saldoActual, 0),
       inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => {
-        // Para inversiones, incluir saldo inicial + transacciones + valor de mercado
-        const valorMercado = a.valorMercado || 0;
-        const saldoConTransacciones = a.saldoActual;
-        return s + Math.max(valorMercado, saldoConTransacciones);
+        // Para inversiones, usar solo el saldo actual (saldo inicial + transacciones)
+        return s + a.saldoActual;
       }, 0),
       empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia').reduce((s, a) => s + a.saldoActual, 0),
       total: 0
@@ -222,7 +220,7 @@ export const useFinanceData = () => {
     
     // INVERSIONES DETALLADAS (considerando saldo inicial)
     const cuentasInversionIds = accountsWithBalances.filter(a => a.tipo === 'Inversiones').map(a => a.id);
-    const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + (a.valorMercado || a.saldoActual), 0);
+    const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoActual, 0);
     
     // Filtrar aportaciones solo a cuentas de inversión
     const aportacionesMes = transactionsThisMonth.filter(t => 
@@ -270,7 +268,7 @@ export const useFinanceData = () => {
     // Calcular rendimiento anual total
     const totalAportadoAnual = aportacionesPorMes.reduce((sum, item) => sum + item.monto, 0);
     const totalRetiradoAnual = retirosPorMes.reduce((sum, item) => sum + item.monto, 0);
-    const valorActualInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + (a.valorMercado || a.saldoActual), 0);
+    const valorActualInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoActual, 0);
     const saldoInicialInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoInicial, 0);
     const rendimientoAnualTotal = valorActualInversiones - saldoInicialInversiones - totalAportadoAnual + totalRetiradoAnual;
     const rendimientoAnualPorcentaje = (saldoInicialInversiones + totalAportadoAnual - totalRetiradoAnual) > 0 ? 
@@ -281,7 +279,7 @@ export const useFinanceData = () => {
       .map(a => {
         const aportaciones = enrichedTransactions.filter(t => t.cuentaId === a.id && t.tipo === 'Aportación').reduce((sum, t) => sum + t.ingreso, 0);
         const retiros = enrichedTransactions.filter(t => t.cuentaId === a.id && t.tipo === 'Retiro').reduce((sum, t) => sum + Math.abs(t.gasto), 0);
-        const valorActual = a.valorMercado || a.saldoActual;
+        const valorActual = a.saldoActual;
         const rendimiento = valorActual - a.saldoInicial - aportaciones + retiros;
         
         // Calcular movimientos por mes para esta cuenta específica
