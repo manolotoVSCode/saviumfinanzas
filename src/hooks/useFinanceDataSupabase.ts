@@ -189,12 +189,14 @@ export const useFinanceDataSupabase = () => {
     const transactionsThisYear = enrichedTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
     const transactionsLastYear = enrichedTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
     
-    // Debug logs para abril
-    console.log('=== DEBUG ABRIL ===');
+    // Debug logs para verificar fechas
+    console.log('=== DEBUG FECHAS ===');
+    console.log('Fecha actual:', now);
+    console.log('Mes actual:', now.getMonth() + 1); // +1 porque getMonth() es 0-indexado
     console.log('startOfPreviousMonth:', startOfPreviousMonth);
     console.log('endOfPreviousMonth:', endOfPreviousMonth);
-    console.log('All enriched transactions:', enrichedTransactions.map(t => ({ fecha: t.fecha, comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
-    console.log('transactionsPreviousMonth (abril):', transactionsPreviousMonth.map(t => ({ fecha: t.fecha, comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
+    console.log('Sample enriched transactions:', enrichedTransactions.slice(0, 3).map(t => ({ fecha: t.fecha, fechaString: t.fecha.toISOString(), comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
+    console.log('transactionsPreviousMonth:', transactionsPreviousMonth.map(t => ({ fecha: t.fecha, fechaString: t.fecha.toISOString(), comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
     
     // INGRESOS Y GASTOS MENSUALES - CONVERTIR A MXN
     const ingresosMes = transactionsThisMonth
