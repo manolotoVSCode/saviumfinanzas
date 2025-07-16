@@ -14,7 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categorias: {
+        Row: {
+          categoria: string
+          created_at: string
+          id: string
+          subcategoria: string
+          tipo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          id?: string
+          subcategoria: string
+          tipo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          id?: string
+          subcategoria?: string
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cuentas: {
+        Row: {
+          created_at: string
+          divisa: string
+          id: string
+          nombre: string
+          rendimiento_mensual: number | null
+          saldo_inicial: number
+          tipo: string
+          updated_at: string
+          user_id: string
+          valor_mercado: number | null
+        }
+        Insert: {
+          created_at?: string
+          divisa?: string
+          id?: string
+          nombre: string
+          rendimiento_mensual?: number | null
+          saldo_inicial?: number
+          tipo: string
+          updated_at?: string
+          user_id: string
+          valor_mercado?: number | null
+        }
+        Update: {
+          created_at?: string
+          divisa?: string
+          id?: string
+          nombre?: string
+          rendimiento_mensual?: number | null
+          saldo_inicial?: number
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+          valor_mercado?: number | null
+        }
+        Relationships: []
+      }
+      transacciones: {
+        Row: {
+          comentario: string
+          created_at: string
+          csv_id: string | null
+          cuenta_id: string
+          divisa: string
+          fecha: string
+          gasto: number
+          id: string
+          ingreso: number
+          subcategoria_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comentario: string
+          created_at?: string
+          csv_id?: string | null
+          cuenta_id: string
+          divisa?: string
+          fecha: string
+          gasto?: number
+          id?: string
+          ingreso?: number
+          subcategoria_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comentario?: string
+          created_at?: string
+          csv_id?: string | null
+          cuenta_id?: string
+          divisa?: string
+          fecha?: string
+          gasto?: number
+          id?: string
+          ingreso?: number
+          subcategoria_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transacciones_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacciones_subcategoria_id_fkey"
+            columns: ["subcategoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
