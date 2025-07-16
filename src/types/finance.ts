@@ -28,7 +28,6 @@ export interface Transaction {
   gasto: number;
   subcategoriaId: string;
   csvId?: string; // ID original del CSV (opcional)
-  cuentaInversionId?: string; // Para vincular rendimientos con cuentas de inversión
   // campos calculados
   categoria?: string;
   monto: number; // ingreso - gasto
