@@ -7,7 +7,6 @@ const Dashboard = () => {
   const financeData = useFinanceData();
   const { formatCurrency, config } = useAppConfig();
 
-
   return (
     <Layout>
       <div className="animate-fade-in">

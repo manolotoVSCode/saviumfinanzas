@@ -1,115 +1,79 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, LogIn, UserPlus } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const location = useLocation();
 
-  // Redirigir automáticamente al dashboard si está autenticado
+  // Redirigir automáticamente al dashboard en la carga inicial
   useEffect(() => {
-    if (!loading && user) {
+    if (location.pathname === '/') {
       navigate('/dashboard', { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [location.pathname, navigate]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const isActive = (path: string) => location.pathname === path;
+
+  const navigationItems = [
+    { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
+    { path: '/transacciones', icon: ArrowUpDown, label: 'Transacciones' },
+    { path: '/inversiones', icon: TrendingUp, label: 'Inversiones' },
+    { path: '/configuracion', icon: Settings, label: 'Configuración' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-16">
-          <h1 className="text-6xl font-bold mb-4 text-primary">SAVIUM</h1>
-          <p className="text-xl text-muted-foreground mb-8">
-            Tu plataforma integral para la gestión de finanzas personales
-          </p>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Toma control de tus finanzas con herramientas avanzadas para rastrear ingresos, 
-            gastos, inversiones y mucho más. Gestiona tu patrimonio de manera inteligente.
-          </p>
+    <div className="min-h-screen bg-background pb-20">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-2">Savium</h1>
+          <p className="text-muted-foreground">Finanzas Personales</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
-          <Card className="border-2 hover:border-primary/50 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-6 w-6 text-primary" />
-                Dashboard Completo
-              </CardTitle>
-              <CardDescription>
-                Visualiza tus finanzas con gráficos intuitivos y métricas en tiempo real
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-2 hover:border-primary/50 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowUpDown className="h-6 w-6 text-primary" />
-                Gestión de Transacciones
-              </CardTitle>
-              <CardDescription>
-                Registra y categoriza tus ingresos y gastos de manera eficiente
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-2 hover:border-primary/50 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-6 w-6 text-primary" />
-                Seguimiento de Inversiones
-              </CardTitle>
-              <CardDescription>
-                Monitorea el rendimiento de tus inversiones y portafolio
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-2 hover:border-primary/50 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-6 w-6 text-primary" />
-                Configuración Avanzada
-              </CardTitle>
-              <CardDescription>
-                Personaliza categorías, cuentas y preferencias según tus necesidades
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        <div className="text-center">
-          <h3 className="text-2xl font-bold mb-8">¿Listo para comenzar?</h3>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              onClick={() => navigate('/auth')}
-              className="text-lg px-8 py-6"
-            >
-              <UserPlus className="mr-2 h-5 w-5" />
-              Crear Cuenta
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              onClick={() => navigate('/auth')}
-              className="text-lg px-8 py-6"
-            >
-              <LogIn className="mr-2 h-5 w-5" />
-              Iniciar Sesión
-            </Button>
+        {/* CONTENIDO PRINCIPAL */}
+        <div className="space-y-6">
+          {/* Placeholder content - el contenido real se mostrará en las rutas específicas */}
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-4">Bienvenido a Savium</h2>
+            <p className="text-muted-foreground mb-6">
+              Tu plataforma integral para la gestión de finanzas personales
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+              {navigationItems.map(({ path, icon: Icon, label }) => (
+                <Button
+                  key={path}
+                  variant="outline"
+                  className="h-20 flex flex-col items-center gap-2"
+                  onClick={() => navigate(path)}
+                >
+                  <Icon className="h-6 w-6" />
+                  <span className="text-xs">{label}</span>
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* NAVEGACIÓN INFERIOR FIJA */}
+        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
+          <div className="grid grid-cols-4 h-full">
+            {navigationItems.map(({ path, icon: Icon, label }) => (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                className={`flex flex-col items-center justify-center space-y-1 h-full transition-colors ${
+                  isActive(path)
+                    ? 'text-primary bg-primary/5 border-t-2 border-primary'
+                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-xs">{label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
       </div>
     </div>
   );

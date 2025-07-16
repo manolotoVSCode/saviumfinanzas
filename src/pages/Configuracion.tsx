@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import Layout from '@/components/Layout';
 import { AccountsManager } from '@/components/AccountsManager';
 import { CategoriesManager } from '@/components/CategoriesManager';
-import { useFinanceData } from '@/hooks/useFinanceDataSupabase';
+import { useFinanceData } from '@/hooks/useFinanceData';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 import { Settings, Heart } from 'lucide-react';

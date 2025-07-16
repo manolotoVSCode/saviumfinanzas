@@ -1,7 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, LogOut, User } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,14 +8,8 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   const navigationItems = [
     { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
@@ -30,29 +22,9 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-background pb-20">
       <div className="container mx-auto px-4 py-8">
         {/* HEADER */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="text-center flex-1">
-              <h1 className="text-4xl font-bold mb-2">Savium</h1>
-              <p className="text-muted-foreground">Finanzas Personales</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {profile && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <User className="h-4 w-4" />
-                  <span>{profile.nombre} {profile.apellidos}</span>
-                </div>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-2">Savium</h1>
+          <p className="text-muted-foreground">Finanzas Personales</p>
         </div>
 
         {/* CONTENIDO PRINCIPAL */}
