@@ -293,18 +293,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                        </div>
                      )}
                      
-                     {/* Mostrar tarjetas de crédito en activos para mejor visibilidad */}
-                     {metrics.pasivosPorMoneda[moneda]?.tarjetasCredito > 0 && (
-                        <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-muted-foreground">Tarjetas de Crédito (Deuda)</span>
-                            <span className="font-bold text-destructive">-{formatNumberOnly(metrics.pasivosPorMoneda[moneda].tarjetasCredito)} {moneda}</span>
-                         </div>
-                         <div className="text-xs text-muted-foreground">
-                           Saldo pendiente por pagar
-                         </div>
-                       </div>
-                     )}
                    </div>
                 );
               })}
@@ -341,32 +329,38 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Mostrar categorías por moneda */}
-              {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
-                const formatNumberOnly = (amount: number) => {
-                  return new Intl.NumberFormat('es-MX', {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  }).format(amount);
-                };
+               {/* Mostrar categorías por moneda - separando cada cuenta */}
+               {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
+                 const formatNumberOnly = (amount: number) => {
+                   return new Intl.NumberFormat('es-MX', {
+                     minimumFractionDigits: 0,
+                     maximumFractionDigits: 0,
+                   }).format(amount);
+                 };
 
-                const hasLiabilities = pasivos.tarjetasCredito > 0 || pasivos.hipoteca > 0;
-                
-                if (!hasLiabilities) return null;
+                 // Filtrar cuentas de tarjetas de crédito por moneda
+                 const tarjetasCredito = accounts.filter(cuenta => 
+                   cuenta.tipo === 'Tarjeta de Crédito' && cuenta.divisa === moneda
+                 );
 
-                return (
-                  <div key={moneda} className="space-y-3">
-                    {pasivos.tarjetasCredito > 0 && (
-                       <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                         <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-muted-foreground">Tarjetas de Crédito</span>
-                            <span className="font-bold text-destructive">{formatNumberOnly(pasivos.tarjetasCredito)} {moneda}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Saldo pendiente por pagar
-                        </div>
-                      </div>
-                    )}
+                 const hasLiabilities = tarjetasCredito.length > 0 || pasivos.hipoteca > 0;
+                 
+                 if (!hasLiabilities) return null;
+
+                 return (
+                   <div key={moneda} className="space-y-3">
+                     {/* Mostrar cada tarjeta de crédito por separado */}
+                     {tarjetasCredito.map(cuenta => (
+                        <div key={cuenta.id} className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                          <div className="flex justify-between items-center mb-2">
+                             <span className="text-sm text-muted-foreground">{cuenta.nombre}</span>
+                             <span className="font-bold text-destructive">{formatNumberOnly(Math.abs(cuenta.balance))} {moneda}</span>
+                         </div>
+                         <div className="text-xs text-muted-foreground">
+                           Tarjeta de Crédito
+                         </div>
+                       </div>
+                     ))}
                     
                     {pasivos.hipoteca > 0 && (
                        <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
