@@ -17,6 +17,12 @@ export const useMigration = () => {
       const localCategories = JSON.parse(localStorage.getItem('financeCategories') || '[]') as Category[];
       const localTransactions = JSON.parse(localStorage.getItem('financeTransactions') || '[]') as Transaction[];
 
+      console.log('Datos a migrar:', {
+        accounts: localAccounts,
+        categories: localCategories,
+        transactions: localTransactions.slice(0, 2) // Solo primeras 2 para debug
+      });
+
       if (localAccounts.length === 0 && localCategories.length === 0 && localTransactions.length === 0) {
         toast({
           title: "Sin datos para migrar",
@@ -43,6 +49,8 @@ export const useMigration = () => {
           };
         });
 
+        console.log('Categorías a insertar:', categoriesToInsert.slice(0, 2));
+
         const { error: catError } = await supabase
           .from('categorias')
           .insert(categoriesToInsert);
@@ -56,23 +64,39 @@ export const useMigration = () => {
         const accountsToInsert = localAccounts.map(acc => {
           const newId = crypto.randomUUID();
           accountIdMap[acc.id] = newId;
+          
+          // Debug detallado de cada cuenta
+          console.log('Procesando cuenta:', {
+            original: acc,
+            saldoInicial: acc.saldoInicial,
+            saldoInicialType: typeof acc.saldoInicial,
+            saldoInicialConverted: Number(acc.saldoInicial),
+            valorMercado: acc.valorMercado,
+            valorMercadoType: typeof acc.valorMercado
+          });
+          
           return {
             id: newId,
             user_id: user.id,
-            nombre: acc.nombre,
+            nombre: acc.nombre || 'Sin nombre',
             tipo: acc.tipo,
-            saldo_inicial: Number(acc.saldoInicial) || 0,
+            saldo_inicial: isNaN(Number(acc.saldoInicial)) ? 0 : Number(acc.saldoInicial),
             divisa: acc.divisa || 'MXN',
-            valor_mercado: acc.valorMercado ? Number(acc.valorMercado) : null,
-            rendimiento_mensual: acc.rendimientoMensual ? Number(acc.rendimientoMensual) : null
+            valor_mercado: acc.valorMercado && !isNaN(Number(acc.valorMercado)) ? Number(acc.valorMercado) : null,
+            rendimiento_mensual: acc.rendimientoMensual && !isNaN(Number(acc.rendimientoMensual)) ? Number(acc.rendimientoMensual) : null
           };
         });
+
+        console.log('Cuentas a insertar:', accountsToInsert);
 
         const { error: accError } = await supabase
           .from('cuentas')
           .insert(accountsToInsert);
 
-        if (accError) throw accError;
+        if (accError) {
+          console.error('Error detallado en cuentas:', accError);
+          throw accError;
+        }
         migratedCount += localAccounts.length;
       }
 
