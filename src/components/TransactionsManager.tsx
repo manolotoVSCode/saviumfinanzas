@@ -76,6 +76,10 @@ export const TransactionsManager = ({
     if (filters.divisa && filters.divisa !== 'all' && transaction.divisa !== filters.divisa) return false;
     if (filters.mes && filters.mes !== 'all') {
       const transactionMonth = transaction.fecha.toISOString().slice(0, 7); // YYYY-MM format
+      console.log('Filtering by month:', filters.mes);
+      console.log('Transaction date:', transaction.fecha);
+      console.log('Transaction month:', transactionMonth);
+      console.log('Match?', transactionMonth === filters.mes);
       if (transactionMonth !== filters.mes) return false;
     }
     return true;
