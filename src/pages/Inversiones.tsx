@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList } from 'recharts';
 
@@ -16,6 +17,8 @@ const Inversiones = () => {
   const { formatCurrency } = useAppConfig();
   const [editingAccount, setEditingAccount] = useState<string | null>(null);
   const [rendimientoManual, setRendimientoManual] = useState<string>('');
+  const [mostrarMovimientos, setMostrarMovimientos] = useState<{[key: string]: boolean}>({});
+  const [reinvertirRendimiento, setReinvertirRendimiento] = useState<{[key: string]: boolean}>({});
 
   const inversionesResumen = dashboardMetrics.inversionesResumen;
   const cuentasInversion = accounts.filter(acc => acc.tipo === 'Inversiones');
@@ -98,7 +101,9 @@ const Inversiones = () => {
           return (
             <Card key={cuenta.id} className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg">{cuenta.nombre}</CardTitle>
+                <CardTitle className="text-lg">
+                  {cuenta.nombre} <strong>{cuenta.divisa}</strong>
+                </CardTitle>
                 <div className="flex items-center gap-2">
                   <div className="flex flex-col items-end gap-1">
                     <Badge variant={rendimiento >= 0 ? 'default' : 'destructive'} className="text-xs">
@@ -133,6 +138,35 @@ const Inversiones = () => {
                     <span className={`text-sm font-medium ${getRendimientoColor(rendimiento)}`}>
                       {rendimiento >= 0 ? '+' : ''}{formatCurrency(rendimiento)}
                     </span>
+                  </div>
+
+                  {/* Checkboxes de configuración */}
+                  <div className="border-t pt-4 space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`mostrar-${cuenta.id}`}
+                        checked={mostrarMovimientos[cuenta.id] || false}
+                        onCheckedChange={(checked) => 
+                          setMostrarMovimientos(prev => ({...prev, [cuenta.id]: checked as boolean}))
+                        }
+                      />
+                      <Label htmlFor={`mostrar-${cuenta.id}`} className="text-sm">
+                        Mostrar movimientos de esta inversión
+                      </Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`reinvertir-${cuenta.id}`}
+                        checked={reinvertirRendimiento[cuenta.id] || false}
+                        onCheckedChange={(checked) => 
+                          setReinvertirRendimiento(prev => ({...prev, [cuenta.id]: checked as boolean}))
+                        }
+                      />
+                      <Label htmlFor={`reinvertir-${cuenta.id}`} className="text-sm">
+                        Reinvertir rendimiento automáticamente
+                      </Label>
+                    </div>
                   </div>
 
 
@@ -170,39 +204,41 @@ const Inversiones = () => {
                     </div>
                   )}
 
-                  {/* Gráfica de movimientos mensuales */}
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium mb-3">Movimientos Mensuales {new Date().getFullYear()}</h4>
-                    <div className="h-48">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={inversion.movimientosPorMes}>
-                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis 
-                            dataKey="mes" 
-                            tick={{ fontSize: 12 }}
-                            className="text-muted-foreground"
-                          />
-                          <YAxis hide />
-                          <Bar dataKey="aportaciones" fill="hsl(var(--success))" radius={[2, 2, 0, 0]}>
-                            <LabelList dataKey="aportaciones" position="top" fontSize={10} formatter={formatAmount} />
-                          </Bar>
-                          <Bar dataKey="retiros" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]}>
-                            <LabelList dataKey="retiros" position="top" fontSize={10} formatter={formatAmount} />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="flex justify-center gap-4 mt-2 text-xs">
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
-                        <span>Aportaciones</span>
+                  {/* Gráfica de movimientos mensuales - Solo si está habilitada */}
+                  {mostrarMovimientos[cuenta.id] && (
+                    <div className="border-t pt-4">
+                      <h4 className="text-sm font-medium mb-3">Movimientos Mensuales {new Date().getFullYear()}</h4>
+                      <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={inversion.movimientosPorMes}>
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis 
+                              dataKey="mes" 
+                              tick={{ fontSize: 12 }}
+                              className="text-muted-foreground"
+                            />
+                            <YAxis hide />
+                            <Bar dataKey="aportaciones" fill="hsl(var(--success))" radius={[2, 2, 0, 0]}>
+                              <LabelList dataKey="aportaciones" position="top" fontSize={10} formatter={formatAmount} />
+                            </Bar>
+                            <Bar dataKey="retiros" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]}>
+                              <LabelList dataKey="retiros" position="top" fontSize={10} formatter={formatAmount} />
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
-                        <span>Retiros</span>
+                      <div className="flex justify-center gap-4 mt-2 text-xs">
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
+                          <span>Aportaciones</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
+                          <span>Retiros</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
