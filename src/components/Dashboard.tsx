@@ -23,23 +23,58 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     // Filtrar transacciones por moneda seleccionada
     const filteredTransactions = transactions.filter(t => t.divisa === currency);
     
-    // Calcular métricas básicas para la moneda seleccionada
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    // MES ANTERIOR (para resumen del mes)
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    // DOS MESES ATRÁS (para comparativo)
+    const startOfTwoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const endOfTwoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 1, 0);
+    
+    // AÑO ACTUAL (para resumen del año)
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     
-    const monthTransactions = filteredTransactions.filter(t => 
-      new Date(t.fecha) >= startOfMonth && new Date(t.fecha) <= endOfMonth
+    // AÑO ANTERIOR (para comparativo)
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
+    
+    // Transacciones del mes anterior
+    const lastMonthTransactions = filteredTransactions.filter(t => 
+      new Date(t.fecha) >= startOfLastMonth && new Date(t.fecha) <= endOfLastMonth
     );
+    
+    // Transacciones de dos meses atrás
+    const twoMonthsAgoTransactions = filteredTransactions.filter(t => 
+      new Date(t.fecha) >= startOfTwoMonthsAgo && new Date(t.fecha) <= endOfTwoMonthsAgo
+    );
+    
+    // Transacciones del año actual
     const yearTransactions = filteredTransactions.filter(t => 
       new Date(t.fecha) >= startOfYear
     );
     
-    const ingresosMes = monthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMes = monthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    // Transacciones del año anterior
+    const lastYearTransactions = filteredTransactions.filter(t => 
+      new Date(t.fecha) >= startOfLastYear && new Date(t.fecha) <= endOfLastYear
+    );
+    
+    // Cálculos del mes anterior
+    const ingresosMes = lastMonthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMes = lastMonthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    
+    // Cálculos de dos meses atrás (para comparativo)
+    const ingresosMesAnterior = twoMonthsAgoTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMesAnterior = twoMonthsAgoTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    
+    // Cálculos del año actual
     const ingresosAnio = yearTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnio = yearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    
+    // Cálculos del año anterior (para comparativo)
+    const ingresosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     
     // Generar datos de tendencia mensual para la moneda seleccionada
     const tendenciaMensual = [];
@@ -65,12 +100,22 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     }
     
     return {
+      // Datos del mes anterior (resumen del mes)
       ingresosMes,
       gastosMes,
+      balanceMes: ingresosMes - gastosMes,
+      
+      // Datos del año actual (resumen del año)
       ingresosAnio,
       gastosAnio,
-      balanceMes: ingresosMes - gastosMes,
       balanceAnio: ingresosAnio - gastosAnio,
+      
+      // Comparativos
+      cambioIngresosMes: ingresosMesAnterior > 0 ? ((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100 : 0,
+      cambioGastosMes: gastosMesAnterior > 0 ? ((gastosMes - gastosMesAnterior) / gastosMesAnterior) * 100 : 0,
+      cambioIngresosAnio: ingresosAnioAnterior > 0 ? ((ingresosAnio - ingresosAnioAnterior) / ingresosAnioAnterior) * 100 : 0,
+      cambioGastosAnio: gastosAnioAnterior > 0 ? ((gastosAnio - gastosAnioAnterior) / gastosAnioAnterior) * 100 : 0,
+      
       tendenciaMensual
     };
   };
@@ -104,12 +149,14 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     let filteredByPeriod;
     
     if (period === 'month') {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      // Mes anterior (no mes actual)
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
       filteredByPeriod = filteredTransactions.filter(t => 
-        new Date(t.fecha) >= startOfMonth && new Date(t.fecha) <= endOfMonth
+        new Date(t.fecha) >= startOfLastMonth && new Date(t.fecha) <= endOfLastMonth
       );
     } else {
+      // Año actual
       const startOfYear = new Date(now.getFullYear(), 0, 1);
       filteredByPeriod = filteredTransactions.filter(t => 
         new Date(t.fecha) >= startOfYear
@@ -140,6 +187,19 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   const pieDataGastosAnual = getFilteredDistribution(selectedCurrency, 'Gastos', 'year');
   const pieDataIngresosMesAnterior = getFilteredDistribution(selectedCurrency, 'Ingreso', 'month');
   const pieDataIngresosAnual = getFilteredDistribution(selectedCurrency, 'Ingreso', 'year');
+
+  // Función para mostrar tendencia
+  const getTrendIcon = (change: number) => {
+    if (change > 0) return <TrendingUp className="h-4 w-4 text-success" />;
+    if (change < 0) return <TrendingDown className="h-4 w-4 text-destructive" />;
+    return null;
+  };
+
+  const getTrendColor = (change: number) => {
+    if (change > 0) return 'text-success';
+    if (change < 0) return 'text-destructive';
+    return 'text-muted-foreground';
+  };
 
 
   const getSaludColor = (nivel: string) => {
@@ -368,12 +428,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ingresos del Mes <strong>{selectedCurrency}</strong></CardTitle>
+            {getTrendIcon(filteredMetrics.cambioIngresosMes)}
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
               {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.ingresosMes) : 
                `${filteredMetrics.ingresosMes.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
             </div>
+            <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosMes)}`}>
+              {filteredMetrics.cambioIngresosMes > 0 ? '+' : ''}{filteredMetrics.cambioIngresosMes.toFixed(1)}% vs mes anterior
+            </p>
           </CardContent>
         </Card>
 
@@ -381,12 +445,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Gastos del Mes <strong>{selectedCurrency}</strong></CardTitle>
+            {getTrendIcon(filteredMetrics.cambioGastosMes)}
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
               {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.gastosMes) : 
                `${filteredMetrics.gastosMes.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
             </div>
+            <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosMes)}`}>
+              {filteredMetrics.cambioGastosMes > 0 ? '+' : ''}{filteredMetrics.cambioGastosMes.toFixed(1)}% vs mes anterior
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -520,12 +588,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ingresos del Año <strong>{selectedCurrency}</strong></CardTitle>
+            {getTrendIcon(filteredMetrics.cambioIngresosAnio)}
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
               {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.ingresosAnio) : 
                `${filteredMetrics.ingresosAnio.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
             </div>
+            <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosAnio)}`}>
+              {filteredMetrics.cambioIngresosAnio > 0 ? '+' : ''}{filteredMetrics.cambioIngresosAnio.toFixed(1)}% vs año anterior
+            </p>
           </CardContent>
         </Card>
 
@@ -533,12 +605,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Gastos del Año <strong>{selectedCurrency}</strong></CardTitle>
+            {getTrendIcon(filteredMetrics.cambioGastosAnio)}
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
               {selectedCurrency === 'MXN' ? formatCurrency(filteredMetrics.gastosAnio) : 
                `${filteredMetrics.gastosAnio.toLocaleString('es-MX', {minimumFractionDigits: 2})} ${selectedCurrency}`}
             </div>
+            <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosAnio)}`}>
+              {filteredMetrics.cambioGastosAnio > 0 ? '+' : ''}{filteredMetrics.cambioGastosAnio.toFixed(1)}% vs año anterior
+            </p>
           </CardContent>
         </Card>
       </div>
