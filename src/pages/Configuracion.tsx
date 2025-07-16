@@ -7,6 +7,7 @@ import { AccountsManager } from '@/components/AccountsManager';
 import { CategoriesManager } from '@/components/CategoriesManager';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { useAppConfig, CurrencyCode } from '@/hooks/useAppConfig';
+import { ExchangeRates } from '@/components/ExchangeRates';
 import { Settings, Info, Heart, DollarSign } from 'lucide-react';
 
 const Configuracion = () => {
@@ -66,6 +67,9 @@ const Configuracion = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* TASAS DE CAMBIO ACTUALES */}
+        <ExchangeRates />
 
         {/* GESTIÓN DE CUENTAS */}
         <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
