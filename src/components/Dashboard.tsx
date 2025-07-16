@@ -144,7 +144,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Mostrar categorías por moneda */}
+              {/* Mostrar categorías por moneda - solo Efectivo/Bancos e Inversiones */}
               {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
                 const formatCurrencyForCurrency = (amount: number) => {
                   return new Intl.NumberFormat('es-MX', {
@@ -155,7 +155,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                   }).format(amount);
                 };
 
-                const hasAssets = activos.efectivoBancos > 0 || activos.inversiones > 0 || activos.empresasPrivadas > 0;
+                const hasAssets = activos.efectivoBancos > 0 || activos.inversiones > 0;
                 
                 if (!hasAssets) return null;
 
@@ -184,28 +184,29 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
                         </div>
                       </div>
                     )}
-                    
-                    {activos.empresasPrivadas > 0 && (
-                      <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-muted-foreground">Empresas Privadas {moneda}</span>
-                          <span className="font-bold text-primary">{formatCurrencyForCurrency(activos.empresasPrivadas)}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Participaciones en empresas propias
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
               
               <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-success">TOTAL ACTIVOS</span>
+                  <span className="font-semibold text-success">TOTAL ACTIVOS MXN</span>
                   <span className="text-xl font-bold text-success">{formatCurrency(metrics.activos.total)}</span>
                 </div>
               </div>
+
+              {/* Empresas Privadas después del total */}
+              {metrics.activos.empresasPrivadas > 0 && (
+                <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-muted-foreground">Empresas Privadas MXN</span>
+                    <span className="font-bold text-primary">{formatCurrency(metrics.activos.empresasPrivadas)}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Participaciones en empresas propias
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
