@@ -66,14 +66,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     
     // Cálculos del mes anterior
     const ingresosMes = lastMonthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMesRaw = lastMonthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
-    const gastosMes = Math.abs(gastosMesRaw);
-    
-    // Debug para gastos mes anterior
-    console.log('=== DEBUG GASTOS MES ANTERIOR ===');
-    console.log('lastMonthTransactions gastos count:', lastMonthTransactions.filter(t => t.tipo === 'Gastos').length);
-    console.log('gastosMesRaw:', gastosMesRaw);
-    console.log('gastosMes final:', gastosMes);
+    const gastosMes = Math.abs(lastMonthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0));
     
     // Cálculos de dos meses atrás (para comparativo)
     const ingresosMesAnterior = twoMonthsAgoTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
@@ -101,16 +94,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       });
       
       const ingresos = monthTrans.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-      const gastosRaw = monthTrans.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
-      const gastos = Math.abs(gastosRaw);
-      
-      // Debug para abril 2025
-      if (date.getMonth() === 3 && date.getFullYear() === 2025) {
-        console.log('=== DEBUG GASTOS ABRIL 2025 ===');
-        console.log('monthTrans gastos:', monthTrans.filter(t => t.tipo === 'Gastos').map(t => ({ comentario: t.comentario, gasto: t.gasto, fecha: t.fecha })));
-        console.log('gastosRaw:', gastosRaw);
-        console.log('gastos final:', gastos);
-      }
+      const gastos = Math.abs(monthTrans.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0));
       
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),

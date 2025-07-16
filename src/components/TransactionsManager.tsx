@@ -75,7 +75,8 @@ export const TransactionsManager = ({
     if (filters.tipo && filters.tipo !== 'all' && transaction.tipo !== filters.tipo) return false;
     if (filters.divisa && filters.divisa !== 'all' && transaction.divisa !== filters.divisa) return false;
     if (filters.mes && filters.mes !== 'all') {
-      const transactionMonth = transaction.fecha.toISOString().slice(0, 7); // YYYY-MM format
+      const adjustedDate = new Date(transaction.fecha.getTime() + transaction.fecha.getTimezoneOffset() * 60000);
+      const transactionMonth = adjustedDate.toISOString().slice(0, 7); // YYYY-MM format
       if (transactionMonth !== filters.mes) return false;
     }
     return true;
