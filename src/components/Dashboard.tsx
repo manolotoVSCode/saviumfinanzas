@@ -472,7 +472,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   dataKey="balance" 
                   stroke="hsl(var(--primary))" 
                   strokeWidth={3}
-                  dot={false}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
                   name="Balance"
                 />
               </ComposedChart>
