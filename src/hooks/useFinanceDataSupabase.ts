@@ -585,7 +585,42 @@ export const useFinanceDataSupabase = () => {
   };
 
   const updateTransaction = async (id: string, transaction: Partial<Transaction>) => {
-    // TODO: Implementar actualización en Supabase
+    try {
+      // Preparar datos para Supabase
+      const updateData: any = {};
+      
+      if (transaction.fecha) updateData.fecha = transaction.fecha.toISOString().split('T')[0];
+      if (transaction.comentario) updateData.comentario = transaction.comentario;
+      if (transaction.subcategoriaId) updateData.subcategoria_id = transaction.subcategoriaId;
+      if (transaction.cuentaId) updateData.cuenta_id = transaction.cuentaId;
+      if (transaction.divisa) updateData.divisa = transaction.divisa;
+      
+      // Manejar ingreso y gasto
+      if (transaction.ingreso !== undefined) updateData.ingreso = transaction.ingreso;
+      if (transaction.gasto !== undefined) updateData.gasto = transaction.gasto;
+      
+      const { error } = await supabase
+        .from('transacciones')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Recargar datos
+      await loadData();
+      
+      toast({
+        title: "Éxito",
+        description: "Transacción actualizada correctamente"
+      });
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la transacción",
+        variant: "destructive"
+      });
+    }
   };
 
   const deleteTransaction = async (id: string) => {
