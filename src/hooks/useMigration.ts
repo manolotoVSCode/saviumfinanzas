@@ -26,20 +26,26 @@ export const useMigration = () => {
       }
 
       let migratedCount = 0;
+      const categoryIdMap: Record<string, string> = {};
+      const accountIdMap: Record<string, string> = {};
 
       // Migrar categorías primero (las transacciones las referencian)
       if (localCategories.length > 0) {
-        const categoriesToInsert = localCategories.map(cat => ({
-          id: cat.id,
-          user_id: user.id,
-          subcategoria: cat.subcategoria,
-          categoria: cat.categoria,
-          tipo: cat.tipo
-        }));
+        const categoriesToInsert = localCategories.map(cat => {
+          const newId = crypto.randomUUID();
+          categoryIdMap[cat.id] = newId;
+          return {
+            id: newId,
+            user_id: user.id,
+            subcategoria: cat.subcategoria,
+            categoria: cat.categoria,
+            tipo: cat.tipo
+          };
+        });
 
         const { error: catError } = await supabase
           .from('categorias')
-          .upsert(categoriesToInsert, { onConflict: 'id' });
+          .insert(categoriesToInsert);
 
         if (catError) throw catError;
         migratedCount += localCategories.length;
@@ -47,32 +53,36 @@ export const useMigration = () => {
 
       // Migrar cuentas
       if (localAccounts.length > 0) {
-        const accountsToInsert = localAccounts.map(acc => ({
-          id: acc.id,
-          user_id: user.id,
-          nombre: acc.nombre,
-          tipo: acc.tipo,
-          saldo_inicial: acc.saldoInicial,
-          divisa: acc.divisa || 'MXN',
-          valor_mercado: acc.valorMercado,
-          rendimiento_mensual: acc.rendimientoMensual
-        }));
+        const accountsToInsert = localAccounts.map(acc => {
+          const newId = crypto.randomUUID();
+          accountIdMap[acc.id] = newId;
+          return {
+            id: newId,
+            user_id: user.id,
+            nombre: acc.nombre,
+            tipo: acc.tipo,
+            saldo_inicial: acc.saldoInicial,
+            divisa: acc.divisa || 'MXN',
+            valor_mercado: acc.valorMercado,
+            rendimiento_mensual: acc.rendimientoMensual
+          };
+        });
 
         const { error: accError } = await supabase
           .from('cuentas')
-          .upsert(accountsToInsert, { onConflict: 'id' });
+          .insert(accountsToInsert);
 
         if (accError) throw accError;
         migratedCount += localAccounts.length;
       }
 
-      // Migrar transacciones
+      // Migrar transacciones (usando los nuevos UUIDs)
       if (localTransactions.length > 0) {
         const transactionsToInsert = localTransactions.map(trans => ({
-          id: trans.id,
+          id: crypto.randomUUID(),
           user_id: user.id,
-          cuenta_id: trans.cuentaId,
-          subcategoria_id: trans.subcategoriaId,
+          cuenta_id: accountIdMap[trans.cuentaId] || crypto.randomUUID(),
+          subcategoria_id: categoryIdMap[trans.subcategoriaId] || crypto.randomUUID(),
           fecha: trans.fecha instanceof Date ? trans.fecha.toISOString().split('T')[0] : trans.fecha,
           comentario: trans.comentario,
           ingreso: trans.ingreso,
@@ -83,7 +93,7 @@ export const useMigration = () => {
 
         const { error: transError } = await supabase
           .from('transacciones')
-          .upsert(transactionsToInsert, { onConflict: 'id' });
+          .insert(transactionsToInsert);
 
         if (transError) throw transError;
         migratedCount += localTransactions.length;
