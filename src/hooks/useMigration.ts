@@ -156,10 +156,151 @@ export const useMigration = () => {
         }
       }
 
+      // PASO 3: Migrar transacciones
+      if (localTransactions.length > 0) {
+        console.log('Migrando transacciones...');
+        
+        // Primero obtener los mapeos de IDs ya creados
+        const { data: existingCategories } = await supabase
+          .from('categorias')
+          .select('id, subcategoria, categoria')
+          .eq('user_id', user.id);
+          
+        const { data: existingAccounts } = await supabase
+          .from('cuentas')
+          .select('id, nombre')
+          .eq('user_id', user.id);
+
+        // Crear mapas de nombre a ID para hacer el matching
+        const categoryMap: Record<string, string> = {};
+        const accountMap: Record<string, string> = {};
+        
+        existingCategories?.forEach(cat => {
+          // Buscar la categoría original por subcategoría
+          const originalCat = localCategories.find(lc => lc.subcategoria === cat.subcategoria);
+          if (originalCat) {
+            categoryMap[originalCat.id] = cat.id;
+          }
+        });
+        
+        existingAccounts?.forEach(acc => {
+          // Buscar la cuenta original por nombre
+          const originalAcc = localAccounts.find(la => la.nombre === acc.nombre);
+          if (originalAcc) {
+            accountMap[originalAcc.id] = acc.id;
+          }
+        });
+
+        console.log('Mapeos creados:', { categoryMap, accountMap });
+        
+        try {
+          const transactionsToInsert = localTransactions
+            .filter((trans, index) => {
+              const hasValidAccount = accountMap[trans.cuentaId];
+              const hasValidCategory = categoryMap[trans.subcategoriaId];
+              
+              if (!hasValidAccount || !hasValidCategory) {
+                console.log(`Transacción ${index + 1} omitida - Referencias inválidas:`, {
+                  cuentaId: trans.cuentaId,
+                  hasValidAccount,
+                  subcategoriaId: trans.subcategoriaId,
+                  hasValidCategory
+                });
+                return false;
+              }
+              return true;
+            })
+            .map((trans, index) => {
+              console.log(`Procesando transacción ${index + 1}:`, {
+                fecha: trans.fecha,
+                fechaType: typeof trans.fecha,
+                ingreso: trans.ingreso,
+                ingresoType: typeof trans.ingreso,
+                gasto: trans.gasto,
+                gastoType: typeof trans.gasto
+              });
+
+              // Función para sanitizar números de transacciones
+              const sanitizeTransactionNumber = (value: any): number => {
+                if (value === null || value === undefined || value === '') return 0;
+                const num = parseFloat(String(value));
+                if (isNaN(num)) return 0;
+                if (num > 999999999) return 999999999;
+                if (num < 0) return 0; // Ingresos y gastos no pueden ser negativos
+                return Math.round(num * 100) / 100; // Max 2 decimales
+              };
+
+              // Procesar fecha
+              let fechaFormatted: string;
+              if (trans.fecha instanceof Date) {
+                fechaFormatted = trans.fecha.toISOString().split('T')[0];
+              } else if (typeof trans.fecha === 'string') {
+                // Intentar parsear la fecha
+                const parsedDate = new Date(trans.fecha);
+                if (isNaN(parsedDate.getTime())) {
+                  fechaFormatted = new Date().toISOString().split('T')[0]; // Fecha actual como fallback
+                } else {
+                  fechaFormatted = parsedDate.toISOString().split('T')[0];
+                }
+              } else {
+                fechaFormatted = new Date().toISOString().split('T')[0]; // Fecha actual como fallback
+              }
+
+              const processedTransaction = {
+                id: crypto.randomUUID(),
+                user_id: user.id,
+                cuenta_id: accountMap[trans.cuentaId],
+                subcategoria_id: categoryMap[trans.subcategoriaId],
+                fecha: fechaFormatted,
+                comentario: String(trans.comentario || ''),
+                ingreso: sanitizeTransactionNumber(trans.ingreso),
+                gasto: sanitizeTransactionNumber(trans.gasto),
+                divisa: String(trans.divisa || 'MXN'),
+                csv_id: trans.csvId || null
+              };
+
+              console.log(`Transacción procesada ${index + 1}:`, processedTransaction);
+              return processedTransaction;
+            });
+
+          console.log(`Insertando ${transactionsToInsert.length} transacciones de ${localTransactions.length} totales`);
+
+          if (transactionsToInsert.length > 0) {
+            const { error: transError } = await supabase
+              .from('transacciones')
+              .insert(transactionsToInsert);
+
+            if (transError) {
+              console.error('Error específico en transacciones:', transError);
+              throw new Error(`Error en transacciones: ${transError.message}`);
+            }
+            
+            migratedCount += transactionsToInsert.length;
+            console.log('Transacciones migradas exitosamente');
+          } else {
+            console.log('No hay transacciones válidas para migrar');
+          }
+          
+        } catch (error) {
+          console.error('Error detallado en transacciones:', error);
+          throw new Error(`Error específico en transacciones: ${error}`);
+        }
+      }
+
       toast({
-        title: "Migración de cuentas exitosa",
-        description: `Se migraron ${migratedCount} registros (categorías + cuentas). Las transacciones se migrarán por separado.`,
+        title: "¡Migración completa exitosa!",
+        description: `Se migraron ${migratedCount} registros (categorías + cuentas + transacciones). Limpiando localStorage...`,
       });
+
+      // Limpiar localStorage después de migración exitosa
+      localStorage.removeItem('financeAccounts');
+      localStorage.removeItem('financeCategories');
+      localStorage.removeItem('financeTransactions');
+
+      setTimeout(() => {
+        alert('¡Migración completada! Ahora tus datos están en Supabase. La página se recargará para mostrar los datos migrados.');
+        window.location.reload();
+      }, 2000);
 
       return true;
     } catch (error: any) {
