@@ -221,9 +221,18 @@ export const useFinanceData = () => {
     }
     
     // INVERSIONES DETALLADAS (considerando saldo inicial)
+    const cuentasInversionIds = accountsWithBalances.filter(a => a.tipo === 'Inversiones').map(a => a.id);
     const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + (a.valorMercado || a.saldoActual), 0);
-    const aportacionesMes = transactionsThisMonth.filter(t => t.tipo === 'Aportación').reduce((s, t) => s + t.ingreso, 0);
-    const aportacionesMesAnterior = transactionsPreviousMonth.filter(t => t.tipo === 'Aportación').reduce((s, t) => s + t.ingreso, 0);
+    
+    // Filtrar aportaciones solo a cuentas de inversión
+    const aportacionesMes = transactionsThisMonth.filter(t => 
+      t.tipo === 'Aportación' && cuentasInversionIds.includes(t.cuentaId)
+    ).reduce((s, t) => s + t.ingreso, 0);
+    
+    const aportacionesMesAnterior = transactionsPreviousMonth.filter(t => 
+      t.tipo === 'Aportación' && cuentasInversionIds.includes(t.cuentaId)
+    ).reduce((s, t) => s + t.ingreso, 0);
+    
     const variacionAportaciones = aportacionesMesAnterior > 0 ? ((aportacionesMes - aportacionesMesAnterior) / aportacionesMesAnterior) * 100 : 0;
     
     const cuentasInversion = accountsWithBalances
