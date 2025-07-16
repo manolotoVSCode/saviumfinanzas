@@ -15,6 +15,12 @@ import { TrendingUp, TrendingDown, DollarSign, Edit3 } from 'lucide-react';
 
 const Inversiones = () => {
   const { dashboardMetrics, accounts, updateAccount, loading } = useFinanceDataSupabase();
+  const { formatCurrency } = useAppConfig();
+  const { convertCurrency, loading: ratesLoading } = useExchangeRates();
+  const [editingAccount, setEditingAccount] = useState<string | null>(null);
+  const [rendimientoManual, setRendimientoManual] = useState<string>('');
+  const [mostrarMovimientos, setMostrarMovimientos] = useState<{[key: string]: boolean}>({});
+  const [reinvertirRendimiento, setReinvertirRendimiento] = useState<{[key: string]: boolean}>({});
 
   if (loading) {
     return (
@@ -28,12 +34,6 @@ const Inversiones = () => {
       </Layout>
     );
   }
-  const { formatCurrency } = useAppConfig();
-  const { convertCurrency, loading: ratesLoading } = useExchangeRates();
-  const [editingAccount, setEditingAccount] = useState<string | null>(null);
-  const [rendimientoManual, setRendimientoManual] = useState<string>('');
-  const [mostrarMovimientos, setMostrarMovimientos] = useState<{[key: string]: boolean}>({});
-  const [reinvertirRendimiento, setReinvertirRendimiento] = useState<{[key: string]: boolean}>({});
 
   const inversionesResumen = dashboardMetrics.inversionesResumen;
   const cuentasInversion = accounts.filter(acc => acc.tipo === 'Inversiones');
