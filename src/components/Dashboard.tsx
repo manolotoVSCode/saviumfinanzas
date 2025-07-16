@@ -139,7 +139,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-success">
-              ACTIVOS (lo que tienes)
+              ACTIVOS <strong>MXN</strong>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -213,7 +213,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-destructive">
-              PASIVOS (lo que debes)
+              PASIVOS <strong>MXN</strong>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -262,7 +262,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
               
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-destructive">TOTAL PASIVOS</span>
+                  <span className="font-semibold text-destructive">TOTAL PASIVOS <strong>MXN</strong></span>
                   <span className="text-xl font-bold text-destructive">{formatCurrency(metrics.pasivos.total)}</span>
                 </div>
               </div>
@@ -274,7 +274,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
       {/* GRÁFICO DE BARRAS CON LÍNEAS DE TENDENCIA - INGRESOS VS GASTOS ÚLTIMOS 12 MESES */}
       <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle>Ingresos vs Gastos - Últimos 12 Meses ({currencyCode})</CardTitle>
+          <CardTitle>Ingresos vs Gastos - Últimos 12 Meses <strong>MXN</strong></CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
@@ -377,13 +377,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
 
       {/* RESUMEN MENSUAL - MES ANTERIOR */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">Resumen Junio</h2>
+        <h2 className="text-xl font-semibold text-center">Resumen Junio <strong>MXN</strong></h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado del mes */}
          <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">Resultado del Mes Anterior</CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Resultado del Mes Anterior <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceMesAnterior)}`}>
@@ -410,7 +410,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Ingresos del mes */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos del Mes Anterior</CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos del Mes Anterior <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
@@ -437,7 +437,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Gastos del mes */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos del Mes Anterior</CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos del Mes Anterior <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
@@ -467,7 +467,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Distribución de Gastos */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Gastos</CardTitle>
+            <CardTitle className="text-center">Distribución Gastos <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -512,7 +512,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Distribución de Ingresos */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Ingresos</CardTitle>
+            <CardTitle className="text-center">Distribución Ingresos <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -557,13 +557,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
 
       {/* RESUMEN ANUAL */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">Resumen 2025</h2>
+        <h2 className="text-xl font-semibold text-center">Resumen 2025 <strong>MXN</strong></h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado anual */}
         <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">Resultado 2025</CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Resultado 2025 <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${getBalanceColor(metrics.balanceAnio)}`}>
@@ -590,7 +590,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Ingresos anuales */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos 2025</CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos 2025 <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">
@@ -617,7 +617,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Gastos anuales */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gastos 2025</CardTitle>
+            <CardTitle className="text-sm font-medium">Gastos 2025 <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
@@ -647,7 +647,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Distribución de Gastos Anual */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Gastos</CardTitle>
+            <CardTitle className="text-center">Distribución Gastos <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -695,7 +695,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Distribución de Ingresos Anual */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">Distribución Ingresos</CardTitle>
+            <CardTitle className="text-center">Distribución Ingresos <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -746,7 +746,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Distribución de activos */}
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle>Distribución de Activos</CardTitle>
+            <CardTitle>Distribución de Activos <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -797,7 +797,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         {/* Distribución de pasivos */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle>Distribución de Pasivos</CardTitle>
+            <CardTitle>Distribución de Pasivos <strong>MXN</strong></CardTitle>
           </CardHeader>
           <CardContent>
             {pasivosData.length > 0 ? (
