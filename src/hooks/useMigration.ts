@@ -111,15 +111,25 @@ export const useMigration = () => {
               rendimientoType: typeof acc.rendimientoMensual
             });
             
+            // Función para sanitizar números
+            const sanitizeNumber = (value: any, defaultValue: number = 0, maxValue: number = 999999999): number => {
+              if (value === null || value === undefined || value === '') return defaultValue;
+              const num = parseFloat(String(value));
+              if (isNaN(num)) return defaultValue;
+              if (num > maxValue) return maxValue;
+              if (num < -maxValue) return -maxValue;
+              return Math.round(num * 100) / 100; // Max 2 decimales
+            };
+            
             const processedAccount = {
               id: newId,
               user_id: user.id,
               nombre: String(acc.nombre || 'Sin nombre'),
               tipo: String(acc.tipo || 'Efectivo'),
-              saldo_inicial: parseFloat(String(acc.saldoInicial || 0)),
+              saldo_inicial: sanitizeNumber(acc.saldoInicial, 0),
               divisa: String(acc.divisa || 'MXN'),
-              valor_mercado: acc.valorMercado ? parseFloat(String(acc.valorMercado)) : null,
-              rendimiento_mensual: acc.rendimientoMensual ? parseFloat(String(acc.rendimientoMensual)) : null
+              valor_mercado: acc.valorMercado ? sanitizeNumber(acc.valorMercado, null) : null,
+              rendimiento_mensual: acc.rendimientoMensual ? sanitizeNumber(acc.rendimientoMensual, null, 100) : null
             };
             
             console.log(`Cuenta procesada ${index + 1}:`, processedAccount);
