@@ -8,13 +8,26 @@ import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList } from 'recharts';
 
 import Layout from '@/components/Layout';
-import { useFinanceData } from '@/hooks/useFinanceData';
+import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { TrendingUp, TrendingDown, DollarSign, Edit3 } from 'lucide-react';
 
 const Inversiones = () => {
-  const { dashboardMetrics, accounts, updateAccount } = useFinanceData();
+  const { dashboardMetrics, accounts, updateAccount, loading } = useFinanceDataSupabase();
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="animate-fade-in flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Cargando inversiones...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
   const { formatCurrency } = useAppConfig();
   const { convertCurrency, loading: ratesLoading } = useExchangeRates();
   const [editingAccount, setEditingAccount] = useState<string | null>(null);
