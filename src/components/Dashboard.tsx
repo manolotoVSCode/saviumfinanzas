@@ -66,7 +66,14 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     
     // Cálculos del mes anterior
     const ingresosMes = lastMonthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMes = Math.abs(lastMonthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0));
+    const gastosMesRaw = lastMonthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const gastosMes = Math.abs(gastosMesRaw);
+    
+    // Debug para gastos mes anterior
+    console.log('=== DEBUG GASTOS MES ANTERIOR ===');
+    console.log('lastMonthTransactions gastos count:', lastMonthTransactions.filter(t => t.tipo === 'Gastos').length);
+    console.log('gastosMesRaw:', gastosMesRaw);
+    console.log('gastosMes final:', gastosMes);
     
     // Cálculos de dos meses atrás (para comparativo)
     const ingresosMesAnterior = twoMonthsAgoTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
