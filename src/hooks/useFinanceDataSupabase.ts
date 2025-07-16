@@ -76,7 +76,7 @@ export const useFinanceDataSupabase = () => {
 
       const mappedTransactions: Transaction[] = transaccionesData.map(transaccion => ({
         id: transaccion.id,
-        fecha: new Date(transaccion.fecha + 'T12:00:00'), // Agregar hora para evitar problemas de timezone
+        fecha: new Date(transaccion.fecha),
         comentario: transaccion.comentario,
         monto: Number(transaccion.ingreso) - Number(transaccion.gasto),
         ingreso: Number(transaccion.ingreso),
@@ -188,6 +188,13 @@ export const useFinanceDataSupabase = () => {
     const transactionsPreviousMonth = enrichedTransactions.filter(t => t.fecha >= startOfPreviousMonth && t.fecha <= endOfPreviousMonth);
     const transactionsThisYear = enrichedTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
     const transactionsLastYear = enrichedTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
+    
+    // Debug logs para abril
+    console.log('=== DEBUG ABRIL ===');
+    console.log('startOfPreviousMonth:', startOfPreviousMonth);
+    console.log('endOfPreviousMonth:', endOfPreviousMonth);
+    console.log('All enriched transactions:', enrichedTransactions.map(t => ({ fecha: t.fecha, comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
+    console.log('transactionsPreviousMonth (abril):', transactionsPreviousMonth.map(t => ({ fecha: t.fecha, comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
     
     // INGRESOS Y GASTOS MENSUALES - CONVERTIR A MXN
     const ingresosMes = transactionsThisMonth
