@@ -66,19 +66,19 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     
     // Cálculos del mes anterior
     const ingresosMes = lastMonthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMes = lastMonthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const gastosMes = Math.abs(lastMonthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0));
     
     // Cálculos de dos meses atrás (para comparativo)
     const ingresosMesAnterior = twoMonthsAgoTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMesAnterior = twoMonthsAgoTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const gastosMesAnterior = Math.abs(twoMonthsAgoTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0));
     
     // Cálculos del año actual
     const ingresosAnio = yearTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosAnio = yearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const gastosAnio = Math.abs(yearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0));
     
     // Cálculos del año anterior (para comparativo)
     const ingresosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    const gastosAnioAnterior = Math.abs(lastYearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0));
     
     // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses incluyendo actual)
     const tendenciaMensual = [];
