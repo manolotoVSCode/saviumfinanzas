@@ -59,26 +59,65 @@ const Inversiones = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{formatCurrency(inversionesResumen.totalInversiones)}</div>
               <div className="text-sm text-muted-foreground">Total Invertido</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-success">{formatCurrency(inversionesResumen.aportacionesMes)}</div>
-              <div className="text-sm text-muted-foreground">Aportaciones Este Mes</div>
+              <div className="text-2xl font-bold text-success">{formatCurrency(inversionesResumen.totalAportadoAnual)}</div>
+              <div className="text-sm text-muted-foreground">Total Aportado {new Date().getFullYear()}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-destructive">{formatCurrency(inversionesResumen.totalRetiradoAnual)}</div>
+              <div className="text-sm text-muted-foreground">Total Retirado {new Date().getFullYear()}</div>
             </div>
             <div className="text-center">
               <div className={`text-2xl font-bold ${
-                inversionesResumen.variacionAportaciones >= 0 ? 'text-success' : 'text-destructive'
+                inversionesResumen.rendimientoAnualPorcentaje >= 0 ? 'text-success' : 'text-destructive'
               }`}>
-                {inversionesResumen.variacionAportaciones >= 0 ? '+' : ''}{inversionesResumen.variacionAportaciones.toFixed(1)}%
+                {inversionesResumen.rendimientoAnualPorcentaje >= 0 ? '+' : ''}{inversionesResumen.rendimientoAnualPorcentaje.toFixed(2)}%
               </div>
-              <div className="text-sm text-muted-foreground">vs Mes Anterior</div>
+              <div className="text-sm text-muted-foreground">Rendimiento Anual</div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* DETALLE MENSUAL */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Aportaciones por Mes - {new Date().getFullYear()}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {inversionesResumen.aportacionesPorMes.map((item, index) => (
+                <div key={index} className="flex justify-between items-center py-1">
+                  <span className="text-sm text-muted-foreground capitalize">{item.mes}</span>
+                  <span className="font-medium">{formatCurrency(item.monto)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Retiros por Mes - {new Date().getFullYear()}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {inversionesResumen.retirosPorMes.map((item, index) => (
+                <div key={index} className="flex justify-between items-center py-1">
+                  <span className="text-sm text-muted-foreground capitalize">{item.mes}</span>
+                  <span className="font-medium text-destructive">{formatCurrency(item.monto)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* DETALLE POR CUENTA */}
       <div className="grid grid-cols-1 gap-6">
@@ -139,12 +178,12 @@ const Inversiones = () => {
                   {/* Formulario para agregar rendimientos */}
                   {editingAccount === cuenta.id && (
                     <div className="border-t pt-4 space-y-3">
-                      <Label className="text-sm font-medium">Agregar Rendimiento Manual</Label>
+                      <Label className="text-sm font-medium">Agregar Rendimiento Mensual</Label>
                       <div className="flex gap-2">
                         <Input
                           type="number"
                           step="0.01"
-                          placeholder="Monto del rendimiento"
+                          placeholder="Monto del rendimiento mensual"
                           value={rendimientoManual}
                           onChange={(e) => setRendimientoManual(e.target.value)}
                           className="flex-1"
@@ -165,7 +204,7 @@ const Inversiones = () => {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        El porcentaje se calculará automáticamente según el monto ingresado
+                        Ingrese el monto del rendimiento mensual en número. El porcentaje se calculará automáticamente.
                       </p>
                     </div>
                   )}

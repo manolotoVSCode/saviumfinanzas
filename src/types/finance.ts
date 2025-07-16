@@ -103,6 +103,12 @@ export interface DashboardMetrics {
     aportacionesMes: number;
     aportacionesMesAnterior: number;
     variacionAportaciones: number;
+    aportacionesPorMes: Array<{ mes: string; monto: number }>;
+    retirosPorMes: Array<{ mes: string; monto: number }>;
+    totalAportadoAnual: number;
+    totalRetiradoAnual: number;
+    rendimientoAnualTotal: number;
+    rendimientoAnualPorcentaje: number;
     cuentasInversion: Array<{ cuenta: string; saldo: number; saldoInicial: number; rendimiento: number }>;
   };
 }

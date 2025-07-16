@@ -234,6 +234,47 @@ export const useFinanceData = () => {
     ).reduce((s, t) => s + t.ingreso, 0);
     
     const variacionAportaciones = aportacionesMesAnterior > 0 ? ((aportacionesMes - aportacionesMesAnterior) / aportacionesMesAnterior) * 100 : 0;
+
+    // Calcular aportaciones y retiros por mes del año en curso
+    const currentYear = new Date().getFullYear();
+    const aportacionesPorMes = [];
+    const retirosPorMes = [];
+    
+    for (let mes = 0; mes < 12; mes++) {
+      const mesStart = new Date(currentYear, mes, 1);
+      const mesEnd = new Date(currentYear, mes + 1, 0);
+      
+      const transaccionesMes = enrichedTransactions.filter(t => 
+        t.fecha >= mesStart && t.fecha <= mesEnd
+      );
+      
+      const aportacionesMesActual = transaccionesMes.filter(t => 
+        t.tipo === 'Aportación' && cuentasInversionIds.includes(t.cuentaId)
+      ).reduce((sum, t) => sum + t.ingreso, 0);
+      
+      const retirosMesActual = transaccionesMes.filter(t => 
+        t.tipo === 'Retiro' && cuentasInversionIds.includes(t.cuentaId)
+      ).reduce((sum, t) => sum + Math.abs(t.gasto), 0);
+      
+      aportacionesPorMes.push({
+        mes: mesStart.toLocaleDateString('es-MX', { month: 'short' }),
+        monto: aportacionesMesActual
+      });
+      
+      retirosPorMes.push({
+        mes: mesStart.toLocaleDateString('es-MX', { month: 'short' }),
+        monto: retirosMesActual
+      });
+    }
+
+    // Calcular rendimiento anual total
+    const totalAportadoAnual = aportacionesPorMes.reduce((sum, item) => sum + item.monto, 0);
+    const totalRetiradoAnual = retirosPorMes.reduce((sum, item) => sum + item.monto, 0);
+    const valorActualInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + (a.valorMercado || a.saldoActual), 0);
+    const saldoInicialInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoInicial, 0);
+    const rendimientoAnualTotal = valorActualInversiones - saldoInicialInversiones - totalAportadoAnual + totalRetiradoAnual;
+    const rendimientoAnualPorcentaje = (saldoInicialInversiones + totalAportadoAnual - totalRetiradoAnual) > 0 ? 
+      (rendimientoAnualTotal / (saldoInicialInversiones + totalAportadoAnual - totalRetiradoAnual)) * 100 : 0;
     
     const cuentasInversion = accountsWithBalances
       .filter(a => a.tipo === 'Inversiones')
@@ -292,6 +333,12 @@ export const useFinanceData = () => {
         aportacionesMes,
         aportacionesMesAnterior,
         variacionAportaciones,
+        aportacionesPorMes,
+        retirosPorMes,
+        totalAportadoAnual,
+        totalRetiradoAnual,
+        rendimientoAnualTotal,
+        rendimientoAnualPorcentaje,
         cuentasInversion
       }
     };
