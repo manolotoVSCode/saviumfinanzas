@@ -25,14 +25,10 @@ const Inversiones = () => {
   const inversionesResumen = dashboardMetrics.inversionesResumen;
   const cuentasInversion = accounts.filter(acc => acc.tipo === 'Inversiones');
 
-  // Calcular totales en MXN
-  const totalInvertidoMXN = ratesLoading ? 0 : cuentasInversion.reduce((total, cuenta) => {
-    const convertedAmount = convertCurrency(cuenta.saldoActual, cuenta.divisa, 'MXN');
-    return total + (isNaN(convertedAmount) ? 0 : convertedAmount);
-  }, 0);
-
-  const totalAportadoAnualMXN = inversionesResumen.totalAportadoAnual; // Ya está en MXN
-  const totalRetiradoAnualMXN = inversionesResumen.totalRetiradoAnual; // Ya está en MXN
+  // Usar los totales ya calculados del resumen
+  const totalInvertidoMXN = inversionesResumen.totalInversiones;
+  const totalAportadoAnualMXN = inversionesResumen.totalAportadoAnual;
+  const totalRetiradoAnualMXN = inversionesResumen.totalRetiradoAnual;
 
   const getRendimientoColor = (rendimiento: number) => {
     if (rendimiento > 0) return 'text-success';
