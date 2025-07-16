@@ -76,7 +76,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const ingresosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
     
-    // Generar datos de tendencia mensual para la moneda seleccionada
+    // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses incluyendo actual)
     const tendenciaMensual = [];
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
@@ -90,12 +90,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       });
       
       const ingresos = monthTrans.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-      const gastos = monthTrans.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+      const gastos = Math.abs(monthTrans.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0));
       
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
         ingresos,
-        gastos
+        gastos,
+        balance: ingresos - gastos
       });
     }
     
@@ -421,6 +422,78 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           ))}
         </div>
       </div>
+
+      {/* GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES */}
+      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="text-center">Ingresos vs Gastos - Últimos 12 Meses <strong>{selectedCurrency}</strong></CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={filteredMetrics.tendenciaMensual}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis 
+                  dataKey="mes" 
+                  tick={{ fontSize: 12 }}
+                  className="text-muted-foreground"
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  className="text-muted-foreground"
+                  tickFormatter={(value) => formatCurrencyConsistent(value, selectedCurrency).replace(` ${selectedCurrency}`, '')}
+                />
+                <Tooltip 
+                  formatter={(value: any, name: string) => [
+                    formatCurrencyConsistent(Number(value), selectedCurrency), 
+                    name === 'ingresos' ? 'Ingresos' : 'Gastos'
+                  ]}
+                  labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                />
+                <Bar 
+                  dataKey="ingresos" 
+                  fill="hsl(var(--success))" 
+                  radius={[2, 2, 0, 0]}
+                  name="ingresos"
+                />
+                <Bar 
+                  dataKey="gastos" 
+                  fill="hsl(var(--destructive))" 
+                  radius={[2, 2, 0, 0]}
+                  name="gastos"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="balance" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={3}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                  name="Balance"
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-center gap-6 mt-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
+              <span>Ingresos</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
+              <span>Gastos</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }}></div>
+              <span>Balance</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* RESUMEN MENSUAL */}
       <div className="mb-4">
