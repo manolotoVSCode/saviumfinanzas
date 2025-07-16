@@ -62,7 +62,14 @@ export const TransactionsManager = ({
   // Aplicar filtros a las transacciones
   const filteredTransactions = transactions.filter(transaction => {
     if (filters.cuentaId && filters.cuentaId !== 'all' && transaction.cuentaId !== filters.cuentaId) return false;
-    if (filters.categoriaId && filters.categoriaId !== 'all' && transaction.subcategoriaId !== filters.categoriaId) return false;
+    
+    // Para filtro de categoría, también incluir transacciones sin categoría válida
+    if (filters.categoriaId && filters.categoriaId !== 'all') {
+      const categoryExists = categories.some(c => c.id === transaction.subcategoriaId);
+      if (!categoryExists && filters.categoriaId !== 'sin-asignar') return false;
+      if (categoryExists && transaction.subcategoriaId !== filters.categoriaId) return false;
+    }
+    
     if (filters.tipo && filters.tipo !== 'all' && transaction.tipo !== filters.tipo) return false;
     if (filters.mes && filters.mes !== 'all') {
       const transactionMonth = transaction.fecha.toISOString().slice(0, 7); // YYYY-MM format
@@ -523,8 +530,11 @@ export const TransactionsManager = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50">
+                  <SelectContent className="bg-background z-50">
                   <SelectItem value="all">Todas las categorías</SelectItem>
+                  <SelectItem value="sin-asignar" className="text-destructive">
+                    SIN ASIGNAR
+                  </SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.categoria} - {category.subcategoria}
@@ -593,11 +603,24 @@ export const TransactionsManager = ({
                   <TableCell>{getAccountName(transaction.cuentaId)}</TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <div className="font-medium">{transaction.categoria}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {categories.find(c => c.id === transaction.subcategoriaId)?.subcategoria || 
-                         <span className="text-red-500 italic">Categoría eliminada</span>}
-                      </div>
+                      {(() => {
+                        const category = categories.find(c => c.id === transaction.subcategoriaId);
+                        if (category) {
+                          return (
+                            <>
+                              <div className="font-medium">{category.categoria}</div>
+                              <div className="text-sm text-muted-foreground">{category.subcategoria}</div>
+                            </>
+                          );
+                        } else {
+                          return (
+                            <>
+                              <div className="font-medium text-destructive">SIN ASIGNAR</div>
+                              <div className="text-sm text-destructive">SIN ASIGNAR</div>
+                            </>
+                          );
+                        }
+                      })()}
                     </div>
                   </TableCell>
                   <TableCell className="max-w-xs truncate">{transaction.comentario}</TableCell>
