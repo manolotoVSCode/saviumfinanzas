@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart } from 'recharts';
+import { useState } from 'react';
 
 interface DashboardProps {
   metrics: DashboardMetrics;
@@ -12,6 +14,7 @@ interface DashboardProps {
 }
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: DashboardProps) => {
+  const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
 
   const getBalanceColor = (amount: number) => {
     if (amount > 0) return 'text-success';
@@ -271,10 +274,27 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         </Card>
       </div>
 
+      {/* BOTONES DE SELECCIÓN DE MONEDA */}
+      <div className="flex justify-center mb-6">
+        <div className="flex rounded-lg bg-muted p-1">
+          {(['MXN', 'USD', 'EUR'] as const).map((currency) => (
+            <Button
+              key={currency}
+              variant={selectedCurrency === currency ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedCurrency(currency)}
+              className="px-4 py-2"
+            >
+              {currency}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {/* GRÁFICO DE BARRAS CON LÍNEAS DE TENDENCIA - INGRESOS VS GASTOS ÚLTIMOS 12 MESES */}
       <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle>Ingresos vs Gastos - Últimos 12 Meses <strong>MXN</strong></CardTitle>
+          <CardTitle>Ingresos vs Gastos - Últimos 12 Meses <strong>{selectedCurrency}</strong></CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
