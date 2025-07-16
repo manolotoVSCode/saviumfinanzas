@@ -183,32 +183,46 @@ export const useFinanceDataSupabase = () => {
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
     const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
     
-    // Filtrar solo transacciones en MXN para los dashboards
-    const dashboardTransactions = enrichedTransactions.filter(t => t.divisa === 'MXN');
+    // Para el dashboard, NO filtrar por divisa sino incluir todas las transacciones convertidas
+    const transactionsThisMonth = enrichedTransactions.filter(t => t.fecha >= startOfMonth && t.fecha <= endOfMonth);
+    const transactionsPreviousMonth = enrichedTransactions.filter(t => t.fecha >= startOfPreviousMonth && t.fecha <= endOfPreviousMonth);
+    const transactionsThisYear = enrichedTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
+    const transactionsLastYear = enrichedTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
     
-    const transactionsThisMonth = dashboardTransactions.filter(t => t.fecha >= startOfMonth && t.fecha <= endOfMonth);
-    const transactionsPreviousMonth = dashboardTransactions.filter(t => t.fecha >= startOfPreviousMonth && t.fecha <= endOfPreviousMonth);
-    const transactionsThisYear = dashboardTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
-    const transactionsLastYear = dashboardTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
-    
-    // INGRESOS Y GASTOS MENSUALES
-    const ingresosMes = transactionsThisMonth.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMes = transactionsThisMonth.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    // INGRESOS Y GASTOS MENSUALES - CONVERTIR A MXN
+    const ingresosMes = transactionsThisMonth
+      .filter(t => t.tipo === 'Ingreso')
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+    const gastosMes = transactionsThisMonth
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
     const balanceMes = ingresosMes - gastosMes;
     
-    // MES ANTERIOR (dinámico)
-    const ingresosMesAnterior = transactionsPreviousMonth.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMesAnterior = transactionsPreviousMonth.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    // MES ANTERIOR (dinámico) - CONVERTIR A MXN
+    const ingresosMesAnterior = transactionsPreviousMonth
+      .filter(t => t.tipo === 'Ingreso')
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+    const gastosMesAnterior = transactionsPreviousMonth
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
     const balanceMesAnterior = ingresosMesAnterior - gastosMesAnterior;
     
-    // ANUALES
-    const ingresosAnio = transactionsThisYear.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosAnio = transactionsThisYear.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    // ANUALES - CONVERTIR A MXN
+    const ingresosAnio = transactionsThisYear
+      .filter(t => t.tipo === 'Ingreso')
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+    const gastosAnio = transactionsThisYear
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
     const balanceAnio = ingresosAnio - gastosAnio;
     
-    // AÑO ANTERIOR
-    const ingresosAnioAnterior = transactionsLastYear.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosAnioAnterior = transactionsLastYear.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + t.gasto, 0);
+    // AÑO ANTERIOR - CONVERTIR A MXN
+    const ingresosAnioAnterior = transactionsLastYear
+      .filter(t => t.tipo === 'Ingreso')
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+    const gastosAnioAnterior = transactionsLastYear
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
     const balanceAnioAnterior = ingresosAnioAnterior - gastosAnioAnterior;
     
     // VARIACIONES PORCENTUALES (Mes actual vs Mes anterior)
