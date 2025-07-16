@@ -354,7 +354,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         <div key={cuenta.id} className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
                           <div className="flex justify-between items-center mb-2">
                              <span className="text-sm text-muted-foreground">{cuenta.nombre}</span>
-                             <span className="font-bold text-destructive">{formatNumberOnly(Math.abs(cuenta.balance))} {moneda}</span>
+                             <span className="font-bold text-destructive">{formatNumberOnly(Math.abs(Math.min(0, cuenta.saldoActual)))} {moneda}</span>
                          </div>
                          <div className="text-xs text-muted-foreground">
                            Tarjeta de Crédito
