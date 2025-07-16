@@ -33,13 +33,25 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
   ];
 
   // Preparar datos para gráficos
-  const pieDataMesAnterior = metrics.topCategoriasMesAnterior.map((cat, index) => ({
+  const pieDataGastosMesAnterior = metrics.topCategoriasGastosMesAnterior.map((cat, index) => ({
     name: cat.categoria,
     value: Math.abs(cat.monto),
     color: COLORS[index % COLORS.length]
   }));
 
-  const pieDataAnual = metrics.topCategoriasAnual.map((cat, index) => ({
+  const pieDataGastosAnual = metrics.topCategoriasGastosAnual.map((cat, index) => ({
+    name: cat.categoria,
+    value: Math.abs(cat.monto),
+    color: COLORS[index % COLORS.length]
+  }));
+
+  const pieDataIngresosMesAnterior = metrics.topCategoriasIngresosMesAnterior.map((cat, index) => ({
+    name: cat.categoria,
+    value: Math.abs(cat.monto),
+    color: COLORS[index % COLORS.length]
+  }));
+
+  const pieDataIngresosAnual = metrics.topCategoriasIngresosAnual.map((cat, index) => ({
     name: cat.categoria,
     value: Math.abs(cat.monto),
     color: COLORS[index % COLORS.length]
@@ -411,50 +423,98 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         </Card>
       </div>
 
-      {/* DISTRIBUCIÓN DE GASTOS MENSUAL - MES ANTERIOR */}
-      <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="text-center">Distribución Gastos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsPieChart>
-                <Pie
-                  data={pieDataMesAnterior}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieDataMesAnterior.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
-                />
-              </RechartsPieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 space-y-2">
-            {pieDataMesAnterior.map((entry, index) => (
-              <div key={index} className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: entry.color }}
+      {/* DISTRIBUCIÓN DE GASTOS E INGRESOS MENSUAL - MES ANTERIOR */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Distribución de Gastos */}
+        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="text-center">Distribución Gastos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie
+                    data={pieDataGastosMesAnterior}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieDataGastosMesAnterior.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
                   />
-                  <span>{entry.name}</span>
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 space-y-2">
+              {pieDataGastosMesAnterior.map((entry, index) => (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span>{entry.name}</span>
+                  </div>
+                  <span className="font-medium">{formatCurrency(entry.value)}</span>
                 </div>
-                <span className="font-medium">{formatCurrency(entry.value)}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Distribución de Ingresos */}
+        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="text-center">Distribución Ingresos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie
+                    data={pieDataIngresosMesAnterior}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieDataIngresosMesAnterior.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
+                  />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 space-y-2">
+              {pieDataIngresosMesAnterior.map((entry, index) => (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span>{entry.name}</span>
+                  </div>
+                  <span className="font-medium">{formatCurrency(entry.value)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* RESUMEN ANUAL */}
       <div className="mb-4">
@@ -543,50 +603,98 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         </Card>
       </div>
 
-      {/* DISTRIBUCIÓN DE GASTOS ANUAL */}
-      <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="text-center">Distribución Gastos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsPieChart>
-                <Pie
-                  data={pieDataAnual}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieDataAnual.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
-                />
-              </RechartsPieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 space-y-2">
-            {pieDataAnual.map((entry, index) => (
-              <div key={index} className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: entry.color }}
+      {/* DISTRIBUCIÓN DE GASTOS E INGRESOS ANUAL */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Distribución de Gastos Anual */}
+        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="text-center">Distribución Gastos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie
+                    data={pieDataGastosAnual}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieDataGastosAnual.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
                   />
-                  <span>{entry.name}</span>
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 space-y-2">
+              {pieDataGastosAnual.map((entry, index) => (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span>{entry.name}</span>
+                  </div>
+                  <span className="font-medium">{formatCurrency(entry.value)}</span>
                 </div>
-                <span className="font-medium">{formatCurrency(entry.value)}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Distribución de Ingresos Anual */}
+        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="text-center">Distribución Ingresos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie
+                    data={pieDataIngresosAnual}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieDataIngresosAnual.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: any) => [formatCurrency(Number(value)), 'Monto']}
+                  />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 space-y-2">
+              {pieDataIngresosAnual.map((entry, index) => (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span>{entry.name}</span>
+                  </div>
+                  <span className="font-medium">{formatCurrency(entry.value)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* GRÁFICOS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

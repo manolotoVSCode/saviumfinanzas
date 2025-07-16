@@ -180,8 +180,8 @@ export const useFinanceData = () => {
       { categoria: 'Hipoteca', monto: pasivos.hipoteca, porcentaje: pasivos.total > 0 ? (pasivos.hipoteca / pasivos.total) * 100 : 0 }
     ].filter(item => item.monto > 0);
     
-    // TOP CATEGORÍAS
-    const getCategoryTotals = (transactions: typeof enrichedTransactions) => {
+    // TOP CATEGORÍAS GASTOS E INGRESOS
+    const getCategoryTotalsGastos = (transactions: typeof enrichedTransactions) => {
       const categoryTotals = new Map<string, number>();
       transactions.forEach(t => {
         if (t.categoria && t.tipo === 'Gastos') {
@@ -194,10 +194,28 @@ export const useFinanceData = () => {
         .sort((a, b) => b.monto - a.monto)
         .slice(0, 5);
     };
+
+    const getCategoryTotalsIngresos = (transactions: typeof enrichedTransactions) => {
+      const categoryTotals = new Map<string, number>();
+      transactions.forEach(t => {
+        if (t.categoria && t.tipo === 'Ingreso') {
+          const current = categoryTotals.get(t.categoria) || 0;
+          categoryTotals.set(t.categoria, current + t.ingreso);
+        }
+      });
+      return Array.from(categoryTotals.entries())
+        .map(([categoria, monto]) => ({ categoria, monto, tipo: 'Ingreso' as TransactionType }))
+        .sort((a, b) => b.monto - a.monto)
+        .slice(0, 5);
+    };
     
-    const topCategorias = getCategoryTotals(transactionsThisMonth);
-    const topCategoriasMesAnterior = getCategoryTotals(transactionsPreviousMonth);
-    const topCategoriasAnual = getCategoryTotals(transactionsThisYear);
+    const topCategoriasGastos = getCategoryTotalsGastos(transactionsThisMonth);
+    const topCategoriasGastosMesAnterior = getCategoryTotalsGastos(transactionsPreviousMonth);
+    const topCategoriasGastosAnual = getCategoryTotalsGastos(transactionsThisYear);
+
+    const topCategoriasIngresos = getCategoryTotalsIngresos(transactionsThisMonth);
+    const topCategoriasIngresosMesAnterior = getCategoryTotalsIngresos(transactionsPreviousMonth);
+    const topCategoriasIngresosAnual = getCategoryTotalsIngresos(transactionsThisYear);
     
     // TENDENCIA MENSUAL (últimos 12 meses)
     const tendenciaMensual = [];
@@ -343,9 +361,16 @@ export const useFinanceData = () => {
       },
       distribucionActivos,
       distribucionPasivos,
-      topCategorias,
-      topCategoriasMesAnterior,
-      topCategoriasAnual,
+      topCategoriasGastos,
+      topCategoriasGastosMesAnterior,
+      topCategoriasGastosAnual,
+      topCategoriasIngresos,
+      topCategoriasIngresosMesAnterior,
+      topCategoriasIngresosAnual,
+      // Mantener compatibilidad con versión anterior
+      topCategorias: topCategoriasGastos,
+      topCategoriasMesAnterior: topCategoriasGastosMesAnterior,
+      topCategoriasAnual: topCategoriasGastosAnual,
       cuentasResumen: accountsWithBalances.map(a => ({ cuenta: a.nombre, saldo: a.saldoActual, tipo: a.tipo })),
       tendenciaMensual,
       inversionesResumen: {

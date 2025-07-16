@@ -95,6 +95,14 @@ export interface DashboardMetrics {
   topCategorias: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
   topCategoriasMesAnterior: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
   topCategoriasAnual: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
+  
+  // Distribuciones específicas por tipo
+  topCategoriasGastos: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
+  topCategoriasGastosMesAnterior: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
+  topCategoriasGastosAnual: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
+  topCategoriasIngresos: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
+  topCategoriasIngresosMesAnterior: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
+  topCategoriasIngresosAnual: Array<{ categoria: string; monto: number; tipo: TransactionType }>;
   cuentasResumen: Array<{ cuenta: string; saldo: number; tipo: AccountType }>;
   tendenciaMensual: Array<{ mes: string; ingresos: number; gastos: number }>;
   
