@@ -30,22 +30,18 @@ const Inversiones = () => {
     return rendimiento >= 0 ? TrendingUp : TrendingDown;
   };
 
-  const handleRendimientoSubmit = (cuentaId: string, valorActual: number) => {
+  const handleRendimientoSubmit = (cuentaId: string) => {
     const rendimientoIngresado = parseFloat(rendimientoManual);
     if (!isNaN(rendimientoIngresado)) {
-      const cuenta = accounts.find(a => a.id === cuentaId);
-      if (cuenta) {
-        const nuevoValorMercado = valorActual + rendimientoIngresado;
-        updateAccount(cuentaId, { valorMercado: nuevoValorMercado });
-        setEditingAccount(null);
-        setRendimientoManual('');
-      }
+      // Guardamos directamente el rendimiento mensual ingresado
+      updateAccount(cuentaId, { rendimientoMensual: rendimientoIngresado });
+      setEditingAccount(null);
+      setRendimientoManual('');
     }
   };
 
-  const calcularPorcentajeRendimiento = (valorActual: number, totalAportado: number) => {
-    const rendimiento = valorActual - totalAportado;
-    return totalAportado !== 0 ? (rendimiento / totalAportado) * 100 : 0;
+  const calcularPorcentajeRendimiento = (rendimientoMensual: number, totalAportado: number) => {
+    return totalAportado !== 0 ? (rendimientoMensual / totalAportado) * 100 : 0;
   };
 
   const calcularRendimientoAnual = (rendimientoMensual: number) => {
@@ -88,10 +84,9 @@ const Inversiones = () => {
           const cuenta = cuentasInversion.find(c => c.id === inversion.id);
           if (!cuenta) return null;
           
-          const valorActual = cuenta.valorMercado || cuenta.saldoActual;
           const totalAportado = cuenta.saldoActual;
-          const rendimiento = valorActual - totalAportado;
-          const rendimientoMensualPorcentaje = calcularPorcentajeRendimiento(valorActual, totalAportado);
+          const rendimiento = cuenta.rendimientoMensual || 0;
+          const rendimientoMensualPorcentaje = calcularPorcentajeRendimiento(rendimiento, totalAportado);
           const rendimientoAnualPorcentaje = calcularRendimientoAnual(rendimientoMensualPorcentaje);
           const IconComponent = getRendimientoIcon(rendimiento);
 
@@ -124,17 +119,12 @@ const Inversiones = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Valor Actual de Mercado</span>
-                    <span className="text-xl font-bold text-primary">{formatCurrency(valorActual)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Aportado</span>
-                    <span className="text-sm font-medium">{formatCurrency(totalAportado)}</span>
+                    <span className="text-xl font-bold text-primary">{formatCurrency(totalAportado)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Ganancia/Pérdida</span>
+                    <span className="text-sm text-muted-foreground">Rendimiento Mensual</span>
                     <span className={`text-sm font-medium ${getRendimientoColor(rendimiento)}`}>
                       {rendimiento >= 0 ? '+' : ''}{formatCurrency(rendimiento)}
                     </span>
@@ -155,7 +145,7 @@ const Inversiones = () => {
                           className="flex-1"
                         />
                         <Button 
-                          onClick={() => handleRendimientoSubmit(cuenta.id, valorActual)}
+                          onClick={() => handleRendimientoSubmit(cuenta.id)}
                           disabled={!rendimientoManual}
                           size="sm"
                         >

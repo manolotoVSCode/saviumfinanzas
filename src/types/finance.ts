@@ -16,6 +16,7 @@ export interface Account {
   saldoInicial: number;
   saldoActual: number; // calculado
   valorMercado?: number; // solo para inversiones - valor actual del mercado
+  rendimientoMensual?: number; // rendimiento mensual manual para inversiones
 }
 
 export interface Transaction {
