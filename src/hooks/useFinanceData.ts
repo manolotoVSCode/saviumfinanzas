@@ -35,7 +35,12 @@ export const useFinanceData = () => {
   const [accounts, setAccounts] = useState<Account[]>(() => {
     try {
       const stored = localStorage.getItem('financeAccounts');
-      return stored ? JSON.parse(stored) : initialAccounts;
+      const parsed = stored ? JSON.parse(stored) : initialAccounts;
+      // Asegurar que todas las cuentas tengan divisa
+      return parsed.map((acc: Account) => ({
+        ...acc,
+        divisa: acc.divisa || 'MXN' // Default a MXN si no tiene divisa
+      }));
     } catch {
       return initialAccounts;
     }
@@ -292,7 +297,7 @@ export const useFinanceData = () => {
     
     // INVERSIONES DETALLADAS (considerando saldo inicial)
     const cuentasInversionIds = accountsWithBalances.filter(a => a.tipo === 'Inversiones').map(a => a.id);
-    const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoActual, 0);
+    const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + convertCurrency(a.saldoActual, a.divisa, 'MXN'), 0);
     
     // Filtrar aportaciones solo a cuentas de inversión
     const aportacionesMes = transactionsThisMonth.filter(t => 
