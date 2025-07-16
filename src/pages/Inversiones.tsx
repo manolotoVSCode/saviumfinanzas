@@ -16,7 +16,7 @@ import { TrendingUp, TrendingDown, DollarSign, Edit3 } from 'lucide-react';
 const Inversiones = () => {
   const { dashboardMetrics, accounts, updateAccount } = useFinanceData();
   const { formatCurrency } = useAppConfig();
-  const { convertCurrency } = useExchangeRates();
+  const { convertCurrency, loading: ratesLoading } = useExchangeRates();
   const [editingAccount, setEditingAccount] = useState<string | null>(null);
   const [rendimientoManual, setRendimientoManual] = useState<string>('');
   const [mostrarMovimientos, setMostrarMovimientos] = useState<{[key: string]: boolean}>({});
@@ -26,8 +26,9 @@ const Inversiones = () => {
   const cuentasInversion = accounts.filter(acc => acc.tipo === 'Inversiones');
 
   // Calcular totales en MXN
-  const totalInvertidoMXN = cuentasInversion.reduce((total, cuenta) => {
-    return total + convertCurrency(cuenta.saldoActual, cuenta.divisa, 'MXN');
+  const totalInvertidoMXN = ratesLoading ? 0 : cuentasInversion.reduce((total, cuenta) => {
+    const convertedAmount = convertCurrency(cuenta.saldoActual, cuenta.divisa, 'MXN');
+    return total + (isNaN(convertedAmount) ? 0 : convertedAmount);
   }, 0);
 
   const totalAportadoAnualMXN = inversionesResumen.totalAportadoAnual; // Ya está en MXN
@@ -74,7 +75,6 @@ const Inversiones = () => {
       <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
             Resumen de Inversiones <strong>MXN</strong>
           </CardTitle>
         </CardHeader>
