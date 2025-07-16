@@ -167,7 +167,7 @@ export const TransactionsManager = ({
     
     setFormData({
       cuentaId: transaction.cuentaId,
-      fecha: transaction.fecha.toISOString().split('T')[0],
+      fecha: new Date(transaction.fecha.getTime() + transaction.fecha.getTimezoneOffset() * 60000).toISOString().split('T')[0],
       comentario: transaction.comentario,
       ingreso: transaction.ingreso,
       gasto: transaction.gasto,
