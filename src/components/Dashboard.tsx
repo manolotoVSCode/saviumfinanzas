@@ -21,30 +21,31 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   console.log('DASHBOARD EJECUTANDOSE');
   console.log('Número de transacciones:', transactions.length);
 
-  // Debug para comparar con la página de transacciones - JUNIO 2025
+  // VERIFICACIÓN CON DATOS REALES DE SUPABASE - JUNIO 2025
   const junioTransactions = transactions.filter(t => {
     const fecha = new Date(t.fecha);
     return fecha.getFullYear() === 2025 && fecha.getMonth() === 5; // junio = mes 5
   });
 
-  console.log('=== ANÁLISIS JUNIO 2025 ===');
-  console.log('Total transacciones junio:', junioTransactions.length);
+  console.log('=== VERIFICACIÓN JUNIO 2025 ===');
+  console.log('Transacciones junio encontradas:', junioTransactions.length);
+  console.log('ESPERADO: 83 transacciones');
   
   if (junioTransactions.length > 0) {
     const ingresosJunio = junioTransactions.reduce((sum, t) => sum + t.ingreso, 0);
     const gastosJunio = junioTransactions.reduce((sum, t) => sum + t.gasto, 0);
 
-    console.log('INGRESOS JUNIO (suma directa):', ingresosJunio);
-    console.log('GASTOS JUNIO (suma directa):', gastosJunio);
+    console.log('INGRESOS JUNIO calculados:', ingresosJunio);
+    console.log('GASTOS JUNIO calculados:', gastosJunio);
+    console.log('ESPERADO - Ingresos: 427313.81, Gastos: 262036.07');
     
-    // Ver solo transacciones con ingresos > 0
-    const transaccionesConIngresos = junioTransactions.filter(t => t.ingreso > 0);
-    console.log('Transacciones con ingresos > 0:', transaccionesConIngresos.map(t => ({
-      fecha: t.fecha,
-      comentario: t.comentario.substring(0, 40),
-      ingreso: t.ingreso,
-      monto: t.monto
-    })));
+    const diferencia = Math.abs(ingresosJunio - 427313.81);
+    console.log('Diferencia en ingresos:', diferencia);
+    if (diferencia > 1) {
+      console.error('ERROR: Los cálculos no coinciden con la base de datos!');
+    } else {
+      console.log('✅ Cálculos correctos!');
+    }
   }
 
   // Función para filtrar métricas por moneda
@@ -93,44 +94,17 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const ingresosMes = lastMonthTransactions.reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMes = lastMonthTransactions.reduce((sum, t) => sum + t.gasto, 0);
     
-    // Cálculos de dos meses atrás (para comparativo) - excluyendo aportaciones, retiros, transferencias e inversiones
-    const ingresosMesAnterior = twoMonthsAgoTransactions.filter(t => 
-      t.tipo === 'Ingreso' && 
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-    ).reduce((sum, t) => sum + t.ingreso, 0);
+    // Cálculos de dos meses atrás (para comparativo) - SUMA DIRECTA sin filtros
+    const ingresosMesAnterior = twoMonthsAgoTransactions.reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMesAnterior = twoMonthsAgoTransactions.reduce((sum, t) => sum + t.gasto, 0);
     
-    const gastosMesAnterior = twoMonthsAgoTransactions.filter(t => 
-      t.tipo === 'Gastos' && 
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-    ).reduce((sum, t) => sum + t.gasto, 0);
+    // Cálculos del año actual - SUMA DIRECTA sin filtros
+    const ingresosAnio = yearTransactions.reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnio = yearTransactions.reduce((sum, t) => sum + t.gasto, 0);
     
-    // Cálculos del año actual - excluyendo aportaciones, retiros, transferencias e inversiones
-    const ingresosAnio = yearTransactions.filter(t => 
-      t.tipo === 'Ingreso' && 
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-    ).reduce((sum, t) => sum + t.ingreso, 0);
-    
-    const gastosAnio = yearTransactions.filter(t => 
-      t.tipo === 'Gastos' && 
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-    ).reduce((sum, t) => sum + t.gasto, 0);
-    
-    // Cálculos del año anterior (para comparativo) - excluyendo aportaciones, retiros, transferencias e inversiones
-    const ingresosAnioAnterior = lastYearTransactions.filter(t => 
-      t.tipo === 'Ingreso' && 
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-    ).reduce((sum, t) => sum + t.ingreso, 0);
-    
-    const gastosAnioAnterior = lastYearTransactions.filter(t => 
-      t.tipo === 'Gastos' && 
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-    ).reduce((sum, t) => sum + t.gasto, 0);
+    // Cálculos del año anterior (para comparativo) - SUMA DIRECTA sin filtros
+    const ingresosAnioAnterior = lastYearTransactions.reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnioAnterior = lastYearTransactions.reduce((sum, t) => sum + t.gasto, 0);
     
     // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses incluyendo actual)
     const tendenciaMensual = [];
@@ -145,17 +119,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         return tDate >= monthStart && tDate <= monthEnd;
       });
       
-      const ingresos = monthTrans.filter(t => 
-        t.tipo === 'Ingreso' && 
-        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-      ).reduce((sum, t) => sum + t.ingreso, 0);
-      
-      const gastos = Math.abs(monthTrans.filter(t => 
-        t.tipo === 'Gastos' && 
-        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-        !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-      ).reduce((sum, t) => sum + t.gasto, 0));
+      const ingresos = monthTrans.reduce((sum, t) => sum + t.ingreso, 0);
+      const gastos = monthTrans.reduce((sum, t) => sum + t.gasto, 0);
       
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
@@ -211,14 +176,9 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     '#6366F1', // Índigo
   ];
 
-  // Función para obtener distribución por categorías filtrada por moneda
   const getFilteredDistribution = (currency: 'MXN' | 'USD' | 'EUR', type: 'Ingreso' | 'Gastos', period: 'month' | 'year') => {
-    const filteredTransactions = transactions.filter(t => 
-      t.divisa === currency && 
-      t.tipo === type && 
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.subcategoria || '') &&
-      !['Aportación', 'Retiro', 'Transferencia', 'Inversiones', 'Inversión'].includes(t.categoria || '')
-    );
+    // SUMA DIRECTA sin filtros por categoría - solo por moneda y tipo
+    const filteredTransactions = transactions.filter(t => t.divisa === currency);
     
     const now = new Date();
     let filteredByPeriod;
