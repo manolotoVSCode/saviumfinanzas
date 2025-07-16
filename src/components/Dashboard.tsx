@@ -139,7 +139,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-success">
-              ACTIVOS <strong>MXN</strong>
+              ACTIVOS
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -213,7 +213,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN' }: Das
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-destructive">
-              PASIVOS <strong>MXN</strong>
+              PASIVOS
             </CardTitle>
           </CardHeader>
           <CardContent>
