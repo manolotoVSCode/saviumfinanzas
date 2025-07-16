@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
-import { Account, Category, Transaction, DashboardMetrics, AccountType, TransactionType } from '@/types/finance';
+import { useState, useEffect, useMemo } from 'react';
+import { Account, AccountType, Category, Transaction, DashboardMetrics, TransactionType } from '@/types/finance';
+import { useAppConfig } from '@/hooks/useAppConfig';
 
-// Data inicial simple
 const initialAccountTypes: AccountType[] = [
   'Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones', 'Hipoteca', 'Empresa Propia'
 ];
@@ -28,43 +28,91 @@ const initialCategories: Category[] = [
 ];
 
 export const useFinanceData = () => {
-  const [accounts, setAccounts] = useState<Account[]>(() => {
-    try {
-      const stored = localStorage.getItem('financeAccounts');
-      return stored ? JSON.parse(stored) : initialAccounts;
-    } catch {
-      return initialAccounts;
-    }
-  });
+  const { config } = useAppConfig();
   
-  const [categories, setCategories] = useState<Category[]>(() => {
-    try {
-      const stored = localStorage.getItem('financeCategories');
-      return stored ? JSON.parse(stored) : initialCategories;
-    } catch {
-      return initialCategories;
-    }
-  });
-  
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    try {
-      const stored = localStorage.getItem('financeTransactions');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return parsed.map((t: any) => ({
-          ...t,
-          fecha: new Date(t.fecha)
-        }));
-      }
-    } catch {}
-    return [];
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accountTypes] = useState<AccountType[]>(initialAccountTypes);
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [exchangeRates, setExchangeRates] = useState<{[key: string]: number}>({
+    MXN: 1,
+    USD: 18.8, // Valor por defecto, se actualizará
+    EUR: 20.5  // Valor por defecto, se actualizará
   });
 
-  const [accountTypes] = useState<AccountType[]>(initialAccountTypes);
-  const [dateFilter, setDateFilter] = useState<{ start: Date; end: Date }>({
-    start: new Date(2025, 0, 1),
-    end: new Date(2025, 11, 31)
-  });
+  // Función para obtener tasas de cambio
+  const fetchExchangeRates = async () => {
+    try {
+      const response = await fetch('https://api.exchangerate-api.com/v4/latest/MXN');
+      if (response.ok) {
+        const data = await response.json();
+        setExchangeRates({
+          MXN: 1,
+          USD: 1 / data.rates.USD, // Cuántos pesos por 1 dólar
+          EUR: 1 / data.rates.EUR  // Cuántos pesos por 1 euro
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+    }
+  };
+
+  // Función para convertir montos a la moneda configurada
+  const convertToCurrency = (amount: number, fromCurrency: 'MXN' | 'USD' | 'EUR', toCurrency: string) => {
+    if (fromCurrency === toCurrency) return amount;
+    
+    // Primero convertir a MXN si no está en MXN
+    let amountInMXN = amount;
+    if (fromCurrency !== 'MXN') {
+      amountInMXN = amount * exchangeRates[fromCurrency];
+    }
+    
+    // Luego convertir de MXN a la moneda destino
+    if (toCurrency === 'MXN') {
+      return amountInMXN;
+    } else {
+      return amountInMXN / exchangeRates[toCurrency as keyof typeof exchangeRates];
+    }
+  };
+
+  // Cargar datos del localStorage al inicializar
+  useEffect(() => {
+    const savedAccounts = localStorage.getItem('finance-accounts');
+    const savedCategories = localStorage.getItem('finance-categories');
+    const savedTransactions = localStorage.getItem('finance-transactions');
+
+    if (savedAccounts) {
+      const parsedAccounts = JSON.parse(savedAccounts);
+      // Migrar cuentas sin divisa para compatibilidad
+      const migratedAccounts = parsedAccounts.map((account: any) => ({
+        ...account,
+        divisa: account.divisa || 'MXN'
+      }));
+      setAccounts(migratedAccounts);
+    } else {
+      setAccounts(initialAccounts);
+    }
+
+    setCategories(savedCategories ? JSON.parse(savedCategories) : initialCategories);
+    
+    if (savedTransactions) {
+      const parsedTransactions = JSON.parse(savedTransactions);
+      setTransactions(parsedTransactions.map((t: any) => ({
+        ...t,
+        fecha: new Date(t.fecha)
+      })));
+    }
+
+    // Obtener tasas de cambio al inicializar
+    fetchExchangeRates();
+  }, []);
+
+  // Actualizar tasas de cambio cada 5 minutos
+  useEffect(() => {
+    const interval = setInterval(fetchExchangeRates, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Calcular saldos actuales
   const accountsWithBalances = useMemo(() => {
@@ -138,27 +186,35 @@ export const useFinanceData = () => {
     const variacionGastosAnual = gastosAnioAnterior > 0 ? ((gastosAnio - gastosAnioAnterior) / gastosAnioAnterior) * 100 : 0;
     const variacionBalanceAnual = balanceAnioAnterior !== 0 ? ((balanceAnio - balanceAnioAnterior) / Math.abs(balanceAnioAnterior)) * 100 : 0;
     
-    // ACTIVOS DETALLADOS (asegurar incluir saldos iniciales)
+    // ACTIVOS DETALLADOS CON CONVERSIÓN DE DIVISAS
     const activos = {
-      efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo)).reduce((s, a) => s + a.saldoActual, 0),
-      inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => {
-        // Para inversiones, usar solo el saldo actual (saldo inicial + transacciones)
-        return s + a.saldoActual;
-      }, 0),
-      empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia').reduce((s, a) => s + a.saldoActual, 0),
+      efectivoBancos: accountsWithBalances
+        .filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo))
+        .reduce((s, a) => s + convertToCurrency(a.saldoActual, a.divisa || 'MXN', config.currency), 0),
+      inversiones: accountsWithBalances
+        .filter(a => a.tipo === 'Inversiones')
+        .reduce((s, a) => s + convertToCurrency(a.saldoActual, a.divisa || 'MXN', config.currency), 0),
+      empresasPrivadas: accountsWithBalances
+        .filter(a => a.tipo === 'Empresa Propia')
+        .reduce((s, a) => s + convertToCurrency(a.saldoActual, a.divisa || 'MXN', config.currency), 0),
       total: 0
     };
     activos.total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
     
-    // PASIVOS DETALLADOS (incluir tarjetas de crédito con saldos negativos)
+    // PASIVOS DETALLADOS CON CONVERSIÓN DE DIVISAS
     const pasivos = {
-      tarjetasCredito: accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito').reduce((s, a) => {
-        // Para tarjetas de crédito, el saldo negativo indica deuda
-        return s + Math.abs(Math.min(0, a.saldoActual));
-      }, 0),
-      hipoteca: accountsWithBalances.filter(a => a.tipo === 'Hipoteca').reduce((s, a) => {
-        return s + Math.abs(Math.min(0, a.saldoActual));
-      }, 0),
+      tarjetasCredito: accountsWithBalances
+        .filter(a => a.tipo === 'Tarjeta de Crédito')
+        .reduce((s, a) => {
+          const debtAmount = Math.abs(Math.min(0, a.saldoActual));
+          return s + convertToCurrency(debtAmount, a.divisa || 'MXN', config.currency);
+        }, 0),
+      hipoteca: accountsWithBalances
+        .filter(a => a.tipo === 'Hipoteca')
+        .reduce((s, a) => {
+          const debtAmount = Math.abs(Math.min(0, a.saldoActual));
+          return s + convertToCurrency(debtAmount, a.divisa || 'MXN', config.currency);
+        }, 0),
       total: 0
     };
     pasivos.total = pasivos.tarjetasCredito + pasivos.hipoteca;
@@ -238,7 +294,7 @@ export const useFinanceData = () => {
     
     // INVERSIONES DETALLADAS (considerando saldo inicial)
     const cuentasInversionIds = accountsWithBalances.filter(a => a.tipo === 'Inversiones').map(a => a.id);
-    const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoActual, 0);
+    const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + convertToCurrency(a.saldoActual, a.divisa || 'MXN', config.currency), 0);
     
     // Filtrar aportaciones solo a cuentas de inversión
     const aportacionesMes = transactionsThisMonth.filter(t => 
@@ -286,8 +342,8 @@ export const useFinanceData = () => {
     // Calcular rendimiento anual total
     const totalAportadoAnual = aportacionesPorMes.reduce((sum, item) => sum + item.monto, 0);
     const totalRetiradoAnual = retirosPorMes.reduce((sum, item) => sum + item.monto, 0);
-    const valorActualInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoActual, 0);
-    const saldoInicialInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + a.saldoInicial, 0);
+    const valorActualInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + convertToCurrency(a.saldoActual, a.divisa || 'MXN', config.currency), 0);
+    const saldoInicialInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => s + convertToCurrency(a.saldoInicial, a.divisa || 'MXN', config.currency), 0);
     const rendimientoAnualTotal = valorActualInversiones - saldoInicialInversiones - totalAportadoAnual + totalRetiradoAnual;
     const rendimientoAnualPorcentaje = (saldoInicialInversiones + totalAportadoAnual - totalRetiradoAnual) > 0 ? 
       (rendimientoAnualTotal / (saldoInicialInversiones + totalAportadoAnual - totalRetiradoAnual)) * 100 : 0;
@@ -297,8 +353,9 @@ export const useFinanceData = () => {
       .map(a => {
         const aportaciones = enrichedTransactions.filter(t => t.cuentaId === a.id && t.tipo === 'Aportación').reduce((sum, t) => sum + t.ingreso, 0);
         const retiros = enrichedTransactions.filter(t => t.cuentaId === a.id && t.tipo === 'Retiro').reduce((sum, t) => sum + Math.abs(t.gasto), 0);
-        const valorActual = a.saldoActual;
-        const rendimiento = valorActual - a.saldoInicial - aportaciones + retiros;
+        const valorActual = convertToCurrency(a.saldoActual, a.divisa || 'MXN', config.currency);
+        const saldoInicialConvertido = convertToCurrency(a.saldoInicial, a.divisa || 'MXN', config.currency);
+        const rendimiento = valorActual - saldoInicialConvertido - aportaciones + retiros;
         
         // Calcular movimientos por mes para esta cuenta específica
         const movimientosPorMes = [];
@@ -324,7 +381,7 @@ export const useFinanceData = () => {
           cuenta: a.nombre,
           id: a.id,
           saldo: valorActual,
-          saldoInicial: a.saldoInicial,
+          saldoInicial: saldoInicialConvertido,
           rendimiento,
           movimientosPorMes
         };
@@ -371,7 +428,7 @@ export const useFinanceData = () => {
       topCategorias: topCategoriasGastos,
       topCategoriasMesAnterior: topCategoriasGastosMesAnterior,
       topCategoriasAnual: topCategoriasGastosAnual,
-      cuentasResumen: accountsWithBalances.map(a => ({ cuenta: a.nombre, saldo: a.saldoActual, tipo: a.tipo })),
+      cuentasResumen: accountsWithBalances.map(a => ({ cuenta: a.nombre, saldo: convertToCurrency(a.saldoActual, a.divisa || 'MXN', config.currency), tipo: a.tipo })),
       tendenciaMensual,
       inversionesResumen: {
         totalInversiones,
@@ -387,45 +444,45 @@ export const useFinanceData = () => {
         cuentasInversion
       }
     };
-  }, [accountsWithBalances, enrichedTransactions]);
+  }, [accountsWithBalances, enrichedTransactions, config.currency, exchangeRates]);
 
   // Funciones CRUD
-  const addAccount = (account: Omit<Account, 'id'>) => {
+  const addAccount = (account: Omit<Account, 'id' | 'saldoActual'>) => {
     const newAccount: Account = { ...account, id: Date.now().toString(), saldoActual: account.saldoInicial };
     const updated = [...accounts, newAccount];
     setAccounts(updated);
-    localStorage.setItem('financeAccounts', JSON.stringify(updated));
+    localStorage.setItem('finance-accounts', JSON.stringify(updated));
   };
 
   const updateAccount = (id: string, updates: Partial<Account>) => {
     const updated = accounts.map(acc => acc.id === id ? { ...acc, ...updates } : acc);
     setAccounts(updated);
-    localStorage.setItem('financeAccounts', JSON.stringify(updated));
+    localStorage.setItem('finance-accounts', JSON.stringify(updated));
   };
 
   const deleteAccount = (id: string) => {
     const updated = accounts.filter(acc => acc.id !== id);
     setAccounts(updated);
-    localStorage.setItem('financeAccounts', JSON.stringify(updated));
+    localStorage.setItem('finance-accounts', JSON.stringify(updated));
   };
 
   const addCategory = (category: Omit<Category, 'id'>) => {
     const newCategory: Category = { ...category, id: Date.now().toString() };
     const updated = [...categories, newCategory];
     setCategories(updated);
-    localStorage.setItem('financeCategories', JSON.stringify(updated));
+    localStorage.setItem('finance-categories', JSON.stringify(updated));
   };
 
   const updateCategory = (id: string, updates: Partial<Category>) => {
     const updated = categories.map(cat => cat.id === id ? { ...cat, ...updates } : cat);
     setCategories(updated);
-    localStorage.setItem('financeCategories', JSON.stringify(updated));
+    localStorage.setItem('finance-categories', JSON.stringify(updated));
   };
 
   const deleteCategory = (id: string) => {
     const updated = categories.filter(cat => cat.id !== id);
     setCategories(updated);
-    localStorage.setItem('financeCategories', JSON.stringify(updated));
+    localStorage.setItem('finance-categories', JSON.stringify(updated));
   };
 
   const addTransaction = (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string }) => {
@@ -460,7 +517,7 @@ export const useFinanceData = () => {
     
     const updated = [...transactions, ...transactionsToAdd];
     setTransactions(updated);
-    localStorage.setItem('financeTransactions', JSON.stringify(updated));
+    localStorage.setItem('finance-transactions', JSON.stringify(updated));
   };
 
   const addTransactionsBatch = (newTransactions: Omit<Transaction, 'id' | 'monto'>[]) => {
@@ -474,7 +531,7 @@ export const useFinanceData = () => {
     });
     const updated = [...transactions, ...processedTransactions];
     setTransactions(updated);
-    localStorage.setItem('financeTransactions', JSON.stringify(updated));
+    localStorage.setItem('finance-transactions', JSON.stringify(updated));
   };
 
   const updateTransaction = (id: string, updates: Partial<Transaction>) => {
@@ -486,18 +543,18 @@ export const useFinanceData = () => {
       } : t
     );
     setTransactions(updated);
-    localStorage.setItem('financeTransactions', JSON.stringify(updated));
+    localStorage.setItem('finance-transactions', JSON.stringify(updated));
   };
 
   const deleteTransaction = (id: string) => {
     const updated = transactions.filter(t => t.id !== id);
     setTransactions(updated);
-    localStorage.setItem('financeTransactions', JSON.stringify(updated));
+    localStorage.setItem('finance-transactions', JSON.stringify(updated));
   };
 
   const clearAllTransactions = () => {
     setTransactions([]);
-    localStorage.setItem('financeTransactions', JSON.stringify([]));
+    localStorage.setItem('finance-transactions', JSON.stringify([]));
   };
 
   return {
