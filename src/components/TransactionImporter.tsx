@@ -40,33 +40,30 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
   
 
   const parseCSVLine = (line: string): string[] => {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
+    // Usar split simple con punto y coma para este formato específico
+    const parts = line.split(';');
     
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ';' && !inQuotes) {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    
-    result.push(current.trim());
-    return result;
+    // Limpiar espacios de cada parte
+    return parts.map(part => part.trim());
   };
 
   const parseAmount = (amountStr: string): number => {
     if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '-') return 0;
-    // Remove spaces and replace comma with dot for decimal separator
-    const cleanAmount = amountStr.replace(/\s/g, '').replace('.', '').replace(',', '.');
-    const parsed = parseFloat(cleanAmount);
-    return isNaN(parsed) ? 0 : parsed; // No usar Math.abs, mantener signo original
+    
+    // Limpiar espacios
+    let clean = amountStr.replace(/\s/g, '');
+    
+    // Si tiene formato europeo (ej: 94.591,88), convertir a formato americano (94591.88)
+    if (clean.includes('.') && clean.includes(',')) {
+      // Remover puntos (separadores de miles) y cambiar coma por punto
+      clean = clean.replace(/\./g, '').replace(',', '.');
+    } else if (clean.includes(',') && !clean.includes('.')) {
+      // Solo tiene coma, es separador decimal
+      clean = clean.replace(',', '.');
+    }
+    
+    const parsed = parseFloat(clean);
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   const parseDateDDMMYY = (dateStr: string): string => {
@@ -111,9 +108,16 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
 
       lines.forEach((line, index) => {
         try {
+          // Saltar línea de encabezado si coincide con el formato esperado
+          if (line.toLowerCase().includes('id;cuentaid;fecha;comentario;ingreso;gasto;subcategoriaid')) {
+            return;
+          }
+          
           const columns = parseCSVLine(line);
+          console.log(`Línea ${index + 1}:`, columns);
+          
           if (columns.length < 7) {
-            errors.push(`Línea ${index + 1}: Formato incorrecto (se esperan 7 columnas: id;cuentaId;fecha;comentario;ingreso;gasto;subcategoriaId)`);
+            errors.push(`Línea ${index + 1}: Formato incorrecto (se esperan 7 columnas: id;cuentaId;fecha;comentario;ingreso;gasto;subcategoriaId). Encontradas: ${columns.length}`);
             return;
           }
 
@@ -121,6 +125,15 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
           
           const ingresoAmount = parseAmount(ingreso);
           const gastoAmount = parseAmount(gasto);
+          
+          console.log(`Procesando transacción ${index + 1}:`, {
+            cuentaId,
+            fecha,
+            comentario: comentario.substring(0, 30) + '...',
+            ingreso: ingresoAmount,
+            gasto: gastoAmount,
+            subcategoriaId
+          });
           
           transactions.push({
             cuentaNombre: cuentaId.trim(),
