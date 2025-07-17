@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Category, TransactionType } from '@/types/finance';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Category, TransactionType, Transaction } from '@/types/finance';
+import { Plus, Edit, Trash2, Check, X } from 'lucide-react';
 
 interface CategoriesManagerProps {
   categories: Category[];
+  transactions: Transaction[];
   onAddCategory: (category: Omit<Category, 'id'>) => void;
   onUpdateCategory: (id: string, updates: Partial<Category>) => void;
   onDeleteCategory: (id: string) => void;
@@ -21,6 +22,7 @@ const transactionTypes: TransactionType[] = ['Ingreso', 'Gastos', 'Aportación',
 
 export const CategoriesManager = ({
   categories,
+  transactions,
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory
@@ -64,6 +66,11 @@ export const CategoriesManager = ({
 
   // Filtrar categorías por tipo seleccionado
   const filteredCategories = categories.filter(category => category.tipo === selectedType);
+
+  // Verificar si una categoría está en uso
+  const isCategoryInUse = (categoryId: string) => {
+    return transactions.some(transaction => transaction.subcategoriaId === categoryId);
+  };
 
   const getTypeBadgeVariant = (tipo: TransactionType) => {
     switch (tipo) {
@@ -172,38 +179,57 @@ export const CategoriesManager = ({
               <TableRow>
                 <TableHead>Subcategoría</TableHead>
                 <TableHead>Categoría</TableHead>
+                <TableHead>En Uso</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredCategories.length > 0 ? (
-                filteredCategories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.subcategoria}</TableCell>
-                    <TableCell>{category.categoria}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(category)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => onDeleteCategory(category.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                filteredCategories.map((category) => {
+                  const inUse = isCategoryInUse(category.id);
+                  return (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">{category.subcategoria}</TableCell>
+                      <TableCell>{category.categoria}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          {inUse ? (
+                            <Badge variant="default" className="flex items-center gap-1">
+                              <Check className="h-3 w-3" />
+                              En uso
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              <X className="h-3 w-3" />
+                              Sin usar
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEdit(category)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => onDeleteCategory(category.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
                     No hay categorías de tipo {selectedType}
                   </TableCell>
                 </TableRow>

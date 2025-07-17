@@ -60,6 +60,7 @@ const Configuracion = () => {
           <CardContent>
             <CategoriesManager
               categories={financeData.categories}
+              transactions={financeData.transactions}
               onAddCategory={financeData.addCategory}
               onUpdateCategory={financeData.updateCategory}
               onDeleteCategory={financeData.deleteCategory}
