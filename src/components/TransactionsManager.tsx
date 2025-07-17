@@ -534,13 +534,6 @@ export const TransactionsManager = ({
             <span className="text-sm font-medium">
               {selectedTransactions.size} seleccionada{selectedTransactions.size > 1 ? 's' : ''}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedTransactions(new Set())}
-            >
-              Limpiar selección
-            </Button>
           </div>
         )}
         
