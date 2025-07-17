@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Category, TransactionType, Transaction } from '@/types/finance';
-import { Plus, Edit, Trash2, Check, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Check, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface CategoriesManagerProps {
   categories: Category[];
@@ -30,6 +30,10 @@ export const CategoriesManager = ({
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [selectedType, setSelectedType] = useState<TransactionType>('Gastos');
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Category | null;
+    direction: 'asc' | 'desc';
+  }>({ key: null, direction: 'asc' });
   const [formData, setFormData] = useState({
     subcategoria: '',
     categoria: '',
@@ -71,6 +75,41 @@ export const CategoriesManager = ({
   const isCategoryInUse = (categoryId: string) => {
     return transactions.some(transaction => transaction.subcategoriaId === categoryId);
   };
+
+  const handleSort = (key: keyof Category) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey: keyof Category) => {
+    if (sortConfig.key !== columnKey) {
+      return <ArrowUpDown className="h-4 w-4" />;
+    }
+    return sortConfig.direction === 'asc' ? 
+      <ArrowUp className="h-4 w-4" /> : 
+      <ArrowDown className="h-4 w-4" />;
+  };
+
+  // Filtrar y ordenar categorías
+  const filteredAndSortedCategories = filteredCategories.sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+    
+    if (aValue === null || aValue === undefined) return 1;
+    if (bValue === null || bValue === undefined) return -1;
+    
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      const comparison = aValue.localeCompare(bValue);
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    }
+    
+    return 0;
+  });
 
   const getTypeBadgeVariant = (tipo: TransactionType) => {
     switch (tipo) {
@@ -177,15 +216,29 @@ export const CategoriesManager = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Subcategoría</TableHead>
-                <TableHead>Categoría</TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('subcategoria')} className="h-auto p-0 font-medium hover:bg-transparent">
+                    <span className="flex items-center gap-1">
+                      Subcategoría
+                      {getSortIcon('subcategoria')}
+                    </span>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('categoria')} className="h-auto p-0 font-medium hover:bg-transparent">
+                    <span className="flex items-center gap-1">
+                      Categoría
+                      {getSortIcon('categoria')}
+                    </span>
+                  </Button>
+                </TableHead>
                 <TableHead>En Uso</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCategories.length > 0 ? (
-                filteredCategories.map((category) => {
+              {filteredAndSortedCategories.length > 0 ? (
+                filteredAndSortedCategories.map((category) => {
                   const inUse = isCategoryInUse(category.id);
                   return (
                     <TableRow key={category.id}>

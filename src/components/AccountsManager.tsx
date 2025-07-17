@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Account, AccountType } from '@/types/finance';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface AccountsManagerProps {
   accounts: Account[];
@@ -27,6 +27,10 @@ export const AccountsManager = ({
 }: AccountsManagerProps) => {
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Account | null;
+    direction: 'asc' | 'desc';
+  }>({ key: null, direction: 'asc' });
   const [formData, setFormData] = useState({
     nombre: '',
     tipo: '' as AccountType,
@@ -87,6 +91,45 @@ export const AccountsManager = ({
       default: return 'outline';
     }
   };
+
+  const handleSort = (key: keyof Account) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey: keyof Account) => {
+    if (sortConfig.key !== columnKey) {
+      return <ArrowUpDown className="h-4 w-4" />;
+    }
+    return sortConfig.direction === 'asc' ? 
+      <ArrowUp className="h-4 w-4" /> : 
+      <ArrowDown className="h-4 w-4" />;
+  };
+
+  const sortedAccounts = [...accounts].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+    
+    if (aValue === null || aValue === undefined) return 1;
+    if (bValue === null || bValue === undefined) return -1;
+    
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      const comparison = aValue.localeCompare(bValue);
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    }
+    
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      const comparison = aValue - bValue;
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    }
+    
+    return 0;
+  });
 
   return (
     <div className="space-y-6">
@@ -194,16 +237,51 @@ export const AccountsManager = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Divisa</TableHead>
-                <TableHead>Saldo Inicial</TableHead>
-                <TableHead>Saldo Actual</TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('nombre')} className="h-auto p-0 font-medium hover:bg-transparent">
+                    <span className="flex items-center gap-1">
+                      Nombre
+                      {getSortIcon('nombre')}
+                    </span>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('tipo')} className="h-auto p-0 font-medium hover:bg-transparent">
+                    <span className="flex items-center gap-1">
+                      Tipo
+                      {getSortIcon('tipo')}
+                    </span>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('divisa')} className="h-auto p-0 font-medium hover:bg-transparent">
+                    <span className="flex items-center gap-1">
+                      Divisa
+                      {getSortIcon('divisa')}
+                    </span>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('saldoInicial')} className="h-auto p-0 font-medium hover:bg-transparent">
+                    <span className="flex items-center gap-1">
+                      Saldo Inicial
+                      {getSortIcon('saldoInicial')}
+                    </span>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => handleSort('saldoActual')} className="h-auto p-0 font-medium hover:bg-transparent">
+                    <span className="flex items-center gap-1">
+                      Saldo Actual
+                      {getSortIcon('saldoActual')}
+                    </span>
+                  </Button>
+                </TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {accounts.map((account) => (
+              {sortedAccounts.map((account) => (
                 <TableRow key={account.id}>
                   <TableCell className="font-medium">{account.nombre}</TableCell>
                   <TableCell>
