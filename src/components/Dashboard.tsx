@@ -609,9 +609,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     />
                     <span>{entry.name}</span>
                   </div>
-                    <span className="font-medium">
-                      {formatCurrencyConsistent(entry.value, selectedCurrency)}
-                    </span>
+                  <span className="font-medium">
+                    {new Intl.NumberFormat('es-MX', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(entry.value)} MXN
+                  </span>
                 </div>
               ))}
             </div>
@@ -659,9 +662,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     />
                     <span>{entry.name}</span>
                   </div>
-                   <span className="font-medium">
-                     {formatCurrencyConsistent(entry.value, selectedCurrency)}
-                   </span>
+                  <span className="font-medium">
+                    {new Intl.NumberFormat('es-MX', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(entry.value)} MXN
+                  </span>
                 </div>
               ))}
             </div>
