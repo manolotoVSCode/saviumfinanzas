@@ -1,15 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import Layout from '@/components/Layout';
 import { AccountsManager } from '@/components/AccountsManager';
 import { CategoriesManager } from '@/components/CategoriesManager';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
-import { Settings, Heart } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Settings, Heart, LogOut } from 'lucide-react';
 
 const Configuracion = () => {
   const financeData = useFinanceDataSupabase();
+  const { signOut } = useAuth();
 
   if (financeData.loading) {
     return (
@@ -92,6 +95,31 @@ const Configuracion = () => {
               <p className="text-sm text-muted-foreground">
                 Versión: 1.0.0 • Desarrollado con ❤️
               </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* CONFIGURACIÓN DE SESIÓN */}
+        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LogOut className="h-5 w-5 text-destructive" />
+              Sesión
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-muted-foreground text-sm">
+                Cerrar sesión en esta aplicación
+              </p>
+              <Button
+                variant="destructive"
+                onClick={signOut}
+                className="w-full flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Cerrar Sesión
+              </Button>
             </div>
           </CardContent>
         </Card>
