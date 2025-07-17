@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Transaction, Account, Category } from '@/types/finance';
-import { Plus, Edit, Trash2, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface TransactionsManagerProps {
   transactions: Transaction[];
@@ -22,6 +22,9 @@ interface TransactionsManagerProps {
   onDeleteTransaction: (id: string) => void;
   onClearAllTransactions: () => void;
 }
+
+type SortField = 'fecha' | 'cuenta' | 'categoria' | 'comentario' | 'monto' | 'divisa' | 'tipo';
+type SortDirection = 'asc' | 'desc' | null;
 
 export const TransactionsManager = ({
   transactions,
@@ -34,6 +37,15 @@ export const TransactionsManager = ({
 }: TransactionsManagerProps) => {
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  
+  // Estados para ordenamiento
+  const [sortField, setSortField] = useState<SortField>('fecha');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  
+  // Estados para selección múltiple
+  const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
+  const [isEditingBulk, setIsEditingBulk] = useState(false);
+  const [bulkCategoryId, setBulkCategoryId] = useState('');
   
   // Filtros
   const [filters, setFilters] = useState({
@@ -193,14 +205,203 @@ export const TransactionsManager = ({
     }
   };
 
-  // Ordenar transacciones filtradas por fecha
-  const sortedTransactions = filteredTransactions.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+  // Función para manejar el ordenamiento
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Si es el mismo campo, cambiar dirección
+      setSortDirection(sortDirection === 'asc' ? 'desc' : sortDirection === 'desc' ? null : 'asc');
+    } else {
+      // Si es un campo diferente, empezar con ascendente
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Función para obtener el icono de ordenamiento
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    if (sortDirection === 'asc') return <ArrowUp className="h-4 w-4" />;
+    if (sortDirection === 'desc') return <ArrowDown className="h-4 w-4" />;
+    return <ArrowUpDown className="h-4 w-4" />;
+  };
+
+  // Ordenar transacciones filtradas
+  const getSortedTransactions = () => {
+    let sorted = [...filteredTransactions];
+    
+    if (sortDirection && sortField) {
+      sorted.sort((a, b) => {
+        let valueA: any;
+        let valueB: any;
+        
+        switch (sortField) {
+          case 'fecha':
+            valueA = a.fecha.getTime();
+            valueB = b.fecha.getTime();
+            break;
+          case 'cuenta':
+            valueA = getAccountName(a.cuentaId).toLowerCase();
+            valueB = getAccountName(b.cuentaId).toLowerCase();
+            break;
+          case 'categoria':
+            const catA = categories.find(c => c.id === a.subcategoriaId);
+            const catB = categories.find(c => c.id === b.subcategoriaId);
+            valueA = catA ? `${catA.categoria} - ${catA.subcategoria}`.toLowerCase() : 'zzz';
+            valueB = catB ? `${catB.categoria} - ${catB.subcategoria}`.toLowerCase() : 'zzz';
+            break;
+          case 'comentario':
+            valueA = a.comentario.toLowerCase();
+            valueB = b.comentario.toLowerCase();
+            break;
+          case 'monto':
+            valueA = Math.abs(a.monto);
+            valueB = Math.abs(b.monto);
+            break;
+          case 'divisa':
+            valueA = a.divisa || 'MXN';
+            valueB = b.divisa || 'MXN';
+            break;
+          case 'tipo':
+            valueA = a.tipo || '';
+            valueB = b.tipo || '';
+            break;
+          default:
+            return 0;
+        }
+        
+        if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1;
+        if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else {
+      // Ordenamiento por defecto: fecha descendente
+      sorted.sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+    }
+    
+    return sorted;
+  };
+
+  const sortedTransactions = getSortedTransactions();
+
+  // Funciones para selección múltiple
+  const handleSelectTransaction = (transactionId: string, checked: boolean) => {
+    const newSelected = new Set(selectedTransactions);
+    if (checked) {
+      newSelected.add(transactionId);
+    } else {
+      newSelected.delete(transactionId);
+    }
+    setSelectedTransactions(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedTransactions(new Set(sortedTransactions.map(t => t.id)));
+    } else {
+      setSelectedTransactions(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    for (const transactionId of selectedTransactions) {
+      onDeleteTransaction(transactionId);
+    }
+    setSelectedTransactions(new Set());
+  };
+
+  const handleBulkCategoryChange = async () => {
+    for (const transactionId of selectedTransactions) {
+      onUpdateTransaction(transactionId, { subcategoriaId: bulkCategoryId });
+    }
+    setSelectedTransactions(new Set());
+    setIsEditingBulk(false);
+    setBulkCategoryId('');
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-xl font-semibold">Gestión de Transacciones</h2>
         <div className="flex gap-2">
+          {selectedTransactions.size > 0 && (
+            <>
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg">
+                <span className="text-sm font-medium">
+                  {selectedTransactions.size} seleccionada{selectedTransactions.size > 1 ? 's' : ''}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedTransactions(new Set())}
+                >
+                  Limpiar selección
+                </Button>
+              </div>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar ({selectedTransactions.size})
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Eliminar transacciones seleccionadas?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Se eliminarán {selectedTransactions.size} transacciones permanentemente. Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <Dialog open={isEditingBulk} onOpenChange={setIsEditingBulk}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Cambiar Categoría
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Cambiar Categoría de {selectedTransactions.size} Transacciones</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="bulk-categoria">Nueva Categoría</Label>
+                      <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.categoria} - {category.subcategoria}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsEditingBulk(false)}>
+                        Cancelar
+                      </Button>
+                      <Button onClick={handleBulkCategoryChange} disabled={!bulkCategoryId}>
+                        Aplicar Cambios
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+          
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button 
@@ -619,19 +820,110 @@ export const TransactionsManager = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Cuenta</TableHead>
-                <TableHead>Categoría</TableHead>
-                <TableHead>Comentario</TableHead>
-                <TableHead>Monto</TableHead>
-                <TableHead>Divisa</TableHead>
-                <TableHead>Tipo</TableHead>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedTransactions.size === sortedTransactions.length && sortedTransactions.length > 0}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Seleccionar todas"
+                  />
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('fecha')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Fecha
+                      {getSortIcon('fecha')}
+                    </div>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('cuenta')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Cuenta
+                      {getSortIcon('cuenta')}
+                    </div>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('categoria')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Categoría
+                      {getSortIcon('categoria')}
+                    </div>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('comentario')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Comentario
+                      {getSortIcon('comentario')}
+                    </div>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('monto')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Monto
+                      {getSortIcon('monto')}
+                    </div>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('divisa')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Divisa
+                      {getSortIcon('divisa')}
+                    </div>
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    className="h-auto p-0 font-semibold hover:bg-transparent"
+                    onClick={() => handleSort('tipo')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Tipo
+                      {getSortIcon('tipo')}
+                    </div>
+                  </Button>
+                </TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedTransactions.has(transaction.id)}
+                      onCheckedChange={(checked) => handleSelectTransaction(transaction.id, checked as boolean)}
+                      aria-label={`Seleccionar transacción ${transaction.comentario}`}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
