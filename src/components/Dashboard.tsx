@@ -241,6 +241,23 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     }
   };
 
+  const getFinancialAdvice = (nivel: string, score: number) => {
+    switch (nivel) {
+      case 'Excelente':
+        return 'Mantén tu disciplina financiera y considera diversificar más tus inversiones para optimizar el rendimiento a largo plazo.';
+      case 'Buena':
+        return 'Aumenta tu fondo de emergencia a 6 meses de gastos y considera incrementar tus inversiones mensuales en un 10%.';
+      case 'Regular':
+        return 'Enfócate en reducir gastos innecesarios y destina al menos 20% de tus ingresos al ahorro e inversión.';
+      case 'Mejorable':
+        return 'Prioriza pagar deudas de alta tasa de interés y crea un presupuesto detallado para controlar mejor tus gastos.';
+      case 'Crítica':
+        return 'Busca asesoría financiera profesional, consolida tus deudas y considera fuentes adicionales de ingresos.';
+      default:
+        return 'Evalúa tu situación financiera y establece metas claras de ahorro e inversión.';
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* BALANCE GENERAL - Activos y Pasivos */}
@@ -420,7 +437,15 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               {metrics.saludFinanciera.nivel}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{metrics.saludFinanciera.descripcion}</p>
+          <p className="text-sm text-muted-foreground mb-4">{metrics.saludFinanciera.descripcion}</p>
+          
+          {/* Consejo financiero */}
+          <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+            <h4 className="text-sm font-semibold text-primary mb-2">💡 Consejo para subir de nivel</h4>
+            <p className="text-xs text-muted-foreground">
+              {getFinancialAdvice(metrics.saludFinanciera.nivel, metrics.saludFinanciera.score)}
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -610,10 +635,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     <span>{entry.name}</span>
                   </div>
                   <span className="font-medium">
-                    {new Intl.NumberFormat('es-MX', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }).format(entry.value)} MXN
+                    {formatCurrencyConsistent(entry.value, selectedCurrency)}
                   </span>
                 </div>
               ))}
@@ -663,10 +685,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                     <span>{entry.name}</span>
                   </div>
                   <span className="font-medium">
-                    {new Intl.NumberFormat('es-MX', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }).format(entry.value)} MXN
+                    {formatCurrencyConsistent(entry.value, selectedCurrency)}
                   </span>
                 </div>
               ))}

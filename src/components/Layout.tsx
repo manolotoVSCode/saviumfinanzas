@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, ArrowUpDown, TrendingUp, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
 
 interface LayoutProps {
@@ -11,6 +12,7 @@ const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { profile } = useUserProfile();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -30,15 +32,24 @@ const Layout = ({ children }: LayoutProps) => {
             <h1 className="text-4xl font-bold mb-2">Savium</h1>
             <p className="text-muted-foreground">Finanzas Personales</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={signOut}
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Salir
-          </Button>
+          <div className="flex items-center gap-4">
+            {profile && (
+              <div className="text-right">
+                <p className="text-sm font-medium">
+                  {profile.nombre} {profile.apellidos}
+                </p>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={signOut}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Salir
+            </Button>
+          </div>
         </div>
 
         {/* CONTENIDO PRINCIPAL */}
