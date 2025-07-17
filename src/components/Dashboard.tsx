@@ -449,7 +449,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         <CardContent>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={filteredMetrics.tendenciaMensual}>
+              <ComposedChart 
+                data={filteredMetrics.tendenciaMensual}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis 
                   dataKey="mes" 
@@ -459,6 +462,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 <YAxis 
                   tick={false}
                   className="text-muted-foreground"
+                  width={0}
                 />
                 <Tooltip 
                   formatter={(value: any, name: string) => [
