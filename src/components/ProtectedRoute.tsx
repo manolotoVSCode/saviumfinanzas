@@ -4,17 +4,18 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  fallbackPath?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallbackPath = '/auth' }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth');
+      navigate(fallbackPath);
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, fallbackPath]);
 
   if (loading) {
     return (
