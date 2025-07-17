@@ -565,15 +565,94 @@ export const useFinanceDataSupabase = () => {
   };
 
   const addCategory = async (category: Omit<Category, 'id'>) => {
-    // TODO: Implementar inserción en Supabase
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
+      const { error } = await supabase
+        .from('categorias')
+        .insert({
+          user_id: user.id,
+          subcategoria: category.subcategoria,
+          categoria: category.categoria,
+          tipo: category.tipo
+        });
+      
+      if (error) throw error;
+      
+      // Recargar datos
+      await loadData();
+      
+      toast({
+        title: "Éxito",
+        description: "Categoría creada correctamente"
+      });
+    } catch (error) {
+      console.error('Error adding category:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la categoría",
+        variant: "destructive"
+      });
+    }
   };
 
   const updateCategory = async (id: string, category: Partial<Category>) => {
-    // TODO: Implementar actualización en Supabase
+    try {
+      const updateData: any = {};
+      
+      if (category.subcategoria) updateData.subcategoria = category.subcategoria;
+      if (category.categoria) updateData.categoria = category.categoria;
+      if (category.tipo) updateData.tipo = category.tipo;
+      
+      const { error } = await supabase
+        .from('categorias')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Recargar datos
+      await loadData();
+      
+      toast({
+        title: "Éxito",
+        description: "Categoría actualizada correctamente"
+      });
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la categoría",
+        variant: "destructive"
+      });
+    }
   };
 
   const deleteCategory = async (id: string) => {
-    // TODO: Implementar eliminación en Supabase
+    try {
+      const { error } = await supabase
+        .from('categorias')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Recargar datos
+      await loadData();
+      
+      toast({
+        title: "Éxito",
+        description: "Categoría eliminada correctamente"
+      });
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la categoría",
+        variant: "destructive"
+      });
+    }
   };
 
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string }) => {
