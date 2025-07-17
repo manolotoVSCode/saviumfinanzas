@@ -912,10 +912,10 @@ export const TransactionsManager = ({
                         const category = categories.find(c => c.id === transaction.subcategoriaId);
                         if (category) {
                           return (
-                            <>
-                              <div className="font-medium">{category.categoria}</div>
-                              <div className="text-sm text-muted-foreground">{category.subcategoria}</div>
-                            </>
+                             <>
+                               <div className="font-medium">{category.subcategoria}</div>
+                               <div className="text-sm text-muted-foreground">{category.categoria}</div>
+                             </>
                           );
                         } else {
                           return (
