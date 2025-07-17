@@ -53,7 +53,8 @@ export const TransactionsManager = ({
     mes: '',
     categoriaId: 'all',
     tipo: 'all',
-    divisa: 'all'
+    divisa: 'all',
+    comentario: ''
   });
 
   const [formData, setFormData] = useState({
@@ -91,6 +92,12 @@ export const TransactionsManager = ({
       const transactionMonth = adjustedDate.toISOString().slice(0, 7); // YYYY-MM format
       if (transactionMonth !== filters.mes) return false;
     }
+    
+    // Filtro por comentario (mínimo 3 caracteres)
+    if (filters.comentario && filters.comentario.length >= 3) {
+      if (!transaction.comentario.toLowerCase().includes(filters.comentario.toLowerCase())) return false;
+    }
+    
     return true;
   });
 
@@ -102,7 +109,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all' });
+    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '' });
   };
 
   const resetForm = () => {
@@ -122,30 +129,6 @@ export const TransactionsManager = ({
     setCategoryTypeFilter('all');
     setEditingTransaction(null);
     setIsAddingTransaction(false);
-  };
-
-  // Obtener categorías filtradas por tipo
-  const getFilteredCategories = () => {
-    if (categoryTypeFilter === 'all') return categories;
-    return categories.filter(c => c.tipo === categoryTypeFilter);
-  };
-
-  // Obtener tipo de categoría seleccionada
-  const getSelectedCategoryType = () => {
-    if (!formData.subcategoriaId) return null;
-    const category = categories.find(c => c.id === formData.subcategoriaId);
-    return category?.tipo || null;
-  };
-
-  // Verificar si un campo debe estar bloqueado
-  const isFieldDisabled = (fieldType: 'ingreso' | 'gasto') => {
-    const categoryType = getSelectedCategoryType();
-    if (!categoryType) return false;
-    
-    if (fieldType === 'gasto' && categoryType === 'Ingreso') return true;
-    if (fieldType === 'ingreso' && (categoryType === 'Gastos' || categoryType === 'Aportación' || categoryType === 'Retiro')) return true;
-    
-    return false;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -323,85 +306,6 @@ export const TransactionsManager = ({
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-xl font-semibold">Gestión de Transacciones</h2>
         <div className="flex gap-2">
-          {selectedTransactions.size > 0 && (
-            <>
-              <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg">
-                <span className="text-sm font-medium">
-                  {selectedTransactions.size} seleccionada{selectedTransactions.size > 1 ? 's' : ''}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedTransactions(new Set())}
-                >
-                  Limpiar selección
-                </Button>
-              </div>
-              
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar ({selectedTransactions.size})
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Eliminar transacciones seleccionadas?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Se eliminarán {selectedTransactions.size} transacciones permanentemente. Esta acción no se puede deshacer.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
-                      Eliminar
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-
-              <Dialog open={isEditingBulk} onOpenChange={setIsEditingBulk}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Cambiar Categoría
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Cambiar Categoría de {selectedTransactions.size} Transacciones</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="bulk-categoria">Nueva Categoría</Label>
-                      <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una categoría" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.categoria} - {category.subcategoria}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsEditingBulk(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleBulkCategoryChange} disabled={!bulkCategoryId}>
-                        Aplicar Cambios
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </>
-          )}
-          
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button 
@@ -454,12 +358,13 @@ export const TransactionsManager = ({
                       <SelectContent>
                         {accounts.map((account) => (
                           <SelectItem key={account.id} value={account.id}>
-                            {account.nombre} ({account.tipo})
+                            {account.nombre} ({account.divisa})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div>
                     <Label htmlFor="fecha">Fecha</Label>
                     <Input
@@ -473,28 +378,74 @@ export const TransactionsManager = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="category-type">Tipo de Categoría</Label>
+                  <Label htmlFor="comentario">Comentario</Label>
+                  <Textarea
+                    id="comentario"
+                    value={formData.comentario}
+                    onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
+                    placeholder="Descripción de la transacción"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="ingreso">Ingreso</Label>
+                    <Input
+                      id="ingreso"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.ingreso || ''}
+                      onChange={(e) => setFormData({ ...formData, ingreso: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="gasto">Gasto</Label>
+                    <Input
+                      id="gasto"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.gasto || ''}
+                      onChange={(e) => setFormData({ ...formData, gasto: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="divisa">Divisa</Label>
+                    <Select 
+                      value={formData.divisa} 
+                      onValueChange={(value: 'MXN' | 'USD' | 'EUR') => setFormData({ ...formData, divisa: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MXN">MXN</SelectItem>
+                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="EUR">EUR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="tipo-categoria">Filtrar categorías por tipo</Label>
                   <Select 
                     value={categoryTypeFilter} 
-                    onValueChange={(value) => {
-                      setCategoryTypeFilter(value);
-                      // Reset subcategory when changing type filter
-                      setFormData(prev => ({ ...prev, subcategoriaId: '' }));
-                      setAutoContribution({
-                        enabled: false,
-                        targetAccountId: ''
-                      });
-                    }}
+                    onValueChange={setCategoryTypeFilter}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Todos los tipos" />
+                      <SelectValue placeholder="Filtrar por tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todos los tipos</SelectItem>
-                      <SelectItem value="Ingreso">Ingreso</SelectItem>
-                      <SelectItem value="Gastos">Gastos</SelectItem>
-                      <SelectItem value="Aportación">Aportación</SelectItem>
-                      <SelectItem value="Retiro">Retiro</SelectItem>
+                      <SelectItem value="all">Todas las categorías</SelectItem>
+                      <SelectItem value="Ingreso">Solo Ingresos</SelectItem>
+                      <SelectItem value="Gastos">Solo Gastos</SelectItem>
+                      <SelectItem value="Aportación">Solo Aportaciones</SelectItem>
+                      <SelectItem value="Retiro">Solo Retiros</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -503,125 +454,45 @@ export const TransactionsManager = ({
                   <Label htmlFor="subcategoriaId">Categoría</Label>
                   <Select 
                     value={formData.subcategoriaId} 
-                    onValueChange={(value) => {
-                      const category = categories.find(c => c.id === value);
-                      const newFormData = { ...formData, subcategoriaId: value };
-                      
-                      // Resetear campos según el tipo de categoría
-                      if (category?.tipo === 'Ingreso') {
-                        newFormData.gasto = 0;
-                      } else if (category?.tipo === 'Gastos' || category?.tipo === 'Aportación' || category?.tipo === 'Retiro') {
-                        newFormData.ingreso = 0;
-                      }
-                      
-                      setFormData(newFormData);
-                      
-                      // Reset category type filter when changing category
-                      if (category?.tipo !== 'Aportación') {
-                        setAutoContribution({
-                          enabled: false,
-                          targetAccountId: ''
-                        });
-                      }
-                    }}
+                    onValueChange={(value) => setFormData({ ...formData, subcategoriaId: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona una categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                      {getFilteredCategories().map((category) => (
+                      {categories
+                        .filter(category => categoryTypeFilter === 'all' || category.tipo === categoryTypeFilter)
+                        .map((category) => (
                         <SelectItem key={category.id} value={category.id}>
-                          {category.categoria} - {category.subcategoria} ({category.tipo})
+                          {category.categoria} - {category.subcategoria}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="ingreso">Ingreso</Label>
-                    <Input
-                      id="ingreso"
-                      type="number"
-                      step="0.01"
-                      value={formData.ingreso}
-                      onChange={(e) => setFormData({ ...formData, ingreso: parseFloat(e.target.value) || 0 })}
-                      placeholder="0.00"
-                      disabled={isFieldDisabled('ingreso')}
-                      className={isFieldDisabled('ingreso') ? 'opacity-50 cursor-not-allowed' : ''}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="gasto">Gasto</Label>
-                    <Input
-                      id="gasto"
-                      type="number"
-                      step="0.01"
-                      value={formData.gasto}
-                      onChange={(e) => setFormData({ ...formData, gasto: parseFloat(e.target.value) || 0 })}
-                      placeholder="0.00"
-                      disabled={isFieldDisabled('gasto')}
-                      className={isFieldDisabled('gasto') ? 'opacity-50 cursor-not-allowed' : ''}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="divisa">Divisa</Label>
-                  <Select 
-                    value={formData.divisa} 
-                    onValueChange={(value) => setFormData({ ...formData, divisa: value as 'MXN' | 'USD' | 'EUR' })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona divisa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MXN">MXN - Peso Mexicano</SelectItem>
-                      <SelectItem value="USD">USD - Dólar Americano</SelectItem>
-                      <SelectItem value="EUR">EUR - Euro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="comentario">Comentario</Label>
-                  <Textarea
-                    id="comentario"
-                    value={formData.comentario}
-                    onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
-                    placeholder="Descripción de la transacción..."
-                    rows={3}
-                  />
-                </div>
-
-                {/* Sección de aportación automática */}
-                {getSelectedCategoryType() === 'Aportación' && (
-                  <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                {!editingTransaction && (
+                  <div className="border-t pt-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="auto-contribution"
+                        id="autoContribution"
                         checked={autoContribution.enabled}
                         onCheckedChange={(checked) => 
-                          setAutoContribution(prev => ({ 
-                            ...prev, 
-                            enabled: !!checked,
-                            targetAccountId: checked ? prev.targetAccountId : ''
-                          }))
+                          setAutoContribution({ ...autoContribution, enabled: checked as boolean })
                         }
                       />
-                      <Label htmlFor="auto-contribution" className="text-sm font-medium">
-                        Crear aportación automática en cuenta destino
+                      <Label htmlFor="autoContribution">
+                        Generar aportación automática a otra cuenta
                       </Label>
                     </div>
-                    
+
                     {autoContribution.enabled && (
-                      <div>
-                        <Label htmlFor="target-account">Cuenta destino</Label>
+                      <div className="mt-2">
+                        <Label htmlFor="targetAccount">Cuenta destino</Label>
                         <Select 
                           value={autoContribution.targetAccountId} 
                           onValueChange={(value) => 
-                            setAutoContribution(prev => ({ ...prev, targetAccountId: value }))
+                            setAutoContribution({ ...autoContribution, targetAccountId: value })
                           }
                         >
                           <SelectTrigger>
@@ -631,10 +502,10 @@ export const TransactionsManager = ({
                             {accounts
                               .filter(account => account.id !== formData.cuentaId)
                               .map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.nombre} ({account.tipo})
-                                </SelectItem>
-                              ))}
+                              <SelectItem key={account.id} value={account.id}>
+                                {account.nombre} ({account.divisa})
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -643,17 +514,105 @@ export const TransactionsManager = ({
                 )}
 
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={resetForm}>
+                  <Button type="button" variant="outline" onClick={() => setIsAddingTransaction(false)}>
                     Cancelar
                   </Button>
                   <Button type="submit">
-                    {editingTransaction ? 'Actualizar' : 'Crear'}
+                    {editingTransaction ? 'Actualizar' : 'Crear'} Transacción
                   </Button>
                 </div>
               </form>
             </DialogContent>
           </Dialog>
         </div>
+      </div>
+
+      {/* BOTONES DE ACCIONES EN GRUPO - FIJOS */}
+      <div className="flex flex-wrap gap-3 items-center">
+        {selectedTransactions.size > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg">
+            <span className="text-sm font-medium">
+              {selectedTransactions.size} seleccionada{selectedTransactions.size > 1 ? 's' : ''}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedTransactions(new Set())}
+            >
+              Limpiar selección
+            </Button>
+          </div>
+        )}
+        
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              disabled={selectedTransactions.size === 0}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar Seleccionadas {selectedTransactions.size > 0 && `(${selectedTransactions.size})`}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar transacciones seleccionadas?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminarán {selectedTransactions.size} transacciones permanentemente. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Dialog open={isEditingBulk} onOpenChange={setIsEditingBulk}>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={selectedTransactions.size === 0}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Cambiar Categoría
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cambiar Categoría de {selectedTransactions.size} Transacciones</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="bulk-categoria">Nueva Categoría</Label>
+                <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.categoria} - {category.subcategoria}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsEditingBulk(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleBulkCategoryChange} disabled={!bulkCategoryId}>
+                  Aplicar Cambios
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filtros */}
@@ -667,7 +626,7 @@ export const TransactionsManager = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="filter-cuenta">Cuenta</Label>
               <Select 
@@ -686,6 +645,22 @@ export const TransactionsManager = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="filter-comentario">Comentario</Label>
+              <Input
+                id="filter-comentario"
+                type="text"
+                placeholder="Buscar por comentario (min. 3 letras)"
+                value={filters.comentario}
+                onChange={(e) => setFilters(prev => ({ ...prev, comentario: e.target.value }))}
+              />
+              {filters.comentario.length > 0 && filters.comentario.length < 3 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mínimo 3 caracteres para filtrar
+                </p>
+              )}
             </div>
             
             <div>
