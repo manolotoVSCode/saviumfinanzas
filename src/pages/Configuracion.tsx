@@ -89,8 +89,15 @@ const Configuracion = () => {
 
   const deleteUser = async (userId: string, userDisplayName: string) => {
     try {
-      // First delete from auth.users (this will cascade delete the profile)
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      console.log('=== DELETING USER ===');
+      console.log('User ID to delete:', userId);
+      
+      // Por ahora, solo eliminar el perfil (no podemos eliminar del auth desde el cliente)
+      // En una implementación real, esto debería hacerse desde el backend
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', userId);
       
       if (error) throw error;
 
@@ -98,14 +105,14 @@ const Configuracion = () => {
       await loadUsers();
       
       toast({
-        title: "Usuario eliminado",
-        description: `El usuario ${userDisplayName} ha sido eliminado exitosamente`,
+        title: "Perfil eliminado",
+        description: `El perfil de ${userDisplayName} ha sido eliminado. Nota: El usuario aún puede acceder con su cuenta de autenticación.`,
       });
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('Error deleting user profile:', error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el usuario. Verifica los permisos de administrador.",
+        description: "No se pudo eliminar el perfil del usuario.",
         variant: "destructive"
       });
     }
