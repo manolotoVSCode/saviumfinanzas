@@ -87,6 +87,7 @@ export type Database = {
         Row: {
           apellidos: string
           created_at: string
+          divisa_preferida: string
           edad: number | null
           id: string
           nombre: string
@@ -96,6 +97,7 @@ export type Database = {
         Insert: {
           apellidos: string
           created_at?: string
+          divisa_preferida?: string
           edad?: number | null
           id?: string
           nombre: string
@@ -105,6 +107,7 @@ export type Database = {
         Update: {
           apellidos?: string
           created_at?: string
+          divisa_preferida?: string
           edad?: number | null
           id?: string
           nombre?: string
