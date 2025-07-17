@@ -44,23 +44,37 @@ const Configuracion = () => {
   // Check if current user is admin
   const isAdmin = user?.email === 'manoloto@hotmail.com';
 
+  // Debug logs
+  console.log('=== DEBUG ADMIN ===');
+  console.log('Current user:', user);
+  console.log('Current user email:', user?.email);
+  console.log('Is admin?', isAdmin);
+
   // Load users if admin
   useEffect(() => {
     if (isAdmin) {
+      console.log('Loading users because user is admin');
       loadUsers();
+    } else {
+      console.log('Not loading users - user is not admin');
     }
   }, [isAdmin]);
 
   const loadUsers = async () => {
     try {
       setLoadingUsers(true);
+      console.log('=== LOADING USERS ===');
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('Users query result:', { data, error });
+      
       if (error) throw error;
       setUsers(data || []);
+      console.log('Users set in state:', data);
     } catch (error) {
       console.error('Error loading users:', error);
       toast({
