@@ -8,7 +8,7 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { InvestmentMigrationForm } from '@/components/InvestmentMigrationForm';
 import { Account } from '@/types/finance';
-import { TrendingUp, TrendingDown, DollarSign, Target, Settings, RefreshCw, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Settings, RefreshCw, AlertTriangle, Plus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
@@ -118,6 +118,16 @@ const Inversiones = (): JSX.Element => {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Inversiones</h1>
           <div className="flex gap-2">
+            <Button 
+              variant="default" 
+              onClick={() => {
+                // Navegar a configuración para crear cuentas
+                window.location.href = '/configuracion';
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Crear Cuenta de Inversión
+            </Button>
             {cuentasSinCompleter.length > 0 && (
               <Button 
                 variant="outline" 
