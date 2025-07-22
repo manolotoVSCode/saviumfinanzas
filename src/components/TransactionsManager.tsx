@@ -350,7 +350,14 @@ export const TransactionsManager = ({
                     <Label htmlFor="cuentaId">Cuenta</Label>
                     <Select 
                       value={formData.cuentaId} 
-                      onValueChange={(value) => setFormData({ ...formData, cuentaId: value })}
+                      onValueChange={(value) => {
+                        const selectedAccount = accounts.find(acc => acc.id === value);
+                        setFormData({ 
+                          ...formData, 
+                          cuentaId: value,
+                          divisa: selectedAccount?.divisa || 'MXN'
+                        });
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona una cuenta" />
@@ -377,65 +384,16 @@ export const TransactionsManager = ({
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="comentario">Comentario</Label>
-                  <Textarea
-                    id="comentario"
-                    value={formData.comentario}
-                    onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
-                    placeholder="Descripción de la transacción"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="ingreso">Ingreso</Label>
-                    <Input
-                      id="ingreso"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.ingreso || ''}
-                      onChange={(e) => setFormData({ ...formData, ingreso: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="gasto">Gasto</Label>
-                    <Input
-                      id="gasto"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.gasto || ''}
-                      onChange={(e) => setFormData({ ...formData, gasto: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="divisa">Divisa</Label>
-                    <Select 
-                      value={formData.divisa} 
-                      onValueChange={(value: 'MXN' | 'USD' | 'EUR') => setFormData({ ...formData, divisa: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="MXN">MXN</SelectItem>
-                        <SelectItem value="USD">USD</SelectItem>
-                        <SelectItem value="EUR">EUR</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
+                {/* Filtro de categorías por tipo - después de cuenta y fecha */}
                 <div>
                   <Label htmlFor="tipo-categoria">Filtrar categorías por tipo</Label>
                   <Select 
                     value={categoryTypeFilter} 
-                    onValueChange={setCategoryTypeFilter}
+                    onValueChange={(value) => {
+                      setCategoryTypeFilter(value);
+                      // Limpiar la categoría seleccionada cuando se cambia el filtro
+                      setFormData({ ...formData, subcategoriaId: '' });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Filtrar por tipo" />
@@ -454,7 +412,16 @@ export const TransactionsManager = ({
                   <Label htmlFor="subcategoriaId">Categoría</Label>
                   <Select 
                     value={formData.subcategoriaId} 
-                    onValueChange={(value) => setFormData({ ...formData, subcategoriaId: value })}
+                    onValueChange={(value) => {
+                      const selectedCategory = categories.find(cat => cat.id === value);
+                      setFormData({ 
+                        ...formData, 
+                        subcategoriaId: value,
+                        // Limpiar campos de ingreso/gasto según el tipo de categoría
+                        ingreso: selectedCategory?.tipo === 'Ingreso' || selectedCategory?.tipo === 'Aportación' ? formData.ingreso : 0,
+                        gasto: selectedCategory?.tipo === 'Gastos' || selectedCategory?.tipo === 'Retiro' ? formData.gasto : 0
+                      });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona una categoría" />
@@ -464,12 +431,88 @@ export const TransactionsManager = ({
                         .filter(category => categoryTypeFilter === 'all' || category.tipo === categoryTypeFilter)
                         .map((category) => (
                         <SelectItem key={category.id} value={category.id}>
-                          {category.categoria} - {category.subcategoria}
+                          {category.categoria} - {category.subcategoria} ({category.tipo})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div>
+                  <Label htmlFor="comentario">Comentario</Label>
+                  <Textarea
+                    id="comentario"
+                    value={formData.comentario}
+                    onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
+                    placeholder="Descripción de la transacción"
+                    required
+                  />
+                </div>
+
+                {/* Campos de ingreso/gasto con lógica de bloqueo */}
+                <div className="grid grid-cols-3 gap-4">
+                  {(() => {
+                    const selectedCategory = categories.find(cat => cat.id === formData.subcategoriaId);
+                    const isIngresoType = selectedCategory?.tipo === 'Ingreso' || selectedCategory?.tipo === 'Aportación';
+                    const isGastoType = selectedCategory?.tipo === 'Gastos' || selectedCategory?.tipo === 'Retiro';
+                    
+                    return (
+                      <>
+                        <div>
+                          <Label htmlFor="ingreso">Ingreso</Label>
+                          <Input
+                            id="ingreso"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData.ingreso || ''}
+                            onChange={(e) => setFormData({ ...formData, ingreso: parseFloat(e.target.value) || 0 })}
+                            disabled={selectedCategory && !isIngresoType}
+                            placeholder={selectedCategory && !isIngresoType ? "Bloqueado para este tipo" : "0.00"}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="gasto">Gasto</Label>
+                          <Input
+                            id="gasto"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData.gasto || ''}
+                            onChange={(e) => setFormData({ ...formData, gasto: parseFloat(e.target.value) || 0 })}
+                            disabled={selectedCategory && !isGastoType}
+                            placeholder={selectedCategory && !isGastoType ? "Bloqueado para este tipo" : "0.00"}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="divisa">Divisa</Label>
+                          <Select 
+                            value={formData.divisa} 
+                            onValueChange={(value: 'MXN' | 'USD' | 'EUR') => setFormData({ ...formData, divisa: value })}
+                            disabled={!!formData.cuentaId} // Deshabilitado si ya se seleccionó una cuenta
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="MXN">MXN</SelectItem>
+                              <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="EUR">EUR</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {formData.cuentaId && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Divisa automática basada en la cuenta seleccionada
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+
 
                 {!editingTransaction && (
                   <div className="border-t pt-4">
