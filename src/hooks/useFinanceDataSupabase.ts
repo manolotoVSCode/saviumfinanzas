@@ -64,7 +64,14 @@ export const useFinanceDataSupabase = () => {
         saldoActual: Number(cuenta.saldo_inicial), // Se calculará después
         divisa: cuenta.divisa as 'MXN' | 'USD' | 'EUR',
         valorMercado: cuenta.valor_mercado ? Number(cuenta.valor_mercado) : undefined,
-        rendimientoMensual: cuenta.rendimiento_mensual ? Number(cuenta.rendimiento_mensual) : undefined
+        rendimientoMensual: cuenta.rendimiento_mensual ? Number(cuenta.rendimiento_mensual) : undefined,
+        // Nuevos campos de inversión
+        tipo_inversion: cuenta.tipo_inversion as 'Interés fijo' | 'Fondo variable' | 'Criptomoneda' | undefined,
+        modalidad: cuenta.modalidad as 'Reinversión' | 'Pago mensual' | 'Pago trimestral' | undefined,
+        rendimiento_bruto: cuenta.rendimiento_bruto ? Number(cuenta.rendimiento_bruto) : undefined,
+        rendimiento_neto: cuenta.rendimiento_neto ? Number(cuenta.rendimiento_neto) : undefined,
+        fecha_inicio: cuenta.fecha_inicio,
+        ultimo_pago: cuenta.ultimo_pago
       }));
 
       const mappedCategories: Category[] = categoriasData.map(categoria => ({
