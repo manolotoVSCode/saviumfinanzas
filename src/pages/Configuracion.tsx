@@ -4,119 +4,21 @@ import { Button } from '@/components/ui/button';
 import Layout from '@/components/Layout';
 import { AccountsManager } from '@/components/AccountsManager';
 import { CategoriesManager } from '@/components/CategoriesManager';
+import { ProfileEditor } from '@/components/ProfileEditor';
+import { AdminUserManagement } from '@/components/AdminUserManagement';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 import { useAuth } from '@/contexts/AuthContext';
-import { Settings, Heart, LogOut, Users, Trash2 } from 'lucide-react';
+import { Settings, Heart, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-
-interface UserProfile {
-  id: string;
-  user_id: string;
-  nombre: string;
-  apellidos: string;
-  edad: number | null;
-  divisa_preferida: string;
-  created_at: string;
-}
 
 const Configuracion = () => {
   const financeData = useFinanceDataSupabase();
   const { signOut, user } = useAuth();
-  const { toast } = useToast();
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
 
   // Check if current user is admin
   const isAdmin = user?.email === 'manoloto@hotmail.com';
-
-  // Debug logs
-  console.log('=== DEBUG ADMIN ===');
-  console.log('Current user:', user);
-  console.log('Current user email:', user?.email);
-  console.log('Is admin?', isAdmin);
-
-  // Load users if admin
-  useEffect(() => {
-    if (isAdmin) {
-      console.log('Loading users because user is admin');
-      loadUsers();
-    } else {
-      console.log('Not loading users - user is not admin');
-    }
-  }, [isAdmin]);
-
-  const loadUsers = async () => {
-    try {
-      setLoadingUsers(true);
-      console.log('=== LOADING USERS ===');
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      console.log('Users query result:', { data, error });
-      
-      if (error) throw error;
-      setUsers(data || []);
-      console.log('Users set in state:', data);
-    } catch (error) {
-      console.error('Error loading users:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los usuarios",
-        variant: "destructive"
-      });
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
-
-  const deleteUser = async (userId: string, userDisplayName: string) => {
-    try {
-      console.log('=== DELETING USER ===');
-      console.log('User ID to delete:', userId);
-      
-      // Por ahora, solo eliminar el perfil (no podemos eliminar del auth desde el cliente)
-      // En una implementación real, esto debería hacerse desde el backend
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', userId);
-      
-      if (error) throw error;
-
-      // Refresh users list
-      await loadUsers();
-      
-      toast({
-        title: "Perfil eliminado",
-        description: `El perfil de ${userDisplayName} ha sido eliminado. Nota: El usuario aún puede acceder con su cuenta de autenticación.`,
-      });
-    } catch (error) {
-      console.error('Error deleting user profile:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el perfil del usuario.",
-        variant: "destructive"
-      });
-    }
-  };
 
   if (financeData.loading) {
     return (
@@ -139,6 +41,8 @@ const Configuracion = () => {
           <h1 className="text-3xl font-bold">Configuración</h1>
         </div>
 
+        {/* EDITOR DE PERFIL */}
+        <ProfileEditor />
 
         {/* TASAS DE CAMBIO ACTUALES */}
         <ExchangeRates />
@@ -176,93 +80,7 @@ const Configuracion = () => {
         </Card>
 
         {/* ADMINISTRACIÓN DE USUARIOS - Solo para admin */}
-        {isAdmin && (
-          <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Administración de Usuarios
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-muted-foreground text-sm">
-                  Gestiona los usuarios registrados en la aplicación
-                </p>
-                
-                {loadingUsers ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {users.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-4">No hay usuarios registrados</p>
-                    ) : (
-                      users.map((user) => (
-                        <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex-1">
-                            <div className="font-medium">
-                              {user.nombre} {user.apellidos}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              ID: {user.user_id}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Divisa: {user.divisa_preferida} • Edad: {user.edad || 'No especificada'}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Registrado: {new Date(user.created_at).toLocaleDateString()}
-                            </div>
-                          </div>
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                className="ml-4"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  ¿Estás seguro de que deseas eliminar al usuario <strong>{user.nombre} {user.apellidos}</strong>? 
-                                  Esta acción no se puede deshacer y eliminará todas sus transacciones, cuentas y datos.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteUser(user.user_id, `${user.nombre} ${user.apellidos}`)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-                
-                <Button 
-                  onClick={loadUsers} 
-                  variant="outline" 
-                  className="w-full"
-                  disabled={loadingUsers}
-                >
-                  Actualizar Lista
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {isAdmin && <AdminUserManagement />}
 
         {/* INFORMACIÓN DE LA APP */}
         <Card className="hover-scale border-muted/20 hover:border-muted/40 transition-all duration-300">

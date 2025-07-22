@@ -1,0 +1,233 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Users, Trash2, RefreshCw } from 'lucide-react';
+
+interface UserStats {
+  id: string;
+  user_id: string;
+  nombre: string;
+  apellidos: string;
+  edad: number | null;
+  divisa_preferida: string;
+  created_at: string;
+  transactionCount: number;
+  categoryCount: number;
+  accountCount: number;
+}
+
+export const AdminUserManagement = () => {
+  const [users, setUsers] = useState<UserStats[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadUsersWithStats();
+  }, []);
+
+  const loadUsersWithStats = async () => {
+    try {
+      setLoading(true);
+
+      // Get all profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      // Get stats for each user
+      const usersWithStats = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          const [transactionsRes, categoriesRes, accountsRes] = await Promise.all([
+            supabase.from('transacciones').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+            supabase.from('categorias').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+            supabase.from('cuentas').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+          ]);
+
+          return {
+            ...profile,
+            transactionCount: transactionsRes.count || 0,
+            categoryCount: categoriesRes.count || 0,
+            accountCount: accountsRes.count || 0,
+          };
+        })
+      );
+
+      setUsers(usersWithStats);
+    } catch (error) {
+      console.error('Error loading users with stats:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los usuarios",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteUser = async (userId: string, userDisplayName: string) => {
+    try {
+      // Delete all user data in order
+      await Promise.all([
+        supabase.from('transacciones').delete().eq('user_id', userId),
+        supabase.from('cuentas').delete().eq('user_id', userId),
+        supabase.from('categorias').delete().eq('user_id', userId),
+      ]);
+
+      // Finally delete the profile
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+
+      await loadUsersWithStats();
+      
+      toast({
+        title: "Usuario eliminado",
+        description: `Todos los datos de ${userDisplayName} han sido eliminados`,
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el usuario",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            Administración de Usuarios
+          </div>
+          <Button 
+            onClick={loadUsersWithStats} 
+            variant="outline" 
+            size="sm"
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : users.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">No hay usuarios registrados</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Usuario</TableHead>
+                  <TableHead>Divisa/Edad</TableHead>
+                  <TableHead>Registro</TableHead>
+                  <TableHead>Transacciones</TableHead>
+                  <TableHead>Categorías</TableHead>
+                  <TableHead>Cuentas</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">
+                          {user.nombre} {user.apellidos}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <Badge variant="outline">{user.divisa_preferida}</Badge>
+                        <div className="text-sm text-muted-foreground">
+                          {user.edad ? `${user.edad} años` : 'Sin edad'}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {new Date(user.created_at).toLocaleDateString('es-ES', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {user.transactionCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {user.categoryCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {user.accountCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              ¿Estás seguro de que deseas eliminar al usuario <strong>{user.nombre} {user.apellidos}</strong>? 
+                              Esta acción eliminará permanentemente:
+                              <ul className="list-disc list-inside mt-2 space-y-1">
+                                <li>{user.transactionCount} transacciones</li>
+                                <li>{user.categoryCount} categorías</li>
+                                <li>{user.accountCount} cuentas</li>
+                                <li>Todos sus datos personales</li>
+                              </ul>
+                              Esta acción no se puede deshacer.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteUser(user.user_id, `${user.nombre} ${user.apellidos}`)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Eliminar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
