@@ -48,11 +48,17 @@ export type Database = {
         Row: {
           created_at: string
           divisa: string
+          fecha_inicio: string | null
           id: string
+          modalidad: string | null
           nombre: string
+          rendimiento_bruto: number | null
           rendimiento_mensual: number | null
+          rendimiento_neto: number | null
           saldo_inicial: number
           tipo: string
+          tipo_inversion: string | null
+          ultimo_pago: string | null
           updated_at: string
           user_id: string
           valor_mercado: number | null
@@ -60,11 +66,17 @@ export type Database = {
         Insert: {
           created_at?: string
           divisa?: string
+          fecha_inicio?: string | null
           id?: string
+          modalidad?: string | null
           nombre: string
+          rendimiento_bruto?: number | null
           rendimiento_mensual?: number | null
+          rendimiento_neto?: number | null
           saldo_inicial?: number
           tipo: string
+          tipo_inversion?: string | null
+          ultimo_pago?: string | null
           updated_at?: string
           user_id: string
           valor_mercado?: number | null
@@ -72,11 +84,17 @@ export type Database = {
         Update: {
           created_at?: string
           divisa?: string
+          fecha_inicio?: string | null
           id?: string
+          modalidad?: string | null
           nombre?: string
+          rendimiento_bruto?: number | null
           rendimiento_mensual?: number | null
+          rendimiento_neto?: number | null
           saldo_inicial?: number
           tipo?: string
+          tipo_inversion?: string | null
+          ultimo_pago?: string | null
           updated_at?: string
           user_id?: string
           valor_mercado?: number | null

@@ -18,6 +18,13 @@ export interface Account {
   divisa: 'MXN' | 'USD' | 'EUR';
   valorMercado?: number; // solo para inversiones - valor actual del mercado
   rendimientoMensual?: number; // rendimiento mensual manual para inversiones
+  // Campos adicionales para inversiones
+  tipo_inversion?: 'Interés fijo' | 'Fondo variable' | 'Criptomoneda';
+  modalidad?: 'Reinversión' | 'Pago mensual' | 'Pago trimestral';
+  rendimiento_bruto?: number;
+  rendimiento_neto?: number;
+  fecha_inicio?: string;
+  ultimo_pago?: string;
 }
 
 export interface Transaction {
