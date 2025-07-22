@@ -558,17 +558,174 @@ export const useFinanceDataSupabase = () => {
     };
   }, [accountsWithBalances, enrichedTransactions, convertCurrency, config.currency]);
 
-  // CRUD operations placeholder (para futuras implementaciones)
-  const addAccount = async (account: Omit<Account, 'id'>) => {
-    // TODO: Implementar inserción en Supabase
+  // CRUD operations para cuentas
+  const addAccount = async (account: Omit<Account, 'id' | 'saldoActual'>) => {
+    try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error de autenticación",
+          description: "Debes estar logueado para crear cuentas",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const accountData: any = {
+        nombre: account.nombre,
+        tipo: account.tipo,
+        saldo_inicial: account.saldoInicial,
+        divisa: account.divisa,
+        user_id: user.id
+      };
+
+      // Agregar campos específicos de inversión si existen
+      if (account.tipo === 'Inversiones') {
+        if (account.tipo_inversion) accountData.tipo_inversion = account.tipo_inversion;
+        if (account.modalidad) accountData.modalidad = account.modalidad;
+        if (account.rendimiento_bruto) accountData.rendimiento_bruto = account.rendimiento_bruto;
+        if (account.rendimiento_neto) accountData.rendimiento_neto = account.rendimiento_neto;
+        if (account.fecha_inicio) accountData.fecha_inicio = account.fecha_inicio;
+        if (account.ultimo_pago) accountData.ultimo_pago = account.ultimo_pago;
+        if (account.valorMercado) accountData.valor_mercado = account.valorMercado;
+      }
+
+      console.log('=== CREAR CUENTA ===');
+      console.log('Datos a insertar:', accountData);
+
+      const { data, error } = await supabase
+        .from('cuentas')
+        .insert(accountData)
+        .select();
+
+      if (error) {
+        console.error('Error al crear cuenta:', error);
+        throw error;
+      }
+
+      console.log('Cuenta creada exitosamente:', data);
+
+      toast({
+        title: "¡Cuenta creada!",
+        description: `La cuenta ${account.nombre} ha sido creada exitosamente.`,
+      });
+
+      // Recargar datos
+      loadData();
+    } catch (error) {
+      console.error('Error creating account:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la cuenta",
+        variant: "destructive"
+      });
+    }
   };
 
-  const updateAccount = async (id: string, account: Partial<Account>) => {
-    // TODO: Implementar actualización en Supabase
+  const updateAccount = async (id: string, updates: Partial<Account>) => {
+    try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error de autenticación",
+          description: "Debes estar logueado para actualizar cuentas",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const updateData: any = {};
+
+      // Mapear campos básicos
+      if (updates.nombre) updateData.nombre = updates.nombre;
+      if (updates.tipo) updateData.tipo = updates.tipo;
+      if (updates.saldoInicial !== undefined) updateData.saldo_inicial = updates.saldoInicial;
+      if (updates.divisa) updateData.divisa = updates.divisa;
+
+      // Mapear campos específicos de inversión
+      if (updates.tipo_inversion) updateData.tipo_inversion = updates.tipo_inversion;
+      if (updates.modalidad) updateData.modalidad = updates.modalidad;
+      if (updates.rendimiento_bruto !== undefined) updateData.rendimiento_bruto = updates.rendimiento_bruto;
+      if (updates.rendimiento_neto !== undefined) updateData.rendimiento_neto = updates.rendimiento_neto;
+      if (updates.fecha_inicio) updateData.fecha_inicio = updates.fecha_inicio;
+      if (updates.ultimo_pago) updateData.ultimo_pago = updates.ultimo_pago;
+      if (updates.valorMercado !== undefined) updateData.valor_mercado = updates.valorMercado;
+
+      console.log('=== ACTUALIZAR CUENTA ===');
+      console.log('ID:', id);
+      console.log('Datos a actualizar:', updateData);
+
+      const { data, error } = await supabase
+        .from('cuentas')
+        .update(updateData)
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        console.error('Error al actualizar cuenta:', error);
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('No se encontró la cuenta para actualizar');
+      }
+
+      console.log('Cuenta actualizada exitosamente:', data[0]);
+
+      toast({
+        title: "¡Cuenta actualizada!",
+        description: "Los cambios se han guardado exitosamente.",
+      });
+
+      // Recargar datos
+      loadData();
+    } catch (error) {
+      console.error('Error updating account:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron guardar los cambios",
+        variant: "destructive"
+      });
+    }
   };
 
   const deleteAccount = async (id: string) => {
-    // TODO: Implementar eliminación en Supabase
+    try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error de autenticación",
+          description: "Debes estar logueado para eliminar cuentas",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('cuentas')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Cuenta eliminada",
+        description: "La cuenta ha sido eliminada exitosamente.",
+      });
+
+      // Recargar datos
+      loadData();
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la cuenta",
+        variant: "destructive"
+      });
+    }
   };
 
   const addCategory = async (category: Omit<Category, 'id'>) => {

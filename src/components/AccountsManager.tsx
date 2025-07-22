@@ -35,7 +35,15 @@ export const AccountsManager = ({
     nombre: '',
     tipo: '' as AccountType,
     saldoInicial: 0,
-    divisa: 'MXN' as 'MXN' | 'USD' | 'EUR'
+    divisa: 'MXN' as 'MXN' | 'USD' | 'EUR',
+    // Campos específicos de inversión
+    tipo_inversion: '' as 'Interés fijo' | 'Fondo variable' | 'Criptomoneda' | '',
+    modalidad: '' as 'Reinversión' | 'Pago mensual' | 'Pago trimestral' | '',
+    rendimiento_bruto: 0,
+    rendimiento_neto: 0,
+    fecha_inicio: '',
+    ultimo_pago: '',
+    valor_mercado: 0
   });
 
   const formatCurrency = (amount: number, currency: 'MXN' | 'USD' | 'EUR' = 'MXN') => {
@@ -53,7 +61,19 @@ export const AccountsManager = ({
   };
 
   const resetForm = () => {
-    setFormData({ nombre: '', tipo: '' as AccountType, saldoInicial: 0, divisa: 'MXN' });
+    setFormData({ 
+      nombre: '', 
+      tipo: '' as AccountType, 
+      saldoInicial: 0, 
+      divisa: 'MXN',
+      tipo_inversion: '',
+      modalidad: '',
+      rendimiento_bruto: 0,
+      rendimiento_neto: 0,
+      fecha_inicio: '',
+      ultimo_pago: '',
+      valor_mercado: 0
+    });
     setEditingAccount(null);
     setIsAddingAccount(false);
   };
@@ -62,10 +82,29 @@ export const AccountsManager = ({
     e.preventDefault();
     if (!formData.nombre || !formData.tipo || !formData.divisa) return;
 
+    // Preparar datos según el tipo de cuenta
+    const accountData: any = {
+      nombre: formData.nombre,
+      tipo: formData.tipo,
+      saldoInicial: formData.saldoInicial,
+      divisa: formData.divisa
+    };
+
+    // Solo agregar campos de inversión si es una cuenta de inversión y están llenos
+    if (formData.tipo === 'Inversiones') {
+      if (formData.tipo_inversion) accountData.tipo_inversion = formData.tipo_inversion;
+      if (formData.modalidad) accountData.modalidad = formData.modalidad;
+      if (formData.rendimiento_bruto) accountData.rendimiento_bruto = formData.rendimiento_bruto;
+      if (formData.rendimiento_neto) accountData.rendimiento_neto = formData.rendimiento_neto;
+      if (formData.fecha_inicio) accountData.fecha_inicio = formData.fecha_inicio;
+      if (formData.ultimo_pago) accountData.ultimo_pago = formData.ultimo_pago;
+      if (formData.valor_mercado) accountData.valorMercado = formData.valor_mercado;
+    }
+
     if (editingAccount) {
-      onUpdateAccount(editingAccount.id, formData);
+      onUpdateAccount(editingAccount.id, accountData);
     } else {
-      onAddAccount(formData);
+      onAddAccount(accountData);
     }
     resetForm();
   };
@@ -75,7 +114,14 @@ export const AccountsManager = ({
       nombre: account.nombre,
       tipo: account.tipo,
       saldoInicial: account.saldoInicial,
-      divisa: account.divisa || 'MXN' // Valor por defecto para cuentas existentes
+      divisa: account.divisa || 'MXN',
+      tipo_inversion: account.tipo_inversion || '',
+      modalidad: account.modalidad || '',
+      rendimiento_bruto: account.rendimiento_bruto || 0,
+      rendimiento_neto: account.rendimiento_neto || 0,
+      fecha_inicio: account.fecha_inicio || '',
+      ultimo_pago: account.ultimo_pago || '',
+      valor_mercado: account.valorMercado || 0
     });
     setEditingAccount(account);
     setIsAddingAccount(true);
@@ -216,6 +262,112 @@ export const AccountsManager = ({
                   placeholder="0.00"
                 />
               </div>
+
+              {/* Campos específicos de inversión */}
+              {formData.tipo === 'Inversiones' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="tipo_inversion">Tipo de Inversión</Label>
+                      <Select 
+                        value={formData.tipo_inversion} 
+                        onValueChange={(value) => setFormData({ ...formData, tipo_inversion: value as any })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Interés fijo">Interés fijo</SelectItem>
+                          <SelectItem value="Fondo variable">Fondo variable</SelectItem>
+                          <SelectItem value="Criptomoneda">Criptomoneda</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="modalidad">Modalidad</Label>
+                      <Select 
+                        value={formData.modalidad} 
+                        onValueChange={(value) => setFormData({ ...formData, modalidad: value as any })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar modalidad" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Reinversión">Reinversión</SelectItem>
+                          <SelectItem value="Pago mensual">Pago mensual</SelectItem>
+                          <SelectItem value="Pago trimestral">Pago trimestral</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="fecha_inicio">Fecha de Inicio</Label>
+                    <Input
+                      id="fecha_inicio"
+                      type="date"
+                      value={formData.fecha_inicio}
+                      onChange={(e) => setFormData({ ...formData, fecha_inicio: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="valor_mercado">Valor Actual</Label>
+                      <Input
+                        id="valor_mercado"
+                        type="number"
+                        step="0.01"
+                        value={formData.valor_mercado}
+                        onChange={(e) => setFormData({ ...formData, valor_mercado: parseFloat(e.target.value) || 0 })}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    {formData.modalidad !== 'Reinversión' && (
+                      <div>
+                        <Label htmlFor="ultimo_pago">Último Pago</Label>
+                        <Input
+                          id="ultimo_pago"
+                          type="date"
+                          value={formData.ultimo_pago}
+                          onChange={(e) => setFormData({ ...formData, ultimo_pago: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {formData.tipo_inversion === 'Interés fijo' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="rendimiento_bruto">Rendimiento Bruto (%)</Label>
+                        <Input
+                          id="rendimiento_bruto"
+                          type="number"
+                          step="0.01"
+                          value={formData.rendimiento_bruto}
+                          onChange={(e) => setFormData({ ...formData, rendimiento_bruto: parseFloat(e.target.value) || 0 })}
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="rendimiento_neto">Rendimiento Neto (%)</Label>
+                        <Input
+                          id="rendimiento_neto"
+                          type="number"
+                          step="0.01"
+                          value={formData.rendimiento_neto}
+                          onChange={(e) => setFormData({ ...formData, rendimiento_neto: parseFloat(e.target.value) || 0 })}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar

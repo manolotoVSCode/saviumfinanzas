@@ -3,10 +3,10 @@ import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AccountsManager } from '@/components/AccountsManager';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
-import { InvestmentMigrationForm } from '@/components/InvestmentMigrationForm';
 import { Account } from '@/types/finance';
 import { TrendingUp, TrendingDown, DollarSign, Target, Settings, RefreshCw, AlertTriangle, Plus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -14,16 +14,15 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const Inversiones = (): JSX.Element => {
-  const { accounts, loading, refreshData } = useFinanceDataSupabase();
+  const { accounts, loading, refreshData, accountTypes, addAccount, updateAccount, deleteAccount } = useFinanceDataSupabase();
   
   // Debug: verificar datos
   console.log('=== DEBUG INVERSIONES ===');
   console.log('Todas las cuentas:', accounts);
   console.log('Loading:', loading);
+  
   const { formatCurrency } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
-  
-  const [showMigrationForms, setShowMigrationForms] = useState(false);
 
   // Filtrar solo cuentas de inversión
   const cuentasInversion = accounts.filter(account => account.tipo === 'Inversiones');
@@ -117,64 +116,16 @@ const Inversiones = (): JSX.Element => {
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Inversiones</h1>
-          <div className="flex gap-2">
-            <Button 
-              variant="default" 
-              onClick={() => {
-                // Navegar a configuración para crear cuentas
-                window.location.href = '/configuracion';
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Cuenta de Inversión
-            </Button>
-            {cuentasSinCompleter.length > 0 && (
-              <Button 
-                variant="outline" 
-                onClick={() => setShowMigrationForms(!showMigrationForms)}
-                className="text-orange-600 border-orange-200"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Completar Info ({cuentasSinCompleter.length})
-              </Button>
-            )}
-          </div>
         </div>
 
-        {/* Alerta de cuentas sin completar */}
-        {cuentasSinCompleter.length > 0 && (
-          <Card className="border-orange-200 bg-orange-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-orange-700">
-                <AlertTriangle className="h-5 w-5" />
-                Información incompleta
-              </CardTitle>
-              <CardDescription>
-                Tienes {cuentasSinCompleter.length} cuenta{cuentasSinCompleter.length !== 1 ? 's' : ''} de inversión que necesita{cuentasSinCompleter.length === 1 ? '' : 'n'} completar información adicional para aprovechar todas las funcionalidades.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
-
-        {/* Formularios de migración */}
-        {showMigrationForms && cuentasSinCompleter.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Completar información de inversiones</h2>
-            {cuentasSinCompleter.map((cuenta) => (
-              <InvestmentMigrationForm
-                key={cuenta.id}
-                account={cuenta}
-                onComplete={() => {
-                  console.log('onComplete llamado para cuenta:', cuenta.id);
-                  refreshData();
-                  setTimeout(() => {
-                    setShowMigrationForms(false);
-                  }, 1000);
-                }}
-              />
-            ))}
-          </div>
-        )}
+        {/* Manager de cuentas de inversión */}
+        <AccountsManager
+          accounts={cuentasInversion}
+          accountTypes={['Inversiones']} // Solo permitir crear cuentas de inversión
+          onAddAccount={addAccount}
+          onUpdateAccount={updateAccount}
+          onDeleteAccount={deleteAccount}
+        />
 
         {/* Solo mostrar estadísticas si hay cuentas completas */}
         {cuentasCompletas.length > 0 && (
@@ -325,19 +276,6 @@ const Inversiones = (): JSX.Element => {
               </CardContent>
             </Card>
           </>
-        )}
-
-        {/* Mensaje cuando no hay inversiones */}
-        {cuentasInversion.length === 0 && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Target className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No hay cuentas de inversión</h3>
-              <p className="text-muted-foreground text-center mb-4">
-                Primero crea cuentas de tipo "Inversiones" en el módulo de cuentas.
-              </p>
-            </CardContent>
-          </Card>
         )}
       </div>
     </Layout>
