@@ -83,6 +83,57 @@ export type Database = {
         }
         Relationships: []
       }
+      inversiones: {
+        Row: {
+          created_at: string
+          fecha_inicio: string
+          id: string
+          modalidad: string
+          moneda: string
+          monto_invertido: number
+          nombre: string
+          rendimiento_bruto: number | null
+          rendimiento_neto: number | null
+          tipo: string
+          ultimo_pago: string | null
+          updated_at: string
+          user_id: string
+          valor_actual: number
+        }
+        Insert: {
+          created_at?: string
+          fecha_inicio: string
+          id?: string
+          modalidad: string
+          moneda?: string
+          monto_invertido?: number
+          nombre: string
+          rendimiento_bruto?: number | null
+          rendimiento_neto?: number | null
+          tipo: string
+          ultimo_pago?: string | null
+          updated_at?: string
+          user_id: string
+          valor_actual?: number
+        }
+        Update: {
+          created_at?: string
+          fecha_inicio?: string
+          id?: string
+          modalidad?: string
+          moneda?: string
+          monto_invertido?: number
+          nombre?: string
+          rendimiento_bruto?: number | null
+          rendimiento_neto?: number | null
+          tipo?: string
+          ultimo_pago?: string | null
+          updated_at?: string
+          user_id?: string
+          valor_actual?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           apellidos: string

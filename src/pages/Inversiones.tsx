@@ -1,47 +1,94 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import Layout from '@/components/Layout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList } from 'recharts';
-
-import Layout from '@/components/Layout';
-import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useInversiones } from '@/hooks/useInversiones';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
-import { TrendingUp, TrendingDown, DollarSign, Edit3 } from 'lucide-react';
+import { InversionForm } from '@/components/InversionForm';
+import { Inversion, InversionFormData } from '@/types/inversiones';
+import { TrendingUp, TrendingDown, DollarSign, Target, Edit, Trash2, Plus, RefreshCw, Filter } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
-const Inversiones = () => {
-  const { dashboardMetrics, accounts, updateAccount, loading } = useFinanceDataSupabase();
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+const Inversiones = (): JSX.Element => {
+  const { inversiones, loading, createInversion, updateInversion, deleteInversion, updateCryptoPrices } = useInversiones();
   const { formatCurrency } = useAppConfig();
-  const { convertCurrency, loading: ratesLoading } = useExchangeRates();
-  const [editingAccount, setEditingAccount] = useState<string | null>(null);
-  const [rendimientoManual, setRendimientoManual] = useState<string>('');
-  const [mostrarMovimientos, setMostrarMovimientos] = useState<{[key: string]: boolean}>({});
-  const [reinvertirRendimiento, setReinvertirRendimiento] = useState<{[key: string]: boolean}>({});
+  const { convertCurrency } = useExchangeRates();
+  
+  const [showForm, setShowForm] = useState(false);
+  const [editingInversion, setEditingInversion] = useState<Inversion | undefined>();
+  const [filtroTipo, setFiltroTipo] = useState<string>('all');
+  const [filtroModalidad, setFiltroModalidad] = useState<string>('all');
+
+  // Filtrar inversiones
+  const inversionesFiltradas = inversiones.filter(inversion => {
+    const matchTipo = filtroTipo === 'all' || inversion.tipo === filtroTipo;
+    const matchModalidad = filtroModalidad === 'all' || inversion.modalidad === filtroModalidad;
+    return matchTipo && matchModalidad;
+  });
+
+  // Calcular resumen
+  const resumenPorTipo = inversiones.reduce((acc, inversion) => {
+    const valorEnMXN = inversion.moneda === 'MXN' 
+      ? inversion.valor_actual 
+      : convertCurrency(inversion.valor_actual, inversion.moneda, 'MXN');
+    
+    const aportadoEnMXN = inversion.moneda === 'MXN' 
+      ? inversion.monto_invertido 
+      : convertCurrency(inversion.monto_invertido, inversion.moneda, 'MXN');
+    
+    if (!acc[inversion.tipo]) {
+      acc[inversion.tipo] = { valorActual: 0, montoInvertido: 0, count: 0 };
+    }
+    
+    acc[inversion.tipo].valorActual += valorEnMXN;
+    acc[inversion.tipo].montoInvertido += aportadoEnMXN;
+    acc[inversion.tipo].count += 1;
+    
+    return acc;
+  }, {} as Record<string, { valorActual: number, montoInvertido: number, count: number }>);
+
+  const totalGeneral = Object.values(resumenPorTipo).reduce((acc, item) => ({
+    valorActual: acc.valorActual + item.valorActual,
+    montoInvertido: acc.montoInvertido + item.montoInvertido,
+  }), { valorActual: 0, montoInvertido: 0 });
+
+  // Datos para el gráfico de pie
+  const pieData = Object.entries(resumenPorTipo).map(([tipo, data]) => ({
+    name: tipo,
+    value: data.valorActual,
+    count: data.count,
+  }));
+
+  const calcularRendimientoAnualizado = (inversion: Inversion): number => {
+    const fechaInicio = new Date(inversion.fecha_inicio);
+    const fechaActual = new Date();
+    const diasTranscurridos = Math.floor((fechaActual.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24));
+    const aniosTranscurridos = diasTranscurridos / 365.25;
+    
+    if (aniosTranscurridos <= 0) return 0;
+    
+    const rendimientoTotal = ((inversion.valor_actual - inversion.monto_invertido) / inversion.monto_invertido) * 100;
+    return rendimientoTotal / aniosTranscurridos;
+  };
 
   if (loading) {
     return (
       <Layout>
-        <div className="animate-fade-in flex items-center justify-center h-64">
+        <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2" />
             <p>Cargando inversiones...</p>
           </div>
         </div>
       </Layout>
     );
   }
-
-  const inversionesResumen = dashboardMetrics.inversionesResumen;
-  const cuentasInversion = accounts.filter(acc => acc.tipo === 'Inversiones');
-
-  // Usar los totales ya calculados del resumen
-  const totalInvertidoMXN = inversionesResumen.totalInversiones;
-  const totalAportadoAnualMXN = inversionesResumen.totalAportadoAnual;
-  const totalRetiradoAnualMXN = inversionesResumen.totalRetiradoAnual;
 
   const getRendimientoColor = (rendimiento: number) => {
     if (rendimiento > 0) return 'text-success';
@@ -50,236 +97,321 @@ const Inversiones = () => {
   };
 
   const getRendimientoIcon = (rendimiento: number) => {
-    return rendimiento >= 0 ? TrendingUp : TrendingDown;
+    if (rendimiento > 0) return <TrendingUp className="h-4 w-4" />;
+    if (rendimiento < 0) return <TrendingDown className="h-4 w-4" />;
+    return <DollarSign className="h-4 w-4" />;
   };
 
-  const handleRendimientoSubmit = (cuentaId: string) => {
-    const rendimientoIngresado = parseFloat(rendimientoManual);
-    if (!isNaN(rendimientoIngresado)) {
-      // Guardamos directamente el rendimiento mensual ingresado
-      updateAccount(cuentaId, { rendimientoMensual: rendimientoIngresado });
-      setEditingAccount(null);
-      setRendimientoManual('');
+  const handleSubmit = async (data: InversionFormData): Promise<boolean> => {
+    if (editingInversion) {
+      return await updateInversion(editingInversion.id, data);
+    } else {
+      return await createInversion(data);
     }
   };
 
-  const calcularPorcentajeRendimiento = (rendimientoMensual: number, totalAportado: number) => {
-    return totalAportado !== 0 ? (rendimientoMensual / totalAportado) * 100 : 0;
+  const handleEdit = (inversion: Inversion) => {
+    setEditingInversion(inversion);
+    setShowForm(true);
   };
 
-  const calcularRendimientoAnual = (rendimientoMensual: number) => {
-    // Fórmula de capitalización compuesta: (1 + r_mensual)^12 - 1
-    return ((Math.pow(1 + (rendimientoMensual / 100), 12) - 1) * 100);
+  const handleDelete = async (id: string) => {
+    if (confirm('¿Estás seguro de que quieres eliminar esta inversión?')) {
+      await deleteInversion(id);
+    }
   };
 
-  const formatAmount = (value: number) => {
-    if (value === 0) return '';
-    return new Intl.NumberFormat('es-ES', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(Math.round(value));
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingInversion(undefined);
   };
 
   return (
     <Layout>
-      <div className="space-y-6 animate-fade-in">
-      {/* RESUMEN GENERAL */}
-      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Resumen de Inversiones <strong>MXN</strong>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">{formatCurrency(totalInvertidoMXN)}</div>
-              <div className="text-sm text-muted-foreground">Total Invertido</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-success">{formatCurrency(totalAportadoAnualMXN)}</div>
-              <div className="text-sm text-muted-foreground">Total Aportado {new Date().getFullYear()}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-destructive">{formatCurrency(totalRetiradoAnualMXN)}</div>
-              <div className="text-sm text-muted-foreground">Total Retirado {new Date().getFullYear()}</div>
-            </div>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-foreground">Inversiones</h1>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={updateCryptoPrices}
+              disabled={loading}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Actualizar Precios
+            </Button>
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Inversión
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* DETALLE POR CUENTA */}
-      <div className="grid grid-cols-1 gap-6">
-        {inversionesResumen.cuentasInversion.map((inversion) => {
-          const cuenta = cuentasInversion.find(c => c.id === inversion.id);
-          if (!cuenta) return null;
+        {/* Resumen General */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Valor Total Actual</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${formatCurrency(totalGeneral.valorActual)}</div>
+              <p className="text-xs text-muted-foreground">
+                {inversiones.length} inversión{inversiones.length !== 1 ? 'es' : ''}
+              </p>
+            </CardContent>
+          </Card>
           
-          const totalAportado = cuenta.saldoActual;
-          const rendimiento = cuenta.rendimientoMensual || 0;
-          const rendimientoMensualPorcentaje = calcularPorcentajeRendimiento(rendimiento, totalAportado);
-          const rendimientoAnualPorcentaje = calcularRendimientoAnual(rendimientoMensualPorcentaje);
-          const IconComponent = getRendimientoIcon(rendimiento);
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Invertido</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${formatCurrency(totalGeneral.montoInvertido)}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ganancia/Pérdida</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${getRendimientoColor(totalGeneral.valorActual - totalGeneral.montoInvertido)}`}>
+                ${formatCurrency(totalGeneral.valorActual - totalGeneral.montoInvertido)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {(((totalGeneral.valorActual - totalGeneral.montoInvertido) / totalGeneral.montoInvertido) * 100).toFixed(2)}%
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-          return (
-            <Card key={cuenta.id} className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg">
-                  {cuenta.nombre} <strong>{cuenta.divisa}</strong>
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-col items-end gap-1">
-                    <Badge variant={rendimiento >= 0 ? 'default' : 'destructive'} className="text-xs">
-                      <IconComponent className="h-3 w-3 mr-1" />
-                      {rendimiento >= 0 ? '+' : ''}{rendimientoMensualPorcentaje.toFixed(2)}% NETO Mensual
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {rendimientoAnualPorcentaje >= 0 ? '+' : ''}{rendimientoAnualPorcentaje.toFixed(2)}% NETO Anual
-                    </Badge>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setEditingAccount(cuenta.id);
-                      setRendimientoManual('');
-                    }}
-                  >
-                    <Edit3 className="h-4 w-4" />
-                  </Button>
-                </div>
+        {/* Gráfico de distribución y resumen por tipo */}
+        {inversiones.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribución del Portafolio</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* Total Aportado en cuadro verde */}
-                  <div className="p-4 rounded-lg bg-success/5 border border-success/20">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-muted-foreground">Total Aportado</span>
-                      <span className="text-xl font-bold text-success">{formatCurrency(totalAportado)}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Valor total de la inversión
-                    </div>
-                  </div>
-                  
-                  {/* Rendimiento Mensual en cuadro gris */}
-                  <div className="p-4 rounded-lg bg-muted/5 border border-muted/20">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-muted-foreground">Rendimiento Mensual</span>
-                      <span className={`text-sm font-medium ${getRendimientoColor(rendimiento)}`}>
-                        {rendimiento >= 0 ? '+' : ''}{formatCurrency(rendimiento)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Ganancias/pérdidas del mes
-                    </div>
-                  </div>
-
-                  {/* Checkboxes de configuración */}
-                  <div className="border-t pt-4 space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`mostrar-${cuenta.id}`}
-                        checked={mostrarMovimientos[cuenta.id] || false}
-                        onCheckedChange={(checked) => 
-                          setMostrarMovimientos(prev => ({...prev, [cuenta.id]: checked as boolean}))
-                        }
-                      />
-                      <Label htmlFor={`mostrar-${cuenta.id}`} className="text-sm">
-                        Mostrar movimientos de esta inversión
-                      </Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`reinvertir-${cuenta.id}`}
-                        checked={reinvertirRendimiento[cuenta.id] || false}
-                        onCheckedChange={(checked) => 
-                          setReinvertirRendimiento(prev => ({...prev, [cuenta.id]: checked as boolean}))
-                        }
-                      />
-                      <Label htmlFor={`reinvertir-${cuenta.id}`} className="text-sm">
-                        Reinvertir rendimiento automáticamente
-                      </Label>
-                    </div>
-                  </div>
-
-
-                  {/* Formulario para agregar rendimientos */}
-                  {editingAccount === cuenta.id && (
-                    <div className="border-t pt-4 space-y-3">
-                      <Label className="text-sm font-medium">Agregar Rendimiento Mensual</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Monto del rendimiento mensual"
-                          value={rendimientoManual}
-                          onChange={(e) => setRendimientoManual(e.target.value)}
-                          className="flex-1"
-                        />
-                        <Button 
-                          onClick={() => handleRendimientoSubmit(cuenta.id)}
-                          disabled={!rendimientoManual}
-                          size="sm"
-                        >
-                          Guardar
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setEditingAccount(null)}
-                          size="sm"
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Ingrese el monto del rendimiento mensual en número. El porcentaje mensual y anual se calculará automáticamente.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Gráfica de movimientos mensuales - Solo si está habilitada */}
-                  {mostrarMovimientos[cuenta.id] && (
-                    <div className="border-t pt-4">
-                      <h4 className="text-sm font-medium mb-3">Movimientos Mensuales {new Date().getFullYear()}</h4>
-                      <div className="h-48">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={inversion.movimientosPorMes}>
-                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                            <XAxis 
-                              dataKey="mes" 
-                              tick={{ fontSize: 12 }}
-                              className="text-muted-foreground"
-                            />
-                            <YAxis hide />
-                            <Bar dataKey="aportaciones" fill="hsl(var(--success))" radius={[2, 2, 0, 0]}>
-                              <LabelList dataKey="aportaciones" position="top" fontSize={10} formatter={formatAmount} />
-                            </Bar>
-                            <Bar dataKey="retiros" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]}>
-                              <LabelList dataKey="retiros" position="top" fontSize={10} formatter={formatAmount} />
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="flex justify-center gap-4 mt-2 text-xs">
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
-                          <span>Aportaciones</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
-                          <span>Retiros</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Valor']} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Resumen por Tipo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.entries(resumenPorTipo).map(([tipo, data]) => (
+                    <div key={tipo} className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium">{tipo}</div>
+                        <div className="text-sm text-muted-foreground">{data.count} inversión{data.count !== 1 ? 'es' : ''}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold">${formatCurrency(data.valorActual)}</div>
+                        <div className={`text-sm ${getRendimientoColor(data.valorActual - data.montoInvertido)}`}>
+                          {(((data.valorActual - data.montoInvertido) / data.montoInvertido) * 100).toFixed(2)}%
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Filtros */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm font-medium">Tipo</label>
+                <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="Interés fijo">Interés fijo</SelectItem>
+                    <SelectItem value="Fondo variable">Fondo variable</SelectItem>
+                    <SelectItem value="Criptomoneda">Criptomoneda</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Modalidad</label>
+                <Select value={filtroModalidad} onValueChange={setFiltroModalidad}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="Reinversión">Reinversión</SelectItem>
+                    <SelectItem value="Pago mensual">Pago mensual</SelectItem>
+                    <SelectItem value="Pago trimestral">Pago trimestral</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tabla de Inversiones */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Inversiones</CardTitle>
+            <CardDescription>
+              Mostrando {inversionesFiltradas.length} de {inversiones.length} inversiones
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {inversionesFiltradas.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Monto Invertido</TableHead>
+                      <TableHead>Valor Actual</TableHead>
+                      <TableHead>Rendimiento</TableHead>
+                      <TableHead>Modalidad</TableHead>
+                      <TableHead>Fecha Inicio</TableHead>
+                      <TableHead>Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inversionesFiltradas.map((inversion) => {
+                      const rendimiento = inversion.valor_actual - inversion.monto_invertido;
+                      const porcentaje = (rendimiento / inversion.monto_invertido) * 100;
+                      const rendimientoAnualizado = calcularRendimientoAnualizado(inversion);
+
+                      return (
+                        <TableRow key={inversion.id}>
+                          <TableCell className="font-medium">
+                            <div>
+                              <div>{inversion.nombre}</div>
+                              <Badge variant="outline" className="mt-1">
+                                {inversion.moneda}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{inversion.tipo}</Badge>
+                          </TableCell>
+                          <TableCell>${formatCurrency(inversion.monto_invertido)}</TableCell>
+                          <TableCell>${formatCurrency(inversion.valor_actual)}</TableCell>
+                          <TableCell>
+                            <div className={`flex items-center gap-1 ${getRendimientoColor(rendimiento)}`}>
+                              {getRendimientoIcon(rendimiento)}
+                              <div>
+                                <div className="font-medium">${formatCurrency(Math.abs(rendimiento))}</div>
+                                <div className="text-xs">
+                                  {porcentaje.toFixed(2)}% ({rendimientoAnualizado.toFixed(2)}% anual)
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div>{inversion.modalidad}</div>
+                              {inversion.ultimo_pago && (
+                                <div className="text-xs text-muted-foreground">
+                                  Último: {new Date(inversion.ultimo_pago).toLocaleDateString()}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{new Date(inversion.fecha_inicio).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleEdit(inversion)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleDelete(inversion.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  {inversiones.length === 0 ? 'No hay inversiones registradas' : 'No se encontraron inversiones con los filtros aplicados'}
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  {inversiones.length === 0 
+                    ? 'Comienza agregando tu primera inversión para hacer seguimiento de tu portafolio.'
+                    : 'Prueba ajustando los filtros para ver más resultados.'
+                  }
+                </p>
+                {inversiones.length === 0 && (
+                  <Button onClick={() => setShowForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Primera Inversión
+                  </Button>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Formulario de Inversión */}
+        <InversionForm
+          open={showForm}
+          onOpenChange={handleCloseForm}
+          onSubmit={handleSubmit}
+          inversion={editingInversion}
+          title={editingInversion ? 'Editar Inversión' : 'Nueva Inversión'}
+        />
       </div>
-    </div>
     </Layout>
   );
 };
