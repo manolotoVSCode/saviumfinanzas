@@ -93,19 +93,32 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
       if (data.rendimiento_neto) updateData.rendimiento_neto = data.rendimiento_neto;
       if (data.ultimo_pago) updateData.ultimo_pago = data.ultimo_pago;
 
-      const { error } = await supabase
+      console.log('Datos a actualizar:', updateData);
+      console.log('ID de la cuenta:', account.id);
+
+      const { data: updatedData, error } = await supabase
         .from('cuentas')
         .update(updateData)
-        .eq('id', account.id);
+        .eq('id', account.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Datos actualizados:', updatedData);
 
       toast({
         title: "¡Inversión actualizada!",
         description: `La información de ${account.nombre} ha sido completada exitosamente.`,
       });
 
-      onComplete();
+      // Forzar actualización inmediata
+      setTimeout(() => {
+        console.log('Llamando onComplete...');
+        onComplete();
+      }, 500);
     } catch (error) {
       console.error('Error updating investment:', error);
       toast({
