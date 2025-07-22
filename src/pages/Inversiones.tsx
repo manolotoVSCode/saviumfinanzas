@@ -15,6 +15,11 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const Inversiones = (): JSX.Element => {
   const { accounts, loading, refreshData } = useFinanceDataSupabase();
+  
+  // Debug: verificar datos
+  console.log('=== DEBUG INVERSIONES ===');
+  console.log('Todas las cuentas:', accounts);
+  console.log('Loading:', loading);
   const { formatCurrency } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
   
