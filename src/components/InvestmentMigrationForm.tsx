@@ -40,15 +40,20 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
   const form = useForm<InversionFormData>({
     resolver: zodResolver(inversionFormSchema),
     defaultValues: {
-      tipo_inversion: 'Fondo variable',
-      modalidad: 'Reinversión',
-      fecha_inicio: '2025-01-01',
+      tipo_inversion: account.tipo_inversion || 'Fondo variable',
+      modalidad: account.modalidad || 'Reinversión',
+      fecha_inicio: account.fecha_inicio || '2025-01-01',
       valor_mercado_actualizado: account.valorMercado || account.saldoActual || account.saldoInicial,
+      rendimiento_bruto: account.rendimiento_bruto,
+      rendimiento_neto: account.rendimiento_neto,
+      ultimo_pago: account.ultimo_pago || '',
     }
   });
 
   const watchedTipo = form.watch('tipo_inversion');
   const watchedModalidad = form.watch('modalidad');
+  const watchedFechaInicio = form.watch('fecha_inicio');
+  const watchedRendimientoBruto = form.watch('rendimiento_bruto');
 
   const calcularRendimientoNeto = () => {
     const bruto = form.getValues('rendimiento_bruto');
@@ -56,6 +61,21 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
       // Aplicar impuestos del 30% aproximadamente
       const neto = bruto * 0.7;
       form.setValue('rendimiento_neto', parseFloat(neto.toFixed(2)));
+    }
+  };
+
+  const calcularValorActualReinversion = () => {
+    if (watchedModalidad === 'Reinversión' && watchedRendimientoBruto && watchedFechaInicio) {
+      const fechaInicio = new Date(watchedFechaInicio);
+      const hoy = new Date();
+      const diasTranscurridos = Math.floor((hoy.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diasTranscurridos > 0) {
+        const aniosTranscurridos = diasTranscurridos / 365.25;
+        const tasaDecimal = watchedRendimientoBruto / 100;
+        const valorCalculado = account.saldoInicial * Math.pow(1 + tasaDecimal, aniosTranscurridos);
+        form.setValue('valor_mercado_actualizado', parseFloat(valorCalculado.toFixed(2)));
+      }
     }
   };
 
@@ -148,7 +168,10 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Modalidad</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      setTimeout(calcularValorActualReinversion, 100);
+                    }} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar modalidad" />
@@ -182,7 +205,10 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
                           {...field}
                           onChange={(e) => {
                             field.onChange(parseFloat(e.target.value) || undefined);
-                            setTimeout(calcularRendimientoNeto, 100);
+                            setTimeout(() => {
+                              calcularRendimientoNeto();
+                              calcularValorActualReinversion();
+                            }, 100);
                           }}
                         />
                       </FormControl>
@@ -221,7 +247,14 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
                   <FormItem>
                     <FormLabel>Fecha de Inicio</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input 
+                        type="date" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e.target.value);
+                          setTimeout(calcularValorActualReinversion, 100);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -250,7 +283,12 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
               name="valor_mercado_actualizado"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor Actual Correcto</FormLabel>
+                  <FormLabel>
+                    Valor Actual Correcto
+                    {watchedModalidad === 'Reinversión' && watchedRendimientoBruto && watchedFechaInicio && (
+                      <span className="text-xs text-blue-600 ml-2">(Se calcula automáticamente con reinversión)</span>
+                    )}
+                  </FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
