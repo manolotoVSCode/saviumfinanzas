@@ -115,10 +115,7 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
       });
 
       // Forzar actualización inmediata
-      setTimeout(() => {
-        console.log('Llamando onComplete...');
-        onComplete();
-      }, 500);
+      window.location.reload();
     } catch (error) {
       console.error('Error updating investment:', error);
       toast({
