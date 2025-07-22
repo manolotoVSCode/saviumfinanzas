@@ -150,12 +150,11 @@ const Inversiones = (): JSX.Element => {
                 key={cuenta.id}
                 account={cuenta}
                 onComplete={() => {
+                  console.log('onComplete llamado para cuenta:', cuenta.id);
                   refreshData();
-                  // Verificar si ya no quedan cuentas sin completar
-                  const remaining = cuentasSinCompleter.filter(c => c.id !== cuenta.id);
-                  if (remaining.length === 0) {
+                  setTimeout(() => {
                     setShowMigrationForms(false);
-                  }
+                  }, 1000);
                 }}
               />
             ))}
