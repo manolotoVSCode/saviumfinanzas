@@ -82,6 +82,18 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
   const handleSubmit = async (data: InversionFormData) => {
     setLoading(true);
     try {
+      // Verificar autenticación
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Usuario autenticado:', user);
+      
+      if (!user) {
+        toast({
+          title: "Error de autenticación",
+          description: "Debes estar logueado para guardar cambios",
+          variant: "destructive",
+        });
+        return;
+      }
       const updateData: any = {
         tipo_inversion: data.tipo_inversion,
         modalidad: data.modalidad,
