@@ -9,7 +9,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { InvestmentMigrationForm } from '@/components/InvestmentMigrationForm';
 import { Account } from '@/types/finance';
 import { TrendingUp, TrendingDown, DollarSign, Target, Settings, RefreshCw, AlertTriangle } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
