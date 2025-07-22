@@ -656,11 +656,109 @@ export const useFinanceDataSupabase = () => {
   };
 
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string }) => {
-    // TODO: Implementar inserción en Supabase
+    try {
+      // Obtener el usuario actual
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      // Preparar datos para inserción en Supabase
+      const insertData = {
+        cuenta_id: transaction.cuentaId,
+        fecha: transaction.fecha.toISOString().split('T')[0],
+        comentario: transaction.comentario,
+        ingreso: transaction.ingreso,
+        gasto: transaction.gasto,
+        subcategoria_id: transaction.subcategoriaId,
+        divisa: transaction.divisa || 'MXN',
+        user_id: userData.user.id
+      };
+
+      const { error } = await supabase
+        .from('transacciones')
+        .insert([insertData]);
+
+      if (error) throw error;
+
+      // Si hay aportación automática, crear transacción adicional
+      if (autoContribution && autoContribution.targetAccountId) {
+        const autoContribData = {
+          cuenta_id: autoContribution.targetAccountId,
+          fecha: transaction.fecha.toISOString().split('T')[0],
+          comentario: `Aportación automática: ${transaction.comentario}`,
+          ingreso: transaction.gasto, // El gasto se convierte en aportación
+          gasto: 0,
+          subcategoria_id: transaction.subcategoriaId,
+          divisa: transaction.divisa || 'MXN',
+          user_id: userData.user.id
+        };
+
+        const { error: autoError } = await supabase
+          .from('transacciones')
+          .insert([autoContribData]);
+
+        if (autoError) throw autoError;
+      }
+
+      // Recargar datos
+      await loadData();
+
+      toast({
+        title: "Éxito",
+        description: "Transacción guardada correctamente"
+      });
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la transacción",
+        variant: "destructive"
+      });
+    }
   };
 
   const addTransactionsBatch = async (newTransactions: Omit<Transaction, 'id' | 'monto'>[]) => {
-    // TODO: Implementar inserción masiva en Supabase
+    try {
+      // Obtener el usuario actual
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      // Preparar datos para inserción masiva
+      const insertData = newTransactions.map(transaction => ({
+        cuenta_id: transaction.cuentaId,
+        fecha: transaction.fecha.toISOString().split('T')[0],
+        comentario: transaction.comentario,
+        ingreso: transaction.ingreso,
+        gasto: transaction.gasto,
+        subcategoria_id: transaction.subcategoriaId,
+        divisa: transaction.divisa || 'MXN',
+        user_id: userData.user.id
+      }));
+
+      const { error } = await supabase
+        .from('transacciones')
+        .insert(insertData);
+
+      if (error) throw error;
+
+      // Recargar datos
+      await loadData();
+
+      toast({
+        title: "Éxito",
+        description: `${newTransactions.length} transacciones importadas correctamente`
+      });
+    } catch (error) {
+      console.error('Error adding transactions batch:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron importar las transacciones",
+        variant: "destructive"
+      });
+    }
   };
 
   const updateTransaction = async (id: string, transaction: Partial<Transaction>) => {
@@ -703,11 +801,61 @@ export const useFinanceDataSupabase = () => {
   };
 
   const deleteTransaction = async (id: string) => {
-    // TODO: Implementar eliminación en Supabase
+    try {
+      const { error } = await supabase
+        .from('transacciones')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Recargar datos
+      await loadData();
+
+      toast({
+        title: "Éxito",
+        description: "Transacción eliminada correctamente"
+      });
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la transacción",
+        variant: "destructive"
+      });
+    }
   };
 
   const clearAllTransactions = async () => {
-    // TODO: Implementar eliminación masiva en Supabase
+    try {
+      // Obtener el usuario actual
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      const { error } = await supabase
+        .from('transacciones')
+        .delete()
+        .eq('user_id', userData.user.id);
+
+      if (error) throw error;
+
+      // Recargar datos
+      await loadData();
+
+      toast({
+        title: "Éxito",
+        description: "Todas las transacciones han sido eliminadas"
+      });
+    } catch (error) {
+      console.error('Error clearing all transactions:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar las transacciones",
+        variant: "destructive"
+      });
+    }
   };
 
   return {
