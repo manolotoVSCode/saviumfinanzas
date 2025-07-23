@@ -246,22 +246,31 @@ const Inversiones = (): JSX.Element => {
                             </div>
                           </div>
                           <div className="space-y-1 pl-4">
-                            {data.cuentas.map(cuenta => (
-                              <div key={cuenta.id} className="flex justify-between items-center text-sm">
-                                <span>{cuenta.nombre}</span>
-                                <div className="text-right">
-                                  <div className="font-medium">{cuenta.divisa} {formatCurrency(cuenta.valorActual)}</div>
-                                  <div className={`text-xs ${getRendimientoColor(cuenta.rendimiento)}`}>
-                                    {cuenta.porcentaje.toFixed(2)}%
-                                  </div>
-                                  {cuenta.rendimiento_neto && (
-                                    <div className="text-xs text-muted-foreground">
-                                      {cuenta.rendimiento_neto}% mensual
+                            {data.cuentas.map(cuenta => {
+                              const importeMensualNeto = cuenta.rendimiento_neto 
+                                ? (cuenta.valorActual * cuenta.rendimiento_neto) / 100 
+                                : 0;
+                              const importeAnualNeto = importeMensualNeto * 12;
+
+                              return (
+                                <div key={cuenta.id} className="flex justify-between items-center text-sm">
+                                  <span>{cuenta.nombre}</span>
+                                  <div className="text-right">
+                                    <div className="font-medium">{cuenta.divisa} {formatCurrency(cuenta.valorActual)}</div>
+                                    <div className={`text-xs ${getRendimientoColor(cuenta.rendimiento)}`}>
+                                      {cuenta.porcentaje.toFixed(2)}%
                                     </div>
-                                  )}
+                                    {cuenta.rendimiento_neto && (
+                                      <div className="text-xs text-muted-foreground">
+                                        <div>{cuenta.rendimiento_neto}% mensual NETO</div>
+                                        <div>{cuenta.divisa} {formatCurrency(importeMensualNeto)}/mes</div>
+                                        <div>{cuenta.divisa} {formatCurrency(importeAnualNeto)}/año</div>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
@@ -281,26 +290,31 @@ const Inversiones = (): JSX.Element => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {cuentasCompletas.map((cuenta) => {
-                    const valorActual = cuenta.valorMercado || cuenta.saldoActual;
-                    const rendimiento = valorActual - cuenta.saldoInicial;
-                    const porcentaje = (rendimiento / cuenta.saldoInicial) * 100;
-                    const rendimientoAnualizado = calcularRendimientoAnualizado(cuenta);
+                    {cuentasCompletas.map((cuenta) => {
+                      const valorActual = cuenta.valorMercado || cuenta.saldoActual;
+                      const rendimiento = valorActual - cuenta.saldoInicial;
+                      const porcentaje = (rendimiento / cuenta.saldoInicial) * 100;
+                      const rendimientoAnualizado = calcularRendimientoAnualizado(cuenta);
+                      
+                      const importeMensualNeto = cuenta.rendimiento_neto 
+                        ? (valorActual * cuenta.rendimiento_neto) / 100 
+                        : 0;
+                      const importeAnualNeto = importeMensualNeto * 12;
 
-                    return (
-                      <div key={cuenta.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">{cuenta.nombre}</h3>
-                            <Badge variant="outline">{cuenta.divisa}</Badge>
-                            <Badge variant="secondary">{cuenta.tipo_inversion}</Badge>
-                            <Badge variant="outline">{cuenta.modalidad}</Badge>
+                      return (
+                        <div key={cuenta.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold">{cuenta.nombre}</h3>
+                              <Badge variant="outline">{cuenta.divisa}</Badge>
+                              <Badge variant="secondary">{cuenta.tipo_inversion}</Badge>
+                              <Badge variant="outline">{cuenta.modalidad}</Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Inicio: {cuenta.fecha_inicio ? new Date(cuenta.fecha_inicio).toLocaleDateString() : 'No definido'}
+                              {cuenta.ultimo_pago && ` | Último pago: ${new Date(cuenta.ultimo_pago).toLocaleDateString()}`}
+                            </div>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            Inicio: {cuenta.fecha_inicio ? new Date(cuenta.fecha_inicio).toLocaleDateString() : 'No definido'}
-                            {cuenta.ultimo_pago && ` | Último pago: ${new Date(cuenta.ultimo_pago).toLocaleDateString()}`}
-                          </div>
-                        </div>
                           <div className="text-right">
                             <div className="font-bold">{cuenta.divisa} {formatCurrency(valorActual)}</div>
                             <div className={`text-sm flex items-center gap-1 ${getRendimientoColor(rendimiento)}`}>
@@ -309,7 +323,10 @@ const Inversiones = (): JSX.Element => {
                             </div>
                             {cuenta.rendimiento_neto ? (
                               <div className="text-xs text-muted-foreground">
-                                {cuenta.rendimiento_neto}% mensual | {rendimientoAnualizado.toFixed(2)}% anual
+                                <div>{cuenta.rendimiento_neto}% mensual NETO | {rendimientoAnualizado.toFixed(2)}% anual</div>
+                                <div className="font-medium text-green-600">
+                                  {cuenta.divisa} {formatCurrency(importeMensualNeto)}/mes | {cuenta.divisa} {formatCurrency(importeAnualNeto)}/año
+                                </div>
                               </div>
                             ) : (
                               <div className="text-xs text-muted-foreground">
@@ -317,9 +334,9 @@ const Inversiones = (): JSX.Element => {
                               </div>
                             )}
                           </div>
-                      </div>
-                    );
-                  })}
+                        </div>
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>
