@@ -338,33 +338,17 @@ export const AccountsManager = ({
                     )}
                   </div>
 
-                  {formData.tipo_inversion === 'Interés fijo' && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="rendimiento_bruto">Rendimiento Bruto (%)</Label>
-                        <Input
-                          id="rendimiento_bruto"
-                          type="number"
-                          step="0.01"
-                          value={formData.rendimiento_bruto}
-                          onChange={(e) => setFormData({ ...formData, rendimiento_bruto: parseFloat(e.target.value) || 0 })}
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="rendimiento_neto">Rendimiento Neto (%)</Label>
-                        <Input
-                          id="rendimiento_neto"
-                          type="number"
-                          step="0.01"
-                          value={formData.rendimiento_neto}
-                          onChange={(e) => setFormData({ ...formData, rendimiento_neto: parseFloat(e.target.value) || 0 })}
-                          placeholder="0.00"
-                        />
-                      </div>
-                    </div>
-                  )}
+                  <div>
+                    <Label htmlFor="rendimiento_neto">Rendimiento Neto (% mensual)</Label>
+                    <Input
+                      id="rendimiento_neto"
+                      type="number"
+                      step="0.01"
+                      value={formData.rendimiento_neto}
+                      onChange={(e) => setFormData({ ...formData, rendimiento_neto: parseFloat(e.target.value) || 0 })}
+                      placeholder="Ej: 1.2"
+                    />
+                  </div>
                 </>
               )}
 

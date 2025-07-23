@@ -36,40 +36,62 @@ const Inversiones = (): JSX.Element => {
     cuenta.tipo_inversion && cuenta.modalidad && cuenta.fecha_inicio
   );
 
-  // Calcular resumen solo de cuentas completas
+  // Calcular resumen solo de cuentas completas - manteniendo moneda original
   const resumenPorTipo = cuentasCompletas.reduce((acc, cuenta) => {
-    const valorEnMXN = cuenta.divisa === 'MXN' 
-      ? (cuenta.valorMercado || cuenta.saldoActual)
-      : convertCurrency(cuenta.valorMercado || cuenta.saldoActual, cuenta.divisa, 'MXN');
-    
-    const aportadoEnMXN = cuenta.divisa === 'MXN' 
-      ? cuenta.saldoInicial 
-      : convertCurrency(cuenta.saldoInicial, cuenta.divisa, 'MXN');
-    
+    const valorActual = cuenta.valorMercado || cuenta.saldoActual;
     const tipo = cuenta.tipo_inversion || 'Sin clasificar';
     
     if (!acc[tipo]) {
-      acc[tipo] = { valorActual: 0, montoInvertido: 0, count: 0 };
+      acc[tipo] = { cuentas: [] };
     }
     
-    acc[tipo].valorActual += valorEnMXN;
-    acc[tipo].montoInvertido += aportadoEnMXN;
-    acc[tipo].count += 1;
+    acc[tipo].cuentas.push({
+      ...cuenta,
+      valorActual,
+      rendimiento: valorActual - cuenta.saldoInicial,
+      porcentaje: ((valorActual - cuenta.saldoInicial) / cuenta.saldoInicial) * 100
+    });
     
     return acc;
-  }, {} as Record<string, { valorActual: number, montoInvertido: number, count: number }>);
+  }, {} as Record<string, { cuentas: Array<typeof cuentasCompletas[0] & { valorActual: number, rendimiento: number, porcentaje: number }> }>);
 
-  const totalGeneral = Object.values(resumenPorTipo).reduce((acc, item) => ({
-    valorActual: acc.valorActual + item.valorActual,
-    montoInvertido: acc.montoInvertido + item.montoInvertido,
-  }), { valorActual: 0, montoInvertido: 0 });
+  // Calcular totales en MXN para resumen general
+  const totalGeneral = Object.values(resumenPorTipo).reduce((acc, item) => {
+    const valorActualMXN = item.cuentas.reduce((sum, cuenta) => {
+      const valorEnMXN = cuenta.divisa === 'MXN' 
+        ? cuenta.valorActual
+        : convertCurrency(cuenta.valorActual, cuenta.divisa, 'MXN');
+      return sum + valorEnMXN;
+    }, 0);
+    
+    const montoInvertidoMXN = item.cuentas.reduce((sum, cuenta) => {
+      const montoEnMXN = cuenta.divisa === 'MXN' 
+        ? cuenta.saldoInicial
+        : convertCurrency(cuenta.saldoInicial, cuenta.divisa, 'MXN');
+      return sum + montoEnMXN;
+    }, 0);
+    
+    return {
+      valorActual: acc.valorActual + valorActualMXN,
+      montoInvertido: acc.montoInvertido + montoInvertidoMXN,
+    };
+  }, { valorActual: 0, montoInvertido: 0 });
 
   // Datos para el gráfico de pie
-  const pieData = Object.entries(resumenPorTipo).map(([tipo, data]) => ({
-    name: tipo,
-    value: data.valorActual,
-    count: data.count,
-  }));
+  const pieData = Object.entries(resumenPorTipo).map(([tipo, data]) => {
+    const valorEnMXN = data.cuentas.reduce((sum, cuenta) => {
+      const valorEnMXN = cuenta.divisa === 'MXN' 
+        ? cuenta.valorActual
+        : convertCurrency(cuenta.valorActual, cuenta.divisa, 'MXN');
+      return sum + valorEnMXN;
+    }, 0);
+    
+    return {
+      name: tipo,
+      value: valorEnMXN,
+      count: data.cuentas.length,
+    };
+  });
 
   const calcularRendimientoAnualizado = (cuenta: Account): number => {
     if (!cuenta.fecha_inicio) return 0;
@@ -210,16 +232,25 @@ const Inversiones = (): JSX.Element => {
                   <CardContent>
                     <div className="space-y-4">
                       {Object.entries(resumenPorTipo).map(([tipo, data]) => (
-                        <div key={tipo} className="flex justify-between items-center">
-                          <div>
-                            <div className="font-medium">{tipo}</div>
-                            <div className="text-sm text-muted-foreground">{data.count} inversión{data.count !== 1 ? 'es' : ''}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-bold">${formatCurrency(data.valorActual)}</div>
-                            <div className={`text-sm ${getRendimientoColor(data.valorActual - data.montoInvertido)}`}>
-                              {data.montoInvertido > 0 ? (((data.valorActual - data.montoInvertido) / data.montoInvertido) * 100).toFixed(2) : 0}%
+                        <div key={tipo} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="font-medium">{tipo}</div>
+                              <div className="text-sm text-muted-foreground">{data.cuentas.length} inversión{data.cuentas.length !== 1 ? 'es' : ''}</div>
                             </div>
+                          </div>
+                          <div className="space-y-1 pl-4">
+                            {data.cuentas.map(cuenta => (
+                              <div key={cuenta.id} className="flex justify-between items-center text-sm">
+                                <span>{cuenta.nombre}</span>
+                                <div className="text-right">
+                                  <div className="font-medium">{cuenta.divisa} {formatCurrency(cuenta.valorActual)}</div>
+                                  <div className={`text-xs ${getRendimientoColor(cuenta.rendimiento)}`}>
+                                    {cuenta.porcentaje.toFixed(2)}%
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       ))}
