@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.8fc59cc6444d4d62a0eb07a2d8e07310',
+  appId: 'com.savium.finanzas',
   appName: 'saviumfinanzas',
   webDir: 'dist',
   server: {
