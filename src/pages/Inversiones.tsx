@@ -36,6 +36,46 @@ const Inversiones = (): JSX.Element => {
     cuenta.tipo_inversion && cuenta.modalidad && cuenta.fecha_inicio
   );
 
+  const calcularValorActualReinversion = (cuenta: Account): number => {
+    // Si no es modalidad de reinversión, devolver el valor actual normal
+    if (cuenta.modalidad !== 'Reinversión' || !cuenta.rendimiento_neto || !cuenta.fecha_inicio) {
+      return cuenta.valorMercado || cuenta.saldoActual;
+    }
+    
+    const fechaInicio = new Date(cuenta.fecha_inicio);
+    const fechaActual = new Date();
+    const mesesTranscurridos = Math.floor((fechaActual.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)); // Promedio de días por mes
+    
+    if (mesesTranscurridos <= 0) return cuenta.saldoInicial;
+    
+    // Calcular valor con interés compuesto mensual
+    const rendimientoDecimal = cuenta.rendimiento_neto / 100;
+    const valorConReinversion = cuenta.saldoInicial * Math.pow(1 + rendimientoDecimal, mesesTranscurridos);
+    
+    return valorConReinversion;
+  };
+
+  const calcularRendimientoAnualizado = (cuenta: Account): number => {
+    // Si tiene rendimiento neto mensual definido, simplemente multiplicarlo por 12
+    if (cuenta.rendimiento_neto) {
+      return cuenta.rendimiento_neto * 12;
+    }
+    
+    // Fallback: cálculo basado en fecha y valor actual
+    if (!cuenta.fecha_inicio) return 0;
+    
+    const fechaInicio = new Date(cuenta.fecha_inicio);
+    const fechaActual = new Date();
+    const diasTranscurridos = Math.floor((fechaActual.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24));
+    const aniosTranscurridos = diasTranscurridos / 365.25;
+    
+    if (aniosTranscurridos <= 0) return 0;
+    
+    const valorActual = calcularValorActualReinversion(cuenta);
+    const rendimientoTotal = ((valorActual - cuenta.saldoInicial) / cuenta.saldoInicial) * 100;
+    return rendimientoTotal / aniosTranscurridos;
+  };
+
   // Calcular resumen solo de cuentas completas - manteniendo moneda original
   const resumenPorTipo = cuentasCompletas.reduce((acc, cuenta) => {
     const valorActual = calcularValorActualReinversion(cuenta);
@@ -93,45 +133,6 @@ const Inversiones = (): JSX.Element => {
     };
   });
 
-  const calcularValorActualReinversion = (cuenta: Account): number => {
-    // Si no es modalidad de reinversión, devolver el valor actual normal
-    if (cuenta.modalidad !== 'Reinversión' || !cuenta.rendimiento_neto || !cuenta.fecha_inicio) {
-      return cuenta.valorMercado || cuenta.saldoActual;
-    }
-    
-    const fechaInicio = new Date(cuenta.fecha_inicio);
-    const fechaActual = new Date();
-    const mesesTranscurridos = Math.floor((fechaActual.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)); // Promedio de días por mes
-    
-    if (mesesTranscurridos <= 0) return cuenta.saldoInicial;
-    
-    // Calcular valor con interés compuesto mensual
-    const rendimientoDecimal = cuenta.rendimiento_neto / 100;
-    const valorConReinversion = cuenta.saldoInicial * Math.pow(1 + rendimientoDecimal, mesesTranscurridos);
-    
-    return valorConReinversion;
-  };
-
-  const calcularRendimientoAnualizado = (cuenta: Account): number => {
-    // Si tiene rendimiento neto mensual definido, simplemente multiplicarlo por 12
-    if (cuenta.rendimiento_neto) {
-      return cuenta.rendimiento_neto * 12;
-    }
-    
-    // Fallback: cálculo basado en fecha y valor actual
-    if (!cuenta.fecha_inicio) return 0;
-    
-    const fechaInicio = new Date(cuenta.fecha_inicio);
-    const fechaActual = new Date();
-    const diasTranscurridos = Math.floor((fechaActual.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24));
-    const aniosTranscurridos = diasTranscurridos / 365.25;
-    
-    if (aniosTranscurridos <= 0) return 0;
-    
-    const valorActual = calcularValorActualReinversion(cuenta);
-    const rendimientoTotal = ((valorActual - cuenta.saldoInicial) / cuenta.saldoInicial) * 100;
-    return rendimientoTotal / aniosTranscurridos;
-  };
 
   const getRendimientoColor = (rendimiento: number): string => {
     if (rendimiento > 0) return 'text-green-600';
