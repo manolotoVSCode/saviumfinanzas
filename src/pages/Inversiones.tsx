@@ -38,7 +38,7 @@ const Inversiones = (): JSX.Element => {
 
   // Calcular resumen solo de cuentas completas - manteniendo moneda original
   const resumenPorTipo = cuentasCompletas.reduce((acc, cuenta) => {
-    const valorActual = cuenta.valorMercado || cuenta.saldoActual;
+    const valorActual = calcularValorActualReinversion(cuenta);
     const tipo = cuenta.tipo_inversion || 'Sin clasificar';
     
     if (!acc[tipo]) {
@@ -93,6 +93,25 @@ const Inversiones = (): JSX.Element => {
     };
   });
 
+  const calcularValorActualReinversion = (cuenta: Account): number => {
+    // Si no es modalidad de reinversión, devolver el valor actual normal
+    if (cuenta.modalidad !== 'Reinversión' || !cuenta.rendimiento_neto || !cuenta.fecha_inicio) {
+      return cuenta.valorMercado || cuenta.saldoActual;
+    }
+    
+    const fechaInicio = new Date(cuenta.fecha_inicio);
+    const fechaActual = new Date();
+    const mesesTranscurridos = Math.floor((fechaActual.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)); // Promedio de días por mes
+    
+    if (mesesTranscurridos <= 0) return cuenta.saldoInicial;
+    
+    // Calcular valor con interés compuesto mensual
+    const rendimientoDecimal = cuenta.rendimiento_neto / 100;
+    const valorConReinversion = cuenta.saldoInicial * Math.pow(1 + rendimientoDecimal, mesesTranscurridos);
+    
+    return valorConReinversion;
+  };
+
   const calcularRendimientoAnualizado = (cuenta: Account): number => {
     // Si tiene rendimiento neto mensual definido, simplemente multiplicarlo por 12
     if (cuenta.rendimiento_neto) {
@@ -109,7 +128,7 @@ const Inversiones = (): JSX.Element => {
     
     if (aniosTranscurridos <= 0) return 0;
     
-    const valorActual = cuenta.valorMercado || cuenta.saldoActual;
+    const valorActual = calcularValorActualReinversion(cuenta);
     const rendimientoTotal = ((valorActual - cuenta.saldoInicial) / cuenta.saldoInicial) * 100;
     return rendimientoTotal / aniosTranscurridos;
   };
@@ -291,7 +310,7 @@ const Inversiones = (): JSX.Element => {
               <CardContent>
                 <div className="space-y-4">
                     {cuentasCompletas.map((cuenta) => {
-                      const valorActual = cuenta.valorMercado || cuenta.saldoActual;
+                      const valorActual = calcularValorActualReinversion(cuenta);
                       const rendimiento = valorActual - cuenta.saldoInicial;
                       const porcentaje = (rendimiento / cuenta.saldoInicial) * 100;
                       const rendimientoAnualizado = calcularRendimientoAnualizado(cuenta);
