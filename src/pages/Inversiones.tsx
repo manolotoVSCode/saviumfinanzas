@@ -344,9 +344,6 @@ const Inversiones = (): JSX.Element => {
                             {cuenta.rendimiento_neto ? (
                               <div className="text-xs text-muted-foreground">
                                 <div>{cuenta.rendimiento_neto}% mensual NETO | {rendimientoAnualizado.toFixed(2)}% anual</div>
-                                <div className="font-medium text-green-600">
-                                  {cuenta.divisa} {formatCurrency(importeMensualNeto)}/mes | {cuenta.divisa} {formatCurrency(importeAnualNeto)}/año
-                                </div>
                               </div>
                             ) : (
                               <div className="text-xs text-muted-foreground">
