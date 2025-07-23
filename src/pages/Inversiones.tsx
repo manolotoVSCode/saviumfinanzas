@@ -336,7 +336,6 @@ const Inversiones = (): JSX.Element => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold">{cuenta.divisa} {formatCurrency(valorActual)}</div>
                             <div className={`text-sm flex items-center gap-1 ${getRendimientoColor(rendimiento)}`}>
                               {getRendimientoIcon(rendimiento)}
                               {cuenta.divisa} {formatCurrency(Math.abs(rendimiento))} ({porcentaje.toFixed(2)}%)
