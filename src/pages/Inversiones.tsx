@@ -94,6 +94,12 @@ const Inversiones = (): JSX.Element => {
   });
 
   const calcularRendimientoAnualizado = (cuenta: Account): number => {
+    // Si tiene rendimiento neto mensual definido, simplemente multiplicarlo por 12
+    if (cuenta.rendimiento_neto) {
+      return cuenta.rendimiento_neto * 12;
+    }
+    
+    // Fallback: cálculo basado en fecha y valor actual
     if (!cuenta.fecha_inicio) return 0;
     
     const fechaInicio = new Date(cuenta.fecha_inicio);
@@ -248,6 +254,11 @@ const Inversiones = (): JSX.Element => {
                                   <div className={`text-xs ${getRendimientoColor(cuenta.rendimiento)}`}>
                                     {cuenta.porcentaje.toFixed(2)}%
                                   </div>
+                                  {cuenta.rendimiento_neto && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {cuenta.rendimiento_neto}% mensual
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             ))}
@@ -290,16 +301,22 @@ const Inversiones = (): JSX.Element => {
                             {cuenta.ultimo_pago && ` | Último pago: ${new Date(cuenta.ultimo_pago).toLocaleDateString()}`}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-bold">${formatCurrency(valorActual)}</div>
-                          <div className={`text-sm flex items-center gap-1 ${getRendimientoColor(rendimiento)}`}>
-                            {getRendimientoIcon(rendimiento)}
-                            ${formatCurrency(Math.abs(rendimiento))} ({porcentaje.toFixed(2)}%)
+                          <div className="text-right">
+                            <div className="font-bold">{cuenta.divisa} {formatCurrency(valorActual)}</div>
+                            <div className={`text-sm flex items-center gap-1 ${getRendimientoColor(rendimiento)}`}>
+                              {getRendimientoIcon(rendimiento)}
+                              {cuenta.divisa} {formatCurrency(Math.abs(rendimiento))} ({porcentaje.toFixed(2)}%)
+                            </div>
+                            {cuenta.rendimiento_neto ? (
+                              <div className="text-xs text-muted-foreground">
+                                {cuenta.rendimiento_neto}% mensual | {rendimientoAnualizado.toFixed(2)}% anual
+                              </div>
+                            ) : (
+                              <div className="text-xs text-muted-foreground">
+                                {rendimientoAnualizado.toFixed(2)}% anual
+                              </div>
+                            )}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {rendimientoAnualizado.toFixed(2)}% anual
-                          </div>
-                        </div>
                       </div>
                     );
                   })}
