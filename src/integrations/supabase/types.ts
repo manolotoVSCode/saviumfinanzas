@@ -48,11 +48,12 @@ export type Database = {
         Row: {
           cantidad: number
           created_at: string
+          divisa_compra: string
           fecha_compra: string
           id: string
           nombre: string
           notas: string | null
-          precio_compra_usd: number
+          precio_compra: number
           simbolo: string
           updated_at: string
           user_id: string
@@ -60,11 +61,12 @@ export type Database = {
         Insert: {
           cantidad?: number
           created_at?: string
+          divisa_compra?: string
           fecha_compra: string
           id?: string
           nombre: string
           notas?: string | null
-          precio_compra_usd?: number
+          precio_compra?: number
           simbolo: string
           updated_at?: string
           user_id: string
@@ -72,11 +74,12 @@ export type Database = {
         Update: {
           cantidad?: number
           created_at?: string
+          divisa_compra?: string
           fecha_compra?: string
           id?: string
           nombre?: string
           notas?: string | null
-          precio_compra_usd?: number
+          precio_compra?: number
           simbolo?: string
           updated_at?: string
           user_id?: string

@@ -29,7 +29,8 @@ const CriptoForm: React.FC<CriptoFormProps> = ({ cripto, onSave, onClose }) => {
     simbolo: cripto?.simbolo || '',
     nombre: cripto?.nombre || '',
     cantidad: cripto?.cantidad?.toString() || '',
-    precio_compra_usd: cripto?.precio_compra_usd?.toString() || '',
+    precio_compra: cripto?.precio_compra?.toString() || '',
+    divisa_compra: cripto?.divisa_compra || 'USD',
     fecha_compra: cripto?.fecha_compra || new Date().toISOString().split('T')[0],
     notas: cripto?.notas || '',
   });
@@ -42,7 +43,8 @@ const CriptoForm: React.FC<CriptoFormProps> = ({ cripto, onSave, onClose }) => {
         simbolo: formData.simbolo,
         nombre: formData.nombre,
         cantidad: parseFloat(formData.cantidad),
-        precio_compra_usd: parseFloat(formData.precio_compra_usd),
+        precio_compra: parseFloat(formData.precio_compra),
+        divisa_compra: formData.divisa_compra,
         fecha_compra: formData.fecha_compra,
         notas: formData.notas,
       });
@@ -97,16 +99,30 @@ const CriptoForm: React.FC<CriptoFormProps> = ({ cripto, onSave, onClose }) => {
         />
       </div>
 
-      <div>
-        <Label htmlFor="precio_compra_usd">Precio de Compra (USD)</Label>
-        <Input
-          type="number"
-          step="0.01"
-          value={formData.precio_compra_usd}
-          onChange={(e) => setFormData(prev => ({ ...prev, precio_compra_usd: e.target.value }))}
-          placeholder="Ej: 50000"
-          required
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="precio_compra">Precio de Compra</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={formData.precio_compra}
+            onChange={(e) => setFormData(prev => ({ ...prev, precio_compra: e.target.value }))}
+            placeholder="Ej: 50000"
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="divisa_compra">Divisa</Label>
+          <Select value={formData.divisa_compra} onValueChange={(value) => setFormData(prev => ({ ...prev, divisa_compra: value }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="USD">USD ($)</SelectItem>
+              <SelectItem value="EUR">EUR (€)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div>
@@ -175,7 +191,7 @@ const CriptomonedasManager: React.FC = () => {
   }
 
   const totalInvertidoUSD = criptomonedas.reduce((sum, cripto) => 
-    sum + (cripto.cantidad * cripto.precio_compra_usd), 0
+    sum + (cripto.valor_compra_usd || 0), 0
   );
 
   const totalActualUSD = criptomonedas.reduce((sum, cripto) => 
@@ -287,7 +303,9 @@ const CriptomonedasManager: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Precio Compra</p>
-                      <p className="font-medium">${formatCurrency(cripto.precio_compra_usd)}</p>
+                      <p className="font-medium">
+                        {cripto.divisa_compra === 'USD' ? '$' : '€'}{formatCurrency(cripto.precio_compra)} {cripto.divisa_compra}
+                      </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Precio Actual</p>
@@ -297,7 +315,7 @@ const CriptomonedasManager: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Valor Compra</p>
-                      <p className="font-medium">${formatCurrency(cripto.cantidad * cripto.precio_compra_usd)}</p>
+                      <p className="font-medium">${formatCurrency(cripto.valor_compra_usd || 0)}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Valor Actual</p>

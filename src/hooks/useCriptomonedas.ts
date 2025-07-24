@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useToast } from '@/hooks/use-toast';
 import { Criptomoneda, CryptoPrices, CryptoWithPrice } from '@/types/crypto';
 
@@ -10,6 +11,7 @@ export const useCriptomonedas = () => {
   const [precios, setPrecios] = useState<CryptoPrices>({});
   const { user } = useAuth();
   const { toast } = useToast();
+  const { convertCurrency } = useExchangeRates();
 
   const fetchCriptomonedas = async () => {
     if (!user) return;
@@ -139,16 +141,24 @@ export const useCriptomonedas = () => {
   // Calcular criptomonedas con precios actuales
   const criptomonedasConPrecios: CryptoWithPrice[] = criptomonedas.map(cripto => {
     const precioActual = precios[cripto.simbolo]?.price;
+    
+    // Convertir precio de compra a USD si está en EUR
+    const precioCompraUSD = cripto.divisa_compra === 'EUR' 
+      ? convertCurrency(cripto.precio_compra, 'EUR', 'USD')
+      : cripto.precio_compra;
+    
+    const valorCompraUSD = cripto.cantidad * precioCompraUSD;
     const valorActual = precioActual ? cripto.cantidad * precioActual : undefined;
-    const valorCompra = cripto.cantidad * cripto.precio_compra_usd;
-    const gananciaPerdida = valorActual ? valorActual - valorCompra : undefined;
-    const gananciaPerdidaPorcentaje = gananciaPerdida && valorCompra > 0 
-      ? (gananciaPerdida / valorCompra) * 100 
+    const gananciaPerdida = valorActual ? valorActual - valorCompraUSD : undefined;
+    const gananciaPerdidaPorcentaje = gananciaPerdida && valorCompraUSD > 0 
+      ? (gananciaPerdida / valorCompraUSD) * 100 
       : undefined;
 
     return {
       ...cripto,
       precio_actual_usd: precioActual,
+      precio_compra_usd: precioCompraUSD,
+      valor_compra_usd: valorCompraUSD,
       valor_actual_usd: valorActual,
       ganancia_perdida_usd: gananciaPerdida,
       ganancia_perdida_porcentaje: gananciaPerdidaPorcentaje,
