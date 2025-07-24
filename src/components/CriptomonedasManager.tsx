@@ -311,37 +311,37 @@ const CriptomonedasManager: React.FC = () => {
                        <div>
                          <p className="text-muted-foreground">Precio Compra</p>
                          <p className="font-medium">
-                           {cripto.divisa_compra === 'USD' ? '$' : '€'}{formatCryptoPrice(cripto.precio_compra)} {cripto.divisa_compra}
+                           {formatCryptoPrice(cripto.precio_compra)} {cripto.divisa_compra}
                          </p>
                        </div>
                        <div>
                          <p className="text-muted-foreground">Precio Actual</p>
                          <p className="font-medium">
-                           {cripto.precio_actual_usd ? (
-                             cripto.divisa_compra === 'EUR' ? 
-                               `€${formatCryptoPrice(convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
-                               `$${formatCryptoPrice(cripto.precio_actual_usd)}`
-                           ) : 'Cargando...'}
+                            {cripto.precio_actual_usd ? (
+                              cripto.divisa_compra === 'EUR' ? 
+                                `${formatCryptoPrice(convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))} EUR` :
+                                `${formatCryptoPrice(cripto.precio_actual_usd)} USD`
+                            ) : 'Cargando...'}
                          </p>
                        </div>
                        <div>
                          <p className="text-muted-foreground">Valor Compra</p>
                          <p className="font-medium">
-                           {cripto.divisa_compra === 'EUR' ? 
-                             `€${formatWithDecimals(cripto.cantidad * cripto.precio_compra)}` :
-                             `$${formatWithDecimals(cripto.cantidad * cripto.precio_compra)}`
-                           }
+                            {cripto.divisa_compra === 'EUR' ? 
+                              `${formatWithDecimals(cripto.cantidad * cripto.precio_compra)} EUR` :
+                              `${formatWithDecimals(cripto.cantidad * cripto.precio_compra)} USD`
+                            }
                          </p>
                        </div>
                        <div>
                          <p className="text-muted-foreground">Valor Actual</p>
                          <div className="flex items-center gap-2">
                            <p className="font-medium">
-                             {cripto.precio_actual_usd ? (
-                               cripto.divisa_compra === 'EUR' ? 
-                                 `€${formatWithDecimals(cripto.cantidad * convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
-                                 `$${formatWithDecimals(cripto.cantidad * cripto.precio_actual_usd)}`
-                             ) : 'Cargando...'}
+                              {cripto.precio_actual_usd ? (
+                                cripto.divisa_compra === 'EUR' ? 
+                                  `${formatWithDecimals(cripto.cantidad * convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))} EUR` :
+                                  `${formatWithDecimals(cripto.cantidad * cripto.precio_actual_usd)} USD`
+                              ) : 'Cargando...'}
                            </p>
                            {cripto.ganancia_perdida_porcentaje !== undefined && (
                              <span className={`text-xs px-2 py-1 rounded ${
