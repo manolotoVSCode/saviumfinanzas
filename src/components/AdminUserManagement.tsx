@@ -19,6 +19,8 @@ interface UserStats {
   transactionCount: number;
   categoryCount: number;
   accountCount: number;
+  inversionesCount: number;
+  criptomonedasCount: number;
 }
 
 export const AdminUserManagement = () => {
@@ -45,10 +47,12 @@ export const AdminUserManagement = () => {
       // Get stats for each user
       const usersWithStats = await Promise.all(
         (profiles || []).map(async (profile) => {
-          const [transactionsRes, categoriesRes, accountsRes] = await Promise.all([
+          const [transactionsRes, categoriesRes, accountsRes, inversionesRes, criptomonedasRes] = await Promise.all([
             supabase.from('transacciones').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
             supabase.from('categorias').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
             supabase.from('cuentas').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+            supabase.from('inversiones').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+            supabase.from('criptomonedas').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
           ]);
 
           return {
@@ -56,6 +60,8 @@ export const AdminUserManagement = () => {
             transactionCount: transactionsRes.count || 0,
             categoryCount: categoriesRes.count || 0,
             accountCount: accountsRes.count || 0,
+            inversionesCount: inversionesRes.count || 0,
+            criptomonedasCount: criptomonedasRes.count || 0,
           };
         })
       );
@@ -80,6 +86,8 @@ export const AdminUserManagement = () => {
         supabase.from('transacciones').delete().eq('user_id', userId),
         supabase.from('cuentas').delete().eq('user_id', userId),
         supabase.from('categorias').delete().eq('user_id', userId),
+        supabase.from('inversiones').delete().eq('user_id', userId),
+        supabase.from('criptomonedas').delete().eq('user_id', userId),
       ]);
 
       // Finally delete the profile
@@ -137,11 +145,13 @@ export const AdminUserManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Usuario</TableHead>
-                  <TableHead>Divisa/Edad</TableHead>
-                  <TableHead>Registro</TableHead>
-                  <TableHead>Transacciones</TableHead>
-                  <TableHead>Categorías</TableHead>
+                  <TableHead className="hidden sm:table-cell">Divisa/Edad</TableHead>
+                  <TableHead className="hidden md:table-cell">Registro</TableHead>
+                  <TableHead>Trans.</TableHead>
+                  <TableHead>Cat.</TableHead>
                   <TableHead>Cuentas</TableHead>
+                  <TableHead className="hidden sm:table-cell">Inv.</TableHead>
+                  <TableHead className="hidden sm:table-cell">Crypto</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -150,12 +160,15 @@ export const AdminUserManagement = () => {
                   <TableRow key={user.id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">
+                        <div className="font-medium text-sm">
                           {user.nombre} {user.apellidos}
+                        </div>
+                        <div className="sm:hidden text-xs text-muted-foreground">
+                          {user.divisa_preferida} {user.edad ? `• ${user.edad}a` : ''}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <div className="space-y-1">
                         <Badge variant="outline">{user.divisa_preferida}</Badge>
                         <div className="text-sm text-muted-foreground">
@@ -163,7 +176,7 @@ export const AdminUserManagement = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <div className="text-sm">
                         {new Date(user.created_at).toLocaleDateString('es-ES', {
                           day: '2-digit',
@@ -173,18 +186,28 @@ export const AdminUserManagement = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="text-xs">
                         {user.transactionCount}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="text-xs">
                         {user.categoryCount}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="text-xs">
                         {user.accountCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant="secondary" className="text-xs">
+                        {user.inversionesCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant="secondary" className="text-xs">
+                        {user.criptomonedasCount}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -200,12 +223,14 @@ export const AdminUserManagement = () => {
                             <AlertDialogDescription>
                               ¿Estás seguro de que deseas eliminar al usuario <strong>{user.nombre} {user.apellidos}</strong>? 
                               Esta acción eliminará permanentemente:
-                              <ul className="list-disc list-inside mt-2 space-y-1">
-                                <li>{user.transactionCount} transacciones</li>
-                                <li>{user.categoryCount} categorías</li>
-                                <li>{user.accountCount} cuentas</li>
-                                <li>Todos sus datos personales</li>
-                              </ul>
+                               <ul className="list-disc list-inside mt-2 space-y-1">
+                                 <li>{user.transactionCount} transacciones</li>
+                                 <li>{user.categoryCount} categorías</li>
+                                 <li>{user.accountCount} cuentas</li>
+                                 <li>{user.inversionesCount} inversiones</li>
+                                 <li>{user.criptomonedasCount} criptomonedas</li>
+                                 <li>Todos sus datos personales</li>
+                               </ul>
                               Esta acción no se puede deshacer.
                             </AlertDialogDescription>
                           </AlertDialogHeader>

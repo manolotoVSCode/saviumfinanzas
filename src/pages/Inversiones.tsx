@@ -158,9 +158,9 @@ const Inversiones = (): JSX.Element => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="container mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Inversiones</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Inversiones</h1>
         </div>
 
         {/* Solo mostrar estadísticas si hay cuentas completas */}
@@ -220,26 +220,45 @@ const Inversiones = (): JSX.Element => {
                       const importeAnualNeto = importeMensualNeto * 12;
 
                       return (
-                        <div key={cuenta.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold">{cuenta.nombre}</h3>
-                              <Badge variant="outline">{cuenta.divisa}</Badge>
-                              <Badge variant="secondary">{cuenta.tipo_inversion}</Badge>
-                              <Badge variant="outline">{cuenta.modalidad}</Badge>
+                        <div key={cuenta.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-sm sm:text-base truncate">{cuenta.nombre}</h3>
+                              <Badge variant="outline" className="text-xs">{cuenta.divisa}</Badge>
+                              <Badge variant="secondary" className="text-xs hidden sm:inline-flex">{cuenta.tipo_inversion}</Badge>
+                              <Badge variant="outline" className="text-xs hidden sm:inline-flex">{cuenta.modalidad}</Badge>
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              Inicio: {cuenta.fecha_inicio ? new Date(cuenta.fecha_inicio).toLocaleDateString() : 'No definido'}
-                              {cuenta.ultimo_pago && ` | Último pago: ${new Date(cuenta.ultimo_pago).toLocaleDateString()}`}
+                            <div className="text-xs sm:text-sm text-muted-foreground">
+                              <div className="sm:hidden mb-1">
+                                {cuenta.tipo_inversion} • {cuenta.modalidad}
+                              </div>
+                              <div>
+                                Inicio: {cuenta.fecha_inicio ? new Date(cuenta.fecha_inicio).toLocaleDateString() : 'No definido'}
+                              </div>
+                              {cuenta.ultimo_pago && (
+                                <div className="hidden sm:block">
+                                  Último pago: {new Date(cuenta.ultimo_pago).toLocaleDateString()}
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-bold">{cuenta.divisa} {formatCurrency(valorActual)}</div>
+                          <div className="text-left sm:text-right flex-shrink-0">
+                            <div className="font-bold text-sm sm:text-base">{cuenta.divisa} {formatCurrency(valorActual)}</div>
                             {cuenta.rendimiento_neto ? (
-                              <div className="text-xs text-muted-foreground">
-                                <div>{cuenta.rendimiento_neto}% mensual NETO | {rendimientoAnualizado.toFixed(2)}% anual</div>
+                              <div className="text-xs text-muted-foreground space-y-1">
+                                <div className="hidden sm:block">
+                                  {cuenta.rendimiento_neto}% mensual NETO | {rendimientoAnualizado.toFixed(2)}% anual
+                                </div>
+                                <div className="sm:hidden">
+                                  {cuenta.rendimiento_neto}% mensual NETO
+                                </div>
                                 <div className="font-medium text-green-600">
-                                  {cuenta.divisa} {formatCurrency(importeMensualNeto)}/mes | {cuenta.divisa} {formatCurrency(importeAnualNeto)}/año
+                                  <div className="sm:hidden">
+                                    {cuenta.divisa} {formatCurrency(importeMensualNeto)}/mes
+                                  </div>
+                                  <div className="hidden sm:block">
+                                    {cuenta.divisa} {formatCurrency(importeMensualNeto)}/mes | {cuenta.divisa} {formatCurrency(importeAnualNeto)}/año
+                                  </div>
                                 </div>
                               </div>
                             ) : (
