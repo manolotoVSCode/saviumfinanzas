@@ -21,7 +21,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename="/saviumfinanzas">
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={
               <ProtectedRoute fallbackPath="/auth">
