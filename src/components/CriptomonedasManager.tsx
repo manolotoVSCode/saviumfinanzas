@@ -249,97 +249,100 @@ const CriptomonedasManager: React.FC = () => {
           <>
 
             {/* Lista de Criptomonedas */}
-            <div className="space-y-3">
-              {criptomonedas.map((cripto) => (
-                <div key={cripto.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-semibold">{cripto.simbolo} - {cripto.nombre}</h4>
-                       <p className="text-sm text-muted-foreground">
-                         {formatWithDecimals(cripto.cantidad, 8)} {cripto.simbolo}
-                       </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Dialog open={editingCripto?.id === cripto.id} onOpenChange={(open) => !open && setEditingCripto(undefined)}>
-                        <DialogTrigger asChild>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setEditingCripto(cripto)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>Editar Criptomoneda</DialogTitle>
-                          </DialogHeader>
-                          <CriptoForm
-                            cripto={cripto}
-                            onSave={handleEditCripto}
-                            onClose={() => setEditingCripto(undefined)}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleDeleteCripto(cripto.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                     <div>
-                       <p className="text-muted-foreground">Precio Compra</p>
-                       <p className="font-medium">
-                         {cripto.divisa_compra === 'USD' ? '$' : '€'}{formatWithDecimals(cripto.precio_compra)} {cripto.divisa_compra}
-                       </p>
+             <div className="space-y-3">
+               {criptomonedas.map((cripto) => {
+                 console.log('Cripto data:', cripto);
+                 return (
+                   <div key={cripto.id} className="border rounded-lg p-4">
+                     <div className="flex justify-between items-start mb-2">
+                       <div>
+                         <h4 className="font-semibold">{cripto.simbolo} - {cripto.nombre}</h4>
+                         <p className="text-sm text-muted-foreground">
+                           {formatWithDecimals(cripto.cantidad, 2)} {cripto.simbolo}
+                         </p>
+                       </div>
+                       <div className="flex gap-2">
+                         <Dialog open={editingCripto?.id === cripto.id} onOpenChange={(open) => !open && setEditingCripto(undefined)}>
+                           <DialogTrigger asChild>
+                             <Button 
+                               size="sm" 
+                               variant="outline"
+                               onClick={() => setEditingCripto(cripto)}
+                             >
+                               <Edit className="h-4 w-4" />
+                             </Button>
+                           </DialogTrigger>
+                           <DialogContent className="max-w-md">
+                             <DialogHeader>
+                               <DialogTitle>Editar Criptomoneda</DialogTitle>
+                             </DialogHeader>
+                             <CriptoForm
+                               cripto={cripto}
+                               onSave={handleEditCripto}
+                               onClose={() => setEditingCripto(undefined)}
+                             />
+                           </DialogContent>
+                         </Dialog>
+                         <Button 
+                           size="sm" 
+                           variant="outline"
+                           onClick={() => handleDeleteCripto(cripto.id)}
+                         >
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       </div>
                      </div>
-                     <div>
-                       <p className="text-muted-foreground">Precio Actual</p>
-                       <p className="font-medium">
-                         {cripto.precio_actual_usd ? (
-                           cripto.divisa_compra === 'EUR' ? 
-                             `€${formatWithDecimals(convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
-                             `$${formatWithDecimals(cripto.precio_actual_usd)}`
-                         ) : 'Cargando...'}
-                       </p>
-                     </div>
-                     <div>
-                       <p className="text-muted-foreground">Valor Compra</p>
-                       <p className="font-medium">
-                         {cripto.divisa_compra === 'EUR' ? 
-                           `€${formatWithDecimals(cripto.cantidad * cripto.precio_compra)}` :
-                           `$${formatWithDecimals(cripto.cantidad * cripto.precio_compra)}`
-                         }
-                       </p>
-                     </div>
-                     <div>
-                       <p className="text-muted-foreground">Valor Actual</p>
-                       <div className="flex items-center gap-2">
+                     
+                     <div className="grid grid-cols-2 gap-4 text-sm">
+                       <div>
+                         <p className="text-muted-foreground">Precio Compra</p>
+                         <p className="font-medium">
+                           {cripto.divisa_compra === 'USD' ? '$' : '€'}{formatWithDecimals(cripto.precio_compra)} {cripto.divisa_compra}
+                         </p>
+                       </div>
+                       <div>
+                         <p className="text-muted-foreground">Precio Actual</p>
                          <p className="font-medium">
                            {cripto.precio_actual_usd ? (
                              cripto.divisa_compra === 'EUR' ? 
-                               `€${formatWithDecimals(cripto.cantidad * convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
-                               `$${formatWithDecimals(cripto.cantidad * cripto.precio_actual_usd)}`
+                               `€${formatWithDecimals(convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
+                               `$${formatWithDecimals(cripto.precio_actual_usd)}`
                            ) : 'Cargando...'}
                          </p>
-                         {cripto.ganancia_perdida_porcentaje !== undefined && (
-                           <span className={`text-xs px-2 py-1 rounded ${
-                             cripto.ganancia_perdida_porcentaje >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                           }`}>
-                             {formatWithDecimals(cripto.ganancia_perdida_porcentaje)}%
-                           </span>
-                         )}
+                       </div>
+                       <div>
+                         <p className="text-muted-foreground">Valor Compra</p>
+                         <p className="font-medium">
+                           {cripto.divisa_compra === 'EUR' ? 
+                             `€${formatWithDecimals(cripto.cantidad * cripto.precio_compra)}` :
+                             `$${formatWithDecimals(cripto.cantidad * cripto.precio_compra)}`
+                           }
+                         </p>
+                       </div>
+                       <div>
+                         <p className="text-muted-foreground">Valor Actual</p>
+                         <div className="flex items-center gap-2">
+                           <p className="font-medium">
+                             {cripto.precio_actual_usd ? (
+                               cripto.divisa_compra === 'EUR' ? 
+                                 `€${formatWithDecimals(cripto.cantidad * convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
+                                 `$${formatWithDecimals(cripto.cantidad * cripto.precio_actual_usd)}`
+                             ) : 'Cargando...'}
+                           </p>
+                           {cripto.ganancia_perdida_porcentaje !== undefined && (
+                             <span className={`text-xs px-2 py-1 rounded ${
+                               cripto.ganancia_perdida_porcentaje >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                             }`}>
+                               {formatWithDecimals(cripto.ganancia_perdida_porcentaje)}%
+                             </span>
+                           )}
+                         </div>
                        </div>
                      </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                   </div>
+                 );
+               })}
+             </div>
           </>
         )}
       </CardContent>
