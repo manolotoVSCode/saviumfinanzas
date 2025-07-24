@@ -35,9 +35,10 @@ export const useCriptomonedas = () => {
     }
   };
 
-  const fetchPrecios = async () => {
+  const fetchPrecios = async (cryptoList?: Criptomoneda[]) => {
     try {
-      const simbolosUnicos = [...new Set(criptomonedas.map(c => c.simbolo))];
+      const currentCriptos = cryptoList || criptomonedas;
+      const simbolosUnicos = [...new Set(currentCriptos.map(c => c.simbolo))];
       
       if (simbolosUnicos.length === 0) return;
 
@@ -173,18 +174,18 @@ export const useCriptomonedas = () => {
 
   useEffect(() => {
     if (criptomonedas.length > 0) {
-      fetchPrecios();
+      fetchPrecios(criptomonedas);
     }
     setLoading(false);
-  }, [criptomonedas]);
+  }, [criptomonedas.length]); // Solo depender de la longitud, no del array completo
 
-  // Actualizar precios cada 30 segundos
-  useEffect(() => {
-    if (criptomonedas.length === 0) return;
+  // Actualizar precios cada 30 segundos - TEMPORALMENTE DESHABILITADO
+  // useEffect(() => {
+  //   if (criptomonedas.length === 0) return;
 
-    const interval = setInterval(fetchPrecios, 30000);
-    return () => clearInterval(interval);
-  }, [criptomonedas]);
+  //   const interval = setInterval(fetchPrecios, 30000);
+  //   return () => clearInterval(interval);
+  // }, [criptomonedas]);
 
   return {
     criptomonedas: criptomonedasConPrecios,
