@@ -142,8 +142,8 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
         description: `La información de ${account.nombre} ha sido completada exitosamente.`,
       });
 
-      // Forzar actualización inmediata
-      window.location.reload();
+      // Refrescar los datos sin recargar la página
+      window.dispatchEvent(new Event('storage')); // Trigger data refresh
     } catch (error) {
       console.error('Error updating investment:', error);
       toast({
