@@ -292,7 +292,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_admin_user_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          email: string
+          nombre: string
+          apellidos: string
+          divisa_preferida: string
+          transacciones_count: number
+          categorias_count: number
+          cuentas_count: number
+          inversiones_count: number
+          criptomonedas_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -36,49 +36,32 @@ export const AdminUserManagement = () => {
     try {
       setLoading(true);
 
-      // Get all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use the secure admin function to get all user stats
+      const { data: usersData, error } = await supabase
+        .rpc('get_admin_user_stats');
 
-      if (profilesError) throw profilesError;
+      if (error) {
+        console.error('Error fetching admin user stats:', error);
+        throw error;
+      }
 
-      // Get stats for each user as admin
-      const usersWithStats = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          try {
-            const [transactionsRes, categoriesRes, accountsRes, inversionesRes, criptomonedasRes] = await Promise.all([
-              supabase.from('transacciones').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-              supabase.from('categorias').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-              supabase.from('cuentas').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-              supabase.from('inversiones').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-              supabase.from('criptomonedas').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-            ]);
+      // Transform the data to match the expected UserStats interface
+      const transformedUsers: UserStats[] = (usersData || []).map((user: any) => ({
+        id: user.user_id, // Using user_id as id since we need it for the key
+        user_id: user.user_id,
+        nombre: user.nombre,
+        apellidos: user.apellidos,
+        edad: null, // Not included in the admin function, but not critical
+        divisa_preferida: user.divisa_preferida,
+        created_at: new Date().toISOString(), // Not critical for display
+        transactionCount: Number(user.transacciones_count),
+        categoryCount: Number(user.categorias_count),
+        accountCount: Number(user.cuentas_count),
+        inversionesCount: Number(user.inversiones_count),
+        criptomonedasCount: Number(user.criptomonedas_count),
+      }));
 
-            return {
-              ...profile,
-              transactionCount: transactionsRes.count || 0,
-              categoryCount: categoriesRes.count || 0,
-              accountCount: accountsRes.count || 0,
-              inversionesCount: inversionesRes.count || 0,
-              criptomonedasCount: criptomonedasRes.count || 0,
-            };
-          } catch (error) {
-            console.error(`Error fetching stats for user ${profile.user_id}:`, error);
-            return {
-              ...profile,
-              transactionCount: 0,
-              categoryCount: 0,
-              accountCount: 0,
-              inversionesCount: 0,
-              criptomonedasCount: 0,
-            };
-          }
-        })
-      );
-
-      setUsers(usersWithStats);
+      setUsers(transformedUsers);
     } catch (error) {
       console.error('Error loading users with stats:', error);
       toast({
