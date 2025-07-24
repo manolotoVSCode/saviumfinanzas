@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BarChart3, ArrowUpDown, TrendingUp, Settings, LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import Logo from '@/components/Logo';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -29,14 +30,14 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-2">Savium</h1>
-          <p className="text-muted-foreground">Finanzas Personales</p>
+          <Logo size={48} className="justify-center" />
+          <p className="text-muted-foreground mt-2">Finanzas Personales</p>
         </div>
 
         {/* CONTENIDO PRINCIPAL */}
         <div className="space-y-6">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold mb-4">Bienvenido a Savium</h2>
+            <h2 className="text-2xl font-bold mb-4">Bienvenido a <span className="text-green-600">Savium</span></h2>
             <p className="text-muted-foreground mb-6">
               Tu plataforma integral para la gestión de finanzas personales
             </p>

@@ -87,12 +87,12 @@ const Configuracion = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-primary" />
-              Acerca de Savium
+              Acerca de <span className="text-green-600 font-semibold">Savium</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              Savium es tu aplicación de finanzas personales diseñada para ayudarte a tomar control de tu dinero.
+              <span className="text-green-600 font-semibold">Savium</span> es tu aplicación de finanzas personales diseñada para ayudarte a tomar control de tu dinero.
             </p>
             
             <div className="flex flex-wrap gap-2">

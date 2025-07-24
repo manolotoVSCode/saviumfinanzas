@@ -3,6 +3,7 @@ import { BarChart3, ArrowUpDown, TrendingUp, Settings, LogOut } from 'lucide-rea
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
+import Logo from '@/components/Logo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -29,8 +30,8 @@ const Layout = ({ children }: LayoutProps) => {
         {/* HEADER */}
         <div className="mb-8 flex justify-between items-center">
           <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold mb-2">Savium</h1>
-            <p className="text-muted-foreground">Finanzas Personales</p>
+            <Logo size={48} className="justify-center" />
+            <p className="text-muted-foreground mt-2">Finanzas Personales</p>
           </div>
           <div className="flex items-center gap-4">
             {profile && (
