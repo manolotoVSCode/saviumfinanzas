@@ -129,7 +129,7 @@ const Auth = () => {
             
             <TabsContent value="signin">
               {!showForgotPassword ? (
-                <form onSubmit={handleSignIn} className="space-y-4">
+                <form onSubmit={handleSignIn} method="post" className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
                     <Input
@@ -174,7 +174,7 @@ const Auth = () => {
                   </Button>
                 </form>
               ) : (
-                <form onSubmit={handleForgotPassword} className="space-y-4">
+                <form onSubmit={handleForgotPassword} method="post" className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="forgot-email">Email</Label>
                     <Input
@@ -202,7 +202,7 @@ const Auth = () => {
             </TabsContent>
             
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
+              <form onSubmit={handleSignUp} method="post" className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-nombre">Nombre</Label>
                   <Input

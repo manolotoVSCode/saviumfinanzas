@@ -193,7 +193,7 @@ export const AccountsManager = ({
                 {editingAccount ? 'Editar Cuenta' : 'Nueva Cuenta'}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} method="post" className="space-y-4">
               <div>
                 <Label htmlFor="nombre">Nombre</Label>
                 <Input

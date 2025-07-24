@@ -156,7 +156,7 @@ export const CategoriesManager = ({
                 {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} method="post" className="space-y-4">
               <div>
                 <Label htmlFor="categoria">Categoría</Label>
                 <Input
