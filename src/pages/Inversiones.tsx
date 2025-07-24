@@ -117,19 +117,15 @@ const Inversiones = (): JSX.Element => {
     };
   }, { valorActual: 0, montoInvertido: 0 });
 
-  // Datos para el gráfico de pie - por monto invertido
-  const pieData = Object.entries(resumenPorTipo).map(([tipo, data]) => {
-    const montoInvertidoMXN = data.cuentas.reduce((sum, cuenta) => {
-      const montoEnMXN = cuenta.divisa === 'MXN' 
-        ? cuenta.saldoInicial
-        : convertCurrency(cuenta.saldoInicial, cuenta.divisa, 'MXN');
-      return sum + montoEnMXN;
-    }, 0);
+  // Datos para el gráfico de pie - por cuenta individual y monto invertido
+  const pieData = cuentasCompletas.map((cuenta) => {
+    const montoEnMXN = cuenta.divisa === 'MXN' 
+      ? cuenta.saldoInicial
+      : convertCurrency(cuenta.saldoInicial, cuenta.divisa, 'MXN');
     
     return {
-      name: tipo,
-      value: montoInvertidoMXN,
-      count: data.cuentas.length,
+      name: cuenta.nombre,
+      value: montoEnMXN,
     };
   });
 
@@ -166,15 +162,6 @@ const Inversiones = (): JSX.Element => {
           <h1 className="text-3xl font-bold text-foreground">Inversiones</h1>
         </div>
 
-        {/* Manager de cuentas de inversión */}
-        <AccountsManager
-          accounts={cuentasInversion}
-          accountTypes={['Inversiones']} // Solo permitir crear cuentas de inversión
-          onAddAccount={addAccount}
-          onUpdateAccount={updateAccount}
-          onDeleteAccount={deleteAccount}
-        />
-
         {/* Solo mostrar estadísticas si hay cuentas completas */}
         {cuentasCompletas.length > 0 && (
           <>
@@ -202,7 +189,7 @@ const Inversiones = (): JSX.Element => {
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Monto']} />
+                        <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Monto Invertido']} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -268,6 +255,16 @@ const Inversiones = (): JSX.Element => {
             </Card>
           </>
         )}
+
+        {/* 3. Cuentas - Manager de cuentas de inversión */}
+        <AccountsManager
+          accounts={cuentasInversion}
+          accountTypes={['Inversiones']} // Solo permitir crear cuentas de inversión
+          onAddAccount={addAccount}
+          onUpdateAccount={updateAccount}
+          onDeleteAccount={deleteAccount}
+        />
+
       </div>
     </Layout>
   );
