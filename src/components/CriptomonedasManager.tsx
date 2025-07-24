@@ -169,6 +169,20 @@ const CriptomonedasManager: React.FC = () => {
       maximumFractionDigits: decimals,
     }).format(amount);
   };
+
+  // Función específica para formatear precios de criptomonedas (más decimales para números muy pequeños)
+  const formatCryptoPrice = (amount: number): string => {
+    if (amount === 0) return '0,00';
+    if (amount < 0.01) {
+      // Para precios muy pequeños, usar hasta 8 decimales
+      return new Intl.NumberFormat('es-ES', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 8,
+      }).format(amount);
+    }
+    // Para precios normales, usar 2 decimales
+    return formatWithDecimals(amount, 2);
+  };
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCripto, setEditingCripto] = useState<Criptomoneda | undefined>();
 
@@ -297,7 +311,7 @@ const CriptomonedasManager: React.FC = () => {
                        <div>
                          <p className="text-muted-foreground">Precio Compra</p>
                          <p className="font-medium">
-                           {cripto.divisa_compra === 'USD' ? '$' : '€'}{formatWithDecimals(cripto.precio_compra)} {cripto.divisa_compra}
+                           {cripto.divisa_compra === 'USD' ? '$' : '€'}{formatCryptoPrice(cripto.precio_compra)} {cripto.divisa_compra}
                          </p>
                        </div>
                        <div>
@@ -305,8 +319,8 @@ const CriptomonedasManager: React.FC = () => {
                          <p className="font-medium">
                            {cripto.precio_actual_usd ? (
                              cripto.divisa_compra === 'EUR' ? 
-                               `€${formatWithDecimals(convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
-                               `$${formatWithDecimals(cripto.precio_actual_usd)}`
+                               `€${formatCryptoPrice(convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
+                               `$${formatCryptoPrice(cripto.precio_actual_usd)}`
                            ) : 'Cargando...'}
                          </p>
                        </div>
