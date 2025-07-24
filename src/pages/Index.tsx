@@ -30,7 +30,7 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
-          <Logo size={56} className="justify-center" />
+          <Logo size={72} className="justify-center" />
         </div>
 
         {/* CONTENIDO PRINCIPAL */}

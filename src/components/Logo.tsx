@@ -6,16 +6,16 @@ interface LogoProps {
   size?: number;
 }
 
-const Logo: React.FC<LogoProps> = ({ className = "", size = 48 }) => {
+const Logo: React.FC<LogoProps> = ({ className = "", size = 64 }) => {
   return (
-    <div className={`flex flex-col items-center ${className}`}>
+    <div className={`flex items-center gap-3 ${className}`}>
       <svg 
         width={size} 
         height={size} 
         viewBox="0 0 32 32" 
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
-        className="flex-shrink-0 mb-2"
+        className="flex-shrink-0"
       >
         {/* Cubo isométrico en verde */}
         {/* Cara superior */}
@@ -34,9 +34,9 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = 48 }) => {
           fill="#15803d"
         />
       </svg>
-      <div className="text-center">
-        <div className="font-bold text-green-600 text-lg leading-tight">savium</div>
-        <div className="text-xs text-green-500 leading-tight">finanzas personales</div>
+      <div className="flex flex-col">
+        <div className="font-bold text-green-600 text-2xl leading-tight tracking-wider">savium</div>
+        <div className="text-sm text-green-500 leading-tight">finanzas personales</div>
       </div>
     </div>
   );

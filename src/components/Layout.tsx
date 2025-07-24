@@ -31,7 +31,7 @@ const Layout = ({ children }: LayoutProps) => {
         {/* HEADER */}
         <div className="mb-8 flex justify-between items-center">
           <div className="text-center flex-1">
-            <Logo size={56} className="justify-center" />
+            <Logo size={72} className="justify-center" />
           </div>
           <div className="flex items-center gap-4">
             {profile && (
