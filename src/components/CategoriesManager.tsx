@@ -128,10 +128,10 @@ export const CategoriesManager = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center space-x-4">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 space-y-3 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4">
           <Select value={selectedType} onValueChange={(value: TransactionType) => setSelectedType(value)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -140,12 +140,12 @@ export const CategoriesManager = ({
               ))}
             </SelectContent>
           </Select>
-          <Badge variant={getTypeBadgeVariant(selectedType)}>{selectedType}</Badge>
+          <Badge variant={getTypeBadgeVariant(selectedType)} className="self-start">{selectedType}</Badge>
         </div>
         
         <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
           <DialogTrigger asChild>
-            <Button onClick={handleNewCategory}>
+            <Button onClick={handleNewCategory} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Nueva Categoría
             </Button>

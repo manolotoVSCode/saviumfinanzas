@@ -228,14 +228,14 @@ const CriptomonedasManager: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <CardTitle className="flex items-center gap-2">
-            💰 Criptomonedas
+            Criptomonedas
             <Badge variant="secondary">{criptomonedas.length}</Badge>
           </CardTitle>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Agregar Cripto
               </Button>

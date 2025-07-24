@@ -44,25 +44,37 @@ export const AdminUserManagement = () => {
 
       if (profilesError) throw profilesError;
 
-      // Get stats for each user
+      // Get stats for each user as admin
       const usersWithStats = await Promise.all(
         (profiles || []).map(async (profile) => {
-          const [transactionsRes, categoriesRes, accountsRes, inversionesRes, criptomonedasRes] = await Promise.all([
-            supabase.from('transacciones').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-            supabase.from('categorias').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-            supabase.from('cuentas').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-            supabase.from('inversiones').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-            supabase.from('criptomonedas').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
-          ]);
+          try {
+            const [transactionsRes, categoriesRes, accountsRes, inversionesRes, criptomonedasRes] = await Promise.all([
+              supabase.from('transacciones').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+              supabase.from('categorias').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+              supabase.from('cuentas').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+              supabase.from('inversiones').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+              supabase.from('criptomonedas').select('id', { count: 'exact', head: true }).eq('user_id', profile.user_id),
+            ]);
 
-          return {
-            ...profile,
-            transactionCount: transactionsRes.count || 0,
-            categoryCount: categoriesRes.count || 0,
-            accountCount: accountsRes.count || 0,
-            inversionesCount: inversionesRes.count || 0,
-            criptomonedasCount: criptomonedasRes.count || 0,
-          };
+            return {
+              ...profile,
+              transactionCount: transactionsRes.count || 0,
+              categoryCount: categoriesRes.count || 0,
+              accountCount: accountsRes.count || 0,
+              inversionesCount: inversionesRes.count || 0,
+              criptomonedasCount: criptomonedasRes.count || 0,
+            };
+          } catch (error) {
+            console.error(`Error fetching stats for user ${profile.user_id}:`, error);
+            return {
+              ...profile,
+              transactionCount: 0,
+              categoryCount: 0,
+              accountCount: 0,
+              inversionesCount: 0,
+              criptomonedasCount: 0,
+            };
+          }
         })
       );
 
