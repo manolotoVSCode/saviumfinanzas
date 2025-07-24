@@ -306,31 +306,6 @@ export const TransactionsManager = ({
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-xl font-semibold">Gestión de Transacciones</h2>
         <div className="flex gap-2">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Limpiar Todo
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción eliminará todas las transacciones permanentemente. Esta acción no se puede deshacer.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={onClearAllTransactions} className="bg-red-600 hover:bg-red-700">
-                  Eliminar todo
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
           <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
             <DialogTrigger asChild>
               <Button onClick={() => setIsAddingTransaction(true)}>

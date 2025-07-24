@@ -10,7 +10,8 @@ import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 import { useAuth } from '@/contexts/AuthContext';
-import { Settings, Heart, LogOut } from 'lucide-react';
+import { Settings, LogOut, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useState, useEffect } from 'react';
 
 const Configuracion = () => {
@@ -86,7 +87,6 @@ const Configuracion = () => {
         <Card className="hover-scale border-muted/20 hover:border-muted/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-primary" />
               Acerca de <span className="text-green-600 font-semibold">Savium</span>
             </CardTitle>
           </CardHeader>
@@ -104,7 +104,7 @@ const Configuracion = () => {
 
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground">
-                Versión: 1.0.0 • Desarrollado con ❤️
+                Versión 1.2.0 · Desarrollado por Manuel de la Torre · 2025
               </p>
             </div>
           </CardContent>
@@ -121,8 +121,36 @@ const Configuracion = () => {
           <CardContent>
             <div className="space-y-4">
               <p className="text-muted-foreground text-sm">
-                Cerrar sesión en esta aplicación
+                Gestionar datos y cerrar sesión en esta aplicación
               </p>
+              
+              {/* Botón para limpiar todas las transacciones */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar Todas las Transacciones
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción eliminará todas las transacciones permanentemente. Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={financeData.clearAllTransactions} className="bg-red-600 hover:bg-red-700">
+                      Eliminar todo
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
               <Button
                 variant="destructive"
                 onClick={signOut}
