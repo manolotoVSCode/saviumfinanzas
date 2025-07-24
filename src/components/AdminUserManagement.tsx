@@ -145,7 +145,6 @@ export const AdminUserManagement = () => {
                   <TableHead>Trans.</TableHead>
                   <TableHead>Cat.</TableHead>
                   <TableHead>Cuentas</TableHead>
-                  <TableHead className="hidden sm:table-cell">Inv.</TableHead>
                   <TableHead className="hidden sm:table-cell">Crypto</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -197,11 +196,6 @@ export const AdminUserManagement = () => {
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <Badge variant="secondary" className="text-xs">
-                        {user.inversionesCount}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant="secondary" className="text-xs">
                         {user.criptomonedasCount}
                       </Badge>
                     </TableCell>
@@ -218,14 +212,13 @@ export const AdminUserManagement = () => {
                             <AlertDialogDescription>
                               ¿Estás seguro de que deseas eliminar al usuario <strong>{user.nombre} {user.apellidos}</strong>? 
                               Esta acción eliminará permanentemente:
-                               <ul className="list-disc list-inside mt-2 space-y-1">
-                                 <li>{user.transactionCount} transacciones</li>
-                                 <li>{user.categoryCount} categorías</li>
-                                 <li>{user.accountCount} cuentas</li>
-                                 <li>{user.inversionesCount} inversiones</li>
-                                 <li>{user.criptomonedasCount} criptomonedas</li>
-                                 <li>Todos sus datos personales</li>
-                               </ul>
+                                <ul className="list-disc list-inside mt-2 space-y-1">
+                                  <li>{user.transactionCount} transacciones</li>
+                                  <li>{user.categoryCount} categorías</li>
+                                  <li>{user.accountCount} cuentas</li>
+                                  <li>{user.criptomonedasCount} criptomonedas</li>
+                                  <li>Todos sus datos personales</li>
+                                </ul>
                               Esta acción no se puede deshacer.
                             </AlertDialogDescription>
                           </AlertDialogHeader>

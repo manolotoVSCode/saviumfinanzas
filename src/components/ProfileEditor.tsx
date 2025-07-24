@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, Trash2 } from 'lucide-react';
+import { DatabaseBackup } from './DatabaseBackup';
 
 const currencies = [
   { value: 'MXN', label: 'MXN - Peso Mexicano' },
@@ -265,6 +266,11 @@ export const ProfileEditor = () => {
             </div>
           </form>
         </Form>
+        
+        {/* Sección de copia de seguridad */}
+        <div className="pt-6 border-t">
+          <DatabaseBackup />
+        </div>
       </CardContent>
     </Card>
   );
