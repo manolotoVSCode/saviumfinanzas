@@ -117,18 +117,18 @@ const Inversiones = (): JSX.Element => {
     };
   }, { valorActual: 0, montoInvertido: 0 });
 
-  // Datos para el gráfico de pie
+  // Datos para el gráfico de pie - por monto invertido
   const pieData = Object.entries(resumenPorTipo).map(([tipo, data]) => {
-    const valorEnMXN = data.cuentas.reduce((sum, cuenta) => {
-      const valorEnMXN = cuenta.divisa === 'MXN' 
-        ? cuenta.valorActual
-        : convertCurrency(cuenta.valorActual, cuenta.divisa, 'MXN');
-      return sum + valorEnMXN;
+    const montoInvertidoMXN = data.cuentas.reduce((sum, cuenta) => {
+      const montoEnMXN = cuenta.divisa === 'MXN' 
+        ? cuenta.saldoInicial
+        : convertCurrency(cuenta.saldoInicial, cuenta.divisa, 'MXN');
+      return sum + montoEnMXN;
     }, 0);
     
     return {
       name: tipo,
-      value: valorEnMXN,
+      value: montoInvertidoMXN,
       count: data.cuentas.length,
     };
   });
@@ -178,129 +178,39 @@ const Inversiones = (): JSX.Element => {
         {/* Solo mostrar estadísticas si hay cuentas completas */}
         {cuentasCompletas.length > 0 && (
           <>
-            {/* Resumen General */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Valor Total Actual</CardTitle>
-                  <Target className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${formatCurrency(totalGeneral.valorActual)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {cuentasCompletas.length} inversión{cuentasCompletas.length !== 1 ? 'es' : ''} activa{cuentasCompletas.length !== 1 ? 's' : ''}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Invertido</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${formatCurrency(totalGeneral.montoInvertido)}</div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Ganancia/Pérdida</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-2xl font-bold ${getRendimientoColor(totalGeneral.valorActual - totalGeneral.montoInvertido)}`}>
-                    ${formatCurrency(totalGeneral.valorActual - totalGeneral.montoInvertido)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {totalGeneral.montoInvertido > 0 ? (((totalGeneral.valorActual - totalGeneral.montoInvertido) / totalGeneral.montoInvertido) * 100).toFixed(2) : 0}%
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Gráfico de distribución y resumen por tipo */}
+            {/* 1. Distribución del Portafolio */}
             {pieData.length > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Distribución del Portafolio</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Valor']} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Resumen por Tipo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {Object.entries(resumenPorTipo).map(([tipo, data]) => (
-                        <div key={tipo} className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <div className="font-medium">{tipo}</div>
-                              <div className="text-sm text-muted-foreground">{data.cuentas.length} inversión{data.cuentas.length !== 1 ? 'es' : ''}</div>
-                            </div>
-                          </div>
-                          <div className="space-y-1 pl-4">
-                            {data.cuentas.map(cuenta => {
-                              const importeMensualNeto = cuenta.rendimiento_neto 
-                                ? (cuenta.valorActual * cuenta.rendimiento_neto) / 100 
-                                : 0;
-                              const importeAnualNeto = importeMensualNeto * 12;
-
-                              return (
-                                <div key={cuenta.id} className="flex justify-between items-center text-sm">
-                                  <span>{cuenta.nombre}</span>
-                                  <div className="text-right">
-                                    <div className="font-medium">{cuenta.divisa} {formatCurrency(cuenta.valorActual)}</div>
-                                    <div className={`text-xs ${getRendimientoColor(cuenta.rendimiento)}`}>
-                                      {cuenta.porcentaje.toFixed(2)}%
-                                    </div>
-                                    {cuenta.rendimiento_neto && (
-                                      <div className="text-xs text-muted-foreground">
-                                        <div>{cuenta.rendimiento_neto}% mensual NETO</div>
-                                        <div>{cuenta.divisa} {formatCurrency(importeMensualNeto)}/mes</div>
-                                        <div>{cuenta.divisa} {formatCurrency(importeAnualNeto)}/año</div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Distribución del Portafolio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Monto']} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Lista detallada de inversiones completas */}
+            {/* 2. Detalle de Inversiones */}
             <Card>
               <CardHeader>
                 <CardTitle>Detalle de Inversiones</CardTitle>
