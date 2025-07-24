@@ -113,8 +113,8 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-2">
-            <Logo size={40} />
+          <div className="flex justify-center mb-4">
+            <Logo size={48} />
           </div>
           <CardDescription className="text-center">
             Accede a tu cuenta o crea una nueva
