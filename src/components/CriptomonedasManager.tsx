@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useCriptomonedas } from '@/hooks/useCriptomonedas';
 import { useAppConfig } from '@/hooks/useAppConfig';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Criptomoneda } from '@/types/crypto';
 
 const CRIPTOMONEDAS_DISPONIBLES = [
@@ -159,6 +160,15 @@ const CriptoForm: React.FC<CriptoFormProps> = ({ cripto, onSave, onClose }) => {
 const CriptomonedasManager: React.FC = () => {
   const { criptomonedas, loading, addCriptomoneda, updateCriptomoneda, deleteCriptomoneda } = useCriptomonedas();
   const { formatCurrency } = useAppConfig();
+  const { convertCurrency } = useExchangeRates();
+
+  // Función para formatear con decimales
+  const formatWithDecimals = (amount: number, decimals: number = 2): string => {
+    return new Intl.NumberFormat('es-ES', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(amount);
+  };
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCripto, setEditingCripto] = useState<Criptomoneda | undefined>();
 
@@ -237,25 +247,6 @@ const CriptomonedasManager: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Resumen Total */}
-            <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
-              <div>
-                <p className="text-sm text-muted-foreground">Invertido Total</p>
-                <p className="text-lg font-semibold">${formatCurrency(totalInvertidoUSD)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Valor Actual</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-lg font-semibold">${formatCurrency(totalActualUSD)}</p>
-                  <div className={`flex items-center gap-1 ${gananciaTotalUSD >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {gananciaTotalUSD >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                    <span className="text-sm font-medium">
-                      {gananciaTotalPorcentaje.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Lista de Criptomonedas */}
             <div className="space-y-3">
@@ -264,9 +255,9 @@ const CriptomonedasManager: React.FC = () => {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h4 className="font-semibold">{cripto.simbolo} - {cripto.nombre}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {cripto.cantidad} {cripto.simbolo}
-                      </p>
+                       <p className="text-sm text-muted-foreground">
+                         {formatWithDecimals(cripto.cantidad, 8)} {cripto.simbolo}
+                       </p>
                     </div>
                     <div className="flex gap-2">
                       <Dialog open={editingCripto?.id === cripto.id} onOpenChange={(open) => !open && setEditingCripto(undefined)}>
@@ -301,37 +292,50 @@ const CriptomonedasManager: React.FC = () => {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Precio Compra</p>
-                      <p className="font-medium">
-                        {cripto.divisa_compra === 'USD' ? '$' : '€'}{formatCurrency(cripto.precio_compra)} {cripto.divisa_compra}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Precio Actual</p>
-                      <p className="font-medium">
-                        {cripto.precio_actual_usd ? `$${formatCurrency(cripto.precio_actual_usd)}` : 'Cargando...'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Valor Compra</p>
-                      <p className="font-medium">${formatCurrency(cripto.valor_compra_usd || 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Valor Actual</p>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">
-                          {cripto.valor_actual_usd ? `$${formatCurrency(cripto.valor_actual_usd)}` : 'Cargando...'}
-                        </p>
-                        {cripto.ganancia_perdida_porcentaje !== undefined && (
-                          <span className={`text-xs px-2 py-1 rounded ${
-                            cripto.ganancia_perdida_porcentaje >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {cripto.ganancia_perdida_porcentaje.toFixed(2)}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                     <div>
+                       <p className="text-muted-foreground">Precio Compra</p>
+                       <p className="font-medium">
+                         {cripto.divisa_compra === 'USD' ? '$' : '€'}{formatWithDecimals(cripto.precio_compra)} {cripto.divisa_compra}
+                       </p>
+                     </div>
+                     <div>
+                       <p className="text-muted-foreground">Precio Actual</p>
+                       <p className="font-medium">
+                         {cripto.precio_actual_usd ? (
+                           cripto.divisa_compra === 'EUR' ? 
+                             `€${formatWithDecimals(convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
+                             `$${formatWithDecimals(cripto.precio_actual_usd)}`
+                         ) : 'Cargando...'}
+                       </p>
+                     </div>
+                     <div>
+                       <p className="text-muted-foreground">Valor Compra</p>
+                       <p className="font-medium">
+                         {cripto.divisa_compra === 'EUR' ? 
+                           `€${formatWithDecimals(cripto.cantidad * cripto.precio_compra)}` :
+                           `$${formatWithDecimals(cripto.cantidad * cripto.precio_compra)}`
+                         }
+                       </p>
+                     </div>
+                     <div>
+                       <p className="text-muted-foreground">Valor Actual</p>
+                       <div className="flex items-center gap-2">
+                         <p className="font-medium">
+                           {cripto.precio_actual_usd ? (
+                             cripto.divisa_compra === 'EUR' ? 
+                               `€${formatWithDecimals(cripto.cantidad * convertCurrency(cripto.precio_actual_usd, 'USD', 'EUR'))}` :
+                               `$${formatWithDecimals(cripto.cantidad * cripto.precio_actual_usd)}`
+                           ) : 'Cargando...'}
+                         </p>
+                         {cripto.ganancia_perdida_porcentaje !== undefined && (
+                           <span className={`text-xs px-2 py-1 rounded ${
+                             cripto.ganancia_perdida_porcentaje >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                           }`}>
+                             {formatWithDecimals(cripto.ganancia_perdida_porcentaje)}%
+                           </span>
+                         )}
+                       </div>
+                     </div>
                   </div>
                 </div>
               ))}
