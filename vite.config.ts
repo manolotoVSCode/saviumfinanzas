@@ -9,6 +9,11 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    historyApiFallback: true,
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
   },
   plugins: [
     react(),
