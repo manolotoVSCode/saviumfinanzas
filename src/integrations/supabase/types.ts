@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      criptomonedas: {
+        Row: {
+          cantidad: number
+          created_at: string
+          fecha_compra: string
+          id: string
+          nombre: string
+          notas: string | null
+          precio_compra_usd: number
+          simbolo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cantidad?: number
+          created_at?: string
+          fecha_compra: string
+          id?: string
+          nombre: string
+          notas?: string | null
+          precio_compra_usd?: number
+          simbolo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          fecha_compra?: string
+          id?: string
+          nombre?: string
+          notas?: string | null
+          precio_compra_usd?: number
+          simbolo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cuentas: {
         Row: {
           created_at: string

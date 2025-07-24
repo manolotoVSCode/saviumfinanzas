@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AccountsManager } from '@/components/AccountsManager';
+import CriptomonedasManager from '@/components/CriptomonedasManager';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
@@ -256,7 +257,10 @@ const Inversiones = (): JSX.Element => {
           </>
         )}
 
-        {/* 3. Cuentas - Manager de cuentas de inversión */}
+        {/* 3. Criptomonedas */}
+        <CriptomonedasManager />
+
+        {/* 4. Cuentas - Manager de cuentas de inversión */}
         <AccountsManager
           accounts={cuentasInversion}
           accountTypes={['Inversiones']} // Solo permitir crear cuentas de inversión
