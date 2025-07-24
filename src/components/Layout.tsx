@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
+// Updated to use new Logo component
 
 interface LayoutProps {
   children: React.ReactNode;

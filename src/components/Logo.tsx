@@ -1,4 +1,5 @@
 import React from 'react';
+// Logo component for Savium
 
 interface LogoProps {
   className?: string;
