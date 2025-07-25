@@ -32,7 +32,7 @@ const Inversiones = (): JSX.Element => {
   const cuentasInversion = accounts.filter(account => account.tipo === 'Inversiones');
   
   // Filtrar cuentas de empresas propias
-  const cuentasEmpresasPropias = accounts.filter(account => account.tipo === 'Empresas Propias');
+  const cuentasEmpresasPropias = accounts.filter(account => account.tipo === 'Empresa Propia');
   
   // Identificar cuentas que necesitan completar información
   const cuentasSinCompleter = cuentasInversion.filter(cuenta => 
@@ -325,60 +325,6 @@ const Inversiones = (): JSX.Element => {
           onDeleteAccount={deleteAccount}
         />
 
-        {/* 5. Empresas Propias */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Empresas Propias</CardTitle>
-            <CardDescription>
-              {cuentasEmpresasPropias.length} empresa{cuentasEmpresasPropias.length !== 1 ? 's' : ''}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {cuentasEmpresasPropias.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="text-4xl mb-4">🏢</div>
-                <p>No tienes empresas propias registradas</p>
-                <p className="text-sm">Agrega tu primera empresa para comenzar el seguimiento</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {cuentasEmpresasPropias.map((cuenta) => (
-                  <div key={cuenta.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-sm sm:text-base truncate">{cuenta.nombre}</h3>
-                        <Badge variant="outline" className="text-xs">{cuenta.divisa}</Badge>
-                        <Badge variant="secondary" className="text-xs">{cuenta.tipo}</Badge>
-                      </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">
-                        <div>
-                          Fecha de registro: {cuenta.created_at ? new Date(cuenta.created_at).toLocaleDateString() : 'No definida'}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-left sm:text-right flex-shrink-0">
-                      <div className="font-bold text-sm sm:text-base">
-                        {cuenta.divisa} {formatCurrency(cuenta.saldoActual)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Saldo actual
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 6. Manager de cuentas de empresas propias */}
-        <AccountsManager
-          accounts={cuentasEmpresasPropias}
-          accountTypes={['Empresas Propias']} // Solo permitir crear cuentas de empresas propias
-          onAddAccount={addAccount}
-          onUpdateAccount={updateAccount}
-          onDeleteAccount={deleteAccount}
-        />
 
       </div>
     </Layout>
