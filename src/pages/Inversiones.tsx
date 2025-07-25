@@ -362,16 +362,7 @@ const Inversiones = (): JSX.Element => {
           </CardContent>
         </Card>
 
-        {/* 5. Manager de cuentas de empresas propias */}
-        <AccountsManager
-          accounts={cuentasEmpresasPropias}
-          accountTypes={['Empresa Propia']}
-          onAddAccount={addAccount}
-          onUpdateAccount={updateAccount}
-          onDeleteAccount={deleteAccount}
-        />
-
-        {/* 6. Cuentas - Manager de cuentas de inversión */}
+        {/* 5. Cuentas - Manager de cuentas de inversión */}
         <AccountsManager
           accounts={cuentasInversion}
           accountTypes={['Inversiones']} // Solo permitir crear cuentas de inversión
