@@ -292,6 +292,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clear_sample_data: {
+        Args: { user_uuid: string }
+        Returns: undefined
+      }
       get_admin_user_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -306,6 +310,10 @@ export type Database = {
           inversiones_count: number
           criptomonedas_count: number
         }[]
+      }
+      user_has_sample_data: {
+        Args: { user_uuid: string }
+        Returns: boolean
       }
     }
     Enums: {
