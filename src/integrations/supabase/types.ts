@@ -292,6 +292,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       clear_sample_data: {
         Args: { user_uuid: string }
         Returns: undefined

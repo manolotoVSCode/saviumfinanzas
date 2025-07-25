@@ -76,20 +76,10 @@ export const AdminUserManagement = () => {
 
   const deleteUser = async (userId: string, userDisplayName: string) => {
     try {
-      // Delete all user data in order
-      await Promise.all([
-        supabase.from('transacciones').delete().eq('user_id', userId),
-        supabase.from('cuentas').delete().eq('user_id', userId),
-        supabase.from('categorias').delete().eq('user_id', userId),
-        supabase.from('inversiones').delete().eq('user_id', userId),
-        supabase.from('criptomonedas').delete().eq('user_id', userId),
-      ]);
-
-      // Finally delete the profile
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', userId);
+      // Use the secure admin function to delete user completely
+      const { error } = await supabase.rpc('admin_delete_user', {
+        target_user_id: userId
+      });
       
       if (error) throw error;
 
@@ -97,7 +87,7 @@ export const AdminUserManagement = () => {
       
       toast({
         title: "Usuario eliminado",
-        description: `Todos los datos de ${userDisplayName} han sido eliminados`,
+        description: `El usuario ${userDisplayName} y todos sus datos han sido eliminados completamente`,
       });
     } catch (error) {
       console.error('Error deleting user:', error);
