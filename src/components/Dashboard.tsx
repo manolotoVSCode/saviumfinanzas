@@ -342,15 +342,15 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                       <DialogTitle>Empresas Privadas</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3">
-                      {accounts.filter(cuenta => cuenta.tipo === 'Empresas Privadas').map(cuenta => (
+                      {accounts.filter(cuenta => cuenta.tipo === 'Empresa Propia').map(cuenta => (
                         <div key={cuenta.id} className="p-3 rounded-lg bg-accent/5 border border-accent/20">
                           <div className="flex justify-between items-center">
                             <span className="font-medium">{cuenta.nombre}</span>
-                            <span className="font-bold text-primary">
-                              {new Intl.NumberFormat('es-MX', { 
-                                minimumFractionDigits: 0, 
-                                maximumFractionDigits: 0 
-                              }).format(cuenta.saldoActual)} {cuenta.divisa}
+                             <span className="font-bold text-primary">
+                               {new Intl.NumberFormat('es-MX', { 
+                                 minimumFractionDigits: 0, 
+                                 maximumFractionDigits: 0 
+                               }).format(cuenta.saldo_inicial)} {cuenta.divisa}
                             </span>
                           </div>
                         </div>
