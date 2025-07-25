@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import CriptomonedasManager from '@/components/CriptomonedasManager';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useCriptomonedas } from '@/hooks/useCriptomonedas';
 import { Account } from '@/types/finance';
 import { TrendingUp, TrendingDown, DollarSign, Target, Settings, RefreshCw, AlertTriangle, Plus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -16,6 +18,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const Inversiones = (): JSX.Element => {
   const { accounts, loading, refreshData, accountTypes, addAccount, updateAccount, deleteAccount } = useFinanceDataSupabase();
+  const { criptomonedas } = useCriptomonedas();
   
   // Debug: verificar datos
   console.log('=== DEBUG INVERSIONES ===');
@@ -27,6 +30,9 @@ const Inversiones = (): JSX.Element => {
 
   // Filtrar solo cuentas de inversión
   const cuentasInversion = accounts.filter(account => account.tipo === 'Inversiones');
+  
+  // Filtrar cuentas de empresas propias
+  const cuentasEmpresasPropias = accounts.filter(account => account.tipo === 'Empresas Propias');
   
   // Identificar cuentas que necesitan completar información
   const cuentasSinCompleter = cuentasInversion.filter(cuenta => 
@@ -75,6 +81,19 @@ const Inversiones = (): JSX.Element => {
     const valorActual = calcularValorActualReinversion(cuenta);
     const rendimientoTotal = ((valorActual - cuenta.saldoInicial) / cuenta.saldoInicial) * 100;
     return rendimientoTotal / aniosTranscurridos;
+  };
+
+  // Calcular rendimiento total de criptomonedas
+  const calcularRendimientoCriptomonedas = () => {
+    const totalInvertidoUSD = criptomonedas.reduce((sum, cripto) => 
+      sum + (cripto.valor_compra_usd || 0), 0
+    );
+
+    const totalActualUSD = criptomonedas.reduce((sum, cripto) => 
+      sum + (cripto.valor_actual_usd || 0), 0
+    );
+
+    return totalActualUSD >= totalInvertidoUSD;
   };
 
   // Calcular resumen solo de cuentas completas - manteniendo moneda original
@@ -276,13 +295,86 @@ const Inversiones = (): JSX.Element => {
           </>
         )}
 
-        {/* 3. Criptomonedas */}
-        <CriptomonedasManager />
+        {/* 3. Criptomonedas con flecha de rendimiento */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <CardTitle className="flex items-center gap-2">
+                Criptomonedas
+                {criptomonedas.length > 0 && (
+                  calcularRendimientoCriptomonedas() ? (
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <TrendingDown className="h-5 w-5 text-red-600" />
+                  )
+                )}
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <CriptomonedasManager />
+          </CardContent>
+        </Card>
 
         {/* 4. Cuentas - Manager de cuentas de inversión */}
         <AccountsManager
           accounts={cuentasInversion}
           accountTypes={['Inversiones']} // Solo permitir crear cuentas de inversión
+          onAddAccount={addAccount}
+          onUpdateAccount={updateAccount}
+          onDeleteAccount={deleteAccount}
+        />
+
+        {/* 5. Empresas Propias */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Empresas Propias</CardTitle>
+            <CardDescription>
+              {cuentasEmpresasPropias.length} empresa{cuentasEmpresasPropias.length !== 1 ? 's' : ''}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {cuentasEmpresasPropias.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <div className="text-4xl mb-4">🏢</div>
+                <p>No tienes empresas propias registradas</p>
+                <p className="text-sm">Agrega tu primera empresa para comenzar el seguimiento</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {cuentasEmpresasPropias.map((cuenta) => (
+                  <div key={cuenta.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-sm sm:text-base truncate">{cuenta.nombre}</h3>
+                        <Badge variant="outline" className="text-xs">{cuenta.divisa}</Badge>
+                        <Badge variant="secondary" className="text-xs">{cuenta.tipo}</Badge>
+                      </div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">
+                        <div>
+                          Fecha de registro: {cuenta.created_at ? new Date(cuenta.created_at).toLocaleDateString() : 'No definida'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-left sm:text-right flex-shrink-0">
+                      <div className="font-bold text-sm sm:text-base">
+                        {cuenta.divisa} {formatCurrency(cuenta.saldoActual)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Saldo actual
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 6. Manager de cuentas de empresas propias */}
+        <AccountsManager
+          accounts={cuentasEmpresasPropias}
+          accountTypes={['Empresas Propias']} // Solo permitir crear cuentas de empresas propias
           onAddAccount={addAccount}
           onUpdateAccount={updateAccount}
           onDeleteAccount={deleteAccount}
