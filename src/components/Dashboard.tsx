@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart } from 'recharts';
@@ -17,6 +18,7 @@ interface DashboardProps {
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+  const [isPrivateCompaniesOpen, setIsPrivateCompaniesOpen] = useState(false);
 
   // Función para filtrar métricas por moneda
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
@@ -323,15 +325,39 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
               {/* Empresas Privadas después del total */}
               {metrics.activos.empresasPrivadas > 0 && (
-                 <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                   <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-muted-foreground">Empresas Privadas</span>
-                      <span className="font-bold text-primary">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(metrics.activos.empresasPrivadas)} MXN</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Participaciones en empresas propias
-                  </div>
-                </div>
+                <Dialog open={isPrivateCompaniesOpen} onOpenChange={setIsPrivateCompaniesOpen}>
+                  <DialogTrigger asChild>
+                    <div className="p-4 rounded-lg bg-accent/5 border border-accent/20 cursor-pointer hover:bg-accent/10 transition-colors">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-muted-foreground">Empresas Privadas</span>
+                        <span className="font-bold text-primary">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(metrics.activos.empresasPrivadas)} MXN</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Participaciones en empresas propias
+                      </div>
+                    </div>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Empresas Privadas</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      {accounts.filter(cuenta => cuenta.tipo === 'Empresas Privadas').map(cuenta => (
+                        <div key={cuenta.id} className="p-3 rounded-lg bg-accent/5 border border-accent/20">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">{cuenta.nombre}</span>
+                            <span className="font-bold text-primary">
+                              {new Intl.NumberFormat('es-MX', { 
+                                minimumFractionDigits: 0, 
+                                maximumFractionDigits: 0 
+                              }).format(cuenta.saldoActual)} {cuenta.divisa}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
               )}
             </div>
           </CardContent>
