@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Category, TransactionType, Transaction } from '@/types/finance';
 import { Plus, Edit, Trash2, Check, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useSampleData } from '@/hooks/useSampleData';
+import { toast } from 'sonner';
 
 interface CategoriesManagerProps {
   categories: Category[];
@@ -27,6 +29,7 @@ export const CategoriesManager = ({
   onUpdateCategory,
   onDeleteCategory
 }: CategoriesManagerProps) => {
+  const { hasSampleData, clearSampleData } = useSampleData();
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [selectedType, setSelectedType] = useState<TransactionType>('Gastos');
@@ -46,9 +49,17 @@ export const CategoriesManager = ({
     setIsAddingCategory(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.subcategoria || !formData.categoria || !formData.tipo) return;
+
+    // Limpiar datos de ejemplo antes de crear la primera categoría real
+    if (!editingCategory && hasSampleData) {
+      const success = await clearSampleData();
+      if (success) {
+        toast.success('Datos de ejemplo eliminados. Creando tu primera categoría...');
+      }
+    }
 
     if (editingCategory) {
       onUpdateCategory(editingCategory.id, formData);

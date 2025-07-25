@@ -2,6 +2,8 @@ import { Dashboard as DashboardComponent } from '@/components/Dashboard';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
+import { SampleDataBanner } from '@/components/SampleDataBanner';
+import { WelcomeGuide } from '@/components/WelcomeGuide';
 
 const Dashboard = () => {
   const financeData = useFinanceDataSupabase();
@@ -23,6 +25,8 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="animate-fade-in">
+        <SampleDataBanner />
+        <WelcomeGuide />
         <DashboardComponent 
           metrics={financeData.dashboardMetrics} 
           formatCurrency={formatCurrency}

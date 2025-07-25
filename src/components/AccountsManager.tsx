@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Account, AccountType } from '@/types/finance';
 import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useSampleData } from '@/hooks/useSampleData';
+import { toast } from 'sonner';
 
 interface AccountsManagerProps {
   accounts: Account[];
@@ -25,6 +27,7 @@ export const AccountsManager = ({
   onUpdateAccount,
   onDeleteAccount
 }: AccountsManagerProps) => {
+  const { hasSampleData, clearSampleData } = useSampleData();
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [sortConfig, setSortConfig] = useState<{
@@ -78,9 +81,17 @@ export const AccountsManager = ({
     setIsAddingAccount(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre || !formData.tipo || !formData.divisa) return;
+
+    // Limpiar datos de ejemplo antes de crear la primera cuenta real
+    if (!editingAccount && hasSampleData) {
+      const success = await clearSampleData();
+      if (success) {
+        toast.success('Datos de ejemplo eliminados. Creando tu primera cuenta...');
+      }
+    }
 
     // Preparar datos según el tipo de cuenta
     const accountData: any = {
