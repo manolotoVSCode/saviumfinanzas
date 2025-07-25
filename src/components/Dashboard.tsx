@@ -350,7 +350,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                {new Intl.NumberFormat('es-MX', { 
                                  minimumFractionDigits: 0, 
                                  maximumFractionDigits: 0 
-                               }).format(cuenta.saldo_inicial)} {cuenta.divisa}
+                               }).format(Number(cuenta.saldo_inicial) || 0)} {cuenta.divisa}
                             </span>
                           </div>
                         </div>
