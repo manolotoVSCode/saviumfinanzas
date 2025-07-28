@@ -1,10 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
-// Updated to use new Logo component
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,15 +15,16 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { profile } = useUserProfile();
+  const { t } = useLanguage();
 
   const isActive = (path: string) => location.pathname === path;
 
   const navigationItems = [
-    { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
-    { path: '/transacciones', icon: ArrowUpDown, label: 'Transacciones' },
-    { path: '/inversiones', icon: TrendingUp, label: 'Inversiones' },
-    { path: '/informes', icon: FileText, label: 'Informes' },
-    { path: '/configuracion', icon: Settings, label: 'Configuración' },
+    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
+    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions') },
+    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments') },
+    { path: '/informes', icon: FileText, label: t('nav.reports') },
+    { path: '/configuracion', icon: Settings, label: t('nav.settings') },
   ];
 
   return (
@@ -49,7 +50,7 @@ const Layout = ({ children }: LayoutProps) => {
               className="flex items-center gap-2"
             >
               <LogOut className="h-4 w-4" />
-              Salir
+              {t('settings.logout')}
             </Button>
           </div>
         </div>
