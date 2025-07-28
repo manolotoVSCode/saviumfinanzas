@@ -8,47 +8,71 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Fallback logic for when AI fails
+// Fallback logic for when AI fails - with improved grouping
 function createFallbackGroups(comments: string[]) {
-  const groups = comments.map(comment => {
-    // Simple pattern matching for common services
+  const serviceMap = new Map<string, { serviceName: string; description: string; originalComments: string[] }>();
+  
+  comments.forEach(comment => {
     let serviceName = comment;
     let description = "Servicio de suscripción";
+    let normalizedKey = comment.toLowerCase();
     
-    if (comment.toLowerCase().includes('netflix')) {
-      serviceName = "Netflix";
-      description = "Plataforma de streaming de video";
-    } else if (comment.toLowerCase().includes('spotify')) {
+    // Enhanced service name extraction and grouping
+    if (normalizedKey.includes('spotify')) {
       serviceName = "Spotify";
       description = "Plataforma de streaming de música";
-    } else if (comment.toLowerCase().includes('openai') || comment.toLowerCase().includes('chatgpt')) {
+      normalizedKey = 'spotify';
+    } else if (normalizedKey.includes('netflix')) {
+      serviceName = "Netflix";
+      description = "Plataforma de streaming de video";
+      normalizedKey = 'netflix';
+    } else if (normalizedKey.includes('openai') || normalizedKey.includes('chatgpt')) {
       serviceName = "ChatGPT";
       description = "Asistente de inteligencia artificial";
-    } else if (comment.toLowerCase().includes('apple')) {
+      normalizedKey = 'chatgpt';
+    } else if (normalizedKey.includes('apple')) {
       serviceName = "Apple";
       description = "Servicios de Apple";
-    } else if (comment.toLowerCase().includes('amazon')) {
-      serviceName = "Amazon";
-      description = "Servicios de Amazon";
-    } else if (comment.toLowerCase().includes('google')) {
+      normalizedKey = 'apple';
+    } else if (normalizedKey.includes('google') || normalizedKey.includes('nest')) {
       serviceName = "Google";
       description = "Servicios de Google";
-    } else if (comment.toLowerCase().includes('rotoplas')) {
+      normalizedKey = 'google';
+    } else if (normalizedKey.includes('amazon')) {
+      serviceName = "Amazon";
+      description = "Servicios de Amazon";
+      normalizedKey = 'amazon';
+    } else if (normalizedKey.includes('rotoplas')) {
       serviceName = "Rotoplas";
       description = "Servicio de agua";
+      normalizedKey = 'rotoplas';
+    } else if (normalizedKey.includes('paypal') && normalizedKey.includes('p36')) {
+      // Generic PayPal services that might be recurring
+      serviceName = "PayPal Service";
+      description = "Servicio via PayPal";
+      normalizedKey = 'paypal_generic';
     } else {
-      // Keep original name but clean it up
-      serviceName = comment.split(' ')[0] || comment;
+      // For unknown services, normalize by removing special characters and numbers
+      normalizedKey = comment.toLowerCase()
+        .replace(/[*\s\d]/g, '')
+        .replace(/paypal/g, '')
+        .substring(0, 10);
+      serviceName = comment.split(' ')[0] || comment.substring(0, 15);
     }
     
-    return {
-      serviceName,
-      description,
-      originalComments: [comment]
-    };
+    // Group similar services
+    if (serviceMap.has(normalizedKey)) {
+      serviceMap.get(normalizedKey)!.originalComments.push(comment);
+    } else {
+      serviceMap.set(normalizedKey, {
+        serviceName,
+        description,
+        originalComments: [comment]
+      });
+    }
   });
   
-  return { groups };
+  return { groups: Array.from(serviceMap.values()) };
 }
 
 serve(async (req) => {

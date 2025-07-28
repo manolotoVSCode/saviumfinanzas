@@ -103,6 +103,62 @@ export const SubscriptionsManager = () => {
     return nextPayment;
   };
 
+  // Función para determinar si dos transacciones son del mismo servicio
+  const areSameService = (t1: any, t2: any): boolean => {
+    // Normalizar comentarios para comparación
+    const normalize = (comment: string) => 
+      comment.toLowerCase()
+        .replace(/[*\s\d]/g, '') // Remover asteriscos, espacios y números
+        .replace(/paypal/g, '') // Remover paypal prefix
+        .substring(0, 10); // Tomar solo los primeros 10 caracteres
+
+    const comment1Normalized = normalize(t1.comentario);
+    const comment2Normalized = normalize(t2.comentario);
+    
+    // Si los comentarios normalizados son similares
+    if (comment1Normalized === comment2Normalized && comment1Normalized.length > 3) {
+      return true;
+    }
+    
+    // Si tienen montos similares (±10%) y están en el mismo día del mes
+    const montoDiff = Math.abs(t1.gasto - t2.gasto) / Math.max(t1.gasto, t2.gasto);
+    const fecha1 = new Date(t1.fecha);
+    const fecha2 = new Date(t2.fecha);
+    
+    if (montoDiff <= 0.1 && fecha1.getDate() === fecha2.getDate()) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  // Agrupar transacciones antes del análisis de IA
+  const groupSimilarTransactions = (transactions: any[]) => {
+    const groups: any[][] = [];
+    const processed = new Set<number>();
+    
+    transactions.forEach((transaction, index) => {
+      if (processed.has(index)) return;
+      
+      const group = [transaction];
+      processed.add(index);
+      
+      // Buscar transacciones similares
+      for (let i = index + 1; i < transactions.length; i++) {
+        if (processed.has(i)) continue;
+        
+        if (areSameService(transaction, transactions[i])) {
+          group.push(transactions[i]);
+          processed.add(i);
+        }
+      }
+      
+      groups.push(group);
+    });
+    
+    return groups;
+  };
+
   // Analizar y procesar servicios automáticamente
   const processSubscriptions = async () => {
     if (subscriptionTransactions.length === 0) {
@@ -112,7 +168,11 @@ export const SubscriptionsManager = () => {
 
     setIsLoading(true);
     try {
-      const uniqueComments = [...new Set(subscriptionTransactions.map(t => t.comentario))];
+      // Agrupar transacciones similares primero
+      const transactionGroups = groupSimilarTransactions(subscriptionTransactions);
+      
+      // Crear comentarios únicos de cada grupo
+      const uniqueComments = transactionGroups.map(group => group[0].comentario);
       
       const { data, error } = await supabase.functions.invoke('analyze-subscriptions', {
         body: { comments: uniqueComments }
@@ -120,17 +180,26 @@ export const SubscriptionsManager = () => {
 
       if (error) {
         console.error('Error calling AI function:', error);
-        // Fallback sin IA - agrupar por comentario único
-        const fallbackServices = uniqueComments.map(comment => {
-          const relatedTransactions = subscriptionTransactions.filter(t => t.comentario === comment);
-          const sortedTransactions = relatedTransactions.sort((a, b) => 
+        // Fallback sin IA - procesar grupos manualmente
+        const fallbackServices = transactionGroups.map(group => {
+          const sortedTransactions = group.sort((a, b) => 
             new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
           );
           const lastTransaction = sortedTransactions[0];
-          const frequency = determineFrecuencia(relatedTransactions);
+          const frequency = determineFrecuencia(group);
+          
+          // Extraer nombre del servicio del comentario
+          let serviceName = group[0].comentario;
+          if (serviceName.includes('SPOTIFY')) serviceName = 'Spotify';
+          else if (serviceName.includes('CHATGPT') || serviceName.includes('OPENAI')) serviceName = 'ChatGPT';
+          else if (serviceName.includes('NETFLIX')) serviceName = 'Netflix';
+          else if (serviceName.includes('APPLE')) serviceName = 'Apple';
+          else if (serviceName.includes('AMAZON')) serviceName = 'Amazon';
+          else if (serviceName.includes('GOOGLE')) serviceName = 'Google';
+          else serviceName = serviceName.split(' ')[0] || serviceName.substring(0, 20);
           
           return {
-            serviceName: comment.split(' ')[0] || comment.substring(0, 20),
+            serviceName,
             tipoServicio: 'Servicio de suscripción',
             ultimoPago: {
               monto: lastTransaction.gasto,
@@ -139,8 +208,8 @@ export const SubscriptionsManager = () => {
             },
             frecuencia: frequency,
             proximoPago: calculateNextPayment(new Date(lastTransaction.fecha), frequency),
-            numeroPagos: relatedTransactions.length,
-            originalComments: [comment]
+            numeroPagos: group.length,
+            originalComments: group.map(t => t.comentario)
           };
         });
         
@@ -150,19 +219,22 @@ export const SubscriptionsManager = () => {
 
       const aiResult: AIAnalysisResult = data;
       
-      // Procesar resultados con IA
+      // Procesar resultados con IA, pero usando los grupos pre-calculados
       const processedServices: SubscriptionService[] = aiResult.groups.map(group => {
-        const relatedTransactions = subscriptionTransactions.filter(t => 
-          group.originalComments.includes(t.comentario)
+        // Encontrar el grupo de transacciones correspondiente
+        const transactionGroup = transactionGroups.find(tGroup => 
+          group.originalComments.some(comment => 
+            tGroup.some(t => t.comentario === comment)
+          )
         );
 
-        if (relatedTransactions.length === 0) return null;
+        if (!transactionGroup || transactionGroup.length === 0) return null;
 
-        const sortedTransactions = relatedTransactions.sort((a, b) => 
+        const sortedTransactions = transactionGroup.sort((a, b) => 
           new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
         );
         const lastTransaction = sortedTransactions[0];
-        const frequency = determineFrecuencia(relatedTransactions);
+        const frequency = determineFrecuencia(transactionGroup);
 
         return {
           serviceName: group.serviceName,
@@ -174,25 +246,13 @@ export const SubscriptionsManager = () => {
           },
           frecuencia: frequency,
           proximoPago: calculateNextPayment(new Date(lastTransaction.fecha), frequency),
-          numeroPagos: relatedTransactions.length,
-          originalComments: group.originalComments
+          numeroPagos: transactionGroup.length,
+          originalComments: transactionGroup.map(t => t.comentario)
         };
       }).filter(Boolean) as SubscriptionService[];
 
-      // Eliminar duplicados por nombre de servicio
-      const uniqueServices = processedServices.reduce((acc, service) => {
-        const existing = acc.find(s => s.serviceName.toLowerCase() === service.serviceName.toLowerCase());
-        if (!existing) {
-          acc.push(service);
-        } else if (service.numeroPagos > existing.numeroPagos) {
-          // Reemplazar si el actual tiene más pagos
-          const index = acc.indexOf(existing);
-          acc[index] = service;
-        }
-        return acc;
-      }, [] as SubscriptionService[]);
-
-      setServices(uniqueServices.sort((a, b) => 
+      // Los servicios ya están agrupados, solo ordenar
+      setServices(processedServices.sort((a, b) => 
         new Date(b.ultimoPago.fecha).getTime() - new Date(a.ultimoPago.fecha).getTime()
       ));
 
