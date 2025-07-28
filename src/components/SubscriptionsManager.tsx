@@ -18,73 +18,59 @@ export const SubscriptionsManager = () => {
   const financeData = useFinanceDataSupabase();
   const { categories, transactions } = financeData;
 
-  // Analizar transacciones para identificar suscripciones recurrentes
+  // Analizar transacciones de la subcategoría "Cuotas / Suscripciones"
   const subscriptions = useMemo(() => {
     // Validar que los datos estén cargados
     if (!transactions || !categories || transactions.length === 0 || categories.length === 0) {
       return [];
     }
 
-    const now = new Date();
-    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-    
-    // Obtener transacciones de gastos de los últimos 3 meses
-    const recentExpenses = transactions.filter(t => 
-      t.gasto > 0 && 
-      t.fecha >= threeMonthsAgo
+    // Buscar la subcategoría "Cuotas / Suscripciones"
+    const subscriptionCategory = categories.find(c => 
+      c.subcategoria.toLowerCase().includes('cuotas') || 
+      c.subcategoria.toLowerCase().includes('suscripciones') ||
+      c.subcategoria.toLowerCase() === 'cuotas / suscripciones'
     );
 
-    // Enriquecer transacciones con información de categoría
-    const enrichedExpenses = recentExpenses.map(transaction => {
-      const category = categories.find(c => c.id === transaction.subcategoriaId);
-      return {
-        ...transaction,
-        subcategoria: category?.subcategoria,
-        categoria: category?.categoria
-      };
-    }).filter(t => t.subcategoria);
+    if (!subscriptionCategory) {
+      return [];
+    }
 
-    // Agrupar por subcategoría y analizar patrones
-    const subcategoryGroups: { [key: string]: any[] } = {};
+    // Obtener solo las transacciones de esa subcategoría
+    const subscriptionTransactions = transactions.filter(t => 
+      t.subcategoriaId === subscriptionCategory.id && t.gasto > 0
+    );
+
+    // Agrupar por comentario/descripción para identificar diferentes servicios
+    const serviceGroups: { [key: string]: any[] } = {};
     
-    enrichedExpenses.forEach(transaction => {
-      const key = transaction.subcategoria!;
-      if (!subcategoryGroups[key]) {
-        subcategoryGroups[key] = [];
+    subscriptionTransactions.forEach(transaction => {
+      // Usar el comentario como identificador del servicio
+      const serviceName = transaction.comentario || 'Servicio sin nombre';
+      if (!serviceGroups[serviceName]) {
+        serviceGroups[serviceName] = [];
       }
-      subcategoryGroups[key].push(transaction);
+      serviceGroups[serviceName].push(transaction);
     });
 
-    // Identificar suscripciones (aparecen múltiples veces con montos similares)
-    const potentialSubscriptions: SubscriptionData[] = [];
+    // Crear lista de suscripciones con estadísticas
+    const subscriptionData: SubscriptionData[] = [];
     
-    Object.entries(subcategoryGroups).forEach(([subcategoria, transactionGroup]) => {
-      if (transactionGroup.length >= 2) { // Al menos 2 transacciones
-        // Calcular monto promedio
-        const avgAmount = transactionGroup.reduce((sum, t) => sum + t.gasto, 0) / transactionGroup.length;
-        
-        // Verificar si los montos son similares (variación <30%)
-        const amounts = transactionGroup.map(t => t.gasto);
-        const maxAmount = Math.max(...amounts);
-        const minAmount = Math.min(...amounts);
-        const variation = (maxAmount - minAmount) / avgAmount;
-        
-        if (variation < 0.3) { // Variación menor al 30%
-          const lastTransaction = transactionGroup.sort((a, b) => b.fecha.getTime() - a.fecha.getTime())[0];
-          const category = categories.find(c => c.id === lastTransaction.subcategoriaId);
-          
-          potentialSubscriptions.push({
-            subcategoria,
-            categoria: category?.categoria || 'Sin categoría',
-            montoMensual: avgAmount,
-            frecuencia: transactionGroup.length,
-            ultimoPago: lastTransaction.gasto
-          });
-        }
-      }
+    Object.entries(serviceGroups).forEach(([serviceName, serviceTransactions]) => {
+      const totalAmount = serviceTransactions.reduce((sum, t) => sum + t.gasto, 0);
+      const avgAmount = totalAmount / serviceTransactions.length;
+      const lastTransaction = serviceTransactions.sort((a, b) => b.fecha.getTime() - a.fecha.getTime())[0];
+      
+      subscriptionData.push({
+        subcategoria: serviceName,
+        categoria: subscriptionCategory.categoria,
+        montoMensual: avgAmount,
+        frecuencia: serviceTransactions.length,
+        ultimoPago: lastTransaction.gasto
+      });
     });
 
-    return potentialSubscriptions.sort((a, b) => b.montoMensual - a.montoMensual);
+    return subscriptionData.sort((a, b) => b.montoMensual - a.montoMensual);
   }, [transactions, categories]);
 
   const totalMensual = subscriptions.reduce((sum, sub) => sum + sub.montoMensual, 0);
