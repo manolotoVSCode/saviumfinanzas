@@ -1,115 +1,86 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
-import { CreditCard, Plus, Trash2, Calendar } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { toast } from '@/hooks/use-toast';
+import { CreditCard, Calendar, TrendingUp } from 'lucide-react';
+import { useMemo } from 'react';
 
-const subscriptionSchema = z.object({
-  nombre: z.string().min(1, 'El nombre es requerido'),
-  monto: z.number().min(0.01, 'El monto debe ser mayor a 0'),
-  tipo: z.enum(['Mensual', 'Trimestral', 'Anual']),
-  descripcion: z.string().optional(),
-});
-
-type SubscriptionFormData = z.infer<typeof subscriptionSchema>;
-
-interface Subscription {
-  id: string;
-  nombre: string;
-  monto: number;
-  tipo: 'Mensual' | 'Trimestral' | 'Anual';
-  descripcion?: string;
+interface SubscriptionData {
+  subcategoria: string;
+  categoria: string;
   montoMensual: number;
+  frecuencia: number;
+  ultimoPago: number;
 }
 
 export const SubscriptionsManager = () => {
   const { formatCurrency } = useAppConfig();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([
-    {
-      id: '1',
-      nombre: 'Netflix',
-      monto: 149,
-      tipo: 'Mensual',
-      descripcion: 'Streaming de películas y series',
-      montoMensual: 149
-    },
-    {
-      id: '2',
-      nombre: 'Spotify',
-      monto: 129,
-      tipo: 'Mensual',
-      descripcion: 'Música streaming',
-      montoMensual: 129
-    },
-    {
-      id: '3',
-      nombre: 'Amazon Prime',
-      monto: 999,
-      tipo: 'Anual',
-      descripcion: 'Compras y streaming',
-      montoMensual: 83.25
-    }
-  ]);
+  const financeData = useFinanceDataSupabase();
+  const { categories, transactions } = financeData;
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors }
-  } = useForm<SubscriptionFormData>({
-    resolver: zodResolver(subscriptionSchema)
-  });
+  // Analizar transacciones para identificar suscripciones recurrentes
+  const subscriptions = useMemo(() => {
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    
+    // Obtener transacciones de gastos de los últimos 3 meses
+    const recentExpenses = transactions.filter(t => 
+      t.gasto > 0 && 
+      t.fecha >= threeMonthsAgo
+    );
 
-  const calculateMonthlyAmount = (monto: number, tipo: string) => {
-    switch (tipo) {
-      case 'Trimestral':
-        return monto / 3;
-      case 'Anual':
-        return monto / 12;
-      default:
-        return monto;
-    }
-  };
+    // Enriquecer transacciones con información de categoría
+    const enrichedExpenses = recentExpenses.map(transaction => {
+      const category = categories.find(c => c.id === transaction.subcategoriaId);
+      return {
+        ...transaction,
+        subcategoria: category?.subcategoria,
+        categoria: category?.categoria
+      };
+    }).filter(t => t.subcategoria);
 
-  const onSubmit = (data: SubscriptionFormData) => {
-    const newSubscription: Subscription = {
-      id: Date.now().toString(),
-      nombre: data.nombre,
-      monto: data.monto,
-      tipo: data.tipo,
-      descripcion: data.descripcion,
-      montoMensual: calculateMonthlyAmount(data.monto, data.tipo)
-    };
-
-    setSubscriptions(prev => [...prev, newSubscription]);
-    setIsDialogOpen(false);
-    reset();
-    toast({
-      title: "Suscripción agregada",
-      description: `${data.nombre} ha sido agregada exitosamente.`
+    // Agrupar por subcategoría y analizar patrones
+    const subcategoryGroups: { [key: string]: any[] } = {};
+    
+    enrichedExpenses.forEach(transaction => {
+      const key = transaction.subcategoria!;
+      if (!subcategoryGroups[key]) {
+        subcategoryGroups[key] = [];
+      }
+      subcategoryGroups[key].push(transaction);
     });
-  };
 
-  const deleteSubscription = (id: string) => {
-    setSubscriptions(prev => prev.filter(sub => sub.id !== id));
-    toast({
-      title: "Suscripción eliminada",
-      description: "La suscripción ha sido eliminada exitosamente."
+    // Identificar suscripciones (aparecen múltiples veces con montos similares)
+    const potentialSubscriptions: SubscriptionData[] = [];
+    
+    Object.entries(subcategoryGroups).forEach(([subcategoria, transactions]) => {
+      if (transactions.length >= 2) { // Al menos 2 transacciones
+        // Calcular monto promedio
+        const avgAmount = transactions.reduce((sum, t) => sum + t.gasto, 0) / transactions.length;
+        
+        // Verificar si los montos son similares (variación <20%)
+        const amounts = transactions.map(t => t.gasto);
+        const maxAmount = Math.max(...amounts);
+        const minAmount = Math.min(...amounts);
+        const variation = (maxAmount - minAmount) / avgAmount;
+        
+        if (variation < 0.3) { // Variación menor al 30%
+          const lastTransaction = transactions.sort((a, b) => b.fecha.getTime() - a.fecha.getTime())[0];
+          const category = categories.find(c => c.id === lastTransaction.subcategoriaId);
+          
+          potentialSubscriptions.push({
+            subcategoria,
+            categoria: category?.categoria || 'Sin categoría',
+            montoMensual: avgAmount,
+            frecuencia: transactions.length,
+            ultimoPago: lastTransaction.gasto
+          });
+        }
+      }
     });
-  };
+
+    return potentialSubscriptions.sort((a, b) => b.montoMensual - a.montoMensual);
+  }, [transactions, categories]);
 
   const totalMensual = subscriptions.reduce((sum, sub) => sum + sub.montoMensual, 0);
 
@@ -118,133 +89,50 @@ export const SubscriptionsManager = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CreditCard className="h-5 w-5" />
-          Suscripciones y Cuotas Mensuales
+          Suscripciones y Gastos Recurrentes
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
           <p className="text-muted-foreground text-sm">
-            Gestiona tus suscripciones y cuotas recurrentes
+            Basado en tus transacciones de los últimos 3 meses
           </p>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Nueva Suscripción</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                  <Label htmlFor="nombre">Nombre</Label>
-                  <Input
-                    id="nombre"
-                    placeholder="Netflix, Spotify, etc."
-                    {...register('nombre')}
-                  />
-                  {errors.nombre && (
-                    <p className="text-sm text-destructive mt-1">{errors.nombre.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="monto">Monto</Label>
-                  <Input
-                    id="monto"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...register('monto', { valueAsNumber: true })}
-                  />
-                  {errors.monto && (
-                    <p className="text-sm text-destructive mt-1">{errors.monto.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="tipo">Frecuencia</Label>
-                  <Select onValueChange={(value) => setValue('tipo', value as any)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar frecuencia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mensual">Mensual</SelectItem>
-                      <SelectItem value="Trimestral">Trimestral</SelectItem>
-                      <SelectItem value="Anual">Anual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.tipo && (
-                    <p className="text-sm text-destructive mt-1">{errors.tipo.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="descripcion">Descripción (opcional)</Label>
-                  <Input
-                    id="descripcion"
-                    placeholder="Breve descripción del servicio"
-                    {...register('descripcion')}
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-4">
-                  <Button type="submit" className="flex-1">
-                    Agregar Suscripción
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Badge variant="outline" className="text-xs">
+            {subscriptions.length} servicios detectados
+          </Badge>
         </div>
 
         {subscriptions.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No tienes suscripciones registradas</p>
-            <p className="text-sm">Agrega tus primeras suscripciones para llevar un control</p>
+            <p>No se detectaron gastos recurrentes</p>
+            <p className="text-sm">Necesitas al menos 2 transacciones similares para detectar patrones</p>
           </div>
         ) : (
           <>
             <div className="space-y-3">
-              {subscriptions.map((subscription) => (
-                <div key={subscription.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+              {subscriptions.map((subscription, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-card">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium">{subscription.nombre}</h4>
+                      <h4 className="font-medium">{subscription.subcategoria}</h4>
                       <Badge variant="secondary" className="text-xs">
-                        {subscription.tipo}
+                        {subscription.categoria}
                       </Badge>
                     </div>
-                    {subscription.descripcion && (
-                      <p className="text-sm text-muted-foreground">{subscription.descripcion}</p>
-                    )}
                     <div className="flex items-center gap-4 mt-2 text-sm">
                       <span className="text-muted-foreground">
-                        {subscription.tipo}: ${formatCurrency(subscription.monto)}
+                        Aparece {subscription.frecuencia} veces
                       </span>
-                      <span className="text-primary font-medium">
-                        Mensual: ${formatCurrency(subscription.montoMensual)}
+                      <span className="text-primary font-medium flex items-center gap-1">
+                        <TrendingUp className="h-3 w-3" />
+                        Promedio: ${formatCurrency(subscription.montoMensual)}
                       </span>
                     </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Último pago: ${formatCurrency(subscription.ultimoPago)}
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteSubscription(subscription.id)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               ))}
             </div>
@@ -253,12 +141,15 @@ export const SubscriptionsManager = () => {
               <div className="flex justify-between items-center p-4 bg-primary/5 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary" />
-                  <span className="font-medium">Total Mensual</span>
+                  <span className="font-medium">Total Mensual Estimado</span>
                 </div>
                 <span className="text-xl font-bold text-primary">
                   ${formatCurrency(totalMensual)}
                 </span>
               </div>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Calculado basándose en patrones de gasto recurrentes detectados
+              </p>
             </div>
           </>
         )}
