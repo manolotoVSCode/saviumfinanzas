@@ -204,9 +204,9 @@ const Auth = () => {
                 </div>
               </div>
               <div className="text-center space-y-3">
-                <CardTitle className="text-2xl font-bold tracking-tight">Iniciar Sesión</CardTitle>
+                <CardTitle className="text-2xl font-bold tracking-tight">Sign In</CardTitle>
                 <CardDescription className="text-base">
-                  Accede a tu plataforma de gestión financiera profesional
+                  Access your professional financial management platform
                 </CardDescription>
               </div>
             </CardHeader>
@@ -216,12 +216,12 @@ const Auth = () => {
                 <form onSubmit={handleSignIn} method="post" className="space-y-6">
                   <div className="space-y-3">
                     <Label htmlFor="signin-email" className="text-sm font-semibold">
-                      Correo Electrónico
+                      Email Address
                     </Label>
                     <Input
                       id="signin-email"
                       type="email"
-                      placeholder="usuario@ejemplo.com"
+                      placeholder="user@example.com"
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
                       className="h-12 text-base"
@@ -231,7 +231,7 @@ const Auth = () => {
                   
                   <div className="space-y-3">
                     <Label htmlFor="signin-password" className="text-sm font-semibold">
-                      Contraseña
+                      Password
                     </Label>
                     <Input
                       id="signin-password"
@@ -251,7 +251,7 @@ const Auth = () => {
                         onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                       />
                       <Label htmlFor="remember-me" className="text-sm text-muted-foreground font-medium">
-                        Recordar sesión
+                        Remember me
                       </Label>
                     </div>
                     
@@ -261,7 +261,7 @@ const Auth = () => {
                       className="p-0 h-auto text-sm text-primary hover:text-primary/80 font-medium"
                       onClick={() => setShowForgotPassword(true)}
                     >
-                      ¿Olvidaste tu contraseña?
+                      Forgot your password?
                     </Button>
                   </div>
                   
@@ -273,30 +273,30 @@ const Auth = () => {
                     {loading ? (
                       <div className="flex items-center gap-3">
                         <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Iniciando sesión...
+                        Signing in...
                       </div>
                     ) : (
-                      'Iniciar Sesión'
+                      'Sign In'
                     )}
                   </Button>
                 </form>
               ) : (
                 <form onSubmit={handleForgotPassword} method="post" className="space-y-6">
                   <div className="text-center space-y-3">
-                    <h3 className="text-xl font-semibold">Recuperar Contraseña</h3>
+                    <h3 className="text-xl font-semibold">Reset Password</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Ingresa tu correo electrónico y te enviaremos un enlace seguro para restablecer tu contraseña
+                      Enter your email address and we'll send you a secure link to reset your password
                     </p>
                   </div>
                   
                   <div className="space-y-3">
                     <Label htmlFor="forgot-email" className="text-sm font-semibold">
-                      Correo Electrónico
+                      Email Address
                     </Label>
                     <Input
                       id="forgot-email"
                       type="email"
-                      placeholder="usuario@ejemplo.com"
+                      placeholder="user@example.com"
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
                       className="h-12 text-base"
@@ -313,10 +313,10 @@ const Auth = () => {
                       {loading ? (
                         <div className="flex items-center gap-3">
                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Enviando...
+                          Sending...
                         </div>
                       ) : (
-                        'Enviar enlace de recuperación'
+                        'Send recovery link'
                       )}
                     </Button>
                     
@@ -326,7 +326,7 @@ const Auth = () => {
                       className="w-full h-12 font-medium"
                       onClick={() => setShowForgotPassword(false)}
                     >
-                      Volver al inicio de sesión
+                      Back to sign in
                     </Button>
                   </div>
                 </form>
