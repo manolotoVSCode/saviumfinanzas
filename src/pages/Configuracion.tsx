@@ -5,7 +5,7 @@ import Layout from '@/components/Layout';
 import { AccountsManager } from '@/components/AccountsManager';
 import { CategoriesManager } from '@/components/CategoriesManager';
 import { ProfileEditor } from '@/components/ProfileEditor';
-import { SubscriptionsManager } from '@/components/SubscriptionsManager';
+
 import { AdminUserManagement } from '@/components/AdminUserManagement';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -45,9 +45,6 @@ const Configuracion = () => {
 
         {/* EDITOR DE PERFIL */}
         <ProfileEditor />
-
-        {/* SUSCRIPCIONES Y CUOTAS MENSUALES */}
-        <SubscriptionsManager />
 
         {/* TASAS DE CAMBIO ACTUALES */}
         <ExchangeRates />

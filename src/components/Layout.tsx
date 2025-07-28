@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, LogOut } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
     { path: '/transacciones', icon: ArrowUpDown, label: 'Transacciones' },
     { path: '/inversiones', icon: TrendingUp, label: 'Inversiones' },
+    { path: '/informes', icon: FileText, label: 'Informes' },
     { path: '/configuracion', icon: Settings, label: 'Configuración' },
   ];
 
@@ -60,7 +61,7 @@ const Layout = ({ children }: LayoutProps) => {
 
         {/* NAVEGACIÓN INFERIOR FIJA */}
         <nav className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
-          <div className="grid grid-cols-4 h-full">
+          <div className="grid grid-cols-5 h-full">
             {navigationItems.map(({ path, icon: Icon, label }) => (
               <button
                 key={path}

@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Transacciones from "./pages/Transacciones";
 import Inversiones from "./pages/Inversiones";
+import Informes from "./pages/Informes";
 import Configuracion from "./pages/Configuracion";
 import NotFound from "./pages/NotFound";
 
@@ -42,6 +43,11 @@ const App = () => (
             <Route path="/inversiones" element={
               <ProtectedRoute>
                 <Inversiones />
+              </ProtectedRoute>
+            } />
+            <Route path="/informes" element={
+              <ProtectedRoute>
+                <Informes />
               </ProtectedRoute>
             } />
             <Route path="/configuracion" element={
