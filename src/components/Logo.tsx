@@ -10,8 +10,8 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = 64 }) => {
   return (
     <div className={`flex items-center ${className}`}>
       <img 
-        src="/lovable-uploads/fb338591-3b93-4742-9edf-dba5aeb496ef.png" 
-        alt="Savium Finanzas Personales"
+        src="/lovable-uploads/ca25ffc9-53d3-4773-9f62-29b073a48ce0.png" 
+        alt="Savium Finance"
         className="h-12 w-auto"
       />
     </div>
