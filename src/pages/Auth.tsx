@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import Logo from '@/components/Logo';
 import { TrendingUp, Shield, BarChart3, PieChart, DollarSign, Banknote } from 'lucide-react';
 
 const Auth = () => {
@@ -118,7 +117,11 @@ const Auth = () => {
         <div className="max-w-lg text-center space-y-12">
           <div className="space-y-6">
             <div className="flex items-center justify-center gap-4">
-              <Logo size={56} />
+              <img 
+                src="/lovable-uploads/b1b386d1-090e-4ac6-8e0d-e1487fce2a5a.png" 
+                alt="Savium"
+                className="h-14 w-14"
+              />
               <div className="text-left">
                 <h1 className="text-3xl font-bold text-foreground tracking-tight">Savium Finance</h1>
                 <p className="text-base text-muted-foreground font-medium">Wealth Management Platform</p>
@@ -193,7 +196,11 @@ const Auth = () => {
             <CardHeader className="space-y-8 pb-8 px-8 pt-10">
               <div className="flex justify-center lg:hidden">
                 <div className="flex items-center gap-3">
-                  <Logo size={44} />
+                  <img 
+                    src="/lovable-uploads/b1b386d1-090e-4ac6-8e0d-e1487fce2a5a.png" 
+                    alt="Savium"
+                    className="h-11 w-11"
+                  />
                   <div>
                     <h1 className="text-xl font-bold">Savium Finance</h1>
                     <p className="text-xs text-muted-foreground">Wealth Management</p>
