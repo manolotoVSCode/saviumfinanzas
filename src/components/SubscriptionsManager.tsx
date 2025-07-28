@@ -20,6 +20,11 @@ export const SubscriptionsManager = () => {
 
   // Analizar transacciones para identificar suscripciones recurrentes
   const subscriptions = useMemo(() => {
+    // Validar que los datos estén cargados
+    if (!transactions || !categories || transactions.length === 0 || categories.length === 0) {
+      return [];
+    }
+
     const now = new Date();
     const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
     
@@ -53,26 +58,26 @@ export const SubscriptionsManager = () => {
     // Identificar suscripciones (aparecen múltiples veces con montos similares)
     const potentialSubscriptions: SubscriptionData[] = [];
     
-    Object.entries(subcategoryGroups).forEach(([subcategoria, transactions]) => {
-      if (transactions.length >= 2) { // Al menos 2 transacciones
+    Object.entries(subcategoryGroups).forEach(([subcategoria, transactionGroup]) => {
+      if (transactionGroup.length >= 2) { // Al menos 2 transacciones
         // Calcular monto promedio
-        const avgAmount = transactions.reduce((sum, t) => sum + t.gasto, 0) / transactions.length;
+        const avgAmount = transactionGroup.reduce((sum, t) => sum + t.gasto, 0) / transactionGroup.length;
         
-        // Verificar si los montos son similares (variación <20%)
-        const amounts = transactions.map(t => t.gasto);
+        // Verificar si los montos son similares (variación <30%)
+        const amounts = transactionGroup.map(t => t.gasto);
         const maxAmount = Math.max(...amounts);
         const minAmount = Math.min(...amounts);
         const variation = (maxAmount - minAmount) / avgAmount;
         
         if (variation < 0.3) { // Variación menor al 30%
-          const lastTransaction = transactions.sort((a, b) => b.fecha.getTime() - a.fecha.getTime())[0];
+          const lastTransaction = transactionGroup.sort((a, b) => b.fecha.getTime() - a.fecha.getTime())[0];
           const category = categories.find(c => c.id === lastTransaction.subcategoriaId);
           
           potentialSubscriptions.push({
             subcategoria,
             categoria: category?.categoria || 'Sin categoría',
             montoMensual: avgAmount,
-            frecuencia: transactions.length,
+            frecuencia: transactionGroup.length,
             ultimoPago: lastTransaction.gasto
           });
         }
