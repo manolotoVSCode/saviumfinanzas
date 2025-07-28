@@ -1,23 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Calendar, TrendingUp, Clock, HelpCircle } from 'lucide-react';
+import { CreditCard, Calendar, Clock, Repeat, RefreshCw } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
-interface GroupedService {
+interface SubscriptionService {
   serviceName: string;
-  description: string;
+  tipoServicio: string;
   ultimoPago: {
     monto: number;
     fecha: Date;
+    mes: string;
   };
-  proximoPago?: Date;
-  frecuencia: number;
-  montoPromedio: number;
+  frecuencia: 'Mensual' | 'Anual' | 'Irregular';
+  proximoPago: Date;
+  numeroPagos: number;
   originalComments: string[];
 }
 
@@ -33,233 +33,284 @@ export const SubscriptionsManager = () => {
   const { formatCurrency } = useAppConfig();
   const financeData = useFinanceDataSupabase();
   const { categories, transactions } = financeData;
-  const [groupedServices, setGroupedServices] = useState<GroupedService[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [needsAnalysis, setNeedsAnalysis] = useState(false);
+  const [services, setServices] = useState<SubscriptionService[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Obtener transacciones de los últimos 12 meses
+  // Obtener todas las transacciones de suscripciones de los últimos 12 meses
   const subscriptionTransactions = useMemo(() => {
     if (!transactions || !categories || transactions.length === 0 || categories.length === 0) {
       return [];
     }
 
-    const subscriptionCategory = categories.find(c => 
-      c.subcategoria.toLowerCase().includes('cuotas') || 
-      c.subcategoria.toLowerCase().includes('suscripciones') ||
-      c.subcategoria.toLowerCase() === 'cuotas / suscripciones'
+    const subscriptionCategories = categories.filter(c => 
+      c.subcategoria.toLowerCase().includes('suscripciones')
     );
 
-    if (!subscriptionCategory) {
+    if (subscriptionCategories.length === 0) {
       return [];
     }
 
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
+    const subscriptionIds = subscriptionCategories.map(c => c.id);
+
     return transactions.filter(t => 
-      t.subcategoriaId === subscriptionCategory.id && 
+      subscriptionIds.includes(t.subcategoriaId!) && 
       t.gasto > 0 &&
       new Date(t.fecha) >= twelveMonthsAgo
     );
   }, [transactions, categories]);
 
-  // Analizar servicios con IA
-  const analyzeServices = async () => {
+  // Función para determinar la frecuencia de pagos
+  const determineFrecuencia = (transactions: any[]): 'Mensual' | 'Anual' | 'Irregular' => {
+    if (transactions.length < 2) return 'Irregular';
+    
+    const sortedTransactions = transactions.sort((a, b) => 
+      new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+    );
+    
+    const intervals = [];
+    for (let i = 1; i < sortedTransactions.length; i++) {
+      const diff = new Date(sortedTransactions[i].fecha).getTime() - 
+                   new Date(sortedTransactions[i-1].fecha).getTime();
+      intervals.push(diff / (1000 * 60 * 60 * 24)); // días
+    }
+    
+    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    
+    if (avgInterval >= 25 && avgInterval <= 35) return 'Mensual';
+    if (avgInterval >= 350 && avgInterval <= 380) return 'Anual';
+    return 'Irregular';
+  };
+
+  // Calcular próximo pago estimado
+  const calculateNextPayment = (lastPayment: Date, frequency: 'Mensual' | 'Anual' | 'Irregular'): Date => {
+    const nextPayment = new Date(lastPayment);
+    
+    switch (frequency) {
+      case 'Mensual':
+        nextPayment.setMonth(nextPayment.getMonth() + 1);
+        break;
+      case 'Anual':
+        nextPayment.setFullYear(nextPayment.getFullYear() + 1);
+        break;
+      case 'Irregular':
+        nextPayment.setMonth(nextPayment.getMonth() + 1); // Asumimos mensual por defecto
+        break;
+    }
+    
+    return nextPayment;
+  };
+
+  // Analizar y procesar servicios automáticamente
+  const processSubscriptions = async () => {
     if (subscriptionTransactions.length === 0) {
-      console.log('No subscription transactions found');
+      setServices([]);
       return;
     }
 
-    setIsAnalyzing(true);
+    setIsLoading(true);
     try {
       const uniqueComments = [...new Set(subscriptionTransactions.map(t => t.comentario))];
-      console.log('Unique comments to analyze:', uniqueComments);
       
       const { data, error } = await supabase.functions.invoke('analyze-subscriptions', {
         body: { comments: uniqueComments }
       });
 
-      console.log('Supabase function response:', { data, error });
-
       if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
+        console.error('Error calling AI function:', error);
+        // Fallback sin IA - agrupar por comentario único
+        const fallbackServices = uniqueComments.map(comment => {
+          const relatedTransactions = subscriptionTransactions.filter(t => t.comentario === comment);
+          const sortedTransactions = relatedTransactions.sort((a, b) => 
+            new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+          );
+          const lastTransaction = sortedTransactions[0];
+          const frequency = determineFrecuencia(relatedTransactions);
+          
+          return {
+            serviceName: comment.split(' ')[0] || comment.substring(0, 20),
+            tipoServicio: 'Servicio de suscripción',
+            ultimoPago: {
+              monto: lastTransaction.gasto,
+              fecha: new Date(lastTransaction.fecha),
+              mes: new Date(lastTransaction.fecha).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+            },
+            frecuencia: frequency,
+            proximoPago: calculateNextPayment(new Date(lastTransaction.fecha), frequency),
+            numeroPagos: relatedTransactions.length,
+            originalComments: [comment]
+          };
+        });
+        
+        setServices(fallbackServices);
+        return;
       }
 
       const aiResult: AIAnalysisResult = data;
-      console.log('AI analysis result:', aiResult);
       
-      // Procesar resultados y calcular estadísticas
-      const services: GroupedService[] = aiResult.groups.map(group => {
+      // Procesar resultados con IA
+      const processedServices: SubscriptionService[] = aiResult.groups.map(group => {
         const relatedTransactions = subscriptionTransactions.filter(t => 
           group.originalComments.includes(t.comentario)
         );
 
         if (relatedTransactions.length === 0) return null;
 
-        // Calcular último pago
         const sortedTransactions = relatedTransactions.sort((a, b) => 
           new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
         );
         const lastTransaction = sortedTransactions[0];
-
-        // Calcular promedio
-        const totalAmount = relatedTransactions.reduce((sum, t) => sum + t.gasto, 0);
-        const avgAmount = totalAmount / relatedTransactions.length;
-
-        // Estimar próximo pago (asumiendo mensual si hay múltiples transacciones)
-        let proximoPago: Date | undefined;
-        if (relatedTransactions.length >= 2) {
-          const lastPaymentDate = new Date(lastTransaction.fecha);
-          proximoPago = new Date(lastPaymentDate);
-          proximoPago.setMonth(proximoPago.getMonth() + 1);
-        }
+        const frequency = determineFrecuencia(relatedTransactions);
 
         return {
           serviceName: group.serviceName,
-          description: group.description,
+          tipoServicio: group.description,
           ultimoPago: {
             monto: lastTransaction.gasto,
-            fecha: new Date(lastTransaction.fecha)
+            fecha: new Date(lastTransaction.fecha),
+            mes: new Date(lastTransaction.fecha).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
           },
-          proximoPago,
-          frecuencia: relatedTransactions.length,
-          montoPromedio: avgAmount,
+          frecuencia: frequency,
+          proximoPago: calculateNextPayment(new Date(lastTransaction.fecha), frequency),
+          numeroPagos: relatedTransactions.length,
           originalComments: group.originalComments
         };
-      }).filter(Boolean) as GroupedService[];
+      }).filter(Boolean) as SubscriptionService[];
 
-      setGroupedServices(services.sort((a, b) => b.montoPromedio - a.montoPromedio));
-      setNeedsAnalysis(false);
+      // Eliminar duplicados por nombre de servicio
+      const uniqueServices = processedServices.reduce((acc, service) => {
+        const existing = acc.find(s => s.serviceName.toLowerCase() === service.serviceName.toLowerCase());
+        if (!existing) {
+          acc.push(service);
+        } else if (service.numeroPagos > existing.numeroPagos) {
+          // Reemplazar si el actual tiene más pagos
+          const index = acc.indexOf(existing);
+          acc[index] = service;
+        }
+        return acc;
+      }, [] as SubscriptionService[]);
+
+      setServices(uniqueServices.sort((a, b) => 
+        new Date(b.ultimoPago.fecha).getTime() - new Date(a.ultimoPago.fecha).getTime()
+      ));
+
     } catch (error) {
-      console.error('Error analyzing services:', error);
-      toast.error('Error al analizar servicios. Revisa la configuración de la API.');
+      console.error('Error processing subscriptions:', error);
+      toast.error('Error al procesar las suscripciones');
     } finally {
-      setIsAnalyzing(false);
+      setIsLoading(false);
     }
   };
 
-  // Detectar cuando hay nuevos datos para analizar
+  // Procesar automáticamente cuando cambien las transacciones
   useEffect(() => {
-    if (subscriptionTransactions.length > 0 && groupedServices.length === 0) {
-      setNeedsAnalysis(true);
-    }
-  }, [subscriptionTransactions.length, groupedServices.length]);
+    processSubscriptions();
+  }, [subscriptionTransactions.length]);
 
-  const totalMensual = groupedServices.reduce((sum, service) => sum + service.montoPromedio, 0);
+  // Función para obtener el color del badge de frecuencia
+  const getFrequencyBadgeVariant = (frequency: string) => {
+    switch (frequency) {
+      case 'Mensual': return 'default';
+      case 'Anual': return 'secondary';
+      default: return 'outline';
+    }
+  };
 
   return (
     <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
-          Suscripciones
+        <CardTitle className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Suscripciones Activas
+          </div>
+          {isLoading && <RefreshCw className="h-4 w-4 animate-spin" />}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
           <p className="text-muted-foreground text-sm">
-            Basado en los últimos 12 meses
+            Análisis automático de los últimos 12 meses
           </p>
           <Badge variant="outline" className="text-xs">
-            {groupedServices.length} servicios detectados
+            {services.length} servicios detectados
           </Badge>
         </div>
 
-        {needsAnalysis && (
-          <div className="text-center py-4 border border-dashed rounded-lg">
-            <HelpCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground mb-3">
-              Necesito analizar tus transacciones para agrupar los servicios inteligentemente
-            </p>
-            <Button 
-              onClick={analyzeServices} 
-              disabled={isAnalyzing}
-              size="sm"
-            >
-              {isAnalyzing ? 'Analizando...' : 'Analizar Servicios'}
-            </Button>
-          </div>
-        )}
-
-        {groupedServices.length === 0 && !needsAnalysis ? (
+        {services.length === 0 && !isLoading ? (
           <div className="text-center py-8 text-muted-foreground">
             <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No se detectaron suscripciones</p>
-            <p className="text-sm">Necesitas transacciones en la categoría "Cuotas / Suscripciones"</p>
+            <p className="text-sm">Agrega transacciones en categorías de "Suscripciones"</p>
           </div>
         ) : (
-          <>
-            <div className="space-y-4">
-              {groupedServices.map((service, index) => (
-                <div key={index} className="p-4 rounded-lg border bg-card">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
+          <div className="space-y-4">
+            {services.map((service, index) => (
+              <div key={index} className="p-4 rounded-lg border bg-card hover:bg-muted/5 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-lg">{service.serviceName}</h3>
-                      <p className="text-sm text-muted-foreground">{service.description}</p>
+                      <Badge variant={getFrequencyBadgeVariant(service.frecuencia)} className="text-xs">
+                        {service.frecuencia}
+                      </Badge>
                     </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {service.frecuencia} pagos
-                    </Badge>
+                    <p className="text-sm text-muted-foreground">{service.tipoServicio}</p>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                  <Badge variant="secondary" className="text-xs">
+                    {service.numeroPagos} pagos
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <span className="text-muted-foreground">Último pago:</span>
-                        <div className="font-medium">
-                          {service.ultimoPago.fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                        </div>
-                        <div className="text-primary font-medium">
+                        <div className="font-medium">{service.ultimoPago.mes}</div>
+                        <div className="text-primary font-bold text-lg">
                           ${formatCurrency(service.ultimoPago.monto)}
                         </div>
                       </div>
                     </div>
-                    
-                    {service.proximoPago && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <span className="text-muted-foreground">Próximo pago:</span>
-                          <div className="font-medium">
-                            {service.proximoPago.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
+                  </div>
+                  
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      <Clock className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <span className="text-muted-foreground">Promedio:</span>
-                        <div className="font-medium text-primary">
-                          ${formatCurrency(service.montoPromedio)}
+                        <span className="text-muted-foreground">Próximo pago estimado:</span>
+                        <div className="font-medium">
+                          {service.proximoPago.toLocaleDateString('es-ES', { 
+                            day: 'numeric',
+                            month: 'long', 
+                            year: 'numeric' 
+                          })}
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Repeat className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            Frecuencia: {service.frecuencia}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {groupedServices.length > 0 && (
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center p-4 bg-primary/5 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Total Mensual Estimado</span>
-                  </div>
-                  <span className="text-xl font-bold text-primary">
-                    ${formatCurrency(totalMensual)}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Calculado basándose en el promedio de los últimos 12 meses
-                </p>
               </div>
-            )}
-          </>
+            ))}
+          </div>
+        )}
+
+        {subscriptionTransactions.length > 0 && (
+          <div className="border-t pt-4 text-center">
+            <p className="text-xs text-muted-foreground">
+              Detectadas {subscriptionTransactions.length} transacciones de suscripciones en los últimos 12 meses
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>
