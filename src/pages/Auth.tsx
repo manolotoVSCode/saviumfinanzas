@@ -126,9 +126,6 @@ const Auth = () => {
             </div>
             
             <div className="space-y-6">
-              <h2 className="text-4xl font-bold text-foreground leading-tight">
-                Professional Portfolio Management & Financial Analytics
-              </h2>
               <p className="text-xl text-muted-foreground leading-relaxed">
                 Comprehensive wealth management solution featuring advanced portfolio analytics, 
                 multi-asset class tracking, and institutional-grade financial reporting.
