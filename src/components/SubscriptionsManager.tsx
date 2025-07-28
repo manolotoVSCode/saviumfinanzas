@@ -65,19 +65,29 @@ export const SubscriptionsManager = () => {
 
   // Analizar servicios con IA
   const analyzeServices = async () => {
-    if (subscriptionTransactions.length === 0) return;
+    if (subscriptionTransactions.length === 0) {
+      console.log('No subscription transactions found');
+      return;
+    }
 
     setIsAnalyzing(true);
     try {
       const uniqueComments = [...new Set(subscriptionTransactions.map(t => t.comentario))];
+      console.log('Unique comments to analyze:', uniqueComments);
       
       const { data, error } = await supabase.functions.invoke('analyze-subscriptions', {
         body: { comments: uniqueComments }
       });
 
-      if (error) throw error;
+      console.log('Supabase function response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
       const aiResult: AIAnalysisResult = data;
+      console.log('AI analysis result:', aiResult);
       
       // Procesar resultados y calcular estadísticas
       const services: GroupedService[] = aiResult.groups.map(group => {

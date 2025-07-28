@@ -14,12 +14,24 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting analyze-subscriptions function');
+    
     const { comments } = await req.json();
+    console.log('Received comments:', comments);
 
     if (!perplexityApiKey) {
+      console.error('PERPLEXITY_API_KEY not configured');
       throw new Error('PERPLEXITY_API_KEY not configured');
     }
 
+    if (!comments || comments.length === 0) {
+      console.log('No comments provided');
+      return new Response(JSON.stringify({ groups: [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Making request to Perplexity API');
     const prompt = `Analiza estos comentarios de transacciones y agrúpalos por servicio/empresa. 
     
 Comentarios: ${comments.join(', ')}
@@ -69,11 +81,23 @@ NO agregues texto adicional, solo el JSON.`;
       }),
     });
 
+    console.log('Perplexity API response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Perplexity API error:', errorText);
+      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
+    }
+
     const data = await response.json();
+    console.log('Perplexity API response:', data);
+    
     const aiResponse = data.choices[0].message.content;
+    console.log('AI response content:', aiResponse);
     
     // Parse the JSON response
     const analysisResult = JSON.parse(aiResponse);
+    console.log('Parsed analysis result:', analysisResult);
 
     return new Response(JSON.stringify(analysisResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
