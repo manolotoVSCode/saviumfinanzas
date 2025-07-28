@@ -2,20 +2,22 @@ import { AlertTriangle, X } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useSampleData } from '@/hooks/useSampleData';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
 export const SampleDataBanner = () => {
   const { hasSampleData, clearSampleData } = useSampleData();
+  const { t } = useLanguage();
 
   if (!hasSampleData) return null;
 
   const handleClearData = async () => {
     const success = await clearSampleData();
     if (success) {
-      toast.success('Datos de ejemplo eliminados correctamente');
+      toast.success(t('dashboard.sample_data_removed'));
       window.location.reload(); // Refresh to update all data
     } else {
-      toast.error('Error al eliminar los datos de ejemplo');
+      toast.error(t('dashboard.sample_data_error'));
     }
   };
 
@@ -24,8 +26,7 @@ export const SampleDataBanner = () => {
       <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
       <AlertDescription className="flex items-center justify-between">
         <span className="text-amber-800 dark:text-amber-200">
-          <strong>Datos de ejemplo:</strong> Estás viendo datos de muestra para que puedas explorar la aplicación. 
-          Cuando crees tu primera cuenta o categoría, estos datos se eliminarán automáticamente.
+          <strong>{t('dashboard.sample_data')}:</strong> {t('dashboard.sample_data_description')}
         </span>
         <Button
           variant="outline"
@@ -34,7 +35,7 @@ export const SampleDataBanner = () => {
           className="ml-4 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900"
         >
           <X className="h-3 w-3 mr-1" />
-          Eliminar ahora
+          {t('dashboard.remove_now')}
         </Button>
       </AlertDescription>
     </Alert>

@@ -15,89 +15,54 @@ import {
   BookOpen
 } from 'lucide-react';
 import { useSampleData } from '@/hooks/useSampleData';
-
-const guideSteps = [
-  {
-    title: '1. Cuentas',
-    description: 'Gestiona tus cuentas bancarias, tarjetas e inversiones',
-    icon: CreditCard,
-    content: [
-      '💰 Líquido: Cuentas bancarias, efectivo',
-      '💳 Pasivo: Tarjetas de crédito, deudas',
-      '📈 Inversiones: ETFs, acciones, fondos',
-      '🏢 Empresa Propia: Activos empresariales',
-      '🏠 Inmuebles: Propiedades, bienes raíces'
-    ],
-    action: 'Crea tus cuentas en la sección principal'
-  },
-  {
-    title: '2. Categorías',
-    description: 'Organiza tus ingresos y gastos',
-    icon: PlusCircle,
-    content: [
-      '💵 Ingresos: Salario, freelance, inversiones',
-      '🛒 Gastos: Alimentación, transporte, hogar',
-      '📊 Subcategorías: Detalla cada categoría',
-      '🔄 Personalizable: Adapta a tu estilo de vida'
-    ],
-    action: 'Configura categorías en Configuración'
-  },
-  {
-    title: '3. Transacciones',
-    description: 'Registra tus movimientos financieros',
-    icon: ArrowUpDown,
-    content: [
-      '📝 Manual: Agrega transacciones una por una',
-      '📁 CSV: Importa desde archivo',
-      '🔄 Transferencias: Entre tus cuentas',
-      '📅 Histórico: Consulta movimientos pasados'
-    ],
-    action: 'Ve a Transacciones para empezar'
-  },
-  {
-    title: '4. Inversiones',
-    description: 'Monitorea tu portafolio de inversión',
-    icon: TrendingUp,
-    content: [
-      '📈 ETFs y Fondos: Diversificación',
-      '🏢 Acciones: Empresas individuales',
-      '💰 Rendimientos: Calcula ganancias',
-      '📊 Analytics: Métricas de performance'
-    ],
-    action: 'Administra en sección Inversiones'
-  },
-  {
-    title: '5. Criptomonedas',
-    description: 'Gestiona tus activos digitales',
-    icon: Coins,
-    content: [
-      '₿ Bitcoin, Ethereum y más',
-      '💱 Precios en tiempo real',
-      '📊 Portfolio tracking',
-      '💰 ROI automático'
-    ],
-    action: 'Configura en Inversiones > Criptomonedas'
-  },
-  {
-    title: '6. Importación',
-    description: 'Acelera con datos existentes',
-    icon: Upload,
-    content: [
-      '📄 Formato CSV estándar',
-      '🔄 Mapeo automático de campos',
-      '✅ Validación de datos',
-      '⚡ Procesamiento masivo'
-    ],
-    action: 'Usa el importador en Transacciones'
-  }
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const WelcomeGuide = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const { hasSampleData } = useSampleData();
+  const { t } = useLanguage();
 
   if (!isVisible || !hasSampleData) return null;
+
+  const guideSteps = [
+    {
+      title: t('guide.step1.title'),
+      description: t('guide.step1.description'),
+      icon: CreditCard,
+      action: t('guide.step1.action')
+    },
+    {
+      title: t('guide.step2.title'),
+      description: t('guide.step2.description'),
+      icon: PlusCircle,
+      action: t('guide.step2.action')
+    },
+    {
+      title: t('guide.step3.title'),
+      description: t('guide.step3.description'),
+      icon: ArrowUpDown,
+      action: t('guide.step3.action')
+    },
+    {
+      title: t('guide.step4.title'),
+      description: t('guide.step4.description'),
+      icon: TrendingUp,
+      action: t('guide.step4.action')
+    },
+    {
+      title: t('guide.step5.title'),
+      description: t('guide.step5.description'),
+      icon: Coins,
+      action: t('guide.step5.action')
+    },
+    {
+      title: t('guide.step6.title'),
+      description: t('guide.step6.description'),
+      icon: Upload,
+      action: t('guide.step6.action')
+    }
+  ];
 
   const currentGuide = guideSteps[currentStep];
   const Icon = currentGuide.icon;
@@ -124,10 +89,10 @@ export const WelcomeGuide = () => {
             </div>
             <div>
               <CardTitle className="text-blue-900 dark:text-blue-100">
-                Guía de Inicio Rápido
+                {t('dashboard.quick_start')}
               </CardTitle>
               <CardDescription className="text-blue-700 dark:text-blue-300">
-                Aprende a usar todas las funciones de tu gestor financiero
+                {t('dashboard.quick_start_description')}
               </CardDescription>
             </div>
           </div>
@@ -171,14 +136,6 @@ export const WelcomeGuide = () => {
               {currentGuide.description}
             </p>
             
-            <div className="space-y-2 mb-4">
-              {currentGuide.content.map((item, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-            
             <Badge variant="secondary" className="bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200">
               {currentGuide.action}
             </Badge>
@@ -193,11 +150,11 @@ export const WelcomeGuide = () => {
             className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
-            Anterior
+            {t('guide.previous')}
           </Button>
           
           <span className="text-sm text-blue-600 dark:text-blue-400">
-            {currentStep + 1} de {guideSteps.length}
+            {t('guide.step_count', { current: currentStep + 1, total: guideSteps.length })}
           </span>
           
           <Button
@@ -205,7 +162,7 @@ export const WelcomeGuide = () => {
             disabled={currentStep === guideSteps.length - 1}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Siguiente
+            {t('guide.next')}
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>

@@ -6,6 +6,7 @@ import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart } from 'recharts';
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DashboardProps {
   metrics: DashboardMetrics;
@@ -17,6 +18,7 @@ interface DashboardProps {
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+  const { t } = useLanguage();
 
   // Función para filtrar métricas por moneda
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
@@ -266,7 +268,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-success">
-              ACTIVOS
+              {t('dashboard.assets')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -289,24 +291,24 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                      {activos.efectivoBancos > 0 && (
                         <div className="p-4 rounded-lg bg-success/5 border border-success/20">
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-muted-foreground">Efectivo y Bancos</span>
-                            <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
-                         </div>
-                         <div className="text-xs text-muted-foreground">
-                           Dinero disponible inmediatamente
-                         </div>
+                             <span className="text-sm text-muted-foreground">{t('dashboard.cash_banks')}</span>
+                             <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {t('dashboard.available_immediately')}
+                          </div>
                        </div>
                      )}
                      
                      {activos.inversiones > 0 && (
                         <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-muted-foreground">Inversiones</span>
-                            <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
-                         </div>
-                         <div className="text-xs text-muted-foreground">
-                           Fondos, acciones y ETFs
-                         </div>
+                             <span className="text-sm text-muted-foreground">{t('dashboard.investments_label')}</span>
+                             <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {t('dashboard.funds_stocks_etfs')}
+                          </div>
                        </div>
                      )}
                      
@@ -316,8 +318,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               
               <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
                 <div className="flex justify-between items-center">
-                   <span className="font-semibold text-success">TOTAL ACTIVOS</span>
-                   <span className="text-xl font-bold text-success">{formatCurrencyTotals(metrics.activos.total, 'MXN')}</span>
+                    <span className="font-semibold text-success">{t('dashboard.total_assets')}</span>
+                    <span className="text-xl font-bold text-success">{formatCurrencyTotals(metrics.activos.total, 'MXN')}</span>
                 </div>
               </div>
 
@@ -340,9 +342,9 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         {/* PASIVOS */}
         <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-destructive">
-              PASIVOS
-            </CardTitle>
+             <CardTitle className="text-destructive">
+               {t('dashboard.liabilities')}
+             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -396,8 +398,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
-                   <span className="font-semibold text-destructive">TOTAL PASIVOS</span>
-                   <span className="text-xl font-bold text-destructive">{formatCurrencyTotals(metrics.pasivos.total, 'MXN')}</span>
+                    <span className="font-semibold text-destructive">{t('dashboard.total_liabilities')}</span>
+                    <span className="text-xl font-bold text-destructive">{formatCurrencyTotals(metrics.pasivos.total, 'MXN')}</span>
                 </div>
               </div>
             </div>
