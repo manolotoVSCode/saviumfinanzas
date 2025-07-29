@@ -20,7 +20,7 @@ export type Database = {
           created_at: string
           id: string
           subcategoria: string
-          tipo: string
+          tipo: string | null
           updated_at: string
           user_id: string
         }
@@ -29,7 +29,7 @@ export type Database = {
           created_at?: string
           id?: string
           subcategoria: string
-          tipo: string
+          tipo?: string | null
           updated_at?: string
           user_id: string
         }
@@ -38,7 +38,7 @@ export type Database = {
           created_at?: string
           id?: string
           subcategoria?: string
-          tipo?: string
+          tipo?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -299,6 +299,10 @@ export type Database = {
       clear_sample_data: {
         Args: { user_uuid: string }
         Returns: undefined
+      }
+      ensure_sin_asignar_category: {
+        Args: { user_uuid: string }
+        Returns: string
       }
       get_admin_user_stats: {
         Args: Record<PropertyKey, never>

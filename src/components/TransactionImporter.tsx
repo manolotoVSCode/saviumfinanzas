@@ -166,13 +166,14 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       return;
     }
 
-    // Buscar categoría "SIN ASIGNAR"
+    // Buscar categoría "SIN ASIGNAR" (debe existir automáticamente)
     const defaultCategory = categories.find(cat => 
-      cat.subcategoria.toLowerCase() === 'sin asignar'
+      cat.subcategoria.toUpperCase() === 'SIN ASIGNAR' && 
+      cat.categoria.toUpperCase() === 'SIN ASIGNAR'
     );
 
     if (!defaultCategory) {
-      setImportStatus({ type: 'error', message: 'No se encontró la categoría "SIN ASIGNAR". Debe crear una categoría con subcategoría "SIN ASIGNAR" antes de importar.' });
+      setImportStatus({ type: 'error', message: 'Error: No se encontró la categoría "SIN ASIGNAR". Contacte al administrador.' });
       return;
     }
 

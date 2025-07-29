@@ -127,8 +127,8 @@ export const useFinanceDataSupabase = () => {
       const category = categories.find(c => c.id === transaction.subcategoriaId);
       return {
         ...transaction,
-        categoria: category?.categoria,
-        tipo: category?.tipo
+        categoria: category?.categoria || 'SIN ASIGNAR',
+        tipo: category?.tipo || undefined // Permitir undefined para transacciones sin clasificar
       };
     });
   }, [transactions, categories]);

@@ -282,7 +282,10 @@ export const CategoriesManager = ({
                           <Button 
                             variant="destructive" 
                             size="sm"
-                            onClick={() => onDeleteCategory(category.id)}
+                            onClick={() => {
+                              // Las transacciones se reasignarán automáticamente a "SIN ASIGNAR" por el trigger de BD
+                              onDeleteCategory(category.id);
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

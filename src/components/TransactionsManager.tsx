@@ -932,7 +932,7 @@ export const TransactionsManager = ({
                           return (
                             <>
                               <div className="font-medium text-destructive">SIN ASIGNAR</div>
-                              <div className="text-sm text-destructive">SIN ASIGNAR</div>
+                              <div className="text-sm text-muted-foreground">Sin clasificar</div>
                             </>
                           );
                         }
