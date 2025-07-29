@@ -166,14 +166,13 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       return;
     }
 
-    // Buscar categoría "SIN ASIGNAR" o usar la primera disponible
+    // Buscar categoría "SIN ASIGNAR"
     const defaultCategory = categories.find(cat => 
-      cat.categoria.toLowerCase() === 'sin asignar' || 
       cat.subcategoria.toLowerCase() === 'sin asignar'
-    ) || categories[0];
+    );
 
     if (!defaultCategory) {
-      setImportStatus({ type: 'error', message: 'No hay categorías disponibles. Debe crear al menos una categoría antes de importar.' });
+      setImportStatus({ type: 'error', message: 'No se encontró la categoría "SIN ASIGNAR". Debe crear una categoría con subcategoría "SIN ASIGNAR" antes de importar.' });
       return;
     }
 
@@ -303,11 +302,13 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
                     <SelectValue placeholder="Seleccione una cuenta" />
                   </SelectTrigger>
                   <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.nombre} ({account.divisa})
-                      </SelectItem>
-                    ))}
+                    {accounts
+                      .filter(account => !selectedCurrency || account.divisa === selectedCurrency)
+                      .map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.nombre} ({account.divisa})
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
