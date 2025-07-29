@@ -85,10 +85,14 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses incluyendo actual)
     const tendenciaMensual = [];
     for (let i = 11; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() - i;
+      
+      // Crear fecha correcta manejando cambios de año
+      const targetDate = new Date(year, month, 1);
+      const monthStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+      const monthEnd = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
       
       const monthTrans = filteredTransactions.filter(t => {
         const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
@@ -98,8 +102,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       const ingresos = monthTrans.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
       const gastos = Math.abs(monthTrans.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + Math.abs(t.monto), 0));
       
+      // Crear etiqueta del mes de forma más consistente
+      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const mesLabel = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear().toString().slice(-2)}`;
+      
       tendenciaMensual.push({
-        mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
+        mes: mesLabel,
         ingresos,
         gastos,
         balance: ingresos - gastos
