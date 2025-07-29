@@ -95,7 +95,7 @@ export const ExchangeRates = () => {
 
   if (loading) {
     return (
-      <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+      <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-success" />
@@ -119,7 +119,7 @@ export const ExchangeRates = () => {
 
   if (error) {
     return (
-      <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+      <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-destructive" />
@@ -143,7 +143,7 @@ export const ExchangeRates = () => {
   }
 
   return (
-    <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+    <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">

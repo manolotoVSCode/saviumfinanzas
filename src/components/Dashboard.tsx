@@ -265,7 +265,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       {/* BALANCE GENERAL - Activos y Pasivos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ACTIVOS */}
-        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-success">
               {t('dashboard.assets')}
@@ -340,7 +340,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </Card>
 
         {/* PASIVOS */}
-        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
              <CardTitle className="text-destructive">
                {t('dashboard.liabilities')}
@@ -408,7 +408,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       </div>
 
       {/* SCORE DE SALUD FINANCIERA */}
-      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {t('dashboard.financial_health')}
@@ -469,7 +469,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       </div>
 
       {/* GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES */}
-      <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
           <CardTitle className="text-center">{t('dashboard.income_vs_expenses')} <strong>{selectedCurrency}</strong></CardTitle>
         </CardHeader>
@@ -545,7 +545,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado del mes */}
-        <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
+        <Card className="border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-primary">{t('dashboard.monthly_result')}</CardTitle>
             {getTrendIcon(cambioBalanceMes)}
@@ -561,7 +561,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </Card>
 
         {/* Ingresos del mes */}
-        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('dashboard.monthly_income_label')}</CardTitle>
             {getTrendIcon(filteredMetrics.cambioIngresosMes)}
@@ -577,7 +577,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </Card>
 
         {/* Gastos del mes */}
-        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('dashboard.monthly_expenses_label')}</CardTitle>
             {getTrendIcon(filteredMetrics.cambioGastosMes)}
@@ -596,7 +596,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       {/* DISTRIBUCIÓN DE GASTOS E INGRESOS MENSUAL */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Distribución de Gastos */}
-        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-center">{t('dashboard.expenses_distribution')}</CardTitle>
           </CardHeader>
@@ -646,7 +646,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </Card>
 
         {/* Distribución de Ingresos */}
-        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-center">{t('dashboard.income_distribution')}</CardTitle>
           </CardHeader>
@@ -702,7 +702,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado anual */}
-        <Card className="hover-scale border-2 border-primary/50 bg-primary/5 transition-all duration-300">
+        <Card className="border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-primary">{t('dashboard.annual_result')}</CardTitle>
             {getTrendIcon(cambioBalanceAnio)}
@@ -718,7 +718,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </Card>
 
         {/* Ingresos anuales */}
-        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('dashboard.annual_income_label')}</CardTitle>
             {getTrendIcon(filteredMetrics.cambioIngresosAnio)}
@@ -734,7 +734,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </Card>
 
         {/* Gastos anuales */}
-        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t('dashboard.annual_expenses_label')}</CardTitle>
             {getTrendIcon(filteredMetrics.cambioGastosAnio)}
@@ -753,7 +753,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       {/* DISTRIBUCIÓN DE GASTOS E INGRESOS ANUAL */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Distribución de Gastos Anual */}
-        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-center">{t('dashboard.expenses_distribution')}</CardTitle>
           </CardHeader>
@@ -803,7 +803,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </Card>
 
         {/* Distribución de Ingresos Anual */}
-        <Card className="hover-scale border-success/20 hover:border-success/40 transition-all duration-300">
+        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-center">{t('dashboard.income_distribution')}</CardTitle>
           </CardHeader>

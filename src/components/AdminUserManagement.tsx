@@ -100,7 +100,7 @@ export const AdminUserManagement = () => {
   };
 
   return (
-    <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+    <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">

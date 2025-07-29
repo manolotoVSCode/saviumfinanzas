@@ -50,7 +50,7 @@ const Configuracion = () => {
         <ProfileEditor />
 
         {/* CONFIGURACIÓN DE IDIOMA */}
-        <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
@@ -80,7 +80,7 @@ const Configuracion = () => {
         </Card>
 
         {/* TASAS DE CAMBIO ACTUALES */}
-        <Card className="hover-scale border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
           <CardHeader>
             <CardTitle>{t('settings.exchange_rates')}</CardTitle>
           </CardHeader>
@@ -90,7 +90,7 @@ const Configuracion = () => {
         </Card>
 
         {/* GESTIÓN DE CUENTAS */}
-        <Card className="hover-scale border-secondary/20 hover:border-secondary/40 transition-all duration-300">
+        <Card className="border-secondary/20 hover:border-secondary/40 transition-all duration-300">
           <CardHeader>
             <CardTitle>{t('settings.accounts')}</CardTitle>
           </CardHeader>
@@ -106,7 +106,7 @@ const Configuracion = () => {
         </Card>
 
         {/* GESTIÓN DE CATEGORÍAS */}
-        <Card className="hover-scale border-accent/20 hover:border-accent/40 transition-all duration-300">
+        <Card className="border-accent/20 hover:border-accent/40 transition-all duration-300">
           <CardHeader>
             <CardTitle>{t('settings.categories')}</CardTitle>
           </CardHeader>
@@ -125,7 +125,7 @@ const Configuracion = () => {
         {isAdmin && <AdminUserManagement />}
 
         {/* INFORMACIÓN DE LA APP */}
-        <Card className="hover-scale border-muted/20 hover:border-muted/40 transition-all duration-300">
+        <Card className="border-muted/20 hover:border-muted/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {t('settings.about')}
@@ -152,7 +152,7 @@ const Configuracion = () => {
         </Card>
 
         {/* CONFIGURACIÓN DE SESIÓN */}
-        <Card className="hover-scale border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LogOut className="h-5 w-5 text-destructive" />
