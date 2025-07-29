@@ -145,6 +145,7 @@ export const AccountsManager = ({
       case 'Tarjeta de Crédito': return 'destructive';
       case 'Ahorros': return 'outline';
       case 'Inversiones': return 'secondary';
+      case 'Bien Raíz': return 'default';
       default: return 'outline';
     }
   };

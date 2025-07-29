@@ -16,7 +16,7 @@ export const useFinanceDataSupabase = () => {
   const [loading, setLoading] = useState(true);
 
   const [accountTypes] = useState<AccountType[]>([
-    'Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones', 'Hipoteca', 'Empresa Propia'
+    'Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones', 'Hipoteca', 'Empresa Propia', 'Bien Raíz'
   ]);
 
   const [dateFilter, setDateFilter] = useState<{ start: Date; end: Date }>({

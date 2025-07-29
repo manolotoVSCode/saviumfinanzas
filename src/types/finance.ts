@@ -1,6 +1,6 @@
 export type TransactionType = 'Ingreso' | 'Gastos' | 'Aportación' | 'Retiro';
 
-export type AccountType = 'Efectivo' | 'Banco' | 'Tarjeta de Crédito' | 'Ahorros' | 'Inversiones' | 'Hipoteca' | 'Empresa Propia';
+export type AccountType = 'Efectivo' | 'Banco' | 'Tarjeta de Crédito' | 'Ahorros' | 'Inversiones' | 'Hipoteca' | 'Empresa Propia' | 'Bien Raíz';
 
 export interface Category {
   id: string;
