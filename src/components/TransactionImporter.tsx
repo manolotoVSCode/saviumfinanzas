@@ -166,6 +166,17 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       return;
     }
 
+    // Buscar categoría "SIN ASIGNAR" o usar la primera disponible
+    const defaultCategory = categories.find(cat => 
+      cat.categoria.toLowerCase() === 'sin asignar' || 
+      cat.subcategoria.toLowerCase() === 'sin asignar'
+    ) || categories[0];
+
+    if (!defaultCategory) {
+      setImportStatus({ type: 'error', message: 'No hay categorías disponibles. Debe crear al menos una categoría antes de importar.' });
+      return;
+    }
+
     const transactions: Omit<Transaction, 'id' | 'monto'>[] = parsedTransactions.map((transaction, index) => ({
       csvId: `import_${Date.now()}_${index}`,
       cuentaId: selectedAccount,
@@ -173,7 +184,7 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       comentario: transaction.comentario,
       ingreso: transaction.ingreso,
       gasto: transaction.gasto,
-      subcategoriaId: 'sin-asignar',
+      subcategoriaId: defaultCategory.id,
       divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
     }));
 
