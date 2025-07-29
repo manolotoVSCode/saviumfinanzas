@@ -32,8 +32,8 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="container mx-auto px-4 py-8">
         {/* HEADER */}
         <div className="mb-8 flex justify-between items-center">
-          <div className="text-center flex-1">
-            <Logo size={72} className="justify-center" />
+          <div className="flex-shrink-0">
+            <Logo size={72} className="justify-start" />
           </div>
           <div className="flex items-center gap-4">
             {profile && (

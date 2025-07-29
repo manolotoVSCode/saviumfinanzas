@@ -12,7 +12,7 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = 64 }) => {
       <img 
         src="/lovable-uploads/ca25ffc9-53d3-4773-9f62-29b073a48ce0.png" 
         alt="Savium Finance"
-        className="h-12 w-auto"
+        className="h-14 w-auto"
       />
     </div>
   );
