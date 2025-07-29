@@ -192,26 +192,46 @@ const Inversiones = (): JSX.Element => {
                   <CardTitle>Distribución del Portafolio</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={pieData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Monto Invertido']} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div className="flex items-center justify-center gap-8">
+                    <div className="h-64 flex-shrink-0" style={{ width: '300px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            fontSize={12}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Monto Invertido']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    {/* Leyenda */}
+                    <div className="flex-1 space-y-2">
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-3">Leyenda</h4>
+                      {pieData.map((entry, index) => (
+                        <div key={entry.name} className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                          />
+                          <span className="text-sm truncate">{entry.name}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            ${formatCurrency(entry.value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
