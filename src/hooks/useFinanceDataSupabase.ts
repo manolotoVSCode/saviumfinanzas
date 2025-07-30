@@ -137,21 +137,27 @@ export const useFinanceDataSupabase = () => {
   const calcularScoreFinanciero = (activos: any, pasivos: any, balanceMes: number, ahorroTarget: number) => {
     let score = 0;
     
-    // Ratio de liquidez (30 puntos máximo)
+    // Ratio de liquidez (25 puntos máximo)
     const ratioLiquidez = activos.efectivoBancos / (pasivos.total || 1);
-    if (ratioLiquidez >= 3) score += 30;
-    else if (ratioLiquidez >= 1) score += 20;
-    else score += 10;
+    if (ratioLiquidez >= 3) score += 25;
+    else if (ratioLiquidez >= 1) score += 15;
+    else score += 5;
     
-    // Capacidad de ahorro (40 puntos máximo)
+    // Capacidad de ahorro (35 puntos máximo)
     const ratioAhorro = balanceMes / ahorroTarget;
-    if (ratioAhorro >= 1) score += 40;
-    else if (ratioAhorro >= 0.5) score += 25;
-    else if (ratioAhorro > 0) score += 15;
+    if (ratioAhorro >= 1) score += 35;
+    else if (ratioAhorro >= 0.5) score += 20;
+    else if (ratioAhorro > 0) score += 10;
     
-    // Diversificación (30 puntos máximo)
-    if (activos.inversiones > 0) score += 20;
-    if (activos.total > activos.efectivoBancos) score += 10;
+    // Diversificación de activos (40 puntos máximo)
+    if (activos.inversiones > 0) score += 15; // Tiene inversiones
+    if (activos.bienRaiz > 0) score += 15; // Tiene bienes raíces
+    if (activos.total > activos.efectivoBancos * 2) score += 10; // Buena diversificación
+    
+    // Ratio patrimonio vs deuda (bonus: hasta 10 puntos extra)
+    const ratioPatrimonio = activos.total / (pasivos.total || 1);
+    if (ratioPatrimonio >= 10) score += 10;
+    else if (ratioPatrimonio >= 5) score += 5;
     
     return Math.min(100, score);
   };
