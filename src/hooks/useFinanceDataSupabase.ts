@@ -137,29 +137,64 @@ export const useFinanceDataSupabase = () => {
   const calcularScoreFinanciero = (activos: any, pasivos: any, balanceMes: number, ahorroTarget: number) => {
     let score = 0;
     
+    console.log('=== CÁLCULO SCORE FINANCIERO ===');
+    console.log('Activos:', activos);
+    console.log('Pasivos:', pasivos);
+    console.log('Balance mes:', balanceMes);
+    console.log('Ahorro target:', ahorroTarget);
+    
     // Ratio de liquidez (25 puntos máximo)
     const ratioLiquidez = activos.efectivoBancos / (pasivos.total || 1);
-    if (ratioLiquidez >= 3) score += 25;
-    else if (ratioLiquidez >= 1) score += 15;
-    else score += 5;
+    console.log('Ratio liquidez:', ratioLiquidez);
+    let puntosLiquidez = 0;
+    if (ratioLiquidez >= 3) puntosLiquidez = 25;
+    else if (ratioLiquidez >= 1) puntosLiquidez = 15;
+    else puntosLiquidez = 5;
+    score += puntosLiquidez;
+    console.log('Puntos por liquidez:', puntosLiquidez);
     
     // Capacidad de ahorro (35 puntos máximo)
     const ratioAhorro = balanceMes / ahorroTarget;
-    if (ratioAhorro >= 1) score += 35;
-    else if (ratioAhorro >= 0.5) score += 20;
-    else if (ratioAhorro > 0) score += 10;
+    console.log('Ratio ahorro:', ratioAhorro);
+    let puntosAhorro = 0;
+    if (ratioAhorro >= 1) puntosAhorro = 35;
+    else if (ratioAhorro >= 0.5) puntosAhorro = 20;
+    else if (ratioAhorro > 0) puntosAhorro = 10;
+    score += puntosAhorro;
+    console.log('Puntos por ahorro:', puntosAhorro);
     
     // Diversificación de activos (40 puntos máximo)
-    if (activos.inversiones > 0) score += 15; // Tiene inversiones
-    if (activos.bienRaiz > 0) score += 15; // Tiene bienes raíces
-    if (activos.total > activos.efectivoBancos * 2) score += 10; // Buena diversificación
+    let puntosDiversificacion = 0;
+    if (activos.inversiones > 0) {
+      puntosDiversificacion += 15;
+      console.log('Tiene inversiones: +15 puntos');
+    }
+    if (activos.bienRaiz > 0) {
+      puntosDiversificacion += 15;
+      console.log('Tiene bienes raíces:', activos.bienRaiz, '+15 puntos');
+    }
+    if (activos.total > activos.efectivoBancos * 2) {
+      puntosDiversificacion += 10;
+      console.log('Buena diversificación (total > efectivo*2):', activos.total, '>', activos.efectivoBancos * 2, '+10 puntos');
+    }
+    score += puntosDiversificacion;
+    console.log('Total puntos diversificación:', puntosDiversificacion);
     
     // Ratio patrimonio vs deuda (bonus: hasta 10 puntos extra)
     const ratioPatrimonio = activos.total / (pasivos.total || 1);
-    if (ratioPatrimonio >= 10) score += 10;
-    else if (ratioPatrimonio >= 5) score += 5;
+    console.log('Ratio patrimonio:', ratioPatrimonio);
+    let puntosPatrimonio = 0;
+    if (ratioPatrimonio >= 10) puntosPatrimonio = 10;
+    else if (ratioPatrimonio >= 5) puntosPatrimonio = 5;
+    score += puntosPatrimonio;
+    console.log('Puntos por ratio patrimonio:', puntosPatrimonio);
     
-    return Math.min(100, score);
+    const finalScore = Math.min(100, score);
+    console.log('Score final antes de límite:', score);
+    console.log('Score final:', finalScore);
+    console.log('=== FIN CÁLCULO SCORE ===');
+    
+    return finalScore;
   };
 
   const generateRecommendations = (activos: any, pasivos: any, balanceMes: number, ahorroTarget: number) => {
