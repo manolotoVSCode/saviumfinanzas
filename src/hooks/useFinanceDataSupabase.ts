@@ -184,8 +184,9 @@ export const useFinanceDataSupabase = () => {
     const ratioPatrimonio = activos.total / (pasivos.total || 1);
     console.log('Ratio patrimonio:', ratioPatrimonio);
     let puntosPatrimonio = 0;
-    if (ratioPatrimonio >= 10) puntosPatrimonio = 10;
-    else if (ratioPatrimonio >= 5) puntosPatrimonio = 5;
+    if (ratioPatrimonio >= 5) puntosPatrimonio = 10;
+    else if (ratioPatrimonio >= 2.5) puntosPatrimonio = 8;
+    else if (ratioPatrimonio >= 1.5) puntosPatrimonio = 5;
     score += puntosPatrimonio;
     console.log('Puntos por ratio patrimonio:', puntosPatrimonio);
     
