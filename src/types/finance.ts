@@ -52,12 +52,13 @@ export interface DashboardMetrics {
     efectivoBancos: number;
     inversiones: number;
     empresasPrivadas: number;
+    bienRaiz: number;
     total: number;
   };
   activosPorMoneda: {
-    MXN: { efectivoBancos: number; inversiones: number; empresasPrivadas: number; total?: number };
-    USD: { efectivoBancos: number; inversiones: number; empresasPrivadas: number; total?: number };
-    EUR: { efectivoBancos: number; inversiones: number; empresasPrivadas: number; total?: number };
+    MXN: { efectivoBancos: number; inversiones: number; empresasPrivadas: number; bienRaiz: number; total?: number };
+    USD: { efectivoBancos: number; inversiones: number; empresasPrivadas: number; bienRaiz: number; total?: number };
+    EUR: { efectivoBancos: number; inversiones: number; empresasPrivadas: number; bienRaiz: number; total?: number };
   };
   pasivos: {
     tarjetasCredito: number;

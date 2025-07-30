@@ -254,26 +254,29 @@ export const useFinanceDataSupabase = () => {
         efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
         inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
         empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
+        bienRaiz: accountsWithBalances.filter(a => a.tipo === 'Bien Raíz' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
       },
       USD: {
         efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
         inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
         empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
+        bienRaiz: accountsWithBalances.filter(a => a.tipo === 'Bien Raíz' && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
       },
       EUR: {
         efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
         inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
         empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
+        bienRaiz: accountsWithBalances.filter(a => a.tipo === 'Bien Raíz' && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
       }
     };
     
     // Calcular totales por moneda
     Object.keys(activosPorMoneda).forEach(moneda => {
       const activos = activosPorMoneda[moneda as keyof typeof activosPorMoneda];
-      (activos as any).total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas;
+      (activos as any).total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas + activos.bienRaiz;
     });
     
-    // Para compatibilidad con código existente - EXCLUYENDO EMPRESAS PRIVADAS del total
+    // Para compatibilidad con código existente - INCLUYENDO BIEN RAÍZ EN ACTIVOS
     const activos = {
       efectivoBancos: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
         return total + convertCurrency(activos.efectivoBancos, moneda as any, config.currency);
@@ -284,10 +287,13 @@ export const useFinanceDataSupabase = () => {
       empresasPrivadas: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
         return total + convertCurrency(activos.empresasPrivadas, moneda as any, config.currency);
       }, 0),
+      bienRaiz: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
+        return total + convertCurrency(activos.bienRaiz, moneda as any, config.currency);
+      }, 0),
       total: 0
     };
-    // TOTAL ACTIVOS = SOLO efectivo + inversiones (SIN empresas privadas)
-    activos.total = activos.efectivoBancos + activos.inversiones;
+    // TOTAL ACTIVOS = efectivo + inversiones + bienes raíces (SIN empresas privadas)
+    activos.total = activos.efectivoBancos + activos.inversiones + activos.bienRaiz;
     
     // PASIVOS DETALLADOS POR MONEDA
     const pasivosPorMoneda = {

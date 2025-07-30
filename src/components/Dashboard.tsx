@@ -290,7 +290,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   }).format(amount);
                 };
 
-                const hasAssets = activos.efectivoBancos > 0 || activos.inversiones > 0;
+                const hasAssets = activos.efectivoBancos > 0 || activos.inversiones > 0 || activos.bienRaiz > 0;
                 
                 if (!hasAssets) return null;
 
@@ -318,9 +318,21 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                             {t('dashboard.funds_stocks_etfs')}
                           </div>
                        </div>
-                     )}
-                     
-                   </div>
+                      )}
+                      
+                      {activos.bienRaiz > 0 && (
+                         <div className="p-4 rounded-lg bg-warning/5 border border-warning/20">
+                           <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm text-muted-foreground">Bienes Raíces</span>
+                              <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
+                           </div>
+                           <div className="text-xs text-muted-foreground">
+                             Propiedades y terrenos
+                           </div>
+                        </div>
+                      )}
+                      
+                    </div>
                 );
               })}
               
