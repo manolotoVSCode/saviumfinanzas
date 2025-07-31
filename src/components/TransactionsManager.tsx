@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +46,10 @@ export const TransactionsManager = ({
   const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
   const [isEditingBulk, setIsEditingBulk] = useState(false);
   const [bulkCategoryId, setBulkCategoryId] = useState('');
+  const [bulkFilters, setBulkFilters] = useState({
+    tipo: 'all',
+    busqueda: ''
+  });
   
   // Filtros
   const [filters, setFilters] = useState({
@@ -598,6 +602,37 @@ export const TransactionsManager = ({
               <DialogTitle>Cambiar Categoría de {selectedTransactions.size} Transacciones</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="bulk-tipo">Filtrar por tipo</Label>
+                  <Select value={bulkFilters.tipo} onValueChange={(value) => setBulkFilters(prev => ({ ...prev, tipo: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos los tipos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los tipos</SelectItem>
+                      <SelectItem value="Ingreso">Ingreso</SelectItem>
+                      <SelectItem value="Gastos">Gastos</SelectItem>
+                      <SelectItem value="Aportación">Aportación</SelectItem>
+                      <SelectItem value="Retiro">Retiro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="bulk-busqueda">Buscar categoría</Label>
+                  <Input
+                    id="bulk-busqueda"
+                    value={bulkFilters.busqueda}
+                    onChange={(e) => setBulkFilters(prev => ({ ...prev, busqueda: e.target.value }))}
+                    placeholder="Buscar... (mín. 3 letras)"
+                  />
+                  {bulkFilters.busqueda.length > 0 && bulkFilters.busqueda.length < 3 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Mínimo 3 caracteres para buscar
+                    </p>
+                  )}
+                </div>
+              </div>
               <div>
                 <Label htmlFor="bulk-categoria">Nueva Categoría</Label>
                 <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
@@ -605,7 +640,25 @@ export const TransactionsManager = ({
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
+                    {useMemo(() => {
+                      let filteredCategories = categories;
+                      
+                      // Filtrar por tipo
+                      if (bulkFilters.tipo !== 'all') {
+                        filteredCategories = filteredCategories.filter(cat => cat.tipo === bulkFilters.tipo);
+                      }
+                      
+                      // Filtrar por búsqueda (solo si tiene 3+ caracteres)
+                      if (bulkFilters.busqueda.length >= 3) {
+                        const searchTerm = bulkFilters.busqueda.toLowerCase();
+                        filteredCategories = filteredCategories.filter(cat => 
+                          cat.categoria.toLowerCase().includes(searchTerm) ||
+                          cat.subcategoria.toLowerCase().includes(searchTerm)
+                        );
+                      }
+                      
+                      return filteredCategories;
+                    }, [bulkFilters]).map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.categoria} - {category.subcategoria}
                       </SelectItem>
@@ -740,14 +793,11 @@ export const TransactionsManager = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                  <SelectItem value="all">Todas las categorías</SelectItem>
-                  <SelectItem value="sin-asignar" className="text-destructive">
-                    SIN ASIGNAR
-                  </SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.categoria} - {category.subcategoria}
+                   <SelectContent className="bg-background z-50">
+                   <SelectItem value="all">Todas las categorías</SelectItem>
+                   {categories.map((category) => (
+                     <SelectItem key={category.id} value={category.id}>
+                       {category.categoria} - {category.subcategoria}
                     </SelectItem>
                   ))}
                 </SelectContent>

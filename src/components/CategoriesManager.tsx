@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Category, TransactionType, Transaction } from '@/types/finance';
 import { Plus, Edit, Trash2, Check, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
@@ -279,16 +279,36 @@ export const CategoriesManager = ({
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => {
-                              // Las transacciones se reasignarán automáticamente a "SIN ASIGNAR" por el trigger de BD
-                              onDeleteCategory(category.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                disabled={inUse}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Confirmar eliminación</DialogTitle>
+                              </DialogHeader>
+                              <p>¿Estás seguro de que quieres eliminar la categoría "{category.subcategoria} - {category.categoria}"?</p>
+                              <div className="flex justify-end space-x-2 mt-4">
+                                <DialogClose asChild>
+                                  <Button variant="outline">Cancelar</Button>
+                                </DialogClose>
+                                <DialogClose asChild>
+                                  <Button 
+                                    variant="destructive"
+                                    onClick={() => onDeleteCategory(category.id)}
+                                  >
+                                    Eliminar
+                                  </Button>
+                                </DialogClose>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </TableCell>
                     </TableRow>

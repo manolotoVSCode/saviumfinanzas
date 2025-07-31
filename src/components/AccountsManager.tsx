@@ -456,9 +456,10 @@ export const AccountsManager = ({
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
-                        variant="destructive" 
+                        variant="outline" 
                         size="sm"
-                        onClick={() => onDeleteAccount(account.id)}
+                        disabled
+                        title="Las cuentas no se pueden eliminar para proteger la integridad del sistema"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
