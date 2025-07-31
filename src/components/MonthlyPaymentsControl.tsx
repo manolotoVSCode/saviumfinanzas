@@ -23,10 +23,12 @@ interface PaymentData {
     fecha: Date | null;
     monto: number;
     hayPago: boolean;
+    esMesAnterior: boolean; // Marcar si es el mes anterior al actual
   }[];
   ultimoMonto: number;
   montoPrevio: number;
   hayChangio: boolean;
+  sinPagoMesAnterior: boolean; // Indicador si falta pago en mes anterior
 }
 
 interface MonthlyPaymentsControlProps {
@@ -86,10 +88,17 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
         const pagos = [];
         const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         
+        // Calcular el mes anterior al actual (ej: si estamos en julio 2025, mes anterior es junio 2025)
+        const mesAnteriorDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        
         for (let i = 11; i >= 0; i--) {
           const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
           const monthStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
           const monthEnd = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
+          
+          // Verificar si este mes es el mes anterior al actual
+          const esMesAnterior = targetDate.getFullYear() === mesAnteriorDate.getFullYear() && 
+                               targetDate.getMonth() === mesAnteriorDate.getMonth();
           
           // Buscar pagos en este mes
           const monthPayments = categoryTransactions.filter(t => {
@@ -108,7 +117,8 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
             mes: mesLabel,
             fecha: latestPayment ? new Date(latestPayment.fecha) : null,
             monto: totalMonto,
-            hayPago: totalMonto > 0
+            hayPago: totalMonto > 0,
+            esMesAnterior
           });
         }
 
@@ -118,12 +128,17 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
         const montoPrevio = pagosConMonto.length > 1 ? pagosConMonto[pagosConMonto.length - 2].monto : 0;
         const hayChangio = montoPrevio > 0 && Math.abs(ultimoMonto - montoPrevio) > 0.01;
 
+        // Verificar si no hay pago en el mes anterior
+        const pagoMesAnterior = pagos.find(p => p.esMesAnterior);
+        const sinPagoMesAnterior = !pagoMesAnterior?.hayPago;
+
         data.push({
           categoria,
           pagos,
           ultimoMonto,
           montoPrevio,
-          hayChangio
+          hayChangio,
+          sinPagoMesAnterior
         });
       });
 
@@ -160,13 +175,26 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
         {/* Grid compacto para aprovechar todo el espacio */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
           {paymentsData.map((categoryData) => (
-            <div key={categoryData.categoria} className="flex items-center justify-between p-2 rounded bg-background/50 border border-muted/20">
+            <div key={categoryData.categoria} className={`flex items-center justify-between p-2 rounded border ${
+              categoryData.sinPagoMesAnterior 
+                ? 'bg-destructive/5 border-destructive/30' 
+                : 'bg-background/50 border-muted/20'
+            }`}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium truncate">{categoryData.categoria}</span>
+                  <span className={`text-sm font-medium truncate ${
+                    categoryData.sinPagoMesAnterior ? 'text-destructive' : ''
+                  }`}>
+                    {categoryData.categoria}
+                  </span>
                   {categoryData.hayChangio && (
                     <Badge variant="outline" className="text-xs h-4 px-1 border-warning/50 text-warning">
                       <AlertTriangle className="h-2 w-2" />
+                    </Badge>
+                  )}
+                  {categoryData.sinPagoMesAnterior && (
+                    <Badge variant="outline" className="text-xs h-4 px-1 border-destructive/50 text-destructive">
+                      Sin pago
                     </Badge>
                   )}
                 </div>
@@ -175,7 +203,9 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
               <div className="flex items-center gap-3 ml-2">
                 {/* Último pago */}
                 <div className="text-right min-w-[80px]">
-                  <div className="text-sm font-semibold">
+                  <div className={`text-sm font-semibold ${
+                    categoryData.sinPagoMesAnterior ? 'text-destructive' : ''
+                  }`}>
                     {categoryData.ultimoMonto > 0 ? (
                       new Intl.NumberFormat('es-MX', {
                         style: 'currency',
@@ -184,11 +214,15 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
                         maximumFractionDigits: 0,
                       }).format(categoryData.ultimoMonto)
                     ) : (
-                      <span className="text-muted-foreground">$0</span>
+                      <span className={categoryData.sinPagoMesAnterior ? 'text-destructive' : 'text-muted-foreground'}>
+                        $0
+                      </span>
                     )}
                   </div>
                   {categoryData.ultimoMonto > 0 && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className={`text-xs ${
+                      categoryData.sinPagoMesAnterior ? 'text-destructive/70' : 'text-muted-foreground'
+                    }`}>
                       {categoryData.pagos.filter(p => p.hayPago).slice(-1)[0]?.fecha && 
                         new Date(categoryData.pagos.filter(p => p.hayPago).slice(-1)[0].fecha!).toLocaleDateString('es-MX', { 
                           day: '2-digit', 
@@ -205,11 +239,13 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
                     <div
                       key={index}
                       className={`w-1.5 h-5 rounded-sm ${
-                        pago.hayPago 
-                          ? 'bg-success/70' 
-                          : 'bg-muted/40'
+                        pago.esMesAnterior && !pago.hayPago
+                          ? 'bg-destructive/70' // Rojo para mes anterior sin pago
+                          : pago.hayPago 
+                            ? 'bg-success/70' 
+                            : 'bg-muted/40'
                       }`}
-                      title={`${pago.mes}: ${pago.hayPago ? formatCurrency(pago.monto) : 'Sin pago'}`}
+                      title={`${pago.mes}: ${pago.hayPago ? formatCurrency(pago.monto) : 'Sin pago'}${pago.esMesAnterior ? ' (Mes anterior)' : ''}`}
                     />
                   ))}
                 </div>
