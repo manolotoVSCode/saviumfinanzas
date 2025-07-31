@@ -7,6 +7,7 @@ import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart } from 'recharts';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { MonthlyPaymentsControl } from './MonthlyPaymentsControl';
 
 interface DashboardProps {
   metrics: DashboardMetrics;
@@ -270,6 +271,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* CONTROL DE PAGOS MENSUALES - Módulo más importante */}
+      <MonthlyPaymentsControl 
+        transactions={transactions}
+        formatCurrency={formatCurrency}
+      />
+
       {/* BALANCE GENERAL - Activos y Pasivos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ACTIVOS */}
