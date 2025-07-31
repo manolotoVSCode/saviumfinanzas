@@ -45,14 +45,30 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
 
   useEffect(() => {
     const analyzePayments = () => {
+      console.log('=== DEBUG PAGOS MENSUALES ===');
+      console.log('Total transacciones:', transactions.length);
+      console.log('Categorías objetivo:', targetCategories);
+      
+      // Verificar qué subcategorías existen
+      const subcategorias = [...new Set(transactions.map(t => t.subcategoria))];
+      console.log('Subcategorías disponibles:', subcategorias);
+      
+      const ingresoTransactions = transactions.filter(t => t.tipo === 'Ingreso');
+      console.log('Transacciones de ingreso:', ingresoTransactions.length);
+      
       const now = new Date();
       const data: PaymentData[] = [];
 
       targetCategories.forEach(categoria => {
+        console.log(`\n--- Analizando ${categoria} ---`);
         // Filtrar transacciones de esta categoría de tipo ingreso
         const categoryTransactions = transactions.filter(t => 
           t.subcategoria === categoria && t.tipo === 'Ingreso'
         );
+        console.log(`Transacciones encontradas para ${categoria}:`, categoryTransactions.length);
+        if (categoryTransactions.length > 0) {
+          console.log('Primeras transacciones:', categoryTransactions.slice(0, 3));
+        }
 
         // Generar datos para los últimos 12 meses
         const pagos = [];
@@ -99,6 +115,7 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
         });
       });
 
+      console.log('Datos finales:', data);
       setPaymentsData(data);
     };
 
@@ -120,89 +137,72 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
   };
 
   return (
-    <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-primary">
-          <CalendarDays className="h-5 w-5" />
+    <Card className="border-muted/30 hover:border-muted/50 transition-all duration-300 bg-muted/20">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <CalendarDays className="h-4 w-4" />
           Control de Pagos Mensuales
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
+      <CardContent className="pt-0">
+        <div className="space-y-3">
           {paymentsData.map((categoryData) => (
-            <div key={categoryData.categoria} className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-foreground">{categoryData.categoria}</h3>
-                {categoryData.hayChangio && (
-                  <Alert className="border-warning/50 bg-warning/5 w-auto py-1 px-3">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
-                    <AlertDescription className="text-xs text-warning">
-                      Cambio detectado
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-
-              {/* Información del último pago */}
-              <div className="p-3 rounded-lg bg-accent/5 border border-accent/20">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Último pago:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold">
-                      {formatCurrency(categoryData.ultimoMonto)}
-                    </span>
-                    {getChangeIcon(categoryData.ultimoMonto, categoryData.montoPrevio)}
-                  </div>
+            <div key={categoryData.categoria} className="flex items-center justify-between p-2 rounded bg-background/50">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{categoryData.categoria}</span>
+                  {categoryData.hayChangio && (
+                    <Badge variant="outline" className="text-xs h-5 border-warning/50 text-warning">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Cambio
+                    </Badge>
+                  )}
                 </div>
-                {categoryData.hayChangio && categoryData.montoPrevio > 0 && (
-                  <div className="text-xs text-muted-foreground">
-                    Anterior: {formatCurrency(categoryData.montoPrevio)} 
-                    <span className={getChangeColor(categoryData.ultimoMonto, categoryData.montoPrevio)}>
-                      {' '}({categoryData.ultimoMonto > categoryData.montoPrevio ? '+' : ''}
-                      {formatCurrency(categoryData.ultimoMonto - categoryData.montoPrevio)})
-                    </span>
-                  </div>
-                )}
               </div>
-
-              {/* Timeline de pagos (últimos 6 meses) */}
-              <div className="grid grid-cols-6 gap-2">
-                {categoryData.pagos.slice(-6).map((pago, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-xs text-muted-foreground mb-1">{pago.mes}</div>
-                    <div className={`p-2 rounded text-xs ${
-                      pago.hayPago 
-                        ? 'bg-success/10 border border-success/30 text-success' 
-                        : 'bg-muted/50 border border-muted text-muted-foreground'
-                    }`}>
-                      {pago.hayPago ? (
-                        <div>
-                          <div className="font-semibold">
-                            {new Intl.NumberFormat('es-MX', {
-                              style: 'currency',
-                              currency: 'MXN',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            }).format(pago.monto)}
-                          </div>
-                          {pago.fecha && (
-                            <div className="text-xs opacity-75">
-                              {pago.fecha.getDate()}/{pago.fecha.getMonth() + 1}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="font-semibold">Sin pago</div>
-                      )}
-                    </div>
+              
+              <div className="flex items-center gap-4">
+                {/* Último pago */}
+                <div className="text-right">
+                  <div className="text-sm font-semibold">
+                    {formatCurrency(categoryData.ultimoMonto)}
                   </div>
-                ))}
+                  {categoryData.ultimoMonto > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      {categoryData.pagos.filter(p => p.hayPago).slice(-1)[0]?.fecha && 
+                        new Date(categoryData.pagos.filter(p => p.hayPago).slice(-1)[0].fecha!).toLocaleDateString('es-MX', { 
+                          day: '2-digit', 
+                          month: 'short' 
+                        })
+                      }
+                    </div>
+                  )}
+                </div>
+
+                {/* Indicadores de últimos 6 meses (muy compacto) */}
+                <div className="flex gap-1">
+                  {categoryData.pagos.slice(-6).map((pago, index) => (
+                    <div
+                      key={index}
+                      className={`w-2 h-6 rounded-sm ${
+                        pago.hayPago 
+                          ? 'bg-success/60' 
+                          : 'bg-muted/40'
+                      }`}
+                      title={`${pago.mes}: ${pago.hayPago ? formatCurrency(pago.monto) : 'Sin pago'}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Icono de tendencia */}
+                <div className="w-4">
+                  {getChangeIcon(categoryData.ultimoMonto, categoryData.montoPrevio)}
+                </div>
               </div>
             </div>
           ))}
 
           {paymentsData.length === 0 && (
-            <div className="text-center text-muted-foreground py-6">
+            <div className="text-center text-muted-foreground py-3 text-sm">
               No se encontraron pagos para las categorías monitoreadas
             </div>
           )}
