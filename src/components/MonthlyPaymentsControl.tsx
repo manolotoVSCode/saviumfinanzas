@@ -11,6 +11,7 @@ interface Transaction {
   comentario: string;
   categoria: string;
   subcategoria: string;
+  subcategoria_id: string; // Añadimos el ID para hacer el match correcto
   divisa: string;
   tipo: string;
 }
@@ -31,6 +32,7 @@ interface PaymentData {
 interface MonthlyPaymentsControlProps {
   transactions: Transaction[];
   formatCurrency: (amount: number) => string;
+  categories?: any[]; // Añadimos categorías para hacer el match
 }
 
 export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: MonthlyPaymentsControlProps) => {
@@ -61,13 +63,23 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
 
       targetCategories.forEach(categoria => {
         console.log(`\n--- Analizando ${categoria} ---`);
+        
+        // Debug: Ver todas las transacciones de tipo ingreso para esta categoría
+        const allIngressTransactions = transactions.filter(t => t.tipo === 'Ingreso');
+        console.log(`Total transacciones de ingreso:`, allIngressTransactions.length);
+        
+        // Debug: Ver las subcategorías exactas de las transacciones de ingreso
+        allIngressTransactions.forEach(t => {
+          console.log(`Transacción ingreso - subcategoria: "${t.subcategoria}", monto: ${t.ingreso}, fecha: ${t.fecha}`);
+        });
+        
         // Filtrar transacciones de esta categoría de tipo ingreso
         const categoryTransactions = transactions.filter(t => 
           t.subcategoria === categoria && t.tipo === 'Ingreso'
         );
         console.log(`Transacciones encontradas para ${categoria}:`, categoryTransactions.length);
         if (categoryTransactions.length > 0) {
-          console.log('Primeras transacciones:', categoryTransactions.slice(0, 3));
+          console.log('Transacciones encontradas:', categoryTransactions);
         }
 
         // Generar datos para los últimos 12 meses

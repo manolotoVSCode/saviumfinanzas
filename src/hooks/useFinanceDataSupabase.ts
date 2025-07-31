@@ -128,6 +128,7 @@ export const useFinanceDataSupabase = () => {
       return {
         ...transaction,
         categoria: category?.categoria || 'SIN ASIGNAR',
+        subcategoria: category?.subcategoria || 'SIN ASIGNAR', // Agregar subcategoría
         tipo: category?.tipo || undefined // Permitir undefined para transacciones sin clasificar
       };
     });
