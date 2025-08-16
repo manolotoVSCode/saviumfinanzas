@@ -3,10 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Trash2, RefreshCw } from 'lucide-react';
+import { Users, Trash2, RefreshCw, UserPlus } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
 interface UserStats {
   id: string;
@@ -23,10 +30,35 @@ interface UserStats {
   criptomonedasCount: number;
 }
 
+const createUserSchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  nombre: z.string().min(1, 'Nombre requerido'),
+  apellidos: z.string().min(1, 'Apellidos requeridos'),
+  edad: z.string().optional(),
+  divisa_preferida: z.string().min(1, 'Divisa requerida')
+});
+
+type CreateUserForm = z.infer<typeof createUserSchema>;
+
 export const AdminUserManagement = () => {
   const [users, setUsers] = useState<UserStats[]>([]);
   const [loading, setLoading] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
   const { toast } = useToast();
+
+  const form = useForm<CreateUserForm>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      nombre: '',
+      apellidos: '',
+      edad: '',
+      divisa_preferida: 'MXN'
+    }
+  });
 
   useEffect(() => {
     loadUsersWithStats();
@@ -74,6 +106,51 @@ export const AdminUserManagement = () => {
     }
   };
 
+  const createUser = async (data: CreateUserForm) => {
+    try {
+      setCreating(true);
+
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No hay sesión activa');
+      }
+
+      // Call the Edge Function to create user
+      const { data: result, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email: data.email,
+          password: data.password,
+          nombre: data.nombre,
+          apellidos: data.apellidos,
+          edad: data.edad,
+          divisa_preferida: data.divisa_preferida
+        }
+      });
+
+      if (error) throw error;
+      if (!result.success) throw new Error(result.error);
+
+      await loadUsersWithStats();
+      setCreateDialogOpen(false);
+      form.reset();
+      
+      toast({
+        title: "Usuario creado",
+        description: `Usuario ${data.nombre} ${data.apellidos} creado exitosamente. Puede iniciar sesión con su email y cambiar su contraseña.`,
+      });
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo crear el usuario",
+        variant: "destructive"
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const deleteUser = async (userId: string, userDisplayName: string) => {
     try {
       // Use the secure admin function to delete user completely
@@ -107,14 +184,137 @@ export const AdminUserManagement = () => {
             <Users className="h-5 w-5 text-primary" />
             Administración de Usuarios
           </div>
-          <Button 
-            onClick={loadUsersWithStats} 
-            variant="outline" 
-            size="sm"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex gap-2">
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default" size="sm">
+                  <UserPlus className="h-4 w-4" />
+                  Crear Usuario
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Crear Nuevo Usuario</DialogTitle>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(createUser)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="email" placeholder="usuario@ejemplo.com" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contraseña Temporal</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="password" placeholder="Contraseña temporal" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="nombre"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombre</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Nombre" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="apellidos"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Apellidos</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Apellidos" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="edad"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Edad (opcional)</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="number" placeholder="Edad" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="divisa_preferida"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Divisa Preferida</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecciona divisa" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="MXN">MXN</SelectItem>
+                                <SelectItem value="USD">USD</SelectItem>
+                                <SelectItem value="EUR">EUR</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setCreateDialogOpen(false)}
+                        disabled={creating}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={creating}>
+                        {creating ? 'Creando...' : 'Crear Usuario'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+            <Button 
+              onClick={loadUsersWithStats} 
+              variant="outline" 
+              size="sm"
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
