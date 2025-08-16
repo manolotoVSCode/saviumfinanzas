@@ -275,28 +275,69 @@ export const SubscriptionsManager = () => {
 
   // Función para determinar si dos transacciones son del mismo servicio
   const areSameService = (t1: any, t2: any): boolean => {
-    // Normalizar comentarios para comparación
-    const normalize = (comment: string) => 
-      comment.toLowerCase()
-        .replace(/[*\s\d]/g, '') // Remover asteriscos, espacios y números
+    // Normalizar comentarios para comparación más inteligente
+    const normalize = (comment: string) => {
+      const lower = comment.toLowerCase();
+      
+      // Detectar servicios específicos primero
+      if (lower.includes('google')) {
+        if (lower.includes('nest')) return 'google-nest';
+        if (lower.includes('one')) return 'google-one';
+        if (lower.includes('drive')) return 'google-drive';
+        if (lower.includes('youtube')) return 'google-youtube';
+        if (lower.includes('cloud')) return 'google-cloud';
+        if (lower.includes('workspace')) return 'google-workspace';
+        return 'google-general';
+      }
+      
+      if (lower.includes('apple')) {
+        if (lower.includes('music')) return 'apple-music';
+        if (lower.includes('icloud')) return 'apple-icloud';
+        if (lower.includes('tv')) return 'apple-tv';
+        return 'apple-general';
+      }
+      
+      if (lower.includes('spotify')) return 'spotify';
+      if (lower.includes('netflix')) return 'netflix';
+      if (lower.includes('chatgpt') || lower.includes('openai')) return 'openai-chatgpt';
+      if (lower.includes('amazon')) return 'amazon';
+      if (lower.includes('lovable')) return 'lovable';
+      if (lower.includes('opus')) return 'opus-clip';
+      if (lower.includes('rotoplas')) return 'rotoplas';
+      
+      // Fallback: normalizar de forma general
+      return lower
+        .replace(/[*\s\d\-_.]/g, '') // Remover caracteres especiales
         .replace(/paypal/g, '') // Remover paypal prefix
-        .substring(0, 10); // Tomar solo los primeros 10 caracteres
+        .substring(0, 15); // Tomar más caracteres para mejor identificación
+    };
 
     const comment1Normalized = normalize(t1.comentario);
     const comment2Normalized = normalize(t2.comentario);
     
-    // Si los comentarios normalizados son similares
+    console.log('Comparing:', {
+      original1: t1.comentario,
+      original2: t2.comentario,
+      normalized1: comment1Normalized,
+      normalized2: comment2Normalized,
+      amount1: t1.gasto,
+      amount2: t2.gasto
+    });
+    
+    // Si los comentarios normalizados son exactamente iguales
     if (comment1Normalized === comment2Normalized && comment1Normalized.length > 3) {
       return true;
     }
     
-    // Si tienen montos similares (±10%) y están en el mismo día del mes
-    const montoDiff = Math.abs(t1.gasto - t2.gasto) / Math.max(t1.gasto, t2.gasto);
-    const fecha1 = new Date(t1.fecha);
-    const fecha2 = new Date(t2.fecha);
-    
-    if (montoDiff <= 0.1 && fecha1.getDate() === fecha2.getDate()) {
-      return true;
+    // Verificación adicional por monto similar solo si el comentario es muy genérico
+    if (comment1Normalized.length <= 5) {
+      const montoDiff = Math.abs(t1.gasto - t2.gasto) / Math.max(t1.gasto, t2.gasto);
+      const fecha1 = new Date(t1.fecha);
+      const fecha2 = new Date(t2.fecha);
+      
+      if (montoDiff <= 0.05 && fecha1.getDate() === fecha2.getDate()) {
+        return true;
+      }
     }
     
     return false;
@@ -358,14 +399,32 @@ export const SubscriptionsManager = () => {
           const lastTransaction = sortedTransactions[0];
           const frequency = determineFrecuencia(group);
           
-          // Extraer nombre del servicio del comentario
+          // Extraer nombre del servicio del comentario de forma más inteligente
           let serviceName = group[0].comentario;
-          if (serviceName.includes('SPOTIFY')) serviceName = 'Spotify';
-          else if (serviceName.includes('CHATGPT') || serviceName.includes('OPENAI')) serviceName = 'ChatGPT';
-          else if (serviceName.includes('NETFLIX')) serviceName = 'Netflix';
-          else if (serviceName.includes('APPLE')) serviceName = 'Apple';
-          else if (serviceName.includes('AMAZON')) serviceName = 'Amazon';
-          else if (serviceName.includes('GOOGLE')) serviceName = 'Google';
+          const lower = serviceName.toLowerCase();
+          
+          if (lower.includes('spotify')) serviceName = 'Spotify';
+          else if (lower.includes('chatgpt') || lower.includes('openai')) serviceName = 'ChatGPT';
+          else if (lower.includes('netflix')) serviceName = 'Netflix';
+          else if (lower.includes('apple')) {
+            if (lower.includes('music')) serviceName = 'Apple Music';
+            else if (lower.includes('icloud')) serviceName = 'iCloud';
+            else if (lower.includes('tv')) serviceName = 'Apple TV';
+            else serviceName = 'Apple';
+          }
+          else if (lower.includes('amazon')) serviceName = 'Amazon';
+          else if (lower.includes('google')) {
+            if (lower.includes('nest')) serviceName = 'Google Nest';
+            else if (lower.includes('one')) serviceName = 'Google One';
+            else if (lower.includes('drive')) serviceName = 'Google Drive';
+            else if (lower.includes('youtube')) serviceName = 'YouTube';
+            else if (lower.includes('cloud')) serviceName = 'Google Cloud';
+            else if (lower.includes('workspace')) serviceName = 'Google Workspace';
+            else serviceName = 'Google';
+          }
+          else if (lower.includes('lovable')) serviceName = 'Lovable';
+          else if (lower.includes('opus')) serviceName = 'Opus Clip';
+          else if (lower.includes('rotoplas')) serviceName = 'Rotoplas';
           else serviceName = serviceName.split(' ')[0] || serviceName.substring(0, 20);
           
           return {
