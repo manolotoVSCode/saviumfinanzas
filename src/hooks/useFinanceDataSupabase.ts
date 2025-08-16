@@ -135,7 +135,7 @@ export const useFinanceDataSupabase = () => {
   }, [transactions, categories]);
 
   // Funciones auxiliares para el cálculo de score financiero (definidas antes del useMemo)
-  const calcularScoreFinanciero = (activos: any, pasivos: any, balanceMes: number, ahorroTarget: number) => {
+  const calcularScoreFinanciero = (activos: any, pasivos: any, balanceMes: number, balanceMesAnterior: number, ahorroTarget: number) => {
     let score = 0;
     
     console.log('=== CÁLCULO SCORE FINANCIERO ===');
@@ -154,8 +154,8 @@ export const useFinanceDataSupabase = () => {
     score += puntosLiquidez;
     console.log('Puntos por liquidez:', puntosLiquidez);
     
-    // Capacidad de ahorro (35 puntos máximo)
-    const ratioAhorro = balanceMes / ahorroTarget;
+    // Capacidad de ahorro (35 puntos máximo) - usar balance del mes anterior
+    const ratioAhorro = balanceMesAnterior / ahorroTarget;
     console.log('Ratio ahorro:', ratioAhorro);
     let puntosAhorro = 0;
     if (ratioAhorro >= 1) puntosAhorro = 35;
@@ -497,7 +497,7 @@ export const useFinanceDataSupabase = () => {
     // OBJETIVOS Y SCORE FINANCIERO
     const ahorroTargetMensual = 15000;
     const tasaObjetivo = 8;
-    const scoreFinanciero = calcularScoreFinanciero(activos, pasivos, balanceMes, ahorroTargetMensual);
+    const scoreFinanciero = calcularScoreFinanciero(activos, pasivos, balanceMes, balanceMesAnterior, ahorroTargetMensual);
     
     // Cálculo de salud financiera simplificado
     const nivel = scoreFinanciero >= 80 ? 'Excelente' : scoreFinanciero >= 60 ? 'Buena' : scoreFinanciero >= 40 ? 'Regular' : 'Mejorable';

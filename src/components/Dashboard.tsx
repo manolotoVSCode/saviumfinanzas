@@ -83,9 +83,9 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const ingresosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + Math.abs(t.monto), 0);
     
-    // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses incluyendo actual)
+    // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses excluyendo mes actual)
     const tendenciaMensual = [];
-    for (let i = 11; i >= 0; i--) {
+    for (let i = 12; i >= 1; i--) {
       const now = new Date();
       const year = now.getFullYear();
       const month = now.getMonth() - i;
