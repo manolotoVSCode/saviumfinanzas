@@ -78,7 +78,8 @@ export const useFinanceDataSupabase = () => {
         id: categoria.id,
         subcategoria: categoria.subcategoria,
         categoria: categoria.categoria,
-        tipo: categoria.tipo as TransactionType
+        tipo: categoria.tipo as TransactionType,
+        seguimiento_pago: Boolean(categoria.seguimiento_pago)
       }));
 
       const mappedTransactions: Transaction[] = transaccionesData.map(transaccion => ({
@@ -817,6 +818,7 @@ export const useFinanceDataSupabase = () => {
       if (category.subcategoria) updateData.subcategoria = category.subcategoria;
       if (category.categoria) updateData.categoria = category.categoria;
       if (category.tipo) updateData.tipo = category.tipo;
+      if (typeof category.seguimiento_pago === 'boolean') updateData.seguimiento_pago = category.seguimiento_pago;
       
       const { error } = await supabase
         .from('categorias')
