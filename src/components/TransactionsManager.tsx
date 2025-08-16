@@ -87,8 +87,13 @@ export const TransactionsManager = ({
     // Para filtro de categoría, también incluir transacciones sin categoría válida
     if (filters.categoriaId && filters.categoriaId !== 'all') {
       const categoryExists = categories.some(c => c.id === transaction.subcategoriaId);
-      if (!categoryExists && filters.categoriaId !== 'sin-asignar') return false;
-      if (categoryExists && transaction.subcategoriaId !== filters.categoriaId) return false;
+      if (filters.categoriaId === 'sin-asignar') {
+        // Solo mostrar transacciones sin categoría válida
+        if (categoryExists) return false;
+      } else {
+        // Filtro por categoría específica
+        if (!categoryExists || transaction.subcategoriaId !== filters.categoriaId) return false;
+      }
     }
     
     if (filters.tipo && filters.tipo !== 'all' && transaction.tipo !== filters.tipo) return false;
@@ -147,6 +152,7 @@ export const TransactionsManager = ({
     setCategoryTypeFilter('all');
     setEditingTransaction(null);
     setIsAddingTransaction(false);
+    // NO resetear los filtros para mantener la selección
   };
 
   const openNewTransaction = () => {
@@ -846,6 +852,9 @@ export const TransactionsManager = ({
                 </SelectTrigger>
                    <SelectContent className="bg-background z-50">
                    <SelectItem value="all">Todas las categorías</SelectItem>
+                   <SelectItem value="sin-asignar" className="text-red-500 font-medium">
+                     SIN ASIGNAR
+                   </SelectItem>
                    {categories.map((category) => (
                      <SelectItem key={category.id} value={category.id}>
                        {category.categoria} - {category.subcategoria}
