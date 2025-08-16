@@ -320,9 +320,80 @@ export const SubscriptionsManager = () => {
       toast.success('Nombre de suscripción actualizado');
       setEditingServiceId(null);
       setEditingName('');
+      
+      // Después de editar el nombre, limpiar posibles duplicados
+      await cleanupDuplicateSubscriptions();
     } catch (error) {
       console.error('Error updating service name:', error);
       toast.error('Error al actualizar el nombre de la suscripción');
+    }
+  };
+
+  // Función para limpiar duplicados después de ediciones
+  const cleanupDuplicateSubscriptions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: allSubs } = await supabase
+        .from('subscription_services')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (!allSubs || allSubs.length <= 1) return;
+
+      // Agrupar por clave estable para detectar duplicados
+      const groups = new Map<string, any[]>();
+      allSubs.forEach((item) => {
+        const key = getServiceKey(
+          item.service_name,
+          item.ultimo_pago_monto,
+          new Date(item.ultimo_pago_fecha),
+          item.original_comments || []
+        );
+        const arr = groups.get(key) || [];
+        arr.push(item);
+        groups.set(key, arr);
+      });
+
+      // Procesar grupos con duplicados
+      for (const [, items] of groups) {
+        if (items.length > 1) {
+          console.log('Encontré duplicados:', items.map(i => ({name: i.service_name, id: i.id, monto: i.ultimo_pago_monto})));
+          
+          // Ordenar por fecha de actualización, mantener el más reciente
+          items.sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime());
+          const keep = items[0];
+          const toDelete = items.slice(1);
+
+          // Fusionar datos del más reciente
+          const merged = {
+            service_name: keep.service_name, // Mantener el nombre más reciente
+            tipo_servicio: keep.tipo_servicio,
+            ultimo_pago_monto: keep.ultimo_pago_monto,
+            ultimo_pago_fecha: keep.ultimo_pago_fecha,
+            frecuencia: keep.frecuencia,
+            proximo_pago: keep.proximo_pago,
+            numero_pagos: Math.max(...items.map(i => i.numero_pagos || 1)),
+            original_comments: Array.from(new Set(items.flatMap(i => i.original_comments || []))),
+            active: items.some(i => i.active !== false),
+            updated_at: new Date().toISOString()
+          };
+
+          await supabase.from('subscription_services').update(merged).eq('id', keep.id);
+          
+          if (toDelete.length > 0) {
+            const deleteIds = toDelete.map(i => i.id);
+            console.log('Eliminando duplicados:', deleteIds);
+            await supabase.from('subscription_services').delete().in('id', deleteIds);
+          }
+        }
+      }
+
+      // Recargar la lista después de limpiar
+      await loadSavedSubscriptions();
+    } catch (error) {
+      console.error('Error cleaning up duplicates:', error);
     }
   };
 
@@ -632,9 +703,14 @@ export const SubscriptionsManager = () => {
     loadSavedSubscriptions();
   }, []);
 
-  // Procesar automáticamente cuando cambien las transacciones
+  // Procesar automáticamente cuando cambien las transacciones, pero con limpieza
   useEffect(() => {
-    processSubscriptions();
+    const processAndClean = async () => {
+      await processSubscriptions();
+      // Limpiar duplicados después del procesamiento automático
+      setTimeout(() => cleanupDuplicateSubscriptions(), 1000);
+    };
+    processAndClean();
   }, [subscriptionTransactions.length]);
 
   // Filter services based on active status
