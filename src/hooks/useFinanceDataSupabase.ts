@@ -974,8 +974,14 @@ export const useFinanceDataSupabase = () => {
     }
   };
 
-  const updateTransaction = async (id: string, transaction: Partial<Transaction>) => {
+  const updateTransaction = async (id: string, transaction: Partial<Transaction>, autoContribution?: { targetAccountId: string }) => {
     try {
+      // Obtener el usuario actual
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        throw new Error('Usuario no autenticado');
+      }
+
       // Preparar datos para Supabase
       const updateData: any = {};
       
@@ -995,13 +1001,53 @@ export const useFinanceDataSupabase = () => {
         .eq('id', id);
       
       if (error) throw error;
+
+      // Si hay aportación automática, crear la transacción complementaria
+      if (autoContribution && autoContribution.targetAccountId) {
+        // Determinar si es aportación o retiro basado en el tipo de transacción
+        const isContribution = transaction.ingreso && transaction.ingreso > 0;
+        const amount = isContribution ? transaction.ingreso : transaction.gasto;
+        
+        if (amount && amount > 0) {
+          // Buscar categoría de aportación o retiro
+          const targetCategory = categories.find(cat => 
+            cat.tipo === (isContribution ? 'Aportación' : 'Retiro')
+          );
+          
+          if (targetCategory) {
+            const autoTransactionData = {
+              user_id: userData.user.id,
+              cuenta_id: autoContribution.targetAccountId,
+              subcategoria_id: targetCategory.id,
+              fecha: transaction.fecha?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+              comentario: `${isContribution ? 'Aportación' : 'Retiro'} automático - ${transaction.comentario}`,
+              ingreso: isContribution ? amount : 0,
+              gasto: isContribution ? 0 : amount,
+              divisa: transaction.divisa || 'MXN'
+            };
+            
+            const { error: autoError } = await supabase
+              .from('transacciones')
+              .insert(autoTransactionData);
+            
+            if (autoError) {
+              console.error('Error creating auto contribution:', autoError);
+              toast({
+                title: "Advertencia",
+                description: "Transacción actualizada pero no se pudo crear la aportación automática",
+                variant: "destructive"
+              });
+            }
+          }
+        }
+      }
       
       // Recargar datos
       await loadData();
       
       toast({
         title: "Éxito",
-        description: "Transacción actualizada correctamente"
+        description: autoContribution ? "Transacción actualizada con aportación automática" : "Transacción actualizada correctamente"
       });
     } catch (error) {
       console.error('Error updating transaction:', error);

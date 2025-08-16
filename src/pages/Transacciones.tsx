@@ -80,7 +80,7 @@ const Transacciones = () => {
           accounts={financeData.accounts}
           categories={financeData.categories}
           onAddTransaction={(transaction, autoContribution) => financeData.addTransaction(transaction, autoContribution)}
-          onUpdateTransaction={financeData.updateTransaction}
+          onUpdateTransaction={(id, updates, autoContribution) => financeData.updateTransaction(id, updates, autoContribution)}
           onDeleteTransaction={financeData.deleteTransaction}
           onClearAllTransactions={financeData.clearAllTransactions}
         />

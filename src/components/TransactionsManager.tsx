@@ -18,7 +18,7 @@ interface TransactionsManagerProps {
   accounts: Account[];
   categories: Category[];
   onAddTransaction: (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string }) => void;
-  onUpdateTransaction: (id: string, updates: Partial<Transaction>) => void;
+  onUpdateTransaction: (id: string, updates: Partial<Transaction>, autoContribution?: { targetAccountId: string }) => void;
   onDeleteTransaction: (id: string) => void;
   onClearAllTransactions: () => void;
 }
@@ -188,7 +188,10 @@ export const TransactionsManager = ({
     };
 
     if (editingTransaction) {
-      onUpdateTransaction(editingTransaction.id, transactionData);
+      const autoContrib = autoContribution.enabled && autoContribution.targetAccountId 
+        ? { targetAccountId: autoContribution.targetAccountId }
+        : undefined;
+      onUpdateTransaction(editingTransaction.id, transactionData, autoContrib);
     } else {
       const autoContrib = autoContribution.enabled && autoContribution.targetAccountId 
         ? { targetAccountId: autoContribution.targetAccountId }
@@ -211,6 +214,13 @@ export const TransactionsManager = ({
       subcategoriaId: categoryExists ? transaction.subcategoriaId : '',
       divisa: transaction.divisa || 'MXN'
     });
+    
+    // Resetear aportación automática al editar
+    setAutoContribution({
+      enabled: false,
+      targetAccountId: ''
+    });
+    
     setEditingTransaction(transaction);
     setIsAddingTransaction(true);
   };
@@ -530,47 +540,51 @@ export const TransactionsManager = ({
                 </div>
 
 
-                {!editingTransaction && (
-                  <div className="border-t pt-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="autoContribution"
-                        checked={autoContribution.enabled}
-                        onCheckedChange={(checked) => 
-                          setAutoContribution({ ...autoContribution, enabled: checked as boolean })
-                        }
-                      />
-                      <Label htmlFor="autoContribution">
-                        Generar aportación automática a otra cuenta
-                      </Label>
-                    </div>
-
-                    {autoContribution.enabled && (
-                      <div className="mt-2">
-                        <Label htmlFor="targetAccount">Cuenta destino</Label>
-                        <Select 
-                          value={autoContribution.targetAccountId} 
-                          onValueChange={(value) => 
-                            setAutoContribution({ ...autoContribution, targetAccountId: value })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona cuenta destino" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {accounts
-                              .filter(account => account.id !== formData.cuentaId)
-                              .map((account) => (
-                              <SelectItem key={account.id} value={account.id}>
-                                {account.nombre} ({account.divisa})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                {/* Aportación automática disponible para crear y editar */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="autoContribution"
+                      checked={autoContribution.enabled}
+                      onCheckedChange={(checked) => 
+                        setAutoContribution({ ...autoContribution, enabled: checked as boolean })
+                      }
+                    />
+                    <Label htmlFor="autoContribution">
+                      Generar aportación automática a otra cuenta
+                    </Label>
                   </div>
-                )}
+
+                  {autoContribution.enabled && (
+                    <div className="mt-2">
+                      <Label htmlFor="targetAccount">Cuenta destino</Label>
+                      <Select 
+                        value={autoContribution.targetAccountId} 
+                        onValueChange={(value) => 
+                          setAutoContribution({ ...autoContribution, targetAccountId: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona cuenta destino" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts
+                            .filter(account => account.id !== formData.cuentaId)
+                            .map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.nombre} ({account.divisa})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {editingTransaction && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Al editar, se creará una nueva transacción automática adicional
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex justify-end space-x-2">
                   <Button type="button" variant="outline" onClick={() => setIsAddingTransaction(false)}>
