@@ -149,6 +149,29 @@ export const TransactionsManager = ({
     setIsAddingTransaction(false);
   };
 
+  const openNewTransaction = () => {
+    setEditingTransaction(null);
+    setCategoryTypeFilter('all');
+    setAutoContribution({ enabled: false, targetAccountId: '' });
+    setFormData({
+      cuentaId: '',
+      fecha: new Date().toISOString().split('T')[0],
+      comentario: '',
+      ingreso: 0,
+      gasto: 0,
+      subcategoriaId: '',
+      divisa: 'MXN'
+    });
+    setIsAddingTransaction(true);
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsAddingTransaction(open);
+    if (!open) {
+      resetForm();
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.cuentaId || !formData.subcategoriaId) return;
@@ -324,9 +347,9 @@ export const TransactionsManager = ({
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-xl font-semibold">Gestión de Transacciones</h2>
         <div className="flex gap-2">
-          <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
+          <Dialog open={isAddingTransaction} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
-              <Button onClick={() => setIsAddingTransaction(true)}>
+              <Button onClick={openNewTransaction}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Transacción
               </Button>
