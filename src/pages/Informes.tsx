@@ -2,9 +2,8 @@ import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { SubscriptionsManager } from '@/components/SubscriptionsManager';
-import { ProfitLossReport } from '@/components/ProfitLossReport';
-import { BalanceSheetReport } from '@/components/BalanceSheetReport';
-import { CashFlowReport } from '@/components/CashFlowReport';
+import { AssetsReport } from '@/components/AssetsReport';
+import { LiabilitiesReport } from '@/components/LiabilitiesReport';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SampleDataBanner } from '@/components/SampleDataBanner';
 
@@ -36,39 +35,29 @@ const Informes = () => {
         </div>
 
         <Tabs defaultValue="suscripciones" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="suscripciones">Suscripciones</TabsTrigger>
-            <TabsTrigger value="profit-loss">P&L</TabsTrigger>
-            <TabsTrigger value="balance">Balance</TabsTrigger>
-            <TabsTrigger value="cashflow">Flujo de Caja</TabsTrigger>
+            <TabsTrigger value="activos">Activos</TabsTrigger>
+            <TabsTrigger value="pasivos">Pasivos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="suscripciones" className="space-y-4">
             <SubscriptionsManager />
           </TabsContent>
 
-          <TabsContent value="profit-loss" className="space-y-4">
-            <ProfitLossReport 
-              metrics={financeData.dashboardMetrics}
-              formatCurrency={formatCurrency}
-              transactions={financeData.transactions}
-              categories={financeData.categories}
-            />
-          </TabsContent>
-
-          <TabsContent value="balance" className="space-y-4">
-            <BalanceSheetReport 
+          <TabsContent value="activos" className="space-y-4">
+            <AssetsReport 
               metrics={financeData.dashboardMetrics}
               formatCurrency={formatCurrency}
               accounts={financeData.accounts}
             />
           </TabsContent>
 
-          <TabsContent value="cashflow" className="space-y-4">
-            <CashFlowReport 
+          <TabsContent value="pasivos" className="space-y-4">
+            <LiabilitiesReport 
               metrics={financeData.dashboardMetrics}
               formatCurrency={formatCurrency}
-              transactions={financeData.transactions}
+              accounts={financeData.accounts}
             />
           </TabsContent>
         </Tabs>
