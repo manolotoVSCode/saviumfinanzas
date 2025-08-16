@@ -71,11 +71,31 @@ serve(async (req) => {
       throw createError
     }
 
+    // Send welcome email
+    try {
+      const { error: emailError } = await supabaseAdmin.functions.invoke('send-welcome-email', {
+        body: {
+          email,
+          password,
+          nombre,
+          apellidos
+        }
+      });
+
+      if (emailError) {
+        console.error('Error sending welcome email:', emailError);
+        // Don't throw error here - user was created successfully, just email failed
+      }
+    } catch (emailError) {
+      console.error('Error calling send-welcome-email function:', emailError);
+      // Don't throw error here - user was created successfully, just email failed
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         user: newUser.user,
-        message: 'User created successfully'
+        message: 'User created successfully and welcome email sent'
       }),
       { 
         headers: { 

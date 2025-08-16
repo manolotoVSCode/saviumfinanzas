@@ -6,7 +6,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +33,6 @@ const createUserSchema = z.object({
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   nombre: z.string().min(1, 'Nombre requerido'),
   apellidos: z.string().min(1, 'Apellidos requeridos'),
-  divisa_preferida: z.string().min(1, 'Divisa requerida')
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -52,8 +50,7 @@ export const AdminUserManagement = () => {
       email: '',
       password: '',
       nombre: '',
-      apellidos: '',
-      divisa_preferida: 'MXN'
+      apellidos: ''
     }
   });
 
@@ -112,14 +109,14 @@ export const AdminUserManagement = () => {
         throw new Error('No hay sesión activa');
       }
 
-      // Call the Edge Function to create user
+      // Call the Edge Function to create user (always with MXN currency)
       const { data: result, error } = await supabase.functions.invoke('admin-create-user', {
         body: {
           email: data.email,
           password: data.password,
           nombre: data.nombre,
           apellidos: data.apellidos,
-          divisa_preferida: data.divisa_preferida
+          divisa_preferida: 'MXN'
         }
       });
 
@@ -132,7 +129,7 @@ export const AdminUserManagement = () => {
       
       toast({
         title: "Usuario creado",
-        description: `Usuario ${data.nombre} ${data.apellidos} creado exitosamente. Puede iniciar sesión con su email y cambiar su contraseña.`,
+        description: `Usuario ${data.nombre} ${data.apellidos} creado exitosamente. Se ha enviado un email con las credenciales de acceso.`,
       });
     } catch (error: any) {
       console.error('Error creating user:', error);
@@ -247,28 +244,11 @@ export const AdminUserManagement = () => {
                         )}
                       />
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="divisa_preferida"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Divisa Preferida</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecciona divisa" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="MXN">MXN</SelectItem>
-                              <SelectItem value="USD">USD</SelectItem>
-                              <SelectItem value="EUR">EUR</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="bg-muted/50 p-3 rounded-md">
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Divisa:</strong> MXN (Peso Mexicano) - Por defecto para todos los usuarios
+                      </p>
+                    </div>
                     <div className="flex justify-end gap-2 pt-4">
                       <Button
                         type="button"
