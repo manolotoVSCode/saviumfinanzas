@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Trash2 } from 'lucide-react';
+import { User, Trash2, Key, Mail } from 'lucide-react';
 import { DatabaseBackup } from './DatabaseBackup';
 
 const currencies = [
@@ -32,14 +32,26 @@ const profileSchema = z.object({
   divisa_preferida: z.string().min(1, 'La divisa es requerida'),
 });
 
+const passwordSchema = z.object({
+  currentPassword: z.string().min(6, 'La contraseña actual es requerida'),
+  newPassword: z.string().min(6, 'La nueva contraseña debe tener al menos 6 caracteres'),
+  confirmPassword: z.string().min(6, 'Confirma la nueva contraseña'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
+});
+
 type ProfileFormData = z.infer<typeof profileSchema>;
+type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const ProfileEditor = () => {
   const { profile, loading, refetch } = useUserProfile();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { toast } = useToast();
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -47,6 +59,15 @@ export const ProfileEditor = () => {
       nombre: profile?.nombre || '',
       apellidos: profile?.apellidos || '',
       divisa_preferida: profile?.divisa_preferida || 'MXN',
+    },
+  });
+
+  const passwordForm = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
     },
   });
 
@@ -93,6 +114,51 @@ export const ProfileEditor = () => {
       });
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const onPasswordSubmit = async (data: PasswordFormData) => {
+    try {
+      setChangingPassword(true);
+
+      // First verify current password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: data.currentPassword,
+      });
+
+      if (signInError) {
+        toast({
+          title: "Error",
+          description: "La contraseña actual es incorrecta",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Update password
+      const { error } = await supabase.auth.updateUser({
+        password: data.newPassword
+      });
+
+      if (error) throw error;
+
+      passwordForm.reset();
+      setShowPasswordForm(false);
+      
+      toast({
+        title: "Contraseña actualizada",
+        description: "Tu contraseña ha sido cambiada exitosamente",
+      });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cambiar la contraseña",
+        variant: "destructive"
+      });
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -150,6 +216,15 @@ export const ProfileEditor = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Información del Email */}
+        <div className="mb-6 p-4 bg-muted/30 rounded-lg border">
+          <div className="flex items-center gap-2 mb-2">
+            <Mail className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Email registrado</span>
+          </div>
+          <p className="text-sm font-medium">{user?.email}</p>
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -212,6 +287,16 @@ export const ProfileEditor = () => {
                 {updating ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
 
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowPasswordForm(!showPasswordForm)}
+                className="flex items-center gap-2"
+              >
+                <Key className="h-4 w-4" />
+                Cambiar Contraseña
+              </Button>
+
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="icon" disabled={deleting}>
@@ -236,10 +321,83 @@ export const ProfileEditor = () => {
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
-              </AlertDialog>
+                </AlertDialog>
             </div>
           </form>
         </Form>
+
+        {/* Formulario de Cambio de Contraseña */}
+        {showPasswordForm && (
+          <div className="mt-6 p-4 border rounded-lg bg-muted/10">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Cambiar Contraseña
+            </h3>
+            <Form {...passwordForm}>
+              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                <FormField
+                  control={passwordForm.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contraseña Actual</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="password" placeholder="Tu contraseña actual" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nueva Contraseña</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="password" placeholder="Nueva contraseña" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Contraseña</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="password" placeholder="Confirma la nueva contraseña" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <Button type="submit" disabled={changingPassword} className="flex-1">
+                    {changingPassword ? 'Cambiando...' : 'Cambiar Contraseña'}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      passwordForm.reset();
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
+        )}
         
         {/* Sección de copia de seguridad */}
         <div className="pt-6 border-t">
