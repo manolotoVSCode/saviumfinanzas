@@ -250,14 +250,6 @@ export const CategoriesManager = ({
                   </Button>
                 </TableHead>
                 <TableHead>En Uso</TableHead>
-                {selectedType === 'Ingreso' && (
-                  <TableHead>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      Seguimiento
-                    </span>
-                  </TableHead>
-                )}
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -267,7 +259,25 @@ export const CategoriesManager = ({
                   const inUse = isCategoryInUse(category.id);
                   return (
                     <TableRow key={category.id}>
-                      <TableCell className="font-medium">{category.subcategoria}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center justify-between">
+                          <span>{category.subcategoria}</span>
+                          {selectedType === 'Ingreso' && (
+                            <div className="flex items-center gap-2">
+                              <Checkbox 
+                                checked={category.seguimiento_pago || false}
+                                onCheckedChange={() => togglePaymentTracking(category.id, category.seguimiento_pago || false)}
+                              />
+                              {category.seguimiento_pago && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  Seguimiento
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{category.categoria}</TableCell>
                       <TableCell>
                         <div className="flex items-center">
@@ -284,21 +294,6 @@ export const CategoriesManager = ({
                           )}
                         </div>
                       </TableCell>
-                      {selectedType === 'Ingreso' && (
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              checked={category.seguimiento_pago || false}
-                              onCheckedChange={() => togglePaymentTracking(category.id, category.seguimiento_pago || false)}
-                            />
-                            {category.seguimiento_pago && (
-                              <Badge variant="outline" className="text-xs">
-                                Activo
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button 
@@ -345,7 +340,7 @@ export const CategoriesManager = ({
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={selectedType === 'Ingreso' ? 5 : 4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
                     No hay categorías de tipo {selectedType}
                   </TableCell>
                 </TableRow>
