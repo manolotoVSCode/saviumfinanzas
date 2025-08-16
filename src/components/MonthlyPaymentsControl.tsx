@@ -141,10 +141,12 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
         const montoPrevio = pagosConMonto.length > 1 ? pagosConMonto[pagosConMonto.length - 2].monto : 0;
         const hayChangio = montoPrevio > 0 && Math.abs(ultimoMonto - montoPrevio) > 0.01;
 
-        // Calcular promedio y total del año
-        const promedioPago = pagosConMonto.length > 0 
-          ? pagosConMonto.reduce((sum, p) => sum + p.monto, 0) / pagosConMonto.length 
-          : 0;
+        // Calcular promedio de los últimos 3 meses completos (excluyendo el mes actual)
+        // Obtener los últimos 3 meses (posiciones 8, 9, 10 en el array de pagos que va de más antiguo a más reciente)
+        const ultimos3Meses = pagos.slice(-4, -1); // Excluimos el último mes (actual) y tomamos los 3 anteriores
+        const totalUltimos3Meses = ultimos3Meses.reduce((sum, p) => sum + p.monto, 0);
+        const promedioPago = totalUltimos3Meses / 3; // Siempre dividimos entre 3 meses
+        
         const totalAnio = pagosConMonto.reduce((sum, p) => sum + p.monto, 0);
         
         // Calcular variación respecto al promedio
