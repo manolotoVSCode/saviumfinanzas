@@ -49,7 +49,7 @@ serve(async (req) => {
       throw new Error('Access denied: Admin only function')
     }
 
-    const { email, password, nombre, apellidos, edad, divisa_preferida } = await req.json()
+    const { email, password, nombre, apellidos, divisa_preferida } = await req.json()
 
     if (!email || !password || !nombre || !apellidos) {
       throw new Error('Missing required fields: email, password, nombre, apellidos')
@@ -63,7 +63,6 @@ serve(async (req) => {
       user_metadata: {
         nombre,
         apellidos,
-        edad: edad ? parseInt(edad) : undefined,
         divisa_preferida: divisa_preferida || 'MXN'
       }
     })

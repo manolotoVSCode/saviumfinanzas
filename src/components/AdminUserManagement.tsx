@@ -20,7 +20,6 @@ interface UserStats {
   user_id: string;
   nombre: string;
   apellidos: string;
-  edad: number | null;
   divisa_preferida: string;
   created_at: string;
   transactionCount: number;
@@ -35,7 +34,6 @@ const createUserSchema = z.object({
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   nombre: z.string().min(1, 'Nombre requerido'),
   apellidos: z.string().min(1, 'Apellidos requeridos'),
-  edad: z.string().optional(),
   divisa_preferida: z.string().min(1, 'Divisa requerida')
 });
 
@@ -55,7 +53,6 @@ export const AdminUserManagement = () => {
       password: '',
       nombre: '',
       apellidos: '',
-      edad: '',
       divisa_preferida: 'MXN'
     }
   });
@@ -83,9 +80,8 @@ export const AdminUserManagement = () => {
         user_id: user.user_id,
         nombre: user.nombre,
         apellidos: user.apellidos,
-        edad: null, // Not included in the admin function, but not critical
         divisa_preferida: user.divisa_preferida,
-        created_at: new Date().toISOString(), // Not critical for display
+        created_at: user.created_at || new Date().toISOString(),
         transactionCount: Number(user.transacciones_count),
         categoryCount: Number(user.categorias_count),
         accountCount: Number(user.cuentas_count),
@@ -123,7 +119,6 @@ export const AdminUserManagement = () => {
           password: data.password,
           nombre: data.nombre,
           apellidos: data.apellidos,
-          edad: data.edad,
           divisa_preferida: data.divisa_preferida
         }
       });
@@ -252,43 +247,28 @@ export const AdminUserManagement = () => {
                         )}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="edad"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Edad (opcional)</FormLabel>
+                    <FormField
+                      control={form.control}
+                      name="divisa_preferida"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Divisa Preferida</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <Input {...field} type="number" placeholder="Edad" />
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona divisa" />
+                              </SelectTrigger>
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="divisa_preferida"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Divisa Preferida</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona divisa" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="MXN">MXN</SelectItem>
-                                <SelectItem value="USD">USD</SelectItem>
-                                <SelectItem value="EUR">EUR</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                            <SelectContent>
+                              <SelectItem value="MXN">MXN</SelectItem>
+                              <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="EUR">EUR</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <div className="flex justify-end gap-2 pt-4">
                       <Button
                         type="button"
@@ -330,7 +310,7 @@ export const AdminUserManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Usuario</TableHead>
-                  <TableHead className="hidden sm:table-cell">Divisa/Edad</TableHead>
+                  <TableHead className="hidden sm:table-cell">Divisa</TableHead>
                   <TableHead className="hidden md:table-cell">Registro</TableHead>
                   <TableHead>Trans.</TableHead>
                   <TableHead>Cat.</TableHead>
@@ -348,17 +328,12 @@ export const AdminUserManagement = () => {
                           {user.nombre} {user.apellidos}
                         </div>
                         <div className="sm:hidden text-xs text-muted-foreground">
-                          {user.divisa_preferida} {user.edad ? `• ${user.edad}a` : ''}
+                          {user.divisa_preferida}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      <div className="space-y-1">
-                        <Badge variant="outline">{user.divisa_preferida}</Badge>
-                        <div className="text-sm text-muted-foreground">
-                          {user.edad ? `${user.edad} años` : 'Sin edad'}
-                        </div>
-                      </div>
+                      <Badge variant="outline">{user.divisa_preferida}</Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <div className="text-sm">

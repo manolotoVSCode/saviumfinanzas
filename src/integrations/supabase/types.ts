@@ -360,6 +360,7 @@ export type Database = {
         Returns: {
           apellidos: string
           categorias_count: number
+          created_at: string
           criptomonedas_count: number
           cuentas_count: number
           divisa_preferida: string

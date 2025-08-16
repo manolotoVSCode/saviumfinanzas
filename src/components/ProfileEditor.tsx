@@ -29,7 +29,6 @@ const currencies = [
 const profileSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   apellidos: z.string().min(1, 'Los apellidos son requeridos'),
-  edad: z.number().int().min(18).max(120).optional().nullable(),
   divisa_preferida: z.string().min(1, 'La divisa es requerida'),
 });
 
@@ -47,7 +46,6 @@ export const ProfileEditor = () => {
     defaultValues: {
       nombre: profile?.nombre || '',
       apellidos: profile?.apellidos || '',
-      edad: profile?.edad || null,
       divisa_preferida: profile?.divisa_preferida || 'MXN',
     },
   });
@@ -58,7 +56,6 @@ export const ProfileEditor = () => {
       form.reset({
         nombre: profile.nombre,
         apellidos: profile.apellidos,
-        edad: profile.edad,
         divisa_preferida: profile.divisa_preferida,
       });
     }
@@ -75,7 +72,6 @@ export const ProfileEditor = () => {
         .update({
           nombre: data.nombre,
           apellidos: data.apellidos,
-          edad: data.edad,
           divisa_preferida: data.divisa_preferida,
         })
         .eq('user_id', profile.user_id);
@@ -179,28 +175,6 @@ export const ProfileEditor = () => {
                     <FormLabel>Apellidos</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Tus apellidos" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="edad"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Edad (opcional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="18" 
-                        max="120"
-                        {...field}
-                        value={field.value || ''}
-                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                        placeholder="Tu edad" 
-                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
