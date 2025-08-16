@@ -260,21 +260,19 @@ export const CategoriesManager = ({
                   return (
                     <TableRow key={category.id}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center justify-between">
-                          <span>{category.subcategoria}</span>
+                        <div className="flex items-center gap-2">
                           {selectedType === 'Ingreso' && (
-                            <div className="flex items-center gap-2">
-                              <Checkbox 
-                                checked={category.seguimiento_pago || false}
-                                onCheckedChange={() => togglePaymentTracking(category.id, category.seguimiento_pago || false)}
-                              />
-                              {category.seguimiento_pago && (
-                                <Badge variant="outline" className="text-xs">
-                                  <Calendar className="h-3 w-3 mr-1" />
-                                  Seguimiento
-                                </Badge>
-                              )}
-                            </div>
+                            <Checkbox 
+                              checked={category.seguimiento_pago || false}
+                              onCheckedChange={() => togglePaymentTracking(category.id, category.seguimiento_pago || false)}
+                            />
+                          )}
+                          <span>{category.subcategoria}</span>
+                          {selectedType === 'Ingreso' && category.seguimiento_pago && (
+                            <Badge variant="outline" className="text-xs">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              Seguimiento
+                            </Badge>
                           )}
                         </div>
                       </TableCell>
