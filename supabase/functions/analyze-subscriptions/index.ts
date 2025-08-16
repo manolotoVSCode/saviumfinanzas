@@ -71,9 +71,9 @@ function createFallbackGroups(comments: string[]) {
       serviceName = "YouTube Premium";
       description = "Plataforma de streaming de video";
       normalizedKey = 'youtube';
-    } else if (normalizedKey.includes('microsoft') || normalizedKey.includes('office') || normalizedKey.includes('365')) {
-      serviceName = "Microsoft 365";
-      description = "Suite de productividad";
+    } else if (normalizedKey.includes('microsoft') || normalizedKey.includes('office') || normalizedKey.includes('365') || normalizedKey.includes('msbill')) {
+      serviceName = "Microsoft";
+      description = "Servicios de Microsoft (Office 365, Xbox, etc.)";
       normalizedKey = 'microsoft';
     } else if (normalizedKey.includes('adobe')) {
       serviceName = "Adobe";
