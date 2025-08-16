@@ -58,7 +58,9 @@ export const TransactionsManager = ({
     categoriaId: 'all',
     tipo: 'all',
     divisa: 'all',
-    comentario: ''
+    comentario: '',
+    minAmount: '',
+    maxAmount: ''
   });
 
   const [formData, setFormData] = useState({
@@ -102,6 +104,18 @@ export const TransactionsManager = ({
       if (!transaction.comentario.toLowerCase().includes(filters.comentario.toLowerCase())) return false;
     }
     
+    // Filtro por monto mínimo
+    if (filters.minAmount && filters.minAmount !== '') {
+      const minAmount = parseFloat(filters.minAmount);
+      if (!isNaN(minAmount) && Math.abs(transaction.monto) < minAmount) return false;
+    }
+    
+    // Filtro por monto máximo
+    if (filters.maxAmount && filters.maxAmount !== '') {
+      const maxAmount = parseFloat(filters.maxAmount);
+      if (!isNaN(maxAmount) && Math.abs(transaction.monto) > maxAmount) return false;
+    }
+    
     return true;
   });
 
@@ -113,7 +127,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '' });
+    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '' });
   };
 
   const resetForm = () => {
@@ -839,6 +853,32 @@ export const TransactionsManager = ({
                   <SelectItem value="EUR">EUR</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="filter-min-amount">Monto Mínimo</Label>
+              <Input
+                id="filter-min-amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Monto mínimo"
+                value={filters.minAmount}
+                onChange={(e) => setFilters(prev => ({ ...prev, minAmount: e.target.value }))}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="filter-max-amount">Monto Máximo</Label>
+              <Input
+                id="filter-max-amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Monto máximo"
+                value={filters.maxAmount}
+                onChange={(e) => setFilters(prev => ({ ...prev, maxAmount: e.target.value }))}
+              />
             </div>
           </div>
         </CardContent>
