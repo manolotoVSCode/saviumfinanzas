@@ -171,6 +171,10 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
 
       console.log('Datos finales:', data);
       setPaymentsData(data);
+      
+      // Expandir todas las categorías por defecto
+      const allCategories = new Set(data.map(d => d.categoria));
+      setExpandedCategories(allCategories);
     };
 
     analyzePayments();
