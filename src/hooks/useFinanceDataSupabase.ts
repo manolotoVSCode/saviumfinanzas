@@ -827,13 +827,20 @@ export const useFinanceDataSupabase = () => {
       
       if (error) throw error;
       
-      // Recargar datos
-      await loadData();
+      // Actualizar solo el estado local en lugar de recargar todos los datos
+      setCategories(prevCategories => 
+        prevCategories.map(cat => 
+          cat.id === id ? { ...cat, ...category } : cat
+        )
+      );
       
-      toast({
-        title: "Éxito",
-        description: "Categoría actualizada correctamente"
-      });
+      // Solo mostrar toast para cambios importantes (no para seguimiento_pago)
+      if (!('seguimiento_pago' in category)) {
+        toast({
+          title: "Éxito",
+          description: "Categoría actualizada correctamente"
+        });
+      }
     } catch (error) {
       console.error('Error updating category:', error);
       toast({
