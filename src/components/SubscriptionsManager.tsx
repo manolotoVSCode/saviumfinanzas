@@ -84,25 +84,61 @@ export const SubscriptionsManager = () => {
     }
   };
 
-  // Save or update subscription in database
+  // Helper: generar una clave estable por servicio para evitar duplicados
+  const getServiceKey = (name: string, amount: number, fecha: Date, originalComments: string[] = []) => {
+    const lower = (name || '').toLowerCase();
+    const normalizeName = () => {
+      if (lower.includes('google')) {
+        if (lower.includes('nest')) return 'google-nest';
+        if (lower.includes('one')) return 'google-one';
+        if (lower.includes('drive')) return 'google-drive';
+        if (lower.includes('youtube')) return 'google-youtube';
+        if (lower.includes('cloud')) return 'google-cloud';
+        if (lower.includes('workspace')) return 'google-workspace';
+        return 'google-general';
+      }
+      if (lower.includes('apple')) {
+        if (lower.includes('music')) return 'apple-music';
+        if (lower.includes('icloud')) return 'apple-icloud';
+        if (lower.includes('tv')) return 'apple-tv';
+        return 'apple-general';
+      }
+      if (lower.includes('spotify')) return 'spotify';
+      if (lower.includes('netflix')) return 'netflix';
+      if (lower.includes('chatgpt') || lower.includes('openai')) return 'openai-chatgpt';
+      if (lower.includes('amazon')) return 'amazon';
+      if (lower.includes('lovable')) return 'lovable';
+      if (lower.includes('opus')) return 'opus-clip';
+      if (lower.includes('rotoplas')) return 'rotoplas';
+      // Fallback: limpiar nombre
+      return lower.replace(/[^a-z]/g, '').substring(0, 15);
+    };
+
+    const nameKey = normalizeName();
+    const dayKey = fecha?.getDate?.() || 0;
+    const amountKey = Math.round(amount || 0);
+    return `${nameKey}|${dayKey}|${amountKey}`;
+  };
+
+  // Save or update subscription in database evitando duplicados por cambio de nombre
   const saveSubscription = async (subscription: SubscriptionService) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Preserve existing 'active' if not explicitly provided
-      const { data: existing } = await supabase
+      // 1) Resolver estado activo existente por nombre exacto
+      const { data: existingByName } = await supabase
         .from('subscription_services')
-        .select('id, active')
+        .select('*')
         .eq('user_id', user.id)
         .eq('service_name', subscription.serviceName)
         .maybeSingle();
 
-      const resolvedActive =
-        typeof subscription.active === 'boolean'
-          ? subscription.active
-          : (existing?.active ?? true);
+      const baseActive = typeof subscription.active === 'boolean'
+        ? subscription.active
+        : (existingByName?.active ?? true);
 
+      // Datos a guardar/actualizar
       const subscriptionData = {
         user_id: user.id,
         service_name: subscription.serviceName,
@@ -113,18 +149,62 @@ export const SubscriptionsManager = () => {
         proximo_pago: subscription.proximoPago.toISOString().split('T')[0],
         numero_pagos: subscription.numeroPagos,
         original_comments: subscription.originalComments,
-        active: resolvedActive
-      };
+        active: baseActive
+      } as any;
 
-      const { error } = await supabase
-        .from('subscription_services')
-        .upsert(subscriptionData, { 
-          onConflict: 'user_id,service_name'
+      // 2) Si no existe por nombre, buscar coincidencia por clave estable (mismo servicio con nombre editado)
+      let targetId: string | null = existingByName?.id ?? null;
+      if (!targetId) {
+        const { data: allExisting } = await supabase
+          .from('subscription_services')
+          .select('*')
+          .eq('user_id', user.id);
+
+        const desiredKey = getServiceKey(
+          subscription.serviceName,
+          subscription.ultimoPago.monto,
+          subscription.ultimoPago.fecha,
+          subscription.originalComments
+        );
+
+        const candidate = (allExisting || []).find((item: any) => {
+          const itemKey = getServiceKey(
+            item.service_name,
+            item.ultimo_pago_monto,
+            new Date(item.ultimo_pago_fecha),
+            item.original_comments || []
+          );
+          const overlap = (item.original_comments || []).some((c: string) =>
+            (subscription.originalComments || []).includes(c)
+          );
+          return itemKey === desiredKey || overlap;
         });
 
-      if (error) {
-        console.error('Error saving subscription:', error);
-        toast.error('Error al guardar la suscripción');
+        if (candidate) {
+          targetId = candidate.id;
+          subscriptionData.active = typeof subscription.active === 'boolean' ? subscription.active : (candidate.active ?? true);
+        }
+      }
+
+      if (targetId) {
+        // Update el registro existente (mismo servicio con nombre actualizado)
+        const { error } = await supabase
+          .from('subscription_services')
+          .update(subscriptionData)
+          .eq('id', targetId);
+        if (error) {
+          console.error('Error updating subscription:', error);
+          toast.error('Error al actualizar la suscripción');
+        }
+      } else {
+        // Insert/Upsert por nombre (primer registro)
+        const { error } = await supabase
+          .from('subscription_services')
+          .upsert(subscriptionData, { onConflict: 'user_id,service_name' });
+        if (error) {
+          console.error('Error saving subscription:', error);
+          toast.error('Error al guardar la suscripción');
+        }
       }
     } catch (error) {
       console.error('Error saving subscription:', error);
