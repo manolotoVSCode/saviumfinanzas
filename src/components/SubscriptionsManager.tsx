@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Calendar, Clock, Repeat, RefreshCw } from 'lucide-react';
+import { CreditCard, Calendar, Clock, Repeat, RefreshCw, Edit2, Check, X } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -39,6 +41,8 @@ export const SubscriptionsManager = () => {
   const [services, setServices] = useState<SubscriptionService[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
 
   // Load saved subscriptions from database
   const loadSavedSubscriptions = async () => {
@@ -145,6 +149,48 @@ export const SubscriptionsManager = () => {
       console.error('Error updating subscription status:', error);
       toast.error('Error al actualizar el estado de la suscripción');
     }
+  };
+
+  // Edit service name
+  const startEditingName = (serviceId: string, currentName: string) => {
+    setEditingServiceId(serviceId);
+    setEditingName(currentName);
+  };
+
+  const saveEditedName = async () => {
+    if (!editingServiceId || !editingName.trim()) return;
+    
+    try {
+      const { error } = await supabase
+        .from('subscription_services')
+        .update({ service_name: editingName.trim() })
+        .eq('id', editingServiceId);
+
+      if (error) {
+        console.error('Error updating service name:', error);
+        toast.error('Error al actualizar el nombre de la suscripción');
+        return;
+      }
+
+      // Update local state
+      setServices(prev => prev.map(service => 
+        service.id === editingServiceId 
+          ? { ...service, serviceName: editingName.trim() }
+          : service
+      ));
+
+      toast.success('Nombre de suscripción actualizado');
+      setEditingServiceId(null);
+      setEditingName('');
+    } catch (error) {
+      console.error('Error updating service name:', error);
+      toast.error('Error al actualizar el nombre de la suscripción');
+    }
+  };
+
+  const cancelEditingName = () => {
+    setEditingServiceId(null);
+    setEditingName('');
   };
 
   // Obtener todas las transacciones de suscripciones de los últimos 12 meses
@@ -457,7 +503,7 @@ export const SubscriptionsManager = () => {
         ) : (
           <div className="space-y-4">
             {filteredServices.map((service, index) => (
-              <div key={service.id || index} className={`p-4 rounded-lg border transition-colors ${service.active === false ? 'bg-muted/20 border-muted' : 'bg-card hover:bg-muted/5'}`}>
+              <div key={service.id || index} className={`group p-4 rounded-lg border transition-colors ${service.active === false ? 'bg-muted/20 border-muted' : 'bg-card hover:bg-muted/5'}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3 flex-1">
                     <Checkbox
@@ -471,9 +517,56 @@ export const SubscriptionsManager = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className={`font-semibold text-lg ${service.active === false ? 'text-muted-foreground' : ''}`}>
-                          {service.serviceName}
-                        </h3>
+                        {editingServiceId === service.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="h-8 text-lg font-semibold"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  saveEditedName();
+                                } else if (e.key === 'Escape') {
+                                  cancelEditingName();
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={saveEditedName}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={cancelEditingName}
+                              className="h-8 w-8 p-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <h3 className={`font-semibold text-lg ${service.active === false ? 'text-muted-foreground' : ''}`}>
+                              {service.serviceName}
+                            </h3>
+                            {service.id && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => startEditingName(service.id!, service.serviceName)}
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Editar nombre"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
                         <Badge variant={getFrequencyBadgeVariant(service.frecuencia)} className="text-xs">
                           {service.frecuencia}
                         </Badge>
