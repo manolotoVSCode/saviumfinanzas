@@ -11,7 +11,7 @@ interface Transaction {
   comentario: string;
   categoria: string;
   subcategoria: string;
-  subcategoria_id: string; // Añadimos el ID para hacer el match correcto
+  subcategoriaId: string; // Cambiado a camelCase para coincidir con la estructura real
   divisa: string;
   tipo: string;
 }
