@@ -233,6 +233,7 @@ export type Database = {
       subscription_services: {
         Row: {
           active: boolean
+          canon_key: string | null
           created_at: string
           frecuencia: string
           id: string
@@ -248,6 +249,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          canon_key?: string | null
           created_at?: string
           frecuencia: string
           id?: string
@@ -263,6 +265,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          canon_key?: string | null
           created_at?: string
           frecuencia?: string
           id?: string
