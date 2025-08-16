@@ -62,7 +62,52 @@ export const SubscriptionsManager = () => {
       }
 
       if (data) {
-        const savedServices: SubscriptionService[] = data.map(item => ({
+        // Dedupe por clave estable (maneja renombres del mismo servicio)
+        const groups = new Map<string, any[]>();
+        data.forEach((item) => {
+          const key = getServiceKey(
+            item.service_name,
+            item.ultimo_pago_monto,
+            new Date(item.ultimo_pago_fecha),
+            item.original_comments || []
+          );
+          const arr = groups.get(key) || [];
+          arr.push(item);
+          groups.set(key, arr);
+        });
+
+        // Fusionar duplicados en BD: conservar el más reciente y borrar el resto
+        for (const [, items] of groups) {
+          if (items.length > 1) {
+            items.sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime());
+            const keep = items[0];
+            const merged = {
+              service_name: keep.service_name,
+              tipo_servicio: keep.tipo_servicio,
+              ultimo_pago_monto: keep.ultimo_pago_monto,
+              ultimo_pago_fecha: keep.ultimo_pago_fecha,
+              frecuencia: keep.frecuencia,
+              proximo_pago: keep.proximo_pago,
+              numero_pagos: Math.max(...items.map(i => i.numero_pagos || 1)),
+              original_comments: Array.from(new Set(items.flatMap(i => i.original_comments || []))),
+              active: items.some(i => i.active !== false)
+            };
+            await supabase.from('subscription_services').update(merged).eq('id', keep.id);
+            const toDelete = items.slice(1).map(i => i.id);
+            if (toDelete.length) {
+              await supabase.from('subscription_services').delete().in('id', toDelete);
+            }
+          }
+        }
+
+        // Recargar lista ya depurada
+        const { data: deduped } = await supabase
+          .from('subscription_services')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false });
+
+        const savedServices: SubscriptionService[] = (deduped || []).map(item => ({
           id: item.id,
           serviceName: item.service_name,
           tipoServicio: item.tipo_servicio,
