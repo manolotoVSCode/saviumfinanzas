@@ -19,6 +19,7 @@ export type Database = {
           categoria: string
           created_at: string
           id: string
+          seguimiento_pago: boolean
           subcategoria: string
           tipo: string | null
           updated_at: string
@@ -28,6 +29,7 @@ export type Database = {
           categoria: string
           created_at?: string
           id?: string
+          seguimiento_pago?: boolean
           subcategoria: string
           tipo?: string | null
           updated_at?: string
@@ -37,6 +39,7 @@ export type Database = {
           categoria?: string
           created_at?: string
           id?: string
+          seguimiento_pago?: boolean
           subcategoria?: string
           tipo?: string | null
           updated_at?: string

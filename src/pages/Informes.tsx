@@ -67,6 +67,7 @@ const Informes = () => {
             <MonthlyPaymentsControl 
               transactions={financeData.transactions}
               formatCurrency={formatCurrency}
+              categories={financeData.categories}
             />
           </TabsContent>
         </Tabs>

@@ -38,25 +38,33 @@ interface PaymentData {
 interface MonthlyPaymentsControlProps {
   transactions: Transaction[];
   formatCurrency: (amount: number) => string;
-  categories?: any[]; // Añadimos categorías para hacer el match
+  categories?: any[]; // Agregamos categorías para obtener las marcadas para seguimiento
 }
 
-export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: MonthlyPaymentsControlProps) => {
+export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categories = [] }: MonthlyPaymentsControlProps) => {
   const [paymentsData, setPaymentsData] = useState<PaymentData[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  const targetCategories = [
-    'Renta AO274',
-    'Rendimiento Tortracs25', 
-    'Rendimiento Tortracs13',
-    'Rendimiento QUANT'
-  ];
+  // Obtener categorías marcadas para seguimiento de pago
+  const getTrackedCategories = () => {
+    return categories
+      .filter(cat => cat.tipo === 'Ingreso' && cat.seguimiento_pago === true)
+      .map(cat => cat.subcategoria);
+  };
 
   useEffect(() => {
     const analyzePayments = () => {
+      const targetCategories = getTrackedCategories();
+      
       console.log('=== DEBUG PAGOS MENSUALES ===');
       console.log('Total transacciones:', transactions.length);
-      console.log('Categorías objetivo:', targetCategories);
+      console.log('Categorías con seguimiento:', targetCategories);
+      
+      if (targetCategories.length === 0) {
+        console.log('No hay categorías marcadas para seguimiento');
+        setPaymentsData([]);
+        return;
+      }
       
       // Verificar qué subcategorías existen
       const subcategorias = [...new Set(transactions.map(t => t.subcategoria))];
@@ -166,7 +174,7 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
     };
 
     analyzePayments();
-  }, [transactions]);
+  }, [transactions, categories]); // Agregamos categories como dependencia
 
   const getChangeIcon = (current: number, previous: number) => {
     if (previous === 0) return null;
@@ -376,7 +384,10 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency }: Monthly
           <div className="text-center text-muted-foreground py-8 text-sm">
             <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="font-medium mb-2">No se encontraron pagos recurrentes</p>
-            <p className="text-xs">Revisa la consola (F12) para ver las subcategorías disponibles</p>
+            <p className="text-xs">
+              Para ver datos aquí, marca categorías de ingreso para seguimiento en 
+              <span className="font-semibold"> Configuración → Categorías</span>
+            </p>
           </div>
         )}
       </CardContent>

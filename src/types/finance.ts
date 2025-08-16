@@ -7,6 +7,7 @@ export interface Category {
   subcategoria: string;
   categoria: string;
   tipo: TransactionType;
+  seguimiento_pago?: boolean;
 }
 
 export interface Account {
