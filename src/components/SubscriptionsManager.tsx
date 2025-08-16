@@ -90,6 +90,19 @@ export const SubscriptionsManager = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Preserve existing 'active' if not explicitly provided
+      const { data: existing } = await supabase
+        .from('subscription_services')
+        .select('id, active')
+        .eq('user_id', user.id)
+        .eq('service_name', subscription.serviceName)
+        .maybeSingle();
+
+      const resolvedActive =
+        typeof subscription.active === 'boolean'
+          ? subscription.active
+          : (existing?.active ?? true);
+
       const subscriptionData = {
         user_id: user.id,
         service_name: subscription.serviceName,
@@ -100,7 +113,7 @@ export const SubscriptionsManager = () => {
         proximo_pago: subscription.proximoPago.toISOString().split('T')[0],
         numero_pagos: subscription.numeroPagos,
         original_comments: subscription.originalComments,
-        active: subscription.active !== false // Default to true if not specified
+        active: resolvedActive
       };
 
       const { error } = await supabase
@@ -366,8 +379,7 @@ export const SubscriptionsManager = () => {
             frecuencia: frequency,
             proximoPago: calculateNextPayment(new Date(lastTransaction.fecha), frequency),
             numeroPagos: group.length,
-            originalComments: group.map(t => t.comentario),
-            active: true // New subscriptions are active by default
+            originalComments: group.map(t => t.comentario)
           };
         });
         
@@ -411,8 +423,7 @@ export const SubscriptionsManager = () => {
           frecuencia: frequency,
           proximoPago: calculateNextPayment(new Date(lastTransaction.fecha), frequency),
           numeroPagos: transactionGroup.length,
-          originalComments: transactionGroup.map(t => t.comentario),
-          active: true // New subscriptions are active by default
+          originalComments: transactionGroup.map(t => t.comentario)
         };
       }).filter(Boolean) as SubscriptionService[];
 
