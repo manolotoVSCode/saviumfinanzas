@@ -49,19 +49,19 @@ const Configuracion = () => {
         {/* EDITOR DE PERFIL */}
         <ProfileEditor />
 
-        {/* CONFIGURACIÓN DE IDIOMA */}
-        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+        {/* CONFIGURACIÓN DE IDIOMA - TEMPORALMENTE INACTIVA */}
+        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300 opacity-60">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
-              {t('settings.language')}
+              {t('settings.language')} (Próximamente)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="language-select">{t('settings.language')}</Label>
-              <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger id="language-select">
+              <Select value={language} onValueChange={() => {}} disabled>
+                <SelectTrigger id="language-select" disabled>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -72,8 +72,8 @@ const Configuracion = () => {
             </div>
             <p className="text-sm text-muted-foreground">
               {language === 'es' 
-                ? 'Cambia el idioma de la interfaz. El inicio de sesión siempre estará en inglés.'
-                : 'Change the interface language. Login will always be in English.'
+                ? 'Funcionalidad temporalmente deshabilitada. Próximamente disponible.'
+                : 'Feature temporarily disabled. Coming soon.'
               }
             </p>
           </CardContent>
