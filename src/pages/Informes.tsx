@@ -35,13 +35,21 @@ const Informes = () => {
           <p className="text-muted-foreground">Reportes detallados de tu situación financiera</p>
         </div>
 
-        <Tabs defaultValue="suscripciones" className="w-full">
+        <Tabs defaultValue="pagos-recurrentes" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="pagos-recurrentes">Pagos Recurrentes</TabsTrigger>
             <TabsTrigger value="suscripciones">Suscripciones</TabsTrigger>
             <TabsTrigger value="activos">Activos</TabsTrigger>
             <TabsTrigger value="pasivos">Pasivos</TabsTrigger>
-            <TabsTrigger value="pagos-recurrentes">Pagos Recurrentes</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="pagos-recurrentes" className="space-y-4">
+            <MonthlyPaymentsControl 
+              transactions={financeData.transactions}
+              formatCurrency={formatCurrency}
+              categories={financeData.categories}
+            />
+          </TabsContent>
 
           <TabsContent value="suscripciones" className="space-y-4">
             <SubscriptionsManager />
@@ -60,14 +68,6 @@ const Informes = () => {
               metrics={financeData.dashboardMetrics}
               formatCurrency={formatCurrency}
               accounts={financeData.accounts}
-            />
-          </TabsContent>
-
-          <TabsContent value="pagos-recurrentes" className="space-y-4">
-            <MonthlyPaymentsControl 
-              transactions={financeData.transactions}
-              formatCurrency={formatCurrency}
-              categories={financeData.categories}
             />
           </TabsContent>
         </Tabs>
