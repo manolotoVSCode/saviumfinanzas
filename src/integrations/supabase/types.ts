@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -227,6 +227,54 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_services: {
+        Row: {
+          active: boolean
+          created_at: string
+          frecuencia: string
+          id: string
+          numero_pagos: number
+          original_comments: string[]
+          proximo_pago: string
+          service_name: string
+          tipo_servicio: string
+          ultimo_pago_fecha: string
+          ultimo_pago_monto: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          frecuencia: string
+          id?: string
+          numero_pagos?: number
+          original_comments?: string[]
+          proximo_pago: string
+          service_name: string
+          tipo_servicio: string
+          ultimo_pago_fecha: string
+          ultimo_pago_monto: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          frecuencia?: string
+          id?: string
+          numero_pagos?: number
+          original_comments?: string[]
+          proximo_pago?: string
+          service_name?: string
+          tipo_servicio?: string
+          ultimo_pago_fecha?: string
+          ultimo_pago_monto?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transacciones: {
         Row: {
           comentario: string
@@ -307,16 +355,16 @@ export type Database = {
       get_admin_user_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          user_id: string
-          email: string
-          nombre: string
           apellidos: string
-          divisa_preferida: string
-          transacciones_count: number
           categorias_count: number
-          cuentas_count: number
-          inversiones_count: number
           criptomonedas_count: number
+          cuentas_count: number
+          divisa_preferida: string
+          email: string
+          inversiones_count: number
+          nombre: string
+          transacciones_count: number
+          user_id: string
         }[]
       }
       user_has_sample_data: {

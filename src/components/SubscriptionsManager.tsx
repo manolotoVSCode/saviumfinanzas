@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +9,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 interface SubscriptionService {
+  id?: string;
   serviceName: string;
   tipoServicio: string;
   ultimoPago: {
@@ -19,6 +21,7 @@ interface SubscriptionService {
   proximoPago: Date;
   numeroPagos: number;
   originalComments: string[];
+  active?: boolean;
 }
 
 interface AIAnalysisResult {
@@ -35,6 +38,114 @@ export const SubscriptionsManager = () => {
   const { categories, transactions } = financeData;
   const [services, setServices] = useState<SubscriptionService[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
+
+  // Load saved subscriptions from database
+  const loadSavedSubscriptions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('subscription_services')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading subscriptions:', error);
+        return;
+      }
+
+      if (data) {
+        const savedServices: SubscriptionService[] = data.map(item => ({
+          id: item.id,
+          serviceName: item.service_name,
+          tipoServicio: item.tipo_servicio,
+          ultimoPago: {
+            monto: item.ultimo_pago_monto,
+            fecha: new Date(item.ultimo_pago_fecha),
+            mes: new Date(item.ultimo_pago_fecha).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+          },
+          frecuencia: item.frecuencia as 'Mensual' | 'Anual' | 'Irregular',
+          proximoPago: new Date(item.proximo_pago),
+          numeroPagos: item.numero_pagos,
+          originalComments: item.original_comments,
+          active: item.active
+        }));
+        setServices(savedServices);
+      }
+    } catch (error) {
+      console.error('Error loading subscriptions:', error);
+    }
+  };
+
+  // Save or update subscription in database
+  const saveSubscription = async (subscription: SubscriptionService) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const subscriptionData = {
+        user_id: user.id,
+        service_name: subscription.serviceName,
+        tipo_servicio: subscription.tipoServicio,
+        ultimo_pago_monto: subscription.ultimoPago.monto,
+        ultimo_pago_fecha: subscription.ultimoPago.fecha.toISOString().split('T')[0],
+        frecuencia: subscription.frecuencia,
+        proximo_pago: subscription.proximoPago.toISOString().split('T')[0],
+        numero_pagos: subscription.numeroPagos,
+        original_comments: subscription.originalComments,
+        active: subscription.active !== false // Default to true if not specified
+      };
+
+      const { error } = await supabase
+        .from('subscription_services')
+        .upsert(subscriptionData, { 
+          onConflict: 'user_id,service_name'
+        });
+
+      if (error) {
+        console.error('Error saving subscription:', error);
+        toast.error('Error al guardar la suscripción');
+      }
+    } catch (error) {
+      console.error('Error saving subscription:', error);
+      toast.error('Error al guardar la suscripción');
+    }
+  };
+
+  // Toggle subscription active status
+  const toggleSubscriptionActive = async (serviceId: string, newActiveStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('subscription_services')
+        .update({ active: newActiveStatus })
+        .eq('id', serviceId);
+
+      if (error) {
+        console.error('Error updating subscription status:', error);
+        toast.error('Error al actualizar el estado de la suscripción');
+        return;
+      }
+
+      // Update local state
+      setServices(prev => prev.map(service => 
+        service.id === serviceId 
+          ? { ...service, active: newActiveStatus }
+          : service
+      ));
+
+      toast.success(
+        newActiveStatus 
+          ? 'Suscripción activada' 
+          : 'Suscripción desactivada'
+      );
+    } catch (error) {
+      console.error('Error updating subscription status:', error);
+      toast.error('Error al actualizar el estado de la suscripción');
+    }
+  };
 
   // Obtener todas las transacciones de suscripciones de los últimos 12 meses
   const subscriptionTransactions = useMemo(() => {
@@ -209,11 +320,18 @@ export const SubscriptionsManager = () => {
             frecuencia: frequency,
             proximoPago: calculateNextPayment(new Date(lastTransaction.fecha), frequency),
             numeroPagos: group.length,
-            originalComments: group.map(t => t.comentario)
+            originalComments: group.map(t => t.comentario),
+            active: true // New subscriptions are active by default
           };
         });
         
-        setServices(fallbackServices);
+        // Save detected subscriptions to database
+        for (const subscription of fallbackServices) {
+          await saveSubscription(subscription);
+        }
+        
+        // Reload from database to get IDs
+        await loadSavedSubscriptions();
         return;
       }
 
@@ -247,14 +365,18 @@ export const SubscriptionsManager = () => {
           frecuencia: frequency,
           proximoPago: calculateNextPayment(new Date(lastTransaction.fecha), frequency),
           numeroPagos: transactionGroup.length,
-          originalComments: transactionGroup.map(t => t.comentario)
+          originalComments: transactionGroup.map(t => t.comentario),
+          active: true // New subscriptions are active by default
         };
       }).filter(Boolean) as SubscriptionService[];
 
-      // Los servicios ya están agrupados, solo ordenar
-      setServices(processedServices.sort((a, b) => 
-        new Date(b.ultimoPago.fecha).getTime() - new Date(a.ultimoPago.fecha).getTime()
-      ));
+      // Save detected subscriptions to database and update local state
+      for (const subscription of processedServices) {
+        await saveSubscription(subscription);
+      }
+
+      // Reload from database to get IDs
+      await loadSavedSubscriptions();
 
     } catch (error) {
       console.error('Error processing subscriptions:', error);
@@ -264,10 +386,22 @@ export const SubscriptionsManager = () => {
     }
   };
 
+  // Load saved subscriptions on component mount
+  useEffect(() => {
+    loadSavedSubscriptions();
+  }, []);
+
   // Procesar automáticamente cuando cambien las transacciones
   useEffect(() => {
     processSubscriptions();
   }, [subscriptionTransactions.length]);
+
+  // Filter services based on active status
+  const filteredServices = useMemo(() => {
+    return services.filter(service => 
+      showInactive ? true : service.active !== false
+    );
+  }, [services, showInactive]);
 
   // Función para obtener el color del badge de frecuencia
   const getFrequencyBadgeVariant = (frequency: string) => {
@@ -294,12 +428,27 @@ export const SubscriptionsManager = () => {
           <p className="text-muted-foreground text-sm">
             Análisis automático de los últimos 12 meses
           </p>
-          <Badge variant="outline" className="text-xs">
-            {services.length} servicios detectados
-          </Badge>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="show-inactive"
+                checked={showInactive}
+                onCheckedChange={(checked) => setShowInactive(checked as boolean)}
+              />
+              <label 
+                htmlFor="show-inactive" 
+                className="text-xs text-muted-foreground cursor-pointer"
+              >
+                Mostrar inactivas
+              </label>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {filteredServices.length} servicios {showInactive ? 'total' : 'activos'}
+            </Badge>
+          </div>
         </div>
 
-        {services.length === 0 && !isLoading ? (
+        {filteredServices.length === 0 && !isLoading ? (
           <div className="text-center py-8 text-muted-foreground">
             <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No se detectaron suscripciones</p>
@@ -307,24 +456,44 @@ export const SubscriptionsManager = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {services.map((service, index) => (
-              <div key={index} className="p-4 rounded-lg border bg-card hover:bg-muted/5 transition-colors">
+            {filteredServices.map((service, index) => (
+              <div key={service.id || index} className={`p-4 rounded-lg border transition-colors ${service.active === false ? 'bg-muted/20 border-muted' : 'bg-card hover:bg-muted/5'}`}>
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg">{service.serviceName}</h3>
-                      <Badge variant={getFrequencyBadgeVariant(service.frecuencia)} className="text-xs">
-                        {service.frecuencia}
-                      </Badge>
+                  <div className="flex items-center gap-3 flex-1">
+                    <Checkbox
+                      checked={service.active !== false}
+                      onCheckedChange={(checked) => {
+                        if (service.id) {
+                          toggleSubscriptionActive(service.id, checked as boolean);
+                        }
+                      }}
+                      aria-label={`${service.active !== false ? 'Desactivar' : 'Activar'} suscripción de ${service.serviceName}`}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className={`font-semibold text-lg ${service.active === false ? 'text-muted-foreground' : ''}`}>
+                          {service.serviceName}
+                        </h3>
+                        <Badge variant={getFrequencyBadgeVariant(service.frecuencia)} className="text-xs">
+                          {service.frecuencia}
+                        </Badge>
+                        {service.active === false && (
+                          <Badge variant="outline" className="text-xs text-muted-foreground">
+                            Inactiva
+                          </Badge>
+                        )}
+                      </div>
+                      <p className={`text-sm ${service.active === false ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
+                        {service.tipoServicio}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">{service.tipoServicio}</p>
                   </div>
                   <Badge variant="secondary" className="text-xs">
                     {service.numeroPagos} pagos
                   </Badge>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 text-sm ${service.active === false ? 'opacity-60' : ''}`}>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
