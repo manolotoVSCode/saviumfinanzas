@@ -460,6 +460,22 @@ export const SubscriptionsManager = () => {
     );
   }, [services, showInactive]);
 
+  // Calculate monthly subscription totals
+  const monthlySubscriptionsTotal = useMemo(() => {
+    const activeMonthlyServices = services.filter(service => 
+      service.active !== false && service.frecuencia === 'Mensual'
+    );
+    
+    const totalAmount = activeMonthlyServices.reduce((sum, service) => 
+      sum + service.ultimoPago.monto, 0
+    );
+    
+    return {
+      count: activeMonthlyServices.length,
+      totalAmount
+    };
+  }, [services]);
+
   // Función para obtener el color del badge de frecuencia
   const getFrequencyBadgeVariant = (frequency: string) => {
     switch (frequency) {
@@ -504,6 +520,29 @@ export const SubscriptionsManager = () => {
             </Badge>
           </div>
         </div>
+
+        {/* Monthly Subscriptions Summary */}
+        {monthlySubscriptionsTotal.count > 0 && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                <div>
+                  <h4 className="font-semibold text-primary">Suscripciones Mensuales Activas</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {monthlySubscriptionsTotal.count} servicio{monthlySubscriptionsTotal.count !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-primary">
+                  ${formatCurrency(monthlySubscriptionsTotal.totalAmount)}
+                </div>
+                <div className="text-sm text-muted-foreground">por mes</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {filteredServices.length === 0 && !isLoading ? (
           <div className="text-center py-8 text-muted-foreground">
