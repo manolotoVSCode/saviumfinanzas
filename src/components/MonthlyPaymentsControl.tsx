@@ -45,11 +45,46 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
   const [paymentsData, setPaymentsData] = useState<PaymentData[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Obtener categorías marcadas para seguimiento de pago
+  // Detectar automáticamente categorías con pagos recurrentes
   const getTrackedCategories = () => {
-    return categories
-      .filter(cat => cat.tipo === 'Ingreso' && cat.seguimiento_pago === true)
-      .map(cat => cat.subcategoria);
+    // Obtener todas las transacciones de ingreso de los últimos 12 meses
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    
+    const ingresoTransactions = transactions.filter(t => 
+      t.tipo === 'Ingreso' && new Date(t.fecha) >= startDate
+    );
+    
+    // Agrupar por subcategoría y contar ocurrencias por mes
+    const subcategoriaGroups: { [key: string]: { [month: string]: number } } = {};
+    
+    ingresoTransactions.forEach(t => {
+      const date = new Date(t.fecha);
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      
+      if (!subcategoriaGroups[t.subcategoria]) {
+        subcategoriaGroups[t.subcategoria] = {};
+      }
+      
+      if (!subcategoriaGroups[t.subcategoria][monthKey]) {
+        subcategoriaGroups[t.subcategoria][monthKey] = 0;
+      }
+      
+      subcategoriaGroups[t.subcategoria][monthKey] += 1;
+    });
+    
+    // Filtrar categorías que tienen pagos en al menos 2 meses diferentes
+    // o que están marcadas manualmente para seguimiento
+    const recurringCategories = Object.keys(subcategoriaGroups).filter(subcategoria => {
+      const monthsWithPayments = Object.keys(subcategoriaGroups[subcategoria]).length;
+      const isManuallyTracked = categories.some(cat => 
+        cat.subcategoria === subcategoria && cat.seguimiento_pago === true
+      );
+      
+      return monthsWithPayments >= 2 || isManuallyTracked;
+    });
+    
+    return recurringCategories;
   };
 
   useEffect(() => {
