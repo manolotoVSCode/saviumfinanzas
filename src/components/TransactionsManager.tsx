@@ -204,6 +204,10 @@ export const TransactionsManager = ({
         : undefined;
       onAddTransaction(transactionData, autoContrib);
     }
+    
+    // Cerrar el diálogo sin resetear filtros
+    setIsAddingTransaction(false);
+    setEditingTransaction(null);
     resetForm();
   };
 
