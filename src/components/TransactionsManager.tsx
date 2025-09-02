@@ -850,11 +850,8 @@ export const TransactionsManager = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
-                   <SelectContent className="bg-background z-50">
+                <SelectContent className="bg-background z-50">
                    <SelectItem value="all">Todas las categorías</SelectItem>
-                   <SelectItem value="sin-asignar" className="text-red-500 font-medium">
-                     SIN ASIGNAR
-                   </SelectItem>
                    {categories.map((category) => (
                      <SelectItem key={category.id} value={category.id}>
                        {category.categoria} - {category.subcategoria}
