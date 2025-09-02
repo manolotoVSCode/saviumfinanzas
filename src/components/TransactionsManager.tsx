@@ -858,6 +858,9 @@ export const TransactionsManager = ({
                        {category.categoria} - {category.subcategoria}
                     </SelectItem>
                   ))}
+                   <SelectItem value="sin-asignar" className="text-red-500 font-medium">
+                     Sin Asignar
+                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
