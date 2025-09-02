@@ -151,8 +151,7 @@ export const TransactionsManager = ({
     });
     setCategoryTypeFilter('all');
     setEditingTransaction(null);
-    setIsAddingTransaction(false);
-    // NO resetear los filtros para mantener la selección
+    // NO resetear los filtros ni el estado del diálogo para mantener la selección
   };
 
   const openNewTransaction = () => {
@@ -205,10 +204,8 @@ export const TransactionsManager = ({
       onAddTransaction(transactionData, autoContrib);
     }
     
-    // Cerrar el diálogo sin resetear filtros
+    // Cerrar el diálogo dejando que handleDialogOpenChange maneje el resto
     setIsAddingTransaction(false);
-    setEditingTransaction(null);
-    resetForm();
   };
 
   const handleEdit = (transaction: Transaction) => {
