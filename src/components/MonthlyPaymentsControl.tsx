@@ -120,7 +120,7 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
         for (let i = 11; i >= 0; i--) {
           const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
           const monthStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-          const monthEnd = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
+          const monthEnd = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59, 999);
           
           // Verificar si este mes es el mes anterior al actual
           const esMesAnterior = targetDate.getFullYear() === mesAnteriorDate.getFullYear() && 
