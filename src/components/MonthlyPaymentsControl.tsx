@@ -126,10 +126,14 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
           const esMesAnterior = targetDate.getFullYear() === mesAnteriorDate.getFullYear() && 
                                targetDate.getMonth() === mesAnteriorDate.getMonth();
           
-          // Buscar pagos en este mes
+          // Buscar pagos en este mes (comparación por mes/año en UTC para evitar problemas de zona horaria)
+          const targetUTCStart = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), 1));
+          const targetUTCYear = targetUTCStart.getUTCFullYear();
+          const targetUTCMonth = targetUTCStart.getUTCMonth();
+
           const monthPayments = categoryTransactions.filter(t => {
-            const transactionDate = new Date(t.fecha);
-            return transactionDate >= monthStart && transactionDate <= monthEnd;
+            const d = new Date(t.fecha);
+            return d.getUTCFullYear() === targetUTCYear && d.getUTCMonth() === targetUTCMonth;
           });
 
           const totalMonto = monthPayments.reduce((sum, t) => sum + t.ingreso, 0);
