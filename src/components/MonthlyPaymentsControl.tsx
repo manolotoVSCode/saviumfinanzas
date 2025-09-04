@@ -9,15 +9,15 @@ interface Transaction {
   id: string;
   fecha: Date;
   ingreso: number;
+  gasto?: number;
   comentario: string;
-  categoria: string;
-  subcategoria: string;
-  subcategoriaId: string; // Cambiado a camelCase para coincidir con la estructura real
+  subcategoriaId?: string;
   divisa: string;
-  tipo: string;
 }
 
+
 interface PaymentData {
+  id: string;
   categoria: string;
   pagos: {
     mes: string;
@@ -34,6 +34,7 @@ interface PaymentData {
   totalAnio: number;
   variacion: number; // Porcentaje de variación respecto al promedio
 }
+
 
 interface MonthlyPaymentsControlProps {
   transactions: Transaction[];
@@ -52,33 +53,35 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
     const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
     
     const ingresoTransactions = transactions.filter(t => 
-      t.tipo === 'Ingreso' && new Date(t.fecha) >= startDate
+      Number(t.ingreso) > 0 && new Date(t.fecha) >= startDate
     );
     
-    // Agrupar por subcategoría y contar ocurrencias por mes
+    // Agrupar por subcategoría (ID) y contar ocurrencias por mes
     const subcategoriaGroups: { [key: string]: { [month: string]: number } } = {};
     
     ingresoTransactions.forEach(t => {
+      if (!t.subcategoriaId) return;
       const date = new Date(t.fecha);
       const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      const key = t.subcategoriaId;
       
-      if (!subcategoriaGroups[t.subcategoria]) {
-        subcategoriaGroups[t.subcategoria] = {};
+      if (!subcategoriaGroups[key]) {
+        subcategoriaGroups[key] = {};
       }
       
-      if (!subcategoriaGroups[t.subcategoria][monthKey]) {
-        subcategoriaGroups[t.subcategoria][monthKey] = 0;
+      if (!subcategoriaGroups[key][monthKey]) {
+        subcategoriaGroups[key][monthKey] = 0;
       }
       
-      subcategoriaGroups[t.subcategoria][monthKey] += 1;
+      subcategoriaGroups[key][monthKey] += 1;
     });
     
-    // Filtrar categorías que tienen pagos en al menos 2 meses diferentes
+    // Filtrar categorías (por ID) que tienen pagos en al menos 2 meses diferentes
     // o que están marcadas manualmente para seguimiento
-    const recurringCategories = Object.keys(subcategoriaGroups).filter(subcategoria => {
-      const monthsWithPayments = Object.keys(subcategoriaGroups[subcategoria]).length;
-      const isManuallyTracked = categories.some(cat => 
-        cat.subcategoria === subcategoria && cat.seguimiento_pago === true
+    const recurringCategories = Object.keys(subcategoriaGroups).filter(subcategoriaId => {
+      const monthsWithPayments = Object.keys(subcategoriaGroups[subcategoriaId]).length;
+      const isManuallyTracked = categories.some((cat: any) => 
+        cat.id === subcategoriaId && cat.seguimiento_pago === true
       );
       
       return monthsWithPayments >= 2 || isManuallyTracked;
@@ -102,35 +105,38 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
       }
       
       // Verificar qué subcategorías existen
-      const subcategorias = [...new Set(transactions.map(t => t.subcategoria))];
-      console.log('Subcategorías disponibles:', subcategorias);
+      const subcategorias = [...new Set(transactions.map(t => t.subcategoriaId).filter(Boolean))];
+      console.log('Subcategorías disponibles (IDs):', subcategorias);
       
-      const ingresoTransactions = transactions.filter(t => t.tipo === 'Ingreso');
+      const ingresoTransactions = transactions.filter(t => Number(t.ingreso) > 0);
       console.log('Transacciones de ingreso:', ingresoTransactions.length);
       
       const now = new Date();
       const data: PaymentData[] = [];
 
-      targetCategories.forEach(categoria => {
-        console.log(`\n--- Analizando ${categoria} ---`);
-        
-        // Debug: Ver todas las transacciones de tipo ingreso para esta categoría
-        const allIngressTransactions = transactions.filter(t => t.tipo === 'Ingreso');
-        console.log(`Total transacciones de ingreso:`, allIngressTransactions.length);
-        
-        // Debug: Ver las subcategorías exactas de las transacciones de ingreso
-        allIngressTransactions.forEach(t => {
-          console.log(`Transacción ingreso - subcategoria: "${t.subcategoria}", monto: ${t.ingreso}, fecha: ${t.fecha}`);
-        });
-        
-        // Filtrar transacciones de esta categoría de tipo ingreso
-        const categoryTransactions = transactions.filter(t => 
-          t.subcategoria === categoria && t.tipo === 'Ingreso'
-        );
-        console.log(`Transacciones encontradas para ${categoria}:`, categoryTransactions.length);
-        if (categoryTransactions.length > 0) {
-          console.log('Transacciones encontradas:', categoryTransactions);
-        }
+        targetCategories.forEach(categoriaId => {
+          const catInfo = categories.find((c: any) => c.id === categoriaId);
+          const categoriaLabel = catInfo?.subcategoria || '(Sin subcategoría)';
+          
+          console.log(`\n--- Analizando ${categoriaLabel} (${categoriaId}) ---`);
+          
+          // Debug: Ver todas las transacciones de tipo ingreso para esta categoría
+          const allIngressTransactions = transactions.filter(t => Number(t.ingreso) > 0);
+          console.log(`Total transacciones de ingreso:`, allIngressTransactions.length);
+          
+          // Debug: Ver las subcategorías exactas de las transacciones de ingreso
+          allIngressTransactions.forEach(t => {
+            console.log(`Transacción ingreso - subcategoriaId: "${t.subcategoriaId}", monto: ${t.ingreso}, fecha: ${t.fecha}`);
+          });
+          
+          // Filtrar transacciones de esta categoría de tipo ingreso
+          const categoryTransactions = transactions.filter(t => 
+            t.subcategoriaId === categoriaId && Number(t.ingreso) > 0
+          );
+          console.log(`Transacciones encontradas para ${categoriaLabel}:`, categoryTransactions.length);
+          if (categoryTransactions.length > 0) {
+            console.log('Transacciones encontradas:', categoryTransactions);
+          }
 
         // Generar datos para los últimos 12 meses
         const pagos = [];
@@ -194,7 +200,8 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
         const sinPagoMesAnterior = !pagoMesAnterior?.hayPago;
 
         data.push({
-          categoria,
+          id: categoriaId,
+          categoria: categoriaLabel,
           pagos,
           ultimoMonto,
           montoPrevio,
@@ -210,7 +217,7 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
       setPaymentsData(data);
       
       // Expandir todas las categorías por defecto
-      const allCategories = new Set(data.map(d => d.categoria));
+      const allCategories = new Set(data.map(d => d.id));
       setExpandedCategories(allCategories);
     };
 
@@ -253,9 +260,9 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
         <div className="space-y-4">
           {paymentsData.map((categoryData) => (
             <Collapsible 
-              key={categoryData.categoria}
-              open={expandedCategories.has(categoryData.categoria)}
-              onOpenChange={() => toggleCategoryExpansion(categoryData.categoria)}
+              key={categoryData.id}
+              open={expandedCategories.has(categoryData.id)}
+              onOpenChange={() => toggleCategoryExpansion(categoryData.id)}
             >
               <div className={`rounded-lg border p-4 ${
                 categoryData.sinPagoMesAnterior 
@@ -265,9 +272,9 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
                 <CollapsibleTrigger className="w-full">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <ChevronDown className={`h-4 w-4 transition-transform ${
-                        expandedCategories.has(categoryData.categoria) ? 'rotate-180' : ''
-                      }`} />
+                        <ChevronDown className={`h-4 w-4 transition-transform ${
+                          expandedCategories.has(categoryData.id) ? 'rotate-180' : ''
+                        }`} />
                       <div className="text-left">
                         <div className="flex items-center gap-2">
                           <h3 className={`font-semibold ${
