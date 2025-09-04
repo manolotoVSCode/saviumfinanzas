@@ -83,14 +83,23 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
           
           console.log(`\n--- Analizando ${categoriaLabel} (${categoriaId}) ---`);
           
-          // Debug: Ver todas las transacciones de tipo ingreso para esta categoría
-          const allIngressTransactions = transactions.filter(t => Number(t.ingreso) > 0);
-          console.log(`Total transacciones de ingreso:`, allIngressTransactions.length);
+          // Debug: Buscar específicamente el pago de hipoteca
+          const hipotecaTransactions = transactions.filter(t => 
+            t.comentario.toLowerCase().includes('hipoteca') || 
+            t.comentario.toLowerCase().includes('aportación')
+          );
           
-          // Debug: Ver las subcategorías exactas de las transacciones de ingreso
-          allIngressTransactions.forEach(t => {
-            console.log(`Transacción ingreso - subcategoriaId: "${t.subcategoriaId}", monto: ${t.ingreso}, fecha: ${t.fecha}`);
-          });
+          if (hipotecaTransactions.length > 0) {
+            console.log('🏠 Transacciones relacionadas con hipoteca/aportación encontradas:');
+            hipotecaTransactions.forEach(t => {
+              const catInfo = categories.find(c => c.id === t.subcategoriaId);
+              console.log(`- Comentario: "${t.comentario}"`, 
+                         `Subcategoría: "${catInfo?.subcategoria || 'No encontrada'}" (${t.subcategoriaId})`, 
+                         `Seguimiento: ${catInfo?.seguimiento_pago}`,
+                         `Monto: ${t.ingreso || t.gasto}`,
+                         `Fecha: ${t.fecha}`);
+            });
+          }
           
           // Filtrar transacciones de esta categoría de tipo ingreso
           const categoryTransactions = transactions.filter(t => 
