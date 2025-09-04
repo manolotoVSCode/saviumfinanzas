@@ -151,7 +151,7 @@ export const TransactionsManager = ({
     });
     setCategoryTypeFilter('all');
     setEditingTransaction(null);
-    // NO resetear los filtros ni el estado del diálogo para mantener la selección
+    // Mantener los filtros para conservar la vista del usuario
   };
 
   const openNewTransaction = () => {
@@ -204,8 +204,9 @@ export const TransactionsManager = ({
       onAddTransaction(transactionData, autoContrib);
     }
     
-    // Cerrar el diálogo dejando que handleDialogOpenChange maneje el resto
+    // Cerrar el diálogo pero NO resetear los filtros para mantener la vista actual
     setIsAddingTransaction(false);
+    resetForm(); // Solo resetear el formulario, no los filtros
   };
 
   const handleEdit = (transaction: Transaction) => {
@@ -855,7 +856,7 @@ export const TransactionsManager = ({
                    <SelectItem value="all">Todas las categorías</SelectItem>
                    {categories.map((category) => (
                      <SelectItem key={category.id} value={category.id}>
-                       {category.categoria} - {category.subcategoria}
+                       <span className="font-bold">{category.categoria}</span> - <span className="font-normal">{category.subcategoria}</span>
                     </SelectItem>
                   ))}
                    <SelectItem value="sin-asignar" className="text-red-500 font-medium">
