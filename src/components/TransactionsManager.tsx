@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,16 +52,33 @@ export const TransactionsManager = ({
   });
   
   // Filtros
-  const [filters, setFilters] = useState({
-    cuentaId: 'all',
-    mes: '',
-    categoriaId: 'all',
-    tipo: 'all',
-    divisa: 'all',
-    comentario: '',
-    minAmount: '',
-    maxAmount: ''
+  const [filters, setFilters] = useState(() => {
+    try {
+      const stored = localStorage.getItem('transactions_filters_v1');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      // ignore parsing errors
+    }
+    return {
+      cuentaId: 'all',
+      mes: 'all',
+      categoriaId: 'all',
+      tipo: 'all',
+      divisa: 'all',
+      comentario: '',
+      minAmount: '',
+      maxAmount: ''
+    };
   });
+
+  // Persistir filtros para mantenerlos tras recargas/refetch
+  useEffect(() => {
+    try {
+      localStorage.setItem('transactions_filters_v1', JSON.stringify(filters));
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [filters]);
 
   const [formData, setFormData] = useState({
     cuentaId: '',
@@ -854,13 +871,19 @@ export const TransactionsManager = ({
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                    <SelectItem value="all">Todas las categorías</SelectItem>
-                   {categories.map((category) => (
-                     <SelectItem key={category.id} value={category.id}>
-                       <span className="font-bold">{category.categoria}</span> - <span className="font-normal">{category.subcategoria}</span>
-                    </SelectItem>
-                  ))}
-                   <SelectItem value="sin-asignar" className="text-red-500 font-medium">
-                     Sin Asignar
+                   {categories
+                     .filter((category) => !(
+                       category.categoria && category.subcategoria &&
+                       category.categoria.trim().toLowerCase() === 'sin asignar' &&
+                       category.subcategoria.trim().toLowerCase() === 'sin asignar'
+                     ))
+                     .map((category) => (
+                       <SelectItem key={category.id} value={category.id}>
+                         <span className="font-bold">{category.categoria}</span> - <span className="font-normal">{category.subcategoria}</span>
+                       </SelectItem>
+                     ))}
+                   <SelectItem value="sin-asignar" className="text-destructive font-semibold">
+                     Sin asignar
                    </SelectItem>
                 </SelectContent>
               </Select>
