@@ -376,14 +376,14 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
                               {pago.hayPago ? (
                                 <>
                                   <span className="font-semibold">{formatCurrency(pago.monto)}</span>
-                                  {pago.fecha && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {pago.fecha.toLocaleDateString('es-MX', { 
-                                        day: '2-digit', 
-                                        month: 'short' 
-                                      })}
-                                    </span>
-                                  )}
+                                   {pago.fecha && (
+                                     <span className="text-xs text-muted-foreground">
+                                       {String(pago.fecha.getDate()).padStart(2, '0')}-{
+                                         ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 
+                                          'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][pago.fecha.getMonth()]
+                                       }
+                                     </span>
+                                   )}
                                 </>
                               ) : (
                                 <span className={`text-sm ${
