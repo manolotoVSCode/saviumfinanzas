@@ -871,6 +871,9 @@ export const TransactionsManager = ({
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                    <SelectItem value="all">Todas las categorías</SelectItem>
+                   <SelectItem value="sin-asignar" className="text-destructive font-semibold">
+                     SIN ASIGNAR
+                   </SelectItem>
                    {categories
                      .filter((category) => !(
                        category.categoria && category.subcategoria &&
@@ -882,9 +885,6 @@ export const TransactionsManager = ({
                          <span className="font-bold">{category.categoria}</span> - <span className="font-normal">{category.subcategoria}</span>
                        </SelectItem>
                      ))}
-                   <SelectItem value="sin-asignar" className="text-destructive font-semibold">
-                     Sin asignar
-                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
