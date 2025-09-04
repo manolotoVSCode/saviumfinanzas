@@ -378,9 +378,9 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
                                   <span className="font-semibold">{formatCurrency(pago.monto)}</span>
                                    {pago.fecha && (
                                      <span className="text-xs text-muted-foreground">
-                                       {String(pago.fecha.getDate()).padStart(2, '0')}-{
+                                       {String(pago.fecha.getUTCDate()).padStart(2, '0')}-{
                                          ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 
-                                          'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][pago.fecha.getMonth()]
+                                          'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][pago.fecha.getUTCMonth()]
                                        }
                                      </span>
                                    )}
