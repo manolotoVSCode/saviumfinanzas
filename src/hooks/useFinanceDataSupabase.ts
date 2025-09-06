@@ -250,39 +250,56 @@ export const useFinanceDataSupabase = () => {
     console.log('transactionsPreviousMonth:', transactionsPreviousMonth.map(t => ({ fecha: t.fecha, fechaString: t.fecha.toISOString(), comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
     
     // INGRESOS Y GASTOS MENSUALES - CONVERTIR A MXN
+    // Excluir reembolsos de ingresos y restarlos de gastos
+    const reembolsosMes = transactionsThisMonth
+      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+    
     const ingresosMes = transactionsThisMonth
-      .filter(t => t.tipo === 'Ingreso')
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosMes = transactionsThisMonth
       .filter(t => t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMes;
     const balanceMes = ingresosMes - gastosMes;
     
     // MES ANTERIOR (dinámico) - CONVERTIR A MXN
+    const reembolsosMesAnterior = transactionsPreviousMonth
+      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+    
     const ingresosMesAnterior = transactionsPreviousMonth
-      .filter(t => t.tipo === 'Ingreso')
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosMesAnterior = transactionsPreviousMonth
       .filter(t => t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMesAnterior;
     const balanceMesAnterior = ingresosMesAnterior - gastosMesAnterior;
     
     // ANUALES - CONVERTIR A MXN
+    const reembolsosAnio = transactionsThisYear
+      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+    
     const ingresosAnio = transactionsThisYear
-      .filter(t => t.tipo === 'Ingreso')
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosAnio = transactionsThisYear
       .filter(t => t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosAnio;
     const balanceAnio = ingresosAnio - gastosAnio;
     
     // AÑO ANTERIOR - CONVERTIR A MXN
+    const reembolsosAnioAnterior = transactionsLastYear
+      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+    
     const ingresosAnioAnterior = transactionsLastYear
-      .filter(t => t.tipo === 'Ingreso')
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosAnioAnterior = transactionsLastYear
       .filter(t => t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosAnioAnterior;
     const balanceAnioAnterior = ingresosAnioAnterior - gastosAnioAnterior;
     
     // VARIACIONES PORCENTUALES (Mes actual vs Mes anterior)
@@ -393,12 +410,29 @@ export const useFinanceDataSupabase = () => {
     // TOP CATEGORÍAS GASTOS E INGRESOS
     const getCategoryTotalsGastos = (transactions: typeof enrichedTransactions) => {
       const categoryTotals = new Map<string, number>();
+      const reembolsosTotal = transactions
+        .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+        .reduce((sum, t) => sum + t.ingreso, 0);
+      
       transactions.forEach(t => {
         if (t.categoria && t.tipo === 'Gastos') {
           const current = categoryTotals.get(t.categoria) || 0;
           categoryTotals.set(t.categoria, current + t.gasto);
         }
       });
+      
+      // Restar reembolsos proporcionalmente de todas las categorías de gastos
+      if (reembolsosTotal > 0) {
+        const totalGastos = Array.from(categoryTotals.values()).reduce((sum, val) => sum + val, 0);
+        if (totalGastos > 0) {
+          categoryTotals.forEach((monto, categoria) => {
+            const proporcion = monto / totalGastos;
+            const reembolsoCategoria = reembolsosTotal * proporcion;
+            categoryTotals.set(categoria, Math.max(0, monto - reembolsoCategoria));
+          });
+        }
+      }
+      
       return Array.from(categoryTotals.entries())
         .map(([categoria, monto]) => ({ categoria, monto, tipo: 'Gastos' as TransactionType }))
         .sort((a, b) => b.monto - a.monto)
@@ -408,7 +442,8 @@ export const useFinanceDataSupabase = () => {
     const getCategoryTotalsIngresos = (transactions: typeof enrichedTransactions) => {
       const categoryTotals = new Map<string, number>();
       transactions.forEach(t => {
-        if (t.categoria && t.tipo === 'Ingreso') {
+        // Excluir reembolsos de los ingresos
+        if (t.categoria && t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')) {
           const current = categoryTotals.get(t.categoria) || 0;
           categoryTotals.set(t.categoria, current + t.ingreso);
         }
@@ -438,12 +473,16 @@ export const useFinanceDataSupabase = () => {
       const monthTransactions = enrichedTransactions.filter(t => t.fecha >= monthStart && t.fecha <= monthEnd);
       
       // Convertir todos los ingresos y gastos a MXN para el dashboard
+      const reembolsosMes = monthTransactions
+        .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      
       const ingresos = monthTransactions
-        .filter(t => t.tipo === 'Ingreso')
+        .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
         .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
       const gastos = monthTransactions
         .filter(t => t.tipo === 'Gastos')
-        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0);
+        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMes;
       
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),

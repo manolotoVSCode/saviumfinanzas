@@ -23,13 +23,17 @@ export const ProfitLossReport = ({ metrics, formatCurrency, transactions, catego
       return transactionDate >= startOfPreviousMonth && transactionDate <= endOfPreviousMonth;
     });
 
+    const reembolsos = previousMonthTransactions
+      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .reduce((sum, t) => sum + t.ingreso, 0);
+
     const income = previousMonthTransactions
-      .filter(t => t.ingreso > 0)
+      .filter(t => t.ingreso > 0 && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
       .reduce((sum, t) => sum + t.ingreso, 0);
 
     const expenses = previousMonthTransactions
       .filter(t => t.gasto > 0)
-      .reduce((sum, t) => sum + t.gasto, 0);
+      .reduce((sum, t) => sum + t.gasto, 0) - reembolsos;
 
     const netIncome = income - expenses;
 
@@ -41,13 +45,26 @@ export const ProfitLossReport = ({ metrics, formatCurrency, transactions, catego
       const category = categories.find(c => c.id === t.subcategoriaId);
       const categoryName = category ? category.categoria : 'Sin categoría';
 
-      if (t.ingreso > 0) {
+      // Excluir reembolsos de ingresos
+      if (t.ingreso > 0 && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')) {
         incomeByCategory[categoryName] = (incomeByCategory[categoryName] || 0) + t.ingreso;
       }
       if (t.gasto > 0) {
         expensesByCategory[categoryName] = (expensesByCategory[categoryName] || 0) + t.gasto;
       }
     });
+
+    // Restar reembolsos proporcionalmente de gastos
+    if (reembolsos > 0) {
+      const totalExpenses = Object.values(expensesByCategory).reduce((sum, val) => sum + val, 0);
+      if (totalExpenses > 0) {
+        Object.keys(expensesByCategory).forEach(categoryName => {
+          const proportion = expensesByCategory[categoryName] / totalExpenses;
+          const reembolsoCategory = reembolsos * proportion;
+          expensesByCategory[categoryName] = Math.max(0, expensesByCategory[categoryName] - reembolsoCategory);
+        });
+      }
+    }
 
     return {
       income,

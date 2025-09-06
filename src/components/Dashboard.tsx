@@ -68,20 +68,52 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     });
     
     // Cálculos del mes anterior
-    const ingresosMes = lastMonthTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMes = lastMonthTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + Math.abs(t.monto), 0);
+    const reembolsosMes = lastMonthTransactions
+      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    const ingresosMes = lastMonthTransactions
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMes = lastMonthTransactions
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + Math.abs(t.monto), 0) - reembolsosMes;
     
     // Cálculos de dos meses atrás (para comparativo)
-    const ingresosMesAnterior = twoMonthsAgoTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosMesAnterior = twoMonthsAgoTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + Math.abs(t.monto), 0);
+    const reembolsosMesAnterior = twoMonthsAgoTransactions
+      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    const ingresosMesAnterior = twoMonthsAgoTransactions
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosMesAnterior = twoMonthsAgoTransactions
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + Math.abs(t.monto), 0) - reembolsosMesAnterior;
     
     // Cálculos del año actual
-    const ingresosAnio = yearTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosAnio = yearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + Math.abs(t.monto), 0);
+    const reembolsosAnio = yearTransactions
+      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    const ingresosAnio = yearTransactions
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnio = yearTransactions
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + Math.abs(t.monto), 0) - reembolsosAnio;
     
     // Cálculos del año anterior (para comparativo)
-    const ingresosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-    const gastosAnioAnterior = lastYearTransactions.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + Math.abs(t.monto), 0);
+    const reembolsosAnioAnterior = lastYearTransactions
+      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    const ingresosAnioAnterior = lastYearTransactions
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    const gastosAnioAnterior = lastYearTransactions
+      .filter(t => t.tipo === 'Gastos')
+      .reduce((sum, t) => sum + Math.abs(t.monto), 0) - reembolsosAnioAnterior;
     
     // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses excluyendo mes actual)
     const tendenciaMensual = [];
@@ -100,8 +132,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         return adjustedDate >= monthStart && adjustedDate <= monthEnd;
       });
       
-      const ingresos = monthTrans.filter(t => t.tipo === 'Ingreso').reduce((sum, t) => sum + t.ingreso, 0);
-      const gastos = Math.abs(monthTrans.filter(t => t.tipo === 'Gastos').reduce((sum, t) => sum + Math.abs(t.monto), 0));
+      const reembolsosMes = monthTrans
+        .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+        .reduce((sum, t) => sum + t.ingreso, 0);
+      
+      const ingresos = monthTrans
+        .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+        .reduce((sum, t) => sum + t.ingreso, 0);
+      const gastos = Math.abs(monthTrans
+        .filter(t => t.tipo === 'Gastos')
+        .reduce((sum, t) => sum + Math.abs(t.monto), 0)) - reembolsosMes;
       
       // Crear etiqueta del mes de forma más consistente
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -163,7 +203,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
   // Función para obtener distribución por categorías filtrada por moneda
   const getFilteredDistribution = (currency: 'MXN' | 'USD' | 'EUR', type: 'Ingreso' | 'Gastos', period: 'month' | 'year') => {
-    const filteredTransactions = transactions.filter(t => t.divisa === currency && t.tipo === type);
+    let filteredTransactions;
+    
+    if (type === 'Ingreso') {
+      // Excluir reembolsos de ingresos
+      filteredTransactions = transactions.filter(t => 
+        t.divisa === currency && 
+        t.tipo === type && 
+        !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      );
+    } else {
+      filteredTransactions = transactions.filter(t => t.divisa === currency && t.tipo === type);
+    }
     
     const now = new Date();
     let filteredByPeriod;
@@ -185,6 +236,35 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       });
     }
     
+    // Si es de gastos, necesitamos calcular reembolsos y restarlos proporcionalmente
+    let reembolsosTotal = 0;
+    if (type === 'Gastos') {
+      // Obtener transacciones de reembolsos del mismo período
+      const reembolsosTransactions = transactions.filter(t => 
+        t.divisa === currency && 
+        t.categoria === 'Ingresos adicionales' && 
+        t.subcategoria === 'Reembolsos'
+      );
+      
+      let reembolsosByPeriod;
+      if (period === 'month') {
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        reembolsosByPeriod = reembolsosTransactions.filter(t => {
+          const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
+          return adjustedDate >= startOfLastMonth && adjustedDate <= endOfLastMonth;
+        });
+      } else {
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        reembolsosByPeriod = reembolsosTransactions.filter(t => {
+          const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
+          return adjustedDate >= startOfYear;
+        });
+      }
+      
+      reembolsosTotal = reembolsosByPeriod.reduce((sum, t) => sum + t.ingreso, 0);
+    }
+    
     // Agrupar por categoría
     const categoryTotals: Record<string, number> = {};
     filteredByPeriod.forEach(t => {
@@ -192,6 +272,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       const amount = type === 'Ingreso' ? t.ingreso : Math.abs(t.monto);
       categoryTotals[categoria] = (categoryTotals[categoria] || 0) + Math.abs(amount);
     });
+    
+    // Si es de gastos, restar reembolsos proporcionalmente
+    if (type === 'Gastos' && reembolsosTotal > 0) {
+      const totalGastos = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
+      if (totalGastos > 0) {
+        Object.keys(categoryTotals).forEach(categoria => {
+          const proporcion = categoryTotals[categoria] / totalGastos;
+          const reembolsoCategoria = reembolsosTotal * proporcion;
+          categoryTotals[categoria] = Math.max(0, categoryTotals[categoria] - reembolsoCategoria);
+        });
+      }
+    }
     
     // Convertir a array y ordenar
     return Object.entries(categoryTotals)
