@@ -102,6 +102,39 @@ export const TransactionsManager = ({
 
   const [categoryTypeFilter, setCategoryTypeFilter] = useState<string>('all');
 
+  // Obtener las últimas transacciones importadas
+  const getLastImportedTransactionIds = () => {
+    const importedTransactions = transactions.filter(t => t.csvId);
+    if (importedTransactions.length === 0) return new Set();
+    
+    // Agrupar por csvId y encontrar el más reciente
+    const csvGroups = importedTransactions.reduce((groups, transaction) => {
+      const csvId = transaction.csvId!;
+      if (!groups[csvId]) {
+        groups[csvId] = [];
+      }
+      groups[csvId].push(transaction);
+      return groups;
+    }, {} as Record<string, Transaction[]>);
+    
+    // Encontrar el grupo con la fecha más reciente (última importación)
+    let latestCsvId = '';
+    let latestDate = new Date(0);
+    
+    Object.entries(csvGroups).forEach(([csvId, transactions]) => {
+      const groupLatestDate = Math.max(...transactions.map(t => t.fecha.getTime()));
+      if (groupLatestDate > latestDate.getTime()) {
+        latestDate = new Date(groupLatestDate);
+        latestCsvId = csvId;
+      }
+    });
+    
+    // Retornar IDs de las transacciones de la última importación
+    return new Set((csvGroups[latestCsvId] || []).map(t => t.id));
+  };
+  
+  const lastImportedIds = getLastImportedTransactionIds();
+
   // Aplicar filtros a las transacciones
   const filteredTransactions = transactions.filter(transaction => {
     if (filters.cuentaId && filters.cuentaId !== 'all' && transaction.cuentaId !== filters.cuentaId) return false;
@@ -109,7 +142,10 @@ export const TransactionsManager = ({
     // Filtro por transacciones importadas
     if (filters.importadas && filters.importadas !== 'all') {
       const hasCSVId = Boolean(transaction.csvId);
-      if (filters.importadas === 'si' && !hasCSVId) return false;
+      if (filters.importadas === 'si') {
+        // Solo mostrar las transacciones de la última importación
+        if (!lastImportedIds.has(transaction.id)) return false;
+      }
       if (filters.importadas === 'no' && hasCSVId) return false;
     }
     
@@ -1027,7 +1063,7 @@ export const TransactionsManager = ({
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="si">Solo Importadas</SelectItem>
+                  <SelectItem value="si">Últimas Importadas</SelectItem>
                   <SelectItem value="no">Solo Manuales</SelectItem>
                 </SelectContent>
               </Select>
