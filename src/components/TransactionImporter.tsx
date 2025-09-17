@@ -177,16 +177,22 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       return;
     }
 
-    const transactions: Omit<Transaction, 'id' | 'monto'>[] = parsedTransactions.map((transaction, index) => ({
-      csvId: `import_${Date.now()}_${index}`,
-      cuentaId: selectedAccount,
-      fecha: new Date(transaction.fecha),
-      comentario: transaction.comentario,
-      ingreso: transaction.ingreso,
-      gasto: transaction.gasto,
-      subcategoriaId: defaultCategory.id,
-      divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
-    }));
+    const transactions: Omit<Transaction, 'id' | 'monto'>[] = parsedTransactions.map((transaction, index) => {
+      // Crear fecha local sin problemas de zona horaria
+      const [year, month, day] = transaction.fecha.split('-');
+      const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      
+      return {
+        csvId: `import_${Date.now()}_${index}`,
+        cuentaId: selectedAccount,
+        fecha,
+        comentario: transaction.comentario,
+        ingreso: transaction.ingreso,
+        gasto: transaction.gasto,
+        subcategoriaId: defaultCategory.id,
+        divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
+      };
+    });
 
     onImportTransactions(transactions);
     
