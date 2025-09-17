@@ -141,12 +141,14 @@ export const TransactionsManager = ({
     
     // Filtro por transacciones importadas
     if (filters.importadas && filters.importadas !== 'all') {
-      const hasCSVId = Boolean(transaction.csvId);
       if (filters.importadas === 'si') {
         // Solo mostrar las transacciones de la última importación
         if (!lastImportedIds.has(transaction.id)) return false;
       }
-      if (filters.importadas === 'no' && hasCSVId) return false;
+      if (filters.importadas === 'no') {
+        // Solo mostrar transacciones manuales (sin csvId)
+        if (transaction.csvId) return false;
+      }
     }
     
     // Para filtro de categoría, también incluir transacciones sin categoría válida
