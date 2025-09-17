@@ -91,7 +91,9 @@ export const useFinanceDataSupabase = () => {
         gasto: Number(transaccion.gasto),
         subcategoriaId: transaccion.subcategoria_id,
         cuentaId: transaccion.cuenta_id,
-        divisa: transaccion.divisa as 'MXN' | 'USD' | 'EUR'
+        divisa: transaccion.divisa as 'MXN' | 'USD' | 'EUR',
+        csvId: transaccion.csv_id,
+        created_at: new Date(transaccion.created_at)
       }));
 
       setAccounts(mappedAccounts);

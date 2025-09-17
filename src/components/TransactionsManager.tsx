@@ -113,9 +113,8 @@ export const TransactionsManager = ({
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
       
-      const transactionDate = new Date(transaction.fecha);
-      transactionDate.setHours(0, 0, 0, 0);
-      const isToday = transactionDate.getTime() === today.getTime();
+      const createdAt = transaction.created_at;
+      const isToday = createdAt && createdAt >= today && createdAt < tomorrow;
       
       if (filters.importadas === 'hoy' && !isToday) return false;
       if (filters.importadas === 'anteriores' && isToday) return false;
