@@ -51,6 +51,10 @@ export const TransactionsManager = ({
     busqueda: ''
   });
   
+  // Estados para cambio de mes masivo
+  const [isEditingBulkDate, setIsEditingBulkDate] = useState(false);
+  const [bulkDate, setBulkDate] = useState('');
+  
   // Filtros
   const [filters, setFilters] = useState(() => {
     try {
@@ -67,7 +71,8 @@ export const TransactionsManager = ({
       divisa: 'all',
       comentario: '',
       minAmount: '',
-      maxAmount: ''
+      maxAmount: '',
+      importadas: 'all'
     };
   });
 
@@ -100,6 +105,13 @@ export const TransactionsManager = ({
   // Aplicar filtros a las transacciones
   const filteredTransactions = transactions.filter(transaction => {
     if (filters.cuentaId && filters.cuentaId !== 'all' && transaction.cuentaId !== filters.cuentaId) return false;
+    
+    // Filtro por transacciones importadas
+    if (filters.importadas && filters.importadas !== 'all') {
+      const hasCSVId = Boolean(transaction.csvId);
+      if (filters.importadas === 'si' && !hasCSVId) return false;
+      if (filters.importadas === 'no' && hasCSVId) return false;
+    }
     
     // Para filtro de categoría, también incluir transacciones sin categoría válida
     if (filters.categoriaId && filters.categoriaId !== 'all') {
@@ -155,7 +167,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '' });
+    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '', importadas: 'all' });
   };
 
   const resetForm = () => {
@@ -381,6 +393,15 @@ export const TransactionsManager = ({
     setSelectedTransactions(new Set());
     setIsEditingBulk(false);
     setBulkCategoryId('');
+  };
+
+  const handleBulkDateChange = async () => {
+    for (const transactionId of selectedTransactions) {
+      onUpdateTransaction(transactionId, { fecha: new Date(bulkDate + 'T12:00:00') });
+    }
+    setSelectedTransactions(new Set());
+    setIsEditingBulkDate(false);
+    setBulkDate('');
   };
 
   return (
@@ -759,6 +780,43 @@ export const TransactionsManager = ({
             </div>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isEditingBulkDate} onOpenChange={setIsEditingBulkDate}>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={selectedTransactions.size === 0}
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Cambiar Mes
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cambiar Fecha de {selectedTransactions.size} Transacciones</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="bulk-date">Nueva Fecha</Label>
+                <Input
+                  id="bulk-date"
+                  type="date"
+                  value={bulkDate}
+                  onChange={(e) => setBulkDate(e.target.value)}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsEditingBulkDate(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleBulkDateChange} disabled={!bulkDate}>
+                  Aplicar Cambios
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filtros */}
@@ -772,7 +830,7 @@ export const TransactionsManager = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             <div>
               <Label htmlFor="filter-cuenta">Cuenta</Label>
               <Select 
@@ -956,6 +1014,23 @@ export const TransactionsManager = ({
                 value={filters.maxAmount}
                 onChange={(e) => setFilters(prev => ({ ...prev, maxAmount: e.target.value }))}
               />
+            </div>
+            
+            <div>
+              <Label htmlFor="filter-importadas">Transacciones Importadas</Label>
+              <Select 
+                value={filters.importadas} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, importadas: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="si">Solo Importadas</SelectItem>
+                  <SelectItem value="no">Solo Manuales</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
