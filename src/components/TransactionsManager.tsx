@@ -72,7 +72,8 @@ export const TransactionsManager = ({
       comentario: '',
       minAmount: '',
       maxAmount: '',
-      importadas: 'all'
+      importadas: 'all',
+      suscripciones: 'all'
     };
   });
 
@@ -101,6 +102,133 @@ export const TransactionsManager = ({
   });
 
   const [categoryTypeFilter, setCategoryTypeFilter] = useState<string>('all');
+
+  // Funciones para detectar suscripciones (copiadas del SubscriptionsManager)
+  const areSameService = (t1: Transaction, t2: Transaction): boolean => {
+    const normalize = (comment: string) => {
+      const lower = comment.toLowerCase();
+      
+      if (lower.includes('google')) {
+        if (lower.includes('nest')) return 'google-nest';
+        if (lower.includes('one')) return 'google-one';
+        if (lower.includes('drive')) return 'google-drive';
+        if (lower.includes('youtube')) return 'google-youtube';
+        if (lower.includes('cloud')) return 'google-cloud';
+        if (lower.includes('workspace')) return 'google-workspace';
+        return 'google-general';
+      }
+      
+      if (lower.includes('apple')) {
+        if (lower.includes('music')) return 'apple-music';
+        if (lower.includes('icloud')) return 'apple-icloud';
+        if (lower.includes('tv')) return 'apple-tv';
+        return 'apple-general';
+      }
+      
+      if (lower.includes('spotify')) return 'spotify';
+      if (lower.includes('netflix')) return 'netflix';
+      if (lower.includes('chatgpt') || lower.includes('openai')) return 'openai-chatgpt';
+      if (lower.includes('amazon')) return 'amazon';
+      if (lower.includes('lovable')) return 'lovable';
+      if (lower.includes('opus')) return 'opus-clip';
+      if (lower.includes('rotoplas')) return 'rotoplas';
+      
+      return lower
+        .replace(/[*\s\d\-_.]/g, '')
+        .replace(/paypal/g, '')
+        .substring(0, 15);
+    };
+
+    const comment1Normalized = normalize(t1.comentario);
+    const comment2Normalized = normalize(t2.comentario);
+    
+    if (comment1Normalized === comment2Normalized && comment1Normalized.length > 3) {
+      return true;
+    }
+    
+    if (comment1Normalized.length <= 5) {
+      const montoDiff = Math.abs(t1.gasto - t2.gasto) / Math.max(t1.gasto, t2.gasto);
+      const fecha1 = new Date(t1.fecha);
+      const fecha2 = new Date(t2.fecha);
+      
+      if (montoDiff <= 0.05 && fecha1.getDate() === fecha2.getDate()) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  const determineFrecuencia = (transactions: Transaction[]): 'Mensual' | 'Anual' | 'Irregular' => {
+    if (transactions.length < 2) return 'Irregular';
+    
+    const sortedTransactions = transactions.sort((a, b) => 
+      new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+    );
+    
+    const intervals = [];
+    for (let i = 1; i < sortedTransactions.length; i++) {
+      const diff = new Date(sortedTransactions[i].fecha).getTime() - 
+                   new Date(sortedTransactions[i-1].fecha).getTime();
+      intervals.push(diff / (1000 * 60 * 60 * 24));
+    }
+    
+    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    
+    if (avgInterval >= 25 && avgInterval <= 35) return 'Mensual';
+    if (avgInterval >= 350 && avgInterval <= 380) return 'Anual';
+    return 'Irregular';
+  };
+
+  const groupSimilarTransactions = (transactions: Transaction[]) => {
+    const groups: Transaction[][] = [];
+    const processed = new Set<number>();
+    
+    transactions.forEach((transaction, index) => {
+      if (processed.has(index)) return;
+      
+      const group = [transaction];
+      processed.add(index);
+      
+      for (let i = index + 1; i < transactions.length; i++) {
+        if (processed.has(i)) continue;
+        
+        if (areSameService(transaction, transactions[i])) {
+          group.push(transactions[i]);
+          processed.add(i);
+        }
+      }
+      
+      groups.push(group);
+    });
+    
+    return groups;
+  };
+
+  // Detectar posibles suscripciones
+  const subscriptionTransactionIds = useMemo(() => {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    
+    const gastos = transactions.filter(t => 
+      t.gasto > 0 && 
+      new Date(t.fecha) >= twelveMonthsAgo
+    );
+    
+    const groups = groupSimilarTransactions(gastos);
+    const subscriptionIds = new Set<string>();
+    
+    groups.forEach(group => {
+      if (group.length >= 2) {
+        const frequency = determineFrecuencia(group);
+        if (frequency === 'Mensual' || frequency === 'Anual') {
+          group.forEach(t => subscriptionIds.add(t.id));
+        }
+      }
+    });
+    
+    return subscriptionIds;
+  }, [transactions]);
 
   // Aplicar filtros a las transacciones
   const filteredTransactions = transactions.filter(transaction => {
@@ -163,6 +291,13 @@ export const TransactionsManager = ({
       if (!isNaN(maxAmount) && Math.abs(transaction.monto) > maxAmount) return false;
     }
     
+    // Filtro por suscripciones
+    if (filters.suscripciones && filters.suscripciones !== 'all') {
+      const isSubscription = subscriptionTransactionIds.has(transaction.id);
+      if (filters.suscripciones === 'suscripciones' && !isSubscription) return false;
+      if (filters.suscripciones === 'no-suscripciones' && isSubscription) return false;
+    }
+    
     return true;
   });
 
@@ -174,7 +309,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '', importadas: 'all' });
+    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '', importadas: 'all', suscripciones: 'all' });
   };
 
   const resetForm = () => {
@@ -1036,6 +1171,23 @@ export const TransactionsManager = ({
                   <SelectItem value="all">Todas</SelectItem>
                   <SelectItem value="hoy">De Hoy</SelectItem>
                   <SelectItem value="anteriores">Anteriores</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="filter-suscripciones">Posibles Suscripciones</Label>
+              <Select 
+                value={filters.suscripciones} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, suscripciones: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="suscripciones">Solo Suscripciones</SelectItem>
+                  <SelectItem value="no-suscripciones">No Suscripciones</SelectItem>
                 </SelectContent>
               </Select>
             </div>
