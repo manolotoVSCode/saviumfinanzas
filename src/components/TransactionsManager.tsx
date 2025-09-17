@@ -103,10 +103,16 @@ export const TransactionsManager = ({
     
     // Para filtro de categoría, también incluir transacciones sin categoría válida
     if (filters.categoriaId && filters.categoriaId !== 'all') {
-      const categoryExists = categories.some(c => c.id === transaction.subcategoriaId);
+      const category = categories.find(c => c.id === transaction.subcategoriaId);
+      const categoryExists = !!category;
+      
       if (filters.categoriaId === 'sin-asignar') {
-        // Solo mostrar transacciones sin categoría válida
-        if (categoryExists) return false;
+        // Mostrar transacciones sin categoría válida O con categoría "SIN ASIGNAR"
+        const isSinAsignarCategory = category && 
+          category.categoria.trim().toLowerCase() === 'sin asignar' && 
+          category.subcategoria.trim().toLowerCase() === 'sin asignar';
+        
+        if (!(!categoryExists || isSinAsignarCategory)) return false;
       } else {
         // Filtro por categoría específica
         if (!categoryExists || transaction.subcategoriaId !== filters.categoriaId) return false;
