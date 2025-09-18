@@ -20,10 +20,6 @@ const Inversiones = (): JSX.Element => {
   const { accounts, loading, refreshData, accountTypes, addAccount, updateAccount, deleteAccount } = useFinanceDataSupabase();
   const { criptomonedas } = useCriptomonedas();
   
-  // Debug: verificar datos
-  console.log('=== DEBUG INVERSIONES ===');
-  console.log('Todas las cuentas:', accounts);
-  console.log('Loading:', loading);
   
   const { formatCurrency } = useAppConfig();
   const { convertCurrency } = useExchangeRates();

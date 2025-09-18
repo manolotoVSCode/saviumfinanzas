@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Transaction, Category } from '@/types/finance';
 import { TrendingUp, TrendingDown, DollarSign, RotateCcw } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface MonthlyReimbursementReportProps {
   transactions: Transaction[];
@@ -35,24 +36,22 @@ export const MonthlyReimbursementReport = ({
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    // Log solo para agosto 2025 - información resumida
-    console.log(`📊 ANÁLISIS AGOSTO 2025: Procesando ${transactions.length} transacciones`);
-    let augustStats = { found: 0, processed: 0, income: 0, reimbursements: 0 };
+    // Track processing for current analysis
+    let processedCount = 0;
+    let totalIncome = 0;
+    let totalReimbursements = 0;
     
     transactions.forEach(transaction => {
       const date = new Date(transaction.fecha);
       const transactionMonth = date.getMonth();
       const transactionYear = date.getFullYear();
       
-      // Contar transacciones de agosto 2025
-      if (transactionYear === 2025 && transactionMonth === 7) {
-        augustStats.found++;
-      }
-      
       // Excluir el mes actual
       if (transactionYear === currentYear && transactionMonth === currentMonth) {
         return;
       }
+      
+      processedCount++;
       
       const monthKey = `${transactionYear}-${String(transactionMonth + 1).padStart(2, '0')}`;
       const monthName = `${date.toLocaleDateString('es-ES', { month: 'long' }).charAt(0).toUpperCase() + date.toLocaleDateString('es-ES', { month: 'long' }).slice(1)} ${transactionYear}`;
@@ -67,11 +66,6 @@ export const MonthlyReimbursementReport = ({
       // Si es una transacción de inversión, no la procesamos
       if (isInvestmentTransaction) {
         return;
-      }
-      
-      // Contar transacciones procesadas de agosto 2025
-      if (transactionYear === 2025 && transactionMonth === 7) {
-        augustStats.processed++;
       }
       
       // Identificar reembolsos: solo ingresos que contengan "reembolso" en su descripción
@@ -100,17 +94,11 @@ export const MonthlyReimbursementReport = ({
       
       if (transaction.ingreso > 0) {
         data.totalIncome += transaction.ingreso;
-        
-        // Contar ingresos y reembolsos de agosto
-        if (transactionYear === 2025 && transactionMonth === 7) {
-          augustStats.income += transaction.ingreso;
-          if (isReimbursement) {
-            augustStats.reimbursements += transaction.ingreso;
-          }
-        }
+        totalIncome += transaction.ingreso;
         
         if (isReimbursement) {
           data.reimbursementAmount += transaction.ingreso;
+          totalReimbursements += transaction.ingreso;
         }
       }
       
@@ -118,11 +106,13 @@ export const MonthlyReimbursementReport = ({
         data.totalExpenses += transaction.gasto;
       }
     });
+    // Log summary of analysis
+    if (processedCount > 0) {
+      const currentMonth = new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+      logger.reimbursement(currentMonth, totalIncome, totalReimbursements, processedCount, transactions.length);
+    }
     
-    // Resumen final para agosto 2025
-    console.log(`✅ AGOSTO 2025: ${augustStats.processed}/${augustStats.found} transacciones procesadas | Ingresos: $${augustStats.income.toLocaleString()} | Reembolsos: $${augustStats.reimbursements.toLocaleString()}`);
-    
-    // Calcular balances
+    // Calculate balances
     Object.values(dataByMonth).forEach(data => {
       data.totalBalance = data.totalIncome - data.totalExpenses;
       // Los ajustados descuentan los reembolsos tanto de ingresos como de gastos
