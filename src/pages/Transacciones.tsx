@@ -5,7 +5,6 @@ import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Info } from 'lucide-react';
 
@@ -86,23 +85,15 @@ const Transacciones = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="transacciones" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="transacciones">Transacciones</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="transacciones">
-            <TransactionsManager
-              transactions={financeData.transactions}
-              accounts={financeData.accounts}
-              categories={financeData.categories}
-              onAddTransaction={(transaction, autoContribution) => financeData.addTransaction(transaction, autoContribution)}
-              onUpdateTransaction={(id, updates, autoContribution) => financeData.updateTransaction(id, updates, autoContribution)}
-              onDeleteTransaction={financeData.deleteTransaction}
-              onClearAllTransactions={financeData.clearAllTransactions}
-            />
-          </TabsContent>
-        </Tabs>
+        <TransactionsManager
+          transactions={financeData.transactions}
+          accounts={financeData.accounts}
+          categories={financeData.categories}
+          onAddTransaction={(transaction, autoContribution) => financeData.addTransaction(transaction, autoContribution)}
+          onUpdateTransaction={(id, updates, autoContribution) => financeData.updateTransaction(id, updates, autoContribution)}
+          onDeleteTransaction={financeData.deleteTransaction}
+          onClearAllTransactions={financeData.clearAllTransactions}
+        />
       </div>
     </Layout>
   );
