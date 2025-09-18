@@ -175,15 +175,28 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         .filter(t => t.tipo === 'Gastos')
         .reduce((sum, t) => sum + t.gasto, 0));
       
+      // Calcular reembolsos del mes
+      const reembolsos = monthTrans
+        .filter(t => t.ingreso > 0 && (
+          t.categoria?.toLowerCase().includes('reembolso') ||
+          t.subcategoria?.toLowerCase().includes('reembolso') ||
+          t.comentario.toLowerCase().includes('reembolso')
+        ))
+        .reduce((sum, t) => sum + t.ingreso, 0);
+      
+      // Ajustar por reembolsos
+      const ingresosAjustados = ingresos - reembolsos;
+      const gastosAjustados = gastos - reembolsos;
+      
       // Crear etiqueta del mes de forma más consistente
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       const mesLabel = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear().toString().slice(-2)}`;
       
       tendenciaMensual.push({
         mes: mesLabel,
-        ingresos,
-        gastos,
-        balance: ingresos - gastos
+        ingresos: ingresosAjustados,
+        gastos: gastosAjustados,
+        balance: ingresosAjustados - gastosAjustados
       });
     }
     
