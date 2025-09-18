@@ -106,11 +106,6 @@ export const MonthlyReimbursementReport = ({
         data.totalExpenses += transaction.gasto;
       }
     });
-    // Log summary of analysis
-    if (processedCount > 0) {
-      const currentMonth = new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-      logger.reimbursement(currentMonth, totalIncome, totalReimbursements, processedCount, transactions.length);
-    }
     
     // Calculate balances
     Object.values(dataByMonth).forEach(data => {

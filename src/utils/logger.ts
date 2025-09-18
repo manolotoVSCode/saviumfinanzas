@@ -18,6 +18,11 @@ class FinanceLogger {
   private maxLogs = 100; // Keep only last 100 logs
 
   private log(level: LogLevel, category: string, message: string, data?: any) {
+    // Only process logs in development mode
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
+
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -33,11 +38,9 @@ class FinanceLogger {
       this.logs = this.logs.slice(-this.maxLogs);
     }
 
-    // Only log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      const emoji = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '📊';
-      console.log(`${emoji} [${category}] ${message}`, data ? data : '');
-    }
+    // Log to console in development only
+    const emoji = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '📊';
+    console.log(`${emoji} [${category}] ${message}`, data ? data : '');
   }
 
   // Financial operations logging
