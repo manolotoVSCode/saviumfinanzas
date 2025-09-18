@@ -112,6 +112,37 @@ export const MonthlyReimbursementReport = ({
       .sort((a, b) => b.sortKey - a.sortKey)
       .slice(0, 12); // Últimos 12 meses (excluyendo el actual)
   }, [transactions, categories]);
+
+  // Calcular resumen de los últimos 12 meses
+  const yearSummary = useMemo(() => {
+    if (monthlyData.length === 0) return null;
+    
+    const summary = {
+      totalIncome: 0,
+      totalExpenses: 0,
+      totalBalance: 0,
+      reimbursementIncome: 0,
+      reimbursementExpenses: 0,
+      adjustedIncome: 0,
+      adjustedExpenses: 0,
+      adjustedBalance: 0,
+      currency: monthlyData[0]?.currency || 'MXN'
+    };
+    
+    monthlyData.forEach(data => {
+      summary.totalIncome += data.totalIncome;
+      summary.totalExpenses += data.totalExpenses;
+      summary.reimbursementIncome += data.reimbursementIncome;
+      summary.reimbursementExpenses += data.reimbursementExpenses;
+    });
+    
+    summary.totalBalance = summary.totalIncome - summary.totalExpenses;
+    summary.adjustedIncome = summary.totalIncome - summary.reimbursementIncome;
+    summary.adjustedExpenses = summary.totalExpenses - summary.reimbursementIncome;
+    summary.adjustedBalance = summary.adjustedIncome - summary.adjustedExpenses;
+    
+    return summary;
+  }, [monthlyData]);
   
   const getBalanceColor = (balance: number) => {
     if (balance > 0) return 'text-green-600';
@@ -146,7 +177,109 @@ export const MonthlyReimbursementReport = ({
         </p>
       </div>
       
-      <div className="grid gap-4">
+      {/* Resumen de los Últimos 12 Meses */}
+      {yearSummary && (
+        <Card className="overflow-hidden border-2 border-primary/20">
+          <CardHeader className="pb-3 bg-primary/5">
+            <CardTitle className="flex items-center justify-between">
+              <span className="text-xl">Resumen Últimos 12 Meses</span>
+              {(yearSummary.reimbursementIncome + yearSummary.reimbursementExpenses) > 0 && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <RotateCcw className="h-3 w-3" />
+                  {formatCurrency(yearSummary.reimbursementIncome + yearSummary.reimbursementExpenses, yearSummary.currency)} total reembolsado
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Datos Totales Anuales */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg border-b pb-2">Totales Anuales</h3>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg">
+                    <span className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      <span className="font-medium">Ingresos</span>
+                    </span>
+                    <span className="font-bold text-lg text-green-700">
+                      {formatCurrency(yearSummary.totalIncome, yearSummary.currency)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center p-4 bg-red-50 rounded-lg">
+                    <span className="flex items-center gap-2">
+                      <TrendingDown className="h-5 w-5 text-red-600" />
+                      <span className="font-medium">Gastos</span>
+                    </span>
+                    <span className="font-bold text-lg text-red-700">
+                      {formatCurrency(yearSummary.totalExpenses, yearSummary.currency)}
+                    </span>
+                  </div>
+                  
+                  <div className={`flex justify-between items-center p-4 rounded-lg border-2 ${
+                    yearSummary.totalBalance > 0 ? 'bg-green-100 border-green-200' : 
+                    yearSummary.totalBalance < 0 ? 'bg-red-100 border-red-200' : 'bg-gray-100 border-gray-200'
+                  }`}>
+                    <span className="flex items-center gap-2 font-medium">
+                      {getBalanceIcon(yearSummary.totalBalance)}
+                      <span className="font-semibold">Balance Total</span>
+                    </span>
+                    <span className={`font-bold text-xl ${getBalanceColor(yearSummary.totalBalance)}`}>
+                      {formatCurrency(yearSummary.totalBalance, yearSummary.currency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Datos Ajustados Anuales */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg border-b pb-2">Ajustados Anuales (Sin Reembolsos)</h3>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
+                    <span className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-blue-600" />
+                      <span className="font-medium">Ingresos Netos</span>
+                    </span>
+                    <span className="font-bold text-lg text-blue-700">
+                      {formatCurrency(yearSummary.adjustedIncome, yearSummary.currency)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center p-4 bg-orange-50 rounded-lg">
+                    <span className="flex items-center gap-2">
+                      <TrendingDown className="h-5 w-5 text-orange-600" />
+                      <span className="font-medium">Gastos Netos</span>
+                    </span>
+                    <span className="font-bold text-lg text-orange-700">
+                      {formatCurrency(yearSummary.adjustedExpenses, yearSummary.currency)}
+                    </span>
+                  </div>
+                  
+                  <div className={`flex justify-between items-center p-4 rounded-lg border-2 ${
+                    yearSummary.adjustedBalance > 0 ? 'bg-blue-100 border-blue-200' : 
+                    yearSummary.adjustedBalance < 0 ? 'bg-orange-100 border-orange-200' : 'bg-gray-100 border-gray-200'
+                  }`}>
+                    <span className="flex items-center gap-2 font-medium">
+                      {getBalanceIcon(yearSummary.adjustedBalance)}
+                      <span className="font-semibold">Balance Ajustado</span>
+                    </span>
+                    <span className={`font-bold text-xl ${getBalanceColor(yearSummary.adjustedBalance)}`}>
+                      {formatCurrency(yearSummary.adjustedBalance, yearSummary.currency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Análisis Mensual Detallado */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold text-center">Análisis Mensual Detallado</h3>
         {monthlyData.map((data, index) => (
           <Card key={index} className="overflow-hidden">
             <CardHeader className="pb-3">
