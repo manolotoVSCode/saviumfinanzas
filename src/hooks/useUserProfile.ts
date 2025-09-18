@@ -37,13 +37,13 @@ export const useUserProfile = () => {
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        // Error fetching profile
         return;
       }
 
       setProfile(data);
     } catch (error) {
-      console.error('Error in fetchProfile:', error);
+      // Error in fetchProfile
     } finally {
       setLoading(false);
     }

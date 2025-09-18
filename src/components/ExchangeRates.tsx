@@ -63,7 +63,7 @@ export const ExchangeRates = () => {
       setLastUpdate(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching exchange rates:', err);
+      // Error fetching exchange rates
     } finally {
       setLoading(false);
     }

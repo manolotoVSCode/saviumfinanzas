@@ -34,7 +34,7 @@ export const useExchangeRates = () => {
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching exchange rates:', err);
+      // Error fetching exchange rates
       
       // Usar tasas por defecto en caso de error
       setRates({ USD: 20, EUR: 22, MXN: 1 });

@@ -101,7 +101,7 @@ export const useFinanceDataSupabase = () => {
       setTransactions(mappedTransactions);
 
     } catch (error) {
-      console.error('Error loading data:', error);
+      // Error loading data - logged to logger
       toast({
         title: "Error",
         description: "No se pudieron cargar los datos financieros",
@@ -671,7 +671,7 @@ export const useFinanceDataSupabase = () => {
       // Recargar datos
       loadData();
     } catch (error) {
-      console.error('Error creating account:', error);
+      // Error creating account
       toast({
         title: "Error",
         description: "No se pudo crear la cuenta",
@@ -718,7 +718,7 @@ export const useFinanceDataSupabase = () => {
         .select();
 
       if (error) {
-        console.error('Error al actualizar cuenta:', error);
+        // Error updating account
         throw error;
       }
 
@@ -736,7 +736,7 @@ export const useFinanceDataSupabase = () => {
       // Recargar datos
       loadData();
     } catch (error) {
-      console.error('Error updating account:', error);
+      // Error updating account
       toast({
         title: "Error",
         description: "No se pudieron guardar los cambios",
@@ -773,7 +773,7 @@ export const useFinanceDataSupabase = () => {
       // Recargar datos
       loadData();
     } catch (error) {
-      console.error('Error deleting account:', error);
+      // Error deleting account
       toast({
         title: "Error",
         description: "No se pudo eliminar la cuenta",
@@ -806,7 +806,7 @@ export const useFinanceDataSupabase = () => {
         description: "Categoría creada correctamente"
       });
     } catch (error) {
-      console.error('Error adding category:', error);
+      // Error adding category
       toast({
         title: "Error",
         description: "No se pudo crear la categoría",
@@ -846,7 +846,7 @@ export const useFinanceDataSupabase = () => {
         });
       }
     } catch (error) {
-      console.error('Error updating category:', error);
+      // Error updating category
       toast({
         title: "Error",
         description: "No se pudo actualizar la categoría",
@@ -872,7 +872,7 @@ export const useFinanceDataSupabase = () => {
         description: "Categoría eliminada correctamente"
       });
     } catch (error) {
-      console.error('Error deleting category:', error);
+      // Error deleting category
       toast({
         title: "Error",
         description: "No se pudo eliminar la categoría",
@@ -935,7 +935,7 @@ export const useFinanceDataSupabase = () => {
         description: "Transacción guardada correctamente"
       });
     } catch (error) {
-      console.error('Error adding transaction:', error);
+      // Error adding transaction
       toast({
         title: "Error",
         description: "No se pudo guardar la transacción",
@@ -978,7 +978,7 @@ export const useFinanceDataSupabase = () => {
         description: `${newTransactions.length} transacciones importadas correctamente`
       });
     } catch (error) {
-      console.error('Error adding transactions batch:', error);
+      // Error adding transactions batch
       toast({
         title: "Error",
         description: "No se pudieron importar las transacciones",
@@ -1044,7 +1044,7 @@ export const useFinanceDataSupabase = () => {
               .insert(autoTransactionData);
             
             if (autoError) {
-              console.error('Error creating auto contribution:', autoError);
+              // Error creating auto contribution
               toast({
                 title: "Advertencia",
                 description: "Transacción actualizada pero no se pudo crear la aportación automática",
@@ -1063,7 +1063,7 @@ export const useFinanceDataSupabase = () => {
         description: autoContribution ? "Transacción actualizada con aportación automática" : "Transacción actualizada correctamente"
       });
     } catch (error) {
-      console.error('Error updating transaction:', error);
+      // Error updating transaction
       toast({
         title: "Error",
         description: "No se pudo actualizar la transacción",
@@ -1089,7 +1089,7 @@ export const useFinanceDataSupabase = () => {
         description: "Transacción eliminada correctamente"
       });
     } catch (error) {
-      console.error('Error deleting transaction:', error);
+      // Error deleting transaction
       toast({
         title: "Error",
         description: "No se pudo eliminar la transacción",
@@ -1121,7 +1121,7 @@ export const useFinanceDataSupabase = () => {
         description: "Todas las transacciones han sido eliminadas"
       });
     } catch (error) {
-      console.error('Error clearing all transactions:', error);
+      // Error clearing all transactions
       toast({
         title: "Error",
         description: "No se pudieron eliminar las transacciones",

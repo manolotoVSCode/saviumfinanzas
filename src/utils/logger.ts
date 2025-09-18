@@ -38,9 +38,7 @@ class FinanceLogger {
       this.logs = this.logs.slice(-this.maxLogs);
     }
 
-    // Log to console in development only
-    const emoji = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '📊';
-    console.log(`${emoji} [${category}] ${message}`, data ? data : '');
+    // COMPLETELY SILENT - no console output
   }
 
   // Financial operations logging

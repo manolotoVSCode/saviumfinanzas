@@ -39,7 +39,7 @@ export const AssetsReport = ({ metrics, formatCurrency, accounts, onAccountUpdat
         onAccountUpdate();
       }
     } catch (error) {
-      console.error('Error updating property/business status:', error);
+      // Error updating property/business status
       toast.error('Error al actualizar el estado');
     }
   };

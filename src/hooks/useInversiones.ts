@@ -24,7 +24,7 @@ export const useInversiones = () => {
       if (error) throw error;
       setInversiones((data || []) as Inversion[]);
     } catch (error) {
-      console.error('Error fetching inversiones:', error);
+      // Error fetching inversiones
       toast({
         title: "Error",
         description: "Error al cargar las inversiones",
@@ -56,7 +56,7 @@ export const useInversiones = () => {
       await fetchInversiones();
       return true;
     } catch (error) {
-      console.error('Error creating inversion:', error);
+      // Error creating inversion
       toast({
         title: "Error",
         description: "Error al crear la inversión",
@@ -83,7 +83,7 @@ export const useInversiones = () => {
       await fetchInversiones();
       return true;
     } catch (error) {
-      console.error('Error updating inversion:', error);
+      // Error updating inversion
       toast({
         title: "Error",
         description: "Error al actualizar la inversión",
@@ -110,7 +110,7 @@ export const useInversiones = () => {
       await fetchInversiones();
       return true;
     } catch (error) {
-      console.error('Error deleting inversion:', error);
+      // Error deleting inversion
       toast({
         title: "Error",
         description: "Error al eliminar la inversión",
@@ -171,7 +171,7 @@ export const useInversiones = () => {
         }
       }
     } catch (error) {
-      console.error('Error updating crypto prices:', error);
+      // Error updating crypto prices
     }
   };
 

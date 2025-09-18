@@ -57,7 +57,7 @@ export const SubscriptionsManager = () => {
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('Error loading subscriptions:', error);
+        // Error loading subscriptions
         return;
       }
 
@@ -125,7 +125,7 @@ export const SubscriptionsManager = () => {
         setServices(savedServices);
       }
     } catch (error) {
-      console.error('Error loading subscriptions:', error);
+      // Error loading subscriptions
     }
   };
 
@@ -238,7 +238,7 @@ export const SubscriptionsManager = () => {
           .update(subscriptionData)
           .eq('id', targetId);
         if (error) {
-          console.error('Error updating subscription:', error);
+          // Error updating subscription
           toast.error('Error al actualizar la suscripción');
         }
       } else {
@@ -247,12 +247,12 @@ export const SubscriptionsManager = () => {
           .from('subscription_services')
           .upsert(subscriptionData, { onConflict: 'user_id,service_name' });
         if (error) {
-          console.error('Error saving subscription:', error);
+          // Error saving subscription
           toast.error('Error al guardar la suscripción');
         }
       }
     } catch (error) {
-      console.error('Error saving subscription:', error);
+      // Error saving subscription
       toast.error('Error al guardar la suscripción');
     }
   };
@@ -266,7 +266,7 @@ export const SubscriptionsManager = () => {
         .eq('id', serviceId);
 
       if (error) {
-        console.error('Error updating subscription status:', error);
+        // Error updating subscription status
         toast.error('Error al actualizar el estado de la suscripción');
         return;
       }
@@ -284,7 +284,7 @@ export const SubscriptionsManager = () => {
           : 'Suscripción desactivada'
       );
     } catch (error) {
-      console.error('Error updating subscription status:', error);
+      // Error updating subscription status
       toast.error('Error al actualizar el estado de la suscripción');
     }
   };
@@ -305,7 +305,7 @@ export const SubscriptionsManager = () => {
         .eq('id', editingServiceId);
 
       if (error) {
-        console.error('Error updating service name:', error);
+        // Error updating service name
         toast.error('Error al actualizar el nombre de la suscripción');
         return;
       }
@@ -324,7 +324,7 @@ export const SubscriptionsManager = () => {
       // Después de editar el nombre, limpiar posibles duplicados
       await cleanupDuplicateSubscriptions();
     } catch (error) {
-      console.error('Error updating service name:', error);
+      // Error updating service name
       toast.error('Error al actualizar el nombre de la suscripción');
     }
   };
@@ -390,7 +390,7 @@ export const SubscriptionsManager = () => {
       // Recargar la lista después de limpiar
       await loadSavedSubscriptions();
     } catch (error) {
-      console.error('Error cleaning up duplicates:', error);
+      // Error cleaning up duplicates
     }
   };
 
@@ -574,7 +574,7 @@ export const SubscriptionsManager = () => {
       });
 
       if (error) {
-        console.error('Error calling AI function:', error);
+        // Error calling AI function
         // Fallback sin IA - procesar grupos manualmente
         const fallbackServices = transactionGroups.map(group => {
           const sortedTransactions = group.sort((a, b) => 
@@ -679,7 +679,7 @@ export const SubscriptionsManager = () => {
       await loadSavedSubscriptions();
 
     } catch (error) {
-      console.error('Error processing subscriptions:', error);
+      // Error processing subscriptions
       toast.error('Error al procesar las suscripciones');
     } finally {
       setIsLoading(false);

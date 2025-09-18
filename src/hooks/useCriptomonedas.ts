@@ -26,7 +26,7 @@ export const useCriptomonedas = () => {
       
       setCriptomonedas(data || []);
     } catch (error) {
-      console.error('Error fetching criptomonedas:', error);
+      // Error fetching criptomonedas
       toast({
         title: "Error",
         description: "No se pudieron cargar las criptomonedas",
@@ -50,7 +50,7 @@ export const useCriptomonedas = () => {
       
       setPrecios(data || {});
     } catch (error) {
-      console.error('Error fetching crypto prices:', error);
+      // Error fetching crypto prices
       toast({
         title: "Advertencia",
         description: "No se pudieron obtener los precios actuales",
@@ -79,7 +79,7 @@ export const useCriptomonedas = () => {
       
       return data;
     } catch (error) {
-      console.error('Error adding criptomoneda:', error);
+      // Error adding criptomoneda
       toast({
         title: "Error",
         description: "No se pudo agregar la criptomoneda",
@@ -104,7 +104,7 @@ export const useCriptomonedas = () => {
         description: "Criptomoneda actualizada correctamente",
       });
     } catch (error) {
-      console.error('Error updating criptomoneda:', error);
+      // Error updating criptomoneda
       toast({
         title: "Error",
         description: "No se pudo actualizar la criptomoneda",
@@ -129,7 +129,7 @@ export const useCriptomonedas = () => {
         description: "Criptomoneda eliminada correctamente",
       });
     } catch (error) {
-      console.error('Error deleting criptomoneda:', error);
+      // Error deleting criptomoneda
       toast({
         title: "Error",
         description: "No se pudo eliminar la criptomoneda",

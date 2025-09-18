@@ -131,7 +131,7 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
       // Refrescar los datos sin recargar la página
       window.dispatchEvent(new Event('storage')); // Trigger data refresh
     } catch (error) {
-      console.error('Error updating investment:', error);
+      // Error updating investment
       toast({
         title: "Error",
         description: "No se pudo actualizar la información de la inversión",

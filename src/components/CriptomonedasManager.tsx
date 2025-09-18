@@ -51,7 +51,7 @@ const CriptoForm: React.FC<CriptoFormProps> = ({ cripto, onSave, onClose }) => {
       });
       onClose();
     } catch (error) {
-      console.error('Error saving crypto:', error);
+      // Error saving crypto
     }
   };
 
