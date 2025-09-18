@@ -5,6 +5,7 @@ import { SubscriptionsManager } from '@/components/SubscriptionsManager';
 import { AssetsReport } from '@/components/AssetsReport';
 import { LiabilitiesReport } from '@/components/LiabilitiesReport';
 import { MonthlyPaymentsControl } from '@/components/MonthlyPaymentsControl';
+import { MonthlyReimbursementReport } from '@/components/MonthlyReimbursementReport';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SampleDataBanner } from '@/components/SampleDataBanner';
 
@@ -40,6 +41,9 @@ const Informes = () => {
             <TabsTrigger value="pagos-recurrentes" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
               Pagos Recurrentes
             </TabsTrigger>
+            <TabsTrigger value="reembolsos" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
+              Análisis Reembolsos
+            </TabsTrigger>
             <TabsTrigger value="suscripciones" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
               Suscripciones
             </TabsTrigger>
@@ -56,6 +60,14 @@ const Informes = () => {
               transactions={financeData.transactions}
               formatCurrency={formatCurrency}
               categories={financeData.categories}
+            />
+          </TabsContent>
+
+          <TabsContent value="reembolsos" className="space-y-4">
+            <MonthlyReimbursementReport
+              transactions={financeData.transactions}
+              categories={financeData.categories}
+              formatCurrency={formatCurrency}
             />
           </TabsContent>
 
