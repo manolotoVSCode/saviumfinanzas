@@ -218,58 +218,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
     // Convertir a array y ordenar
     return Object.entries(categoryTotals)
-    
-    // Si es de gastos, necesitamos calcular reembolsos y restarlos proporcionalmente
-    let reembolsosTotal = 0;
-    if (type === 'Gastos') {
-      // Obtener transacciones de reembolsos del mismo período
-      const reembolsosTransactions = transactions.filter(t => 
-        t.divisa === currency && 
-        t.categoria === 'Ingresos adicionales' && 
-        t.subcategoria === 'Reembolsos'
-      );
-      
-      let reembolsosByPeriod;
-      if (period === 'month') {
-        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-        reembolsosByPeriod = reembolsosTransactions.filter(t => {
-          const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
-          return adjustedDate >= startOfLastMonth && adjustedDate <= endOfLastMonth;
-        });
-      } else {
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        reembolsosByPeriod = reembolsosTransactions.filter(t => {
-          const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
-          return adjustedDate >= startOfYear;
-        });
-      }
-      
-      reembolsosTotal = reembolsosByPeriod.reduce((sum, t) => sum + t.ingreso, 0);
-    }
-    
-    // Agrupar por categoría
-    const categoryTotals: Record<string, number> = {};
-    filteredByPeriod.forEach(t => {
-      const categoria = t.categoria || 'Sin categoría';
-      const amount = type === 'Ingreso' ? t.ingreso : Math.abs(t.monto);
-      categoryTotals[categoria] = (categoryTotals[categoria] || 0) + Math.abs(amount);
-    });
-    
-    // Si es de gastos, restar reembolsos proporcionalmente
-    if (type === 'Gastos' && reembolsosTotal > 0) {
-      const totalGastos = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
-      if (totalGastos > 0) {
-        Object.keys(categoryTotals).forEach(categoria => {
-          const proporcion = categoryTotals[categoria] / totalGastos;
-          const reembolsoCategoria = reembolsosTotal * proporcion;
-          categoryTotals[categoria] = Math.max(0, categoryTotals[categoria] - reembolsoCategoria);
-        });
-      }
-    }
-    
-    // Convertir a array y ordenar
-    return Object.entries(categoryTotals)
       .map(([categoria, monto], index) => ({
         name: categoria,
         value: monto,
