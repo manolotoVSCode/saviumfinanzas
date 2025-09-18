@@ -92,7 +92,11 @@ export const MonthlyReimbursementReport = ({
       }
       
       if (transaction.gasto > 0) {
-        data.totalExpenses += transaction.gasto;
+        // Excluir retiros de la suma de gastos
+        const isWithdrawal = category?.tipo?.toLowerCase() === 'retiro';
+        if (!isWithdrawal) {
+          data.totalExpenses += transaction.gasto;
+        }
       }
     });
     
