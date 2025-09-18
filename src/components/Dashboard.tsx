@@ -168,6 +168,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         return adjustedDate >= monthStart && adjustedDate <= monthEnd;
       });
       
+      // Filtrar solo transacciones no aportaciones para ingresos y gastos regulares
       const ingresos = monthTrans
         .filter(t => t.tipo === 'Ingreso')
         .reduce((sum, t) => sum + t.ingreso, 0);
@@ -175,7 +176,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         .filter(t => t.tipo === 'Gastos')
         .reduce((sum, t) => sum + t.gasto, 0));
       
-      // Calcular reembolsos del mes
+      // Calcular reembolsos del mes (solo ingresos que contengan "reembolso")
       const reembolsos = monthTrans
         .filter(t => t.ingreso > 0 && (
           t.categoria?.toLowerCase().includes('reembolso') ||
@@ -191,6 +192,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       // Crear etiqueta del mes de forma más consistente
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       const mesLabel = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear().toString().slice(-2)}`;
+      
+      // Debug para agosto específicamente
+      if (mesLabel === 'Ago 24') {
+        console.log(`=== DEBUG AGOSTO ${selectedCurrency} ===`);
+        console.log('Transacciones del mes:', monthTrans.length);
+        console.log('Ingresos brutos:', ingresos);
+        console.log('Gastos brutos:', gastos);
+        console.log('Reembolsos encontrados:', reembolsos);
+        console.log('Ingresos ajustados:', ingresosAjustados);
+        console.log('Gastos ajustados:', gastosAjustados);
+        console.log('=== FIN DEBUG AGOSTO ===');
+      }
       
       tendenciaMensual.push({
         mes: mesLabel,
