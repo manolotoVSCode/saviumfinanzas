@@ -26,37 +26,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     // Filtrar transacciones por moneda seleccionada
     const filteredTransactions = transactions.filter(t => t.divisa === currency);
     
-    console.log("=== DEBUG DASHBOARD TRANSACTIONS ===");
-    console.log("Currency:", currency);
-    console.log("Total transactions:", filteredTransactions.length);
-    console.log("Sample transaction:", filteredTransactions[0]);
-    console.log("Transaction types:", [...new Set(filteredTransactions.map(t => t.tipo))]);
-    console.log("Has ingreso field:", filteredTransactions.some(t => t.ingreso !== undefined));
-    console.log("Has gasto field:", filteredTransactions.some(t => t.gasto !== undefined));
-    
-    // Debug para agosto 2025 específicamente
-    const agostoTransactions = filteredTransactions.filter(t => {
-      const tDate = new Date(t.fecha);
-      return tDate.getMonth() === 7 && tDate.getFullYear() === 2025; // Agosto = mes 7
-    });
-    
-    console.log("=== AGOSTO 2025 TRANSACTIONS ===");
-    console.log("Total agosto:", agostoTransactions.length);
-    
-    const ingresosAgosto = agostoTransactions.filter(t => t.tipo === 'Ingreso');
-    const gastosAgosto = agostoTransactions.filter(t => t.tipo === 'Gastos');
-    
-    console.log("Ingresos agosto:", ingresosAgosto.length);
-    console.log("Gastos agosto:", gastosAgosto.length);
-    
-    const sumaIngresos = ingresosAgosto.reduce((sum, t) => sum + t.ingreso, 0);
-    const sumaGastos = gastosAgosto.reduce((sum, t) => sum + t.gasto, 0);
-    
-    console.log("Suma ingresos agosto:", sumaIngresos);
-    console.log("Suma gastos agosto:", sumaGastos);
-    console.log("Sample ingreso transaction:", ingresosAgosto[0]);
-    console.log("Sample gasto transaction:", gastosAgosto[0]);
-    
     const now = new Date();
     
     // MES ANTERIOR (para resumen del mes)
@@ -76,26 +45,26 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     
     // Transacciones del mes anterior
     const lastMonthTransactions = filteredTransactions.filter(t => {
-      const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
-      return adjustedDate >= startOfLastMonth && adjustedDate <= endOfLastMonth;
+      const tDate = new Date(t.fecha);
+      return tDate.getMonth() === now.getMonth() - 1 && tDate.getFullYear() === now.getFullYear();
     });
     
     // Transacciones de dos meses atrás
     const twoMonthsAgoTransactions = filteredTransactions.filter(t => {
-      const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
-      return adjustedDate >= startOfTwoMonthsAgo && adjustedDate <= endOfTwoMonthsAgo;
+      const tDate = new Date(t.fecha);
+      return tDate.getMonth() === now.getMonth() - 2 && tDate.getFullYear() === now.getFullYear();
     });
     
     // Transacciones del año actual
     const yearTransactions = filteredTransactions.filter(t => {
-      const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
-      return adjustedDate >= startOfYear;
+      const tDate = new Date(t.fecha);
+      return tDate.getFullYear() === now.getFullYear();
     });
     
     // Transacciones del año anterior
     const lastYearTransactions = filteredTransactions.filter(t => {
-      const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
-      return adjustedDate >= startOfLastYear && adjustedDate <= endOfLastYear;
+      const tDate = new Date(t.fecha);
+      return tDate.getFullYear() === now.getFullYear() - 1;
     });
     
     // Cálculos del mes anterior (excluyendo aportaciones de ingresos y retiros de gastos)
