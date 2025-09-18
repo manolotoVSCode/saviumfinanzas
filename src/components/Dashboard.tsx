@@ -34,6 +34,29 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     console.log("Has ingreso field:", filteredTransactions.some(t => t.ingreso !== undefined));
     console.log("Has gasto field:", filteredTransactions.some(t => t.gasto !== undefined));
     
+    // Debug para agosto 2025 específicamente
+    const agostoTransactions = filteredTransactions.filter(t => {
+      const tDate = new Date(t.fecha);
+      return tDate.getMonth() === 7 && tDate.getFullYear() === 2025; // Agosto = mes 7
+    });
+    
+    console.log("=== AGOSTO 2025 TRANSACTIONS ===");
+    console.log("Total agosto:", agostoTransactions.length);
+    
+    const ingresosAgosto = agostoTransactions.filter(t => t.tipo === 'Ingreso');
+    const gastosAgosto = agostoTransactions.filter(t => t.tipo === 'Gastos');
+    
+    console.log("Ingresos agosto:", ingresosAgosto.length);
+    console.log("Gastos agosto:", gastosAgosto.length);
+    
+    const sumaIngresos = ingresosAgosto.reduce((sum, t) => sum + t.ingreso, 0);
+    const sumaGastos = gastosAgosto.reduce((sum, t) => sum + t.gasto, 0);
+    
+    console.log("Suma ingresos agosto:", sumaIngresos);
+    console.log("Suma gastos agosto:", sumaGastos);
+    console.log("Sample ingreso transaction:", ingresosAgosto[0]);
+    console.log("Sample gasto transaction:", gastosAgosto[0]);
+    
     const now = new Date();
     
     // MES ANTERIOR (para resumen del mes)
