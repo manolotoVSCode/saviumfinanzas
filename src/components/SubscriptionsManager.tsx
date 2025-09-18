@@ -57,7 +57,7 @@ export const SubscriptionsManager = () => {
         .order('updated_at', { ascending: false });
 
       if (error) {
-        // Error loading subscriptions
+        console.error('Error loading subscriptions:', error);
         return;
       }
 
@@ -125,7 +125,7 @@ export const SubscriptionsManager = () => {
         setServices(savedServices);
       }
     } catch (error) {
-      // Error loading subscriptions
+      console.error('Error loading subscriptions:', error);
     }
   };
 
@@ -238,7 +238,7 @@ export const SubscriptionsManager = () => {
           .update(subscriptionData)
           .eq('id', targetId);
         if (error) {
-          // Error updating subscription
+          console.error('Error updating subscription:', error);
           toast.error('Error al actualizar la suscripción');
         }
       } else {
@@ -247,12 +247,12 @@ export const SubscriptionsManager = () => {
           .from('subscription_services')
           .upsert(subscriptionData, { onConflict: 'user_id,service_name' });
         if (error) {
-          // Error saving subscription
+          console.error('Error saving subscription:', error);
           toast.error('Error al guardar la suscripción');
         }
       }
     } catch (error) {
-      // Error saving subscription
+      console.error('Error saving subscription:', error);
       toast.error('Error al guardar la suscripción');
     }
   };
@@ -266,7 +266,7 @@ export const SubscriptionsManager = () => {
         .eq('id', serviceId);
 
       if (error) {
-        // Error updating subscription status
+        console.error('Error updating subscription status:', error);
         toast.error('Error al actualizar el estado de la suscripción');
         return;
       }
@@ -284,7 +284,7 @@ export const SubscriptionsManager = () => {
           : 'Suscripción desactivada'
       );
     } catch (error) {
-      // Error updating subscription status
+      console.error('Error updating subscription status:', error);
       toast.error('Error al actualizar el estado de la suscripción');
     }
   };
@@ -305,7 +305,7 @@ export const SubscriptionsManager = () => {
         .eq('id', editingServiceId);
 
       if (error) {
-        // Error updating service name
+        console.error('Error updating service name:', error);
         toast.error('Error al actualizar el nombre de la suscripción');
         return;
       }
@@ -324,7 +324,7 @@ export const SubscriptionsManager = () => {
       // Después de editar el nombre, limpiar posibles duplicados
       await cleanupDuplicateSubscriptions();
     } catch (error) {
-      // Error updating service name
+      console.error('Error updating service name:', error);
       toast.error('Error al actualizar el nombre de la suscripción');
     }
   };
@@ -359,6 +359,8 @@ export const SubscriptionsManager = () => {
       // Procesar grupos con duplicados
       for (const [, items] of groups) {
         if (items.length > 1) {
+          console.log('Encontré duplicados:', items.map(i => ({name: i.service_name, id: i.id, monto: i.ultimo_pago_monto})));
+          
           // Ordenar por fecha de actualización, mantener el más reciente
           items.sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime());
           const keep = items[0];
@@ -382,6 +384,7 @@ export const SubscriptionsManager = () => {
           
           if (toDelete.length > 0) {
             const deleteIds = toDelete.map(i => i.id);
+            console.log('Eliminando duplicados:', deleteIds);
             await supabase.from('subscription_services').delete().in('id', deleteIds);
           }
         }
@@ -390,7 +393,7 @@ export const SubscriptionsManager = () => {
       // Recargar la lista después de limpiar
       await loadSavedSubscriptions();
     } catch (error) {
-      // Error cleaning up duplicates
+      console.error('Error cleaning up duplicates:', error);
     }
   };
 
@@ -508,6 +511,15 @@ export const SubscriptionsManager = () => {
     const comment1Normalized = normalize(t1.comentario);
     const comment2Normalized = normalize(t2.comentario);
     
+    console.log('Comparing:', {
+      original1: t1.comentario,
+      original2: t2.comentario,
+      normalized1: comment1Normalized,
+      normalized2: comment2Normalized,
+      amount1: t1.gasto,
+      amount2: t2.gasto
+    });
+    
     // Si los comentarios normalizados son exactamente iguales
     if (comment1Normalized === comment2Normalized && comment1Normalized.length > 3) {
       return true;
@@ -574,7 +586,7 @@ export const SubscriptionsManager = () => {
       });
 
       if (error) {
-        // Error calling AI function
+        console.error('Error calling AI function:', error);
         // Fallback sin IA - procesar grupos manualmente
         const fallbackServices = transactionGroups.map(group => {
           const sortedTransactions = group.sort((a, b) => 
@@ -679,7 +691,7 @@ export const SubscriptionsManager = () => {
       await loadSavedSubscriptions();
 
     } catch (error) {
-      // Error processing subscriptions
+      console.error('Error processing subscriptions:', error);
       toast.error('Error al procesar las suscripciones');
     } finally {
       setIsLoading(false);

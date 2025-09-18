@@ -67,7 +67,7 @@ export const AdminUserManagement = () => {
         .rpc('get_admin_user_stats');
 
       if (error) {
-        // Error fetching admin user stats
+        console.error('Error fetching admin user stats:', error);
         throw error;
       }
 
@@ -88,7 +88,7 @@ export const AdminUserManagement = () => {
 
       setUsers(transformedUsers);
     } catch (error) {
-      // Error loading users with stats
+      console.error('Error loading users with stats:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los usuarios",
@@ -132,7 +132,7 @@ export const AdminUserManagement = () => {
         description: `Usuario ${data.nombre} ${data.apellidos} creado exitosamente. Se ha enviado un email con las credenciales de acceso.`,
       });
     } catch (error: any) {
-      // Error creating user
+      console.error('Error creating user:', error);
       toast({
         title: "Error",
         description: error.message || "No se pudo crear el usuario",
@@ -159,7 +159,7 @@ export const AdminUserManagement = () => {
         description: `El usuario ${userDisplayName} y todos sus datos han sido eliminados completamente`,
       });
     } catch (error) {
-      // Error deleting user
+      console.error('Error deleting user:', error);
       toast({
         title: "Error",
         description: "No se pudo eliminar el usuario",

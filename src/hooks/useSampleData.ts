@@ -20,13 +20,13 @@ export const useSampleData = () => {
       });
 
       if (error) {
-        // Error checking sample data
+        console.error('Error checking sample data:', error);
         return;
       }
 
       setHasSampleData(data);
     } catch (error) {
-      // Error in checkSampleData
+      console.error('Error in checkSampleData:', error);
     } finally {
       setLoading(false);
     }
@@ -41,14 +41,14 @@ export const useSampleData = () => {
       });
 
       if (error) {
-        // Error clearing sample data
+        console.error('Error clearing sample data:', error);
         return;
       }
 
       setHasSampleData(false);
       return true;
     } catch (error) {
-      // Error in clearSampleData
+      console.error('Error in clearSampleData:', error);
       return false;
     }
   };

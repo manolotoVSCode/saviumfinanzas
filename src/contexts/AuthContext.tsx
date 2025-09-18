@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Then sign out from Supabase
       await supabase.auth.signOut();
     } catch (error) {
-      // Error signing out
+      console.error('Error signing out:', error);
       // Even if there's an error, clear local state
       setSession(null);
       setUser(null);

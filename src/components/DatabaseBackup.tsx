@@ -62,7 +62,7 @@ export const DatabaseBackup = () => {
           .select('*');
 
         if (error) {
-          // Error fetching table data
+          console.error(`Error fetching ${tableName}:`, error);
           continue;
         }
 
@@ -111,7 +111,7 @@ export const DatabaseBackup = () => {
       });
 
     } catch (error) {
-      // Error creating backup
+      console.error('Error creating backup:', error);
       toast({
         title: "Error",
         description: "No se pudo crear la copia de seguridad",

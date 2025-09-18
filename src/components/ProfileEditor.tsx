@@ -106,7 +106,7 @@ export const ProfileEditor = () => {
         description: "Tus datos han sido guardados exitosamente",
       });
     } catch (error) {
-      // Error updating profile
+      console.error('Error updating profile:', error);
       toast({
         title: "Error",
         description: "No se pudo actualizar el perfil",
@@ -151,7 +151,7 @@ export const ProfileEditor = () => {
         description: "Tu contraseña ha sido cambiada exitosamente",
       });
     } catch (error) {
-      // Error updating password
+      console.error('Error updating password:', error);
       toast({
         title: "Error",
         description: "No se pudo cambiar la contraseña",
@@ -184,7 +184,7 @@ export const ProfileEditor = () => {
       // Sign out user
       await signOut();
     } catch (error) {
-      // Error deleting account
+      console.error('Error deleting account:', error);
       toast({
         title: "Error",
         description: "No se pudo eliminar la cuenta",

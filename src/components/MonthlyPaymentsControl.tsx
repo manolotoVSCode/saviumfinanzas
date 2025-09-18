@@ -57,10 +57,22 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
     const analyzePayments = () => {
       const targetCategories = getTrackedCategories();
       
+      console.log('=== DEBUG PAGOS MENSUALES ===');
+      console.log('Total transacciones:', transactions.length);
+      console.log('Categorías con seguimiento:', targetCategories);
+      
       if (targetCategories.length === 0) {
+        console.log('No hay categorías marcadas para seguimiento');
         setPaymentsData([]);
         return;
       }
+      
+      // Verificar qué subcategorías existen
+      const subcategorias = [...new Set(transactions.map(t => t.subcategoriaId).filter(Boolean))];
+      console.log('Subcategorías disponibles (IDs):', subcategorias);
+      
+      const ingresoTransactions = transactions.filter(t => Number(t.ingreso) > 0);
+      console.log('Transacciones de ingreso:', ingresoTransactions.length);
       
       const now = new Date();
       const data: PaymentData[] = [];
@@ -69,10 +81,34 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
           const catInfo = categories.find((c: any) => c.id === categoriaId);
           const categoriaLabel = catInfo?.subcategoria || '(Sin subcategoría)';
           
+          console.log(`\n--- Analizando ${categoriaLabel} (${categoriaId}) ---`);
+          
+          // Debug: Buscar específicamente el pago de hipoteca
+          const hipotecaTransactions = transactions.filter(t => 
+            t.comentario.toLowerCase().includes('hipoteca') || 
+            t.comentario.toLowerCase().includes('aportación')
+          );
+          
+          if (hipotecaTransactions.length > 0) {
+            console.log('🏠 Transacciones relacionadas con hipoteca/aportación encontradas:');
+            hipotecaTransactions.forEach(t => {
+              const catInfo = categories.find(c => c.id === t.subcategoriaId);
+              console.log(`- Comentario: "${t.comentario}"`, 
+                         `Subcategoría: "${catInfo?.subcategoria || 'No encontrada'}" (${t.subcategoriaId})`, 
+                         `Seguimiento: ${catInfo?.seguimiento_pago}`,
+                         `Monto: ${t.ingreso || t.gasto}`,
+                         `Fecha: ${t.fecha}`);
+            });
+          }
+          
           // Filtrar transacciones de esta categoría de tipo ingreso
           const categoryTransactions = transactions.filter(t => 
             t.subcategoriaId === categoriaId && Number(t.ingreso) > 0
           );
+          console.log(`Transacciones encontradas para ${categoriaLabel}:`, categoryTransactions.length);
+          if (categoryTransactions.length > 0) {
+            console.log('Transacciones encontradas:', categoryTransactions);
+          }
 
         // Generar datos para los últimos 12 meses
         const pagos = [];
@@ -152,6 +188,8 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
           variacion
         });
       });
+
+      console.log('Datos finales:', data);
       setPaymentsData(data);
       
       // Expandir todas las categorías por defecto

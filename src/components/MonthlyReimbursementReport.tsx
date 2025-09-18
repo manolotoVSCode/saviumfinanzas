@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Transaction, Category } from '@/types/finance';
 import { TrendingUp, TrendingDown, DollarSign, RotateCcw } from 'lucide-react';
-import { logger } from '@/utils/logger';
 
 interface MonthlyReimbursementReportProps {
   transactions: Transaction[];
@@ -35,11 +34,6 @@ export const MonthlyReimbursementReport = ({
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-
-    // Track processing for current analysis
-    let processedCount = 0;
-    let totalIncome = 0;
-    let totalReimbursements = 0;
     
     transactions.forEach(transaction => {
       const date = new Date(transaction.fecha);
@@ -51,17 +45,14 @@ export const MonthlyReimbursementReport = ({
         return;
       }
       
-      processedCount++;
-      
       const monthKey = `${transactionYear}-${String(transactionMonth + 1).padStart(2, '0')}`;
       const monthName = `${date.toLocaleDateString('es-ES', { month: 'long' }).charAt(0).toUpperCase() + date.toLocaleDateString('es-ES', { month: 'long' }).slice(1)} ${transactionYear}`;
       
       // Buscar la categoría para verificar si es reembolso
       const category = categories.find(cat => cat.id === transaction.subcategoriaId);
       
-      // Excluir solo las categorías de tipo "Inversiones" 
-      const isInvestmentTransaction = category && category.categoria && 
-        category.categoria.toLowerCase().trim() === 'inversiones';
+      // Excluir solo las categorías de tipo "Inversiones"
+      const isInvestmentTransaction = category?.categoria.toLowerCase() === 'inversiones';
       
       // Si es una transacción de inversión, no la procesamos
       if (isInvestmentTransaction) {
@@ -94,11 +85,9 @@ export const MonthlyReimbursementReport = ({
       
       if (transaction.ingreso > 0) {
         data.totalIncome += transaction.ingreso;
-        totalIncome += transaction.ingreso;
         
         if (isReimbursement) {
           data.reimbursementAmount += transaction.ingreso;
-          totalReimbursements += transaction.ingreso;
         }
       }
       
@@ -107,12 +96,13 @@ export const MonthlyReimbursementReport = ({
       }
     });
     
-    // Calculate balances
+    // Calcular balances
     Object.values(dataByMonth).forEach(data => {
       data.totalBalance = data.totalIncome - data.totalExpenses;
-      // Los ajustados excluyen completamente los reembolsos de los ingresos
+      // Los ajustados descuentan los reembolsos tanto de ingresos como de gastos
+      // (asumiendo que cada peso reembolsado corresponde a un peso gastado originalmente)
       data.adjustedIncome = data.totalIncome - data.reimbursementAmount;
-      data.adjustedExpenses = data.totalExpenses; // Los gastos no se ven afectados por reembolsos de ingresos
+      data.adjustedExpenses = data.totalExpenses - data.reimbursementAmount;
       data.adjustedBalance = data.adjustedIncome - data.adjustedExpenses;
     });
     
@@ -152,7 +142,7 @@ export const MonthlyReimbursementReport = ({
     
     summary.totalBalance = summary.totalIncome - summary.totalExpenses;
     summary.adjustedIncome = summary.totalIncome - summary.reimbursementAmount;
-    summary.adjustedExpenses = summary.totalExpenses; // Los gastos no se ven afectados por reembolsos de ingresos
+    summary.adjustedExpenses = summary.totalExpenses - summary.reimbursementAmount;
     summary.adjustedBalance = summary.adjustedIncome - summary.adjustedExpenses;
     
     return summary;
@@ -340,9 +330,9 @@ export const MonthlyReimbursementReport = ({
                     }`}>
                       <span className="flex items-center gap-2 font-medium">
                         {getBalanceIcon(data.totalBalance)}
-                        <span>Balance Total</span>
+                        Balance Total
                       </span>
-                      <span className={`font-semibold ${getBalanceColor(data.totalBalance)}`}>
+                      <span className={`font-bold text-lg ${getBalanceColor(data.totalBalance)}`}>
                         {formatCurrency(data.totalBalance, data.currency)}
                       </span>
                     </div>
@@ -351,7 +341,7 @@ export const MonthlyReimbursementReport = ({
                 
                 {/* Datos Ajustados */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-lg border-b pb-2">Ajustados (Sin Reembolsos)</h3>
+                  <h3 className="font-semibold text-lg border-b pb-2">Datos Ajustados (Sin Reembolsos)</h3>
                   
                   <div className="space-y-3">
                     <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
@@ -380,9 +370,9 @@ export const MonthlyReimbursementReport = ({
                     }`}>
                       <span className="flex items-center gap-2 font-medium">
                         {getBalanceIcon(data.adjustedBalance)}
-                        <span>Balance Ajustado</span>
+                        Balance Ajustado
                       </span>
-                      <span className={`font-semibold ${getBalanceColor(data.adjustedBalance)}`}>
+                      <span className={`font-bold text-lg ${getBalanceColor(data.adjustedBalance)}`}>
                         {formatCurrency(data.adjustedBalance, data.currency)}
                       </span>
                     </div>
