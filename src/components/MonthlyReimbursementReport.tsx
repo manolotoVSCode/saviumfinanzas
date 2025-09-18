@@ -55,6 +55,19 @@ export const MonthlyReimbursementReport = ({
                              category?.categoria.toLowerCase().includes('reembolso') ||
                              transaction.comentario.toLowerCase().includes('reembolso');
       
+      // Excluir aportaciones, retiros e inversiones (no son ingresos ni gastos reales)
+      const isInvestmentTransaction = category?.categoria.toLowerCase().includes('inversiones') ||
+                                    category?.subcategoria.toLowerCase().includes('aportación') ||
+                                    category?.subcategoria.toLowerCase().includes('retiro') ||
+                                    category?.subcategoria.toLowerCase().includes('inversión') ||
+                                    transaction.comentario.toLowerCase().includes('aportación') ||
+                                    transaction.comentario.toLowerCase().includes('retiro');
+      
+      // Si es una transacción de inversión, no la procesamos
+      if (isInvestmentTransaction) {
+        return;
+      }
+      
       if (!dataByMonth[monthKey]) {
         dataByMonth[monthKey] = {
           month: monthName,
