@@ -31,7 +31,7 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-background pb-20">
       <div className="container mx-auto px-4 py-8">
         {/* HEADER */}
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex-shrink-0">
             <button 
               onClick={() => navigate('/dashboard')}
@@ -40,9 +40,9 @@ const Layout = ({ children }: LayoutProps) => {
               <Logo size={72} className="justify-start" />
             </button>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
             {profile && (
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <p className="text-sm font-medium">
                   {profile.nombre} {profile.apellidos}
                 </p>
@@ -52,10 +52,10 @@ const Layout = ({ children }: LayoutProps) => {
               variant="outline"
               size="sm"
               onClick={signOut}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <LogOut className="h-4 w-4" />
-              {t('settings.logout')}
+              <span className="sm:inline">{t('settings.logout')}</span>
             </Button>
           </div>
         </div>

@@ -36,11 +36,11 @@ const Informes = () => {
         </div>
 
         <Tabs defaultValue="pagos-recurrentes" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="pagos-recurrentes">Pagos Recurrentes</TabsTrigger>
-            <TabsTrigger value="suscripciones">Suscripciones</TabsTrigger>
-            <TabsTrigger value="activos">Activos</TabsTrigger>
-            <TabsTrigger value="pasivos">Pasivos</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1">
+            <TabsTrigger value="pagos-recurrentes" className="text-xs sm:text-sm">Pagos Recurrentes</TabsTrigger>
+            <TabsTrigger value="suscripciones" className="text-xs sm:text-sm">Suscripciones</TabsTrigger>
+            <TabsTrigger value="activos" className="text-xs sm:text-sm">Activos</TabsTrigger>
+            <TabsTrigger value="pasivos" className="text-xs sm:text-sm">Pasivos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pagos-recurrentes" className="space-y-4">
