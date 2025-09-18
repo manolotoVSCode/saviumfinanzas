@@ -78,8 +78,6 @@ export const MonthlyReimbursementReport = ({
         
         if (isReimbursement) {
           data.reimbursementIncome += transaction.ingreso;
-        } else {
-          data.adjustedIncome += transaction.ingreso;
         }
       }
       
@@ -88,8 +86,6 @@ export const MonthlyReimbursementReport = ({
         
         if (isReimbursement) {
           data.reimbursementExpenses += transaction.gasto;
-        } else {
-          data.adjustedExpenses += transaction.gasto;
         }
       }
     });
@@ -97,6 +93,10 @@ export const MonthlyReimbursementReport = ({
     // Calcular balances
     Object.values(dataByMonth).forEach(data => {
       data.totalBalance = data.totalIncome - data.totalExpenses;
+      // Para gastos ajustados: descontar gastos que fueron reembolsados
+      data.adjustedExpenses = data.totalExpenses - data.reimbursementExpenses;
+      // Para ingresos ajustados: descontar ingresos de reembolsos
+      data.adjustedIncome = data.totalIncome - data.reimbursementIncome;
       data.adjustedBalance = data.adjustedIncome - data.adjustedExpenses;
     });
     
