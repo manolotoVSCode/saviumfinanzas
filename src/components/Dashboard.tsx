@@ -73,7 +73,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMes = lastMonthTransactions
       .filter(t => t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + Math.abs(t.monto), 0);
+      .reduce((sum, t) => sum + t.gasto, 0);
     
     // Cálculos de dos meses atrás (para comparativo - excluyendo aportaciones y retiros)
     const ingresosMesAnterior = twoMonthsAgoTransactions
@@ -81,7 +81,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMesAnterior = twoMonthsAgoTransactions
       .filter(t => t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + Math.abs(t.monto), 0);
+      .reduce((sum, t) => sum + t.gasto, 0);
     
     // Cálculos del año actual (excluyendo aportaciones de ingresos y retiros de gastos)
     const ingresosAnio = yearTransactions
@@ -89,7 +89,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnio = yearTransactions
       .filter(t => t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + Math.abs(t.monto), 0);
+      .reduce((sum, t) => sum + t.gasto, 0);
     
     // Cálculos del año anterior (para comparativo - excluyendo aportaciones y retiros)
     const ingresosAnioAnterior = lastYearTransactions
@@ -97,7 +97,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnioAnterior = lastYearTransactions
       .filter(t => t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + Math.abs(t.monto), 0);
+      .reduce((sum, t) => sum + t.gasto, 0);
     
     // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses excluyendo mes actual)
     const tendenciaMensual = [];
@@ -121,7 +121,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         .reduce((sum, t) => sum + t.ingreso, 0);
       const gastos = Math.abs(monthTrans
         .filter(t => t.tipo === 'Gastos')
-        .reduce((sum, t) => sum + Math.abs(t.monto), 0));
+        .reduce((sum, t) => sum + t.gasto, 0));
       
       // Crear etiqueta del mes de forma más consistente
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -212,7 +212,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const categoryTotals: Record<string, number> = {};
     filteredByPeriod.forEach(t => {
       const categoria = t.categoria || 'Sin categoría';
-      const amount = type === 'Ingreso' ? t.ingreso : Math.abs(t.monto);
+      const amount = type === 'Ingreso' ? t.ingreso : t.gasto;
       categoryTotals[categoria] = (categoryTotals[categoria] || 0) + Math.abs(amount);
     });
 
