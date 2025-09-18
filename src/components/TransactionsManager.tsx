@@ -804,7 +804,7 @@ export const TransactionsManager = ({
               disabled={selectedTransactions.size === 0}
             >
               <Calendar className="h-4 w-4 mr-2" />
-              Cambiar Mes
+              Cambiar Fecha
             </Button>
           </DialogTrigger>
           <DialogContent>
