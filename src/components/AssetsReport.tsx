@@ -196,96 +196,96 @@ export const AssetsReport = ({ metrics, formatCurrency, accounts, onAccountUpdat
                    const rendimiento = cuenta.saldoActual - cuenta.saldoInicial;
                    const isVendida = (cuenta as any).vendida;
                    
-                   return (
-                     <div key={cuenta.id} className={`p-3 rounded-lg border bg-card hover:bg-muted/5 transition-colors ${isVendida ? 'opacity-60' : ''}`}>
-                       <div className="flex justify-between items-start mb-2">
-                         <div className="flex-1">
-                           <div className="flex items-center gap-2 mb-1">
-                             <h4 className={`font-medium ${isVendida ? 'line-through text-muted-foreground' : ''}`}>
-                               {cuenta.nombre}
-                             </h4>
-                             <Badge variant="outline" className="text-xs">
-                               {cuenta.tipo}
-                             </Badge>
-                             {cuenta.divisa && cuenta.divisa !== 'MXN' && (
-                               <Badge variant="secondary" className="text-xs">
-                                 {cuenta.divisa}
-                               </Badge>
-                             )}
-                             {isVendida && (
-                               <Badge variant="destructive" className="text-xs">
-                                 Vendida
-                               </Badge>
-                             )}
+                    return (
+                      <div key={cuenta.id} className={`p-3 rounded-lg border bg-card hover:bg-muted/5 transition-colors ${isVendida ? 'opacity-60' : ''}`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className={`font-medium ${isVendida ? 'line-through text-muted-foreground' : ''}`}>
+                                {cuenta.nombre}
+                              </h4>
+                              <Badge variant="outline" className="text-xs">
+                                {cuenta.tipo}
+                              </Badge>
+                              {cuenta.divisa && cuenta.divisa !== 'MXN' && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {cuenta.divisa}
+                                </Badge>
+                              )}
+                              {isVendida && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Vendida
+                                </Badge>
+                              )}
+                            </div>
+                           <div className="text-sm text-muted-foreground">
+                             Balance actual: <span className="font-medium text-foreground">{formatCurrency(cuenta.saldoActual)}</span>
                            </div>
-                          <div className="text-sm text-muted-foreground">
-                            Balance actual: <span className="font-medium text-foreground">{formatCurrency(cuenta.saldoActual)}</span>
-                          </div>
-                          {cuenta.saldoInicial !== cuenta.saldoActual && (
-                            <div className="text-sm flex items-center gap-1 mt-1">
-                              <span className="text-muted-foreground">Cambio:</span>
-                              <span className={getTrendColor(rendimiento)}>
-                                {formatCurrency(Math.abs(rendimiento))}
-                              </span>
-                              {getTrendIcon(rendimiento)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-muted-foreground mb-1">
-                            {porcentajeCategoria.toFixed(1)}% de {info.nombre.toLowerCase()}
-                          </div>
-                          {categoria === 'inversiones' && rendimiento !== 0 && (
-                            <div className={`text-xs ${getTrendColor(rendimiento)}`}>
-                              {rendimiento > 0 ? '+' : ''}{((rendimiento / cuenta.saldoInicial) * 100).toFixed(1)}%
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                       <Progress value={porcentajeCategoria} className="h-1" />
+                           {cuenta.saldoInicial !== cuenta.saldoActual && (
+                             <div className="text-sm flex items-center gap-1 mt-1">
+                               <span className="text-muted-foreground">Cambio:</span>
+                               <span className={getTrendColor(rendimiento)}>
+                                 {formatCurrency(Math.abs(rendimiento))}
+                               </span>
+                               {getTrendIcon(rendimiento)}
+                             </div>
+                           )}
+                         </div>
+                         <div className="text-right">
+                           <div className="text-sm text-muted-foreground mb-1">
+                             {porcentajeCategoria.toFixed(1)}% de {info.nombre.toLowerCase()}
+                           </div>
+                           {categoria === 'inversiones' && rendimiento !== 0 && (
+                             <div className={`text-xs ${getTrendColor(rendimiento)}`}>
+                               {rendimiento > 0 ? '+' : ''}{((rendimiento / cuenta.saldoInicial) * 100).toFixed(1)}%
+                             </div>
+                           )}
+                         </div>
+                       </div>
                        
-                       {/* Botón para marcar como vendida/activa en bienes raíces y empresas propias */}
-                       {(categoria === 'bienRaiz' || categoria === 'empresas') && (
-                         <div className="flex justify-end mt-3">
-                           <Button
-                             size="sm"
-                             variant={isVendida ? "outline" : "destructive"}
-                             onClick={() => handleToggleVendida(cuenta.id, isVendida, cuenta.saldoInicial)}
-                             className="text-xs"
-                           >
-                             {isVendida ? (
-                               <>
-                                 <XCircle className="h-3 w-3 mr-1" />
-                                 Marcar como Activa
-                               </>
-                             ) : (
-                               <>
-                                 <CheckCircle className="h-3 w-3 mr-1" />
-                                 Marcar como Vendida
-                               </>
-                             )}
-                           </Button>
+                        <Progress value={porcentajeCategoria} className="h-1" />
+                        
+                        {/* Información adicional para inversiones */}
+                        {categoria === 'inversiones' && (
+                         <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t text-xs">
+                           <div>
+                             <span className="text-muted-foreground">Balance inicial:</span>
+                             <div className="font-medium">{formatCurrency(cuenta.saldoInicial)}</div>
+                           </div>
+                           <div>
+                             <span className="text-muted-foreground">Rendimiento:</span>
+                             <div className={`font-medium ${getTrendColor(rendimiento)}`}>
+                               {formatCurrency(rendimiento)}
+                             </div>
+                           </div>
                          </div>
                        )}
-                       
-                       {/* Información adicional para inversiones */}
-                       {categoria === 'inversiones' && (
-                        <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t text-xs">
-                          <div>
-                            <span className="text-muted-foreground">Balance inicial:</span>
-                            <div className="font-medium">{formatCurrency(cuenta.saldoInicial)}</div>
+
+                        {/* Botón para marcar como vendida/activa en bienes raíces y empresas propias */}
+                        {(categoria === 'bienRaiz' || categoria === 'empresas') && (
+                          <div className="flex justify-end mt-3">
+                            <Button
+                              size="sm"
+                              variant={isVendida ? "outline" : "destructive"}
+                              onClick={() => handleToggleVendida(cuenta.id, isVendida, cuenta.saldoInicial)}
+                              className="text-xs"
+                            >
+                              {isVendida ? (
+                                <>
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Marcar como Activa
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Marcar como Vendida
+                                </>
+                              )}
+                            </Button>
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">Rendimiento:</span>
-                            <div className={`font-medium ${getTrendColor(rendimiento)}`}>
-                              {formatCurrency(rendimiento)}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
+                        )}
+                      </div>
+                   );
                 })}
               </div>
             </CardContent>
