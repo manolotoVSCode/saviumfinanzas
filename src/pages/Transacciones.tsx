@@ -28,8 +28,8 @@ const Transacciones = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <div className={`flex items-center ${isMobile ? 'flex-col space-y-2' : 'justify-end'}`}>
-          <div className={`flex items-center ${isMobile ? 'flex-col space-y-2 w-full' : 'gap-2'}`}>
+        <div className={`flex items-center ${isMobile ? 'flex-col space-y-2 items-start' : 'justify-end'}`}>
+          <div className={`flex items-center ${isMobile ? 'flex-col space-y-2 w-full items-start' : 'gap-2'}`}>
             <ExcelExporter
               transactions={financeData.transactions}
               accounts={financeData.accounts}
