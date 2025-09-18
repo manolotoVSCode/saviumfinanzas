@@ -1,14 +1,13 @@
 import { TransactionsManager } from '@/components/TransactionsManager';
 import TransactionImporter from '@/components/TransactionImporter';
 import { ExcelExporter } from '@/components/ExcelExporter';
-import { ReembolsosManager } from '@/components/ReembolsosManager';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Info, RotateCcw } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 const Transacciones = () => {
   const financeData = useFinanceDataSupabase();
@@ -88,12 +87,8 @@ const Transacciones = () => {
         </div>
         
         <Tabs defaultValue="transacciones" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="transacciones">Transacciones</TabsTrigger>
-            <TabsTrigger value="reembolsos" className="flex items-center gap-2">
-              <RotateCcw className="h-4 w-4" />
-              Reembolsos
-            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="transacciones">
@@ -105,15 +100,6 @@ const Transacciones = () => {
               onUpdateTransaction={(id, updates, autoContribution) => financeData.updateTransaction(id, updates, autoContribution)}
               onDeleteTransaction={financeData.deleteTransaction}
               onClearAllTransactions={financeData.clearAllTransactions}
-            />
-          </TabsContent>
-          
-          <TabsContent value="reembolsos">
-            <ReembolsosManager
-              transactions={financeData.transactions}
-              accounts={financeData.accounts}
-              categories={financeData.categories}
-              onAddTransaction={financeData.addTransaction}
             />
           </TabsContent>
         </Tabs>
