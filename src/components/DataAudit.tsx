@@ -41,7 +41,7 @@ export const DataAudit = ({ transactions, accounts, categories }: DataAuditProps
         category: 'Transacciones',
         message: 'Transacciones sin cuenta válida',
         count: orphanedTransactionsByAccount.length,
-        items: orphanedTransactionsByAccount.map(t => `${t.comentario} (${t.fecha.toLocaleDateString()})`).slice(0, 10)
+        items: orphanedTransactionsByAccount.map(t => `${t.comentario} (${new Date(t.fecha).toLocaleDateString()})`).slice(0, 10)
       });
     }
 
@@ -55,7 +55,7 @@ export const DataAudit = ({ transactions, accounts, categories }: DataAuditProps
         category: 'Transacciones',
         message: 'Transacciones sin categoría válida',
         count: orphanedTransactionsByCategory.length,
-        items: orphanedTransactionsByCategory.map(t => `${t.comentario} (${t.fecha.toLocaleDateString()})`).slice(0, 10)
+        items: orphanedTransactionsByCategory.map(t => `${t.comentario} (${new Date(t.fecha).toLocaleDateString()})`).slice(0, 10)
       });
     }
 
@@ -104,7 +104,7 @@ export const DataAudit = ({ transactions, accounts, categories }: DataAuditProps
 
     // 6. Fechas futuras
     const futureTransactions = transactions.filter(t => 
-      t.fecha > new Date()
+      new Date(t.fecha) > new Date()
     );
     if (futureTransactions.length > 0) {
       issues.push({
@@ -112,7 +112,7 @@ export const DataAudit = ({ transactions, accounts, categories }: DataAuditProps
         category: 'Transacciones',
         message: 'Transacciones con fechas futuras',
         count: futureTransactions.length,
-        items: futureTransactions.map(t => `${t.comentario} (${t.fecha.toLocaleDateString()})`).slice(0, 10)
+        items: futureTransactions.map(t => `${t.comentario} (${new Date(t.fecha).toLocaleDateString()})`).slice(0, 10)
       });
     }
 
@@ -157,7 +157,7 @@ export const DataAudit = ({ transactions, accounts, categories }: DataAuditProps
         category: 'Calidad de Datos',
         message: 'Transacciones con descripciones pobres o vacías',
         count: poorDescriptions.length,
-        items: poorDescriptions.map(t => `${t.comentario || '(vacío)'} - ${t.fecha.toLocaleDateString()}`).slice(0, 10)
+        items: poorDescriptions.map(t => `${t.comentario || '(vacío)'} - ${new Date(t.fecha).toLocaleDateString()}`).slice(0, 10)
       });
     }
 
