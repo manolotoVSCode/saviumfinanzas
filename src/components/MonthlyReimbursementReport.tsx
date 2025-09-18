@@ -242,18 +242,6 @@ export const MonthlyReimbursementReport = ({
                   </div>
                 </div>
               </div>
-              
-              {/* Diferencia */}
-              {(data.reimbursementIncome + data.reimbursementExpenses) > 0 && (
-                <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-purple-700 font-medium">Impacto de Reembolsos:</span>
-                    <span className="text-purple-800 font-semibold">
-                      {formatCurrency(Math.abs(data.totalBalance - data.adjustedBalance), data.currency)} diferencia
-                    </span>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}
