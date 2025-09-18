@@ -16,8 +16,7 @@ interface MonthlyData {
   totalIncome: number;
   totalExpenses: number;
   totalBalance: number;
-  reimbursementIncome: number;
-  reimbursementExpenses: number;
+  reimbursementAmount: number;
   adjustedIncome: number;
   adjustedExpenses: number;
   adjustedBalance: number;
@@ -51,22 +50,21 @@ export const MonthlyReimbursementReport = ({
       
       // Buscar la categoría para verificar si es reembolso
       const category = categories.find(cat => cat.id === transaction.subcategoriaId);
-      const isReimbursement = category?.subcategoria.toLowerCase().includes('reembolso') || 
-                             category?.categoria.toLowerCase().includes('reembolso') ||
-                             transaction.comentario.toLowerCase().includes('reembolso');
       
-      // Excluir aportaciones, retiros e inversiones (no son ingresos ni gastos reales)
-      const isInvestmentTransaction = category?.categoria.toLowerCase().includes('inversiones') ||
-                                    category?.subcategoria.toLowerCase().includes('aportación') ||
-                                    category?.subcategoria.toLowerCase().includes('retiro') ||
-                                    category?.subcategoria.toLowerCase().includes('inversión') ||
-                                    transaction.comentario.toLowerCase().includes('aportación') ||
-                                    transaction.comentario.toLowerCase().includes('retiro');
+      // Excluir solo las categorías de tipo "Inversiones"
+      const isInvestmentTransaction = category?.categoria.toLowerCase() === 'inversiones';
       
       // Si es una transacción de inversión, no la procesamos
       if (isInvestmentTransaction) {
         return;
       }
+      
+      // Identificar reembolsos: solo ingresos que contengan "reembolso" en su descripción
+      const isReimbursement = (transaction.ingreso > 0) && (
+        category?.subcategoria.toLowerCase().includes('reembolso') || 
+        category?.categoria.toLowerCase().includes('reembolso') ||
+        transaction.comentario.toLowerCase().includes('reembolso')
+      );
       
       if (!dataByMonth[monthKey]) {
         dataByMonth[monthKey] = {
@@ -75,8 +73,7 @@ export const MonthlyReimbursementReport = ({
           totalIncome: 0,
           totalExpenses: 0,
           totalBalance: 0,
-          reimbursementIncome: 0,
-          reimbursementExpenses: 0,
+          reimbursementAmount: 0,
           adjustedIncome: 0,
           adjustedExpenses: 0,
           adjustedBalance: 0,
@@ -90,26 +87,22 @@ export const MonthlyReimbursementReport = ({
         data.totalIncome += transaction.ingreso;
         
         if (isReimbursement) {
-          data.reimbursementIncome += transaction.ingreso;
+          data.reimbursementAmount += transaction.ingreso;
         }
       }
       
       if (transaction.gasto > 0) {
         data.totalExpenses += transaction.gasto;
-        
-        if (isReimbursement) {
-          data.reimbursementExpenses += transaction.gasto;
-        }
       }
     });
     
     // Calcular balances
     Object.values(dataByMonth).forEach(data => {
       data.totalBalance = data.totalIncome - data.totalExpenses;
-      // Los reembolsos se descuentan tanto de ingresos como de gastos ajustados
-      const totalReimbursements = data.reimbursementIncome + data.reimbursementExpenses;
-      data.adjustedIncome = data.totalIncome - data.reimbursementIncome;
-      data.adjustedExpenses = data.totalExpenses - data.reimbursementIncome; // Descontar reembolsos de gastos
+      // Los ajustados descuentan los reembolsos tanto de ingresos como de gastos
+      // (asumiendo que cada peso reembolsado corresponde a un peso gastado originalmente)
+      data.adjustedIncome = data.totalIncome - data.reimbursementAmount;
+      data.adjustedExpenses = data.totalExpenses - data.reimbursementAmount;
       data.adjustedBalance = data.adjustedIncome - data.adjustedExpenses;
     });
     
@@ -134,8 +127,7 @@ export const MonthlyReimbursementReport = ({
       totalIncome: 0,
       totalExpenses: 0,
       totalBalance: 0,
-      reimbursementIncome: 0,
-      reimbursementExpenses: 0,
+      reimbursementAmount: 0,
       adjustedIncome: 0,
       adjustedExpenses: 0,
       adjustedBalance: 0,
@@ -145,13 +137,12 @@ export const MonthlyReimbursementReport = ({
     monthlyData.forEach(data => {
       summary.totalIncome += data.totalIncome;
       summary.totalExpenses += data.totalExpenses;
-      summary.reimbursementIncome += data.reimbursementIncome;
-      summary.reimbursementExpenses += data.reimbursementExpenses;
+      summary.reimbursementAmount += data.reimbursementAmount;
     });
     
     summary.totalBalance = summary.totalIncome - summary.totalExpenses;
-    summary.adjustedIncome = summary.totalIncome - summary.reimbursementIncome;
-    summary.adjustedExpenses = summary.totalExpenses - summary.reimbursementIncome;
+    summary.adjustedIncome = summary.totalIncome - summary.reimbursementAmount;
+    summary.adjustedExpenses = summary.totalExpenses - summary.reimbursementAmount;
     summary.adjustedBalance = summary.adjustedIncome - summary.adjustedExpenses;
     
     return summary;
@@ -196,10 +187,10 @@ export const MonthlyReimbursementReport = ({
           <CardHeader className="pb-3 bg-primary/5">
             <CardTitle className="flex items-center justify-between">
               <span className="text-xl">Resumen Últimos 12 Meses</span>
-              {(yearSummary.reimbursementIncome + yearSummary.reimbursementExpenses) > 0 && (
+              {(yearSummary.reimbursementAmount) > 0 && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <RotateCcw className="h-3 w-3" />
-                  {formatCurrency(yearSummary.reimbursementIncome + yearSummary.reimbursementExpenses, yearSummary.currency)} total reembolsado
+                  {formatCurrency(yearSummary.reimbursementAmount, yearSummary.currency)} total reembolsado
                 </Badge>
               )}
             </CardTitle>
@@ -298,10 +289,10 @@ export const MonthlyReimbursementReport = ({
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
                 <span className="capitalize">{data.month}</span>
-                {(data.reimbursementIncome + data.reimbursementExpenses) > 0 && (
+                {data.reimbursementAmount > 0 && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     <RotateCcw className="h-3 w-3" />
-                    {formatCurrency(data.reimbursementIncome + data.reimbursementExpenses, data.currency)} reembolsados
+                    {formatCurrency(data.reimbursementAmount, data.currency)} reembolsados
                   </Badge>
                 )}
               </CardTitle>
