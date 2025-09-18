@@ -26,6 +26,8 @@ export interface Account {
   rendimiento_neto?: number;
   fecha_inicio?: string;
   ultimo_pago?: string;
+  // Campo para marcar propiedades como vendidas
+  vendida?: boolean;
 }
 
 export interface Transaction {

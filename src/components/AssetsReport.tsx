@@ -1,16 +1,42 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DashboardMetrics, Account } from '@/types/finance';
-import { TrendingUp, TrendingDown, DollarSign, Building, Wallet, PieChart, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Building, Wallet, PieChart, Info, CheckCircle, XCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface AssetsReportProps {
   metrics: DashboardMetrics;
   formatCurrency: (amount: number) => string;
   accounts: Account[];
+  onAccountUpdate?: () => void;
 }
 
-export const AssetsReport = ({ metrics, formatCurrency, accounts }: AssetsReportProps) => {
+export const AssetsReport = ({ metrics, formatCurrency, accounts, onAccountUpdate }: AssetsReportProps) => {
+  
+  const handleToggleVendida = async (accountId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('cuentas')
+        .update({ vendida: !currentStatus })
+        .eq('id', accountId);
+
+      if (error) throw error;
+
+      toast.success(
+        !currentStatus ? 'Propiedad marcada como vendida' : 'Propiedad marcada como activa'
+      );
+      
+      if (onAccountUpdate) {
+        onAccountUpdate();
+      }
+    } catch (error) {
+      console.error('Error updating property status:', error);
+      toast.error('Error al actualizar el estado de la propiedad');
+    }
+  };
   
   // Filtrar cuentas de activos
   const assetAccounts = accounts.filter(account => 
@@ -159,25 +185,33 @@ export const AssetsReport = ({ metrics, formatCurrency, accounts }: AssetsReport
 
               {/* Detalle de cada cuenta */}
               <div className="space-y-3">
-                {cuentas.map(cuenta => {
-                  const porcentajeCategoria = total > 0 ? (cuenta.saldoActual / total) * 100 : 0;
-                  const rendimiento = cuenta.saldoActual - cuenta.saldoInicial;
-                  
-                  return (
-                    <div key={cuenta.id} className="p-3 rounded-lg border bg-card hover:bg-muted/5 transition-colors">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium">{cuenta.nombre}</h4>
-                            <Badge variant="outline" className="text-xs">
-                              {cuenta.tipo}
-                            </Badge>
-                            {cuenta.divisa && cuenta.divisa !== 'MXN' && (
-                              <Badge variant="secondary" className="text-xs">
-                                {cuenta.divisa}
-                              </Badge>
-                            )}
-                          </div>
+                 {cuentas.map(cuenta => {
+                   const porcentajeCategoria = total > 0 ? (cuenta.saldoActual / total) * 100 : 0;
+                   const rendimiento = cuenta.saldoActual - cuenta.saldoInicial;
+                   const isVendida = (cuenta as any).vendida;
+                   
+                   return (
+                     <div key={cuenta.id} className={`p-3 rounded-lg border bg-card hover:bg-muted/5 transition-colors ${isVendida ? 'opacity-60' : ''}`}>
+                       <div className="flex justify-between items-start mb-2">
+                         <div className="flex-1">
+                           <div className="flex items-center gap-2 mb-1">
+                             <h4 className={`font-medium ${isVendida ? 'line-through text-muted-foreground' : ''}`}>
+                               {cuenta.nombre}
+                             </h4>
+                             <Badge variant="outline" className="text-xs">
+                               {cuenta.tipo}
+                             </Badge>
+                             {cuenta.divisa && cuenta.divisa !== 'MXN' && (
+                               <Badge variant="secondary" className="text-xs">
+                                 {cuenta.divisa}
+                               </Badge>
+                             )}
+                             {isVendida && (
+                               <Badge variant="destructive" className="text-xs">
+                                 Vendida
+                               </Badge>
+                             )}
+                           </div>
                           <div className="text-sm text-muted-foreground">
                             Balance actual: <span className="font-medium text-foreground">{formatCurrency(cuenta.saldoActual)}</span>
                           </div>
@@ -203,10 +237,34 @@ export const AssetsReport = ({ metrics, formatCurrency, accounts }: AssetsReport
                         </div>
                       </div>
                       
-                      <Progress value={porcentajeCategoria} className="h-1" />
-                      
-                      {/* Información adicional para inversiones */}
-                      {categoria === 'inversiones' && (
+                       <Progress value={porcentajeCategoria} className="h-1" />
+                       
+                       {/* Botón para marcar como vendida/activa en bienes raíces */}
+                       {categoria === 'bienRaiz' && (
+                         <div className="flex justify-end mt-3">
+                           <Button
+                             size="sm"
+                             variant={isVendida ? "outline" : "destructive"}
+                             onClick={() => handleToggleVendida(cuenta.id, isVendida)}
+                             className="text-xs"
+                           >
+                             {isVendida ? (
+                               <>
+                                 <XCircle className="h-3 w-3 mr-1" />
+                                 Marcar como Activa
+                               </>
+                             ) : (
+                               <>
+                                 <CheckCircle className="h-3 w-3 mr-1" />
+                                 Marcar como Vendida
+                               </>
+                             )}
+                           </Button>
+                         </div>
+                       )}
+                       
+                       {/* Información adicional para inversiones */}
+                       {categoria === 'inversiones' && (
                         <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t text-xs">
                           <div>
                             <span className="text-muted-foreground">Balance inicial:</span>

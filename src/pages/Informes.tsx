@@ -60,6 +60,7 @@ const Informes = () => {
               metrics={financeData.dashboardMetrics}
               formatCurrency={formatCurrency}
               accounts={financeData.accounts}
+              onAccountUpdate={financeData.refreshData}
             />
           </TabsContent>
 
