@@ -33,7 +33,12 @@ const Layout = ({ children }: LayoutProps) => {
         {/* HEADER */}
         <div className="mb-8 flex justify-between items-center">
           <div className="flex-shrink-0">
-            <Logo size={72} className="justify-start" />
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="hover:opacity-80 transition-opacity"
+            >
+              <Logo size={72} className="justify-start" />
+            </button>
           </div>
           <div className="flex items-center gap-4">
             {profile && (
