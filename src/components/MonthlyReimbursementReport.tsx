@@ -31,10 +31,21 @@ export const MonthlyReimbursementReport = ({
   
   const monthlyData = useMemo(() => {
     const dataByMonth: Record<string, MonthlyData> = {};
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     
     transactions.forEach(transaction => {
       const date = new Date(transaction.fecha);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const transactionMonth = date.getMonth();
+      const transactionYear = date.getFullYear();
+      
+      // Excluir el mes actual
+      if (transactionYear === currentYear && transactionMonth === currentMonth) {
+        return;
+      }
+      
+      const monthKey = `${transactionYear}-${String(transactionMonth + 1).padStart(2, '0')}`;
       const monthName = date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
       
       // Buscar la categoría para verificar si es reembolso
@@ -46,7 +57,7 @@ export const MonthlyReimbursementReport = ({
       if (!dataByMonth[monthKey]) {
         dataByMonth[monthKey] = {
           month: monthName,
-          year: date.getFullYear(),
+          year: transactionYear,
           totalIncome: 0,
           totalExpenses: 0,
           totalBalance: 0,
@@ -86,9 +97,17 @@ export const MonthlyReimbursementReport = ({
       data.adjustedBalance = data.adjustedIncome - data.adjustedExpenses;
     });
     
-    return Object.values(dataByMonth)
-      .sort((a, b) => b.year - a.year || b.month.localeCompare(a.month))
-      .slice(0, 12); // Últimos 12 meses
+    // Ordenar por año y mes descendente (más reciente primero), excluyendo mes actual
+    return Object.entries(dataByMonth)
+      .map(([key, data]) => {
+        const [year, month] = key.split('-');
+        return {
+          ...data,
+          sortKey: parseInt(year) * 12 + parseInt(month)
+        };
+      })
+      .sort((a, b) => b.sortKey - a.sortKey)
+      .slice(0, 12); // Últimos 12 meses (excluyendo el actual)
   }, [transactions, categories]);
   
   const getBalanceColor = (balance: number) => {
