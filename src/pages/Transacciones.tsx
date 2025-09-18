@@ -1,5 +1,6 @@
 import { TransactionsManager } from '@/components/TransactionsManager';
 import TransactionImporter from '@/components/TransactionImporter';
+import { ExcelExporter } from '@/components/ExcelExporter';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,11 @@ const Transacciones = () => {
       <div className="animate-fade-in space-y-6">
         <div className="flex justify-end items-center">
           <div className="flex items-center gap-2">
+            <ExcelExporter
+              transactions={financeData.transactions}
+              accounts={financeData.accounts}
+              categories={financeData.categories}
+            />
             <TransactionImporter
               accounts={financeData.accounts}
               categories={financeData.categories}
