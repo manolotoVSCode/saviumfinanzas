@@ -69,34 +69,34 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     
     // Cálculos del mes anterior (excluyendo aportaciones de ingresos y retiros de gastos)
     const ingresosMes = lastMonthTransactions
-      .filter(t => t.tipo === 'Ingreso' && t.tipo !== 'Aportación')
+      .filter(t => t.tipo === 'Ingreso')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMes = lastMonthTransactions
-      .filter(t => t.tipo === 'Gastos' && t.tipo !== 'Retiro')
+      .filter(t => t.tipo === 'Gastos')
       .reduce((sum, t) => sum + Math.abs(t.monto), 0);
     
     // Cálculos de dos meses atrás (para comparativo - excluyendo aportaciones y retiros)
     const ingresosMesAnterior = twoMonthsAgoTransactions
-      .filter(t => t.tipo === 'Ingreso' && t.tipo !== 'Aportación')
+      .filter(t => t.tipo === 'Ingreso')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMesAnterior = twoMonthsAgoTransactions
-      .filter(t => t.tipo === 'Gastos' && t.tipo !== 'Retiro')
+      .filter(t => t.tipo === 'Gastos')
       .reduce((sum, t) => sum + Math.abs(t.monto), 0);
     
     // Cálculos del año actual (excluyendo aportaciones de ingresos y retiros de gastos)
     const ingresosAnio = yearTransactions
-      .filter(t => t.tipo === 'Ingreso' && t.tipo !== 'Aportación')
+      .filter(t => t.tipo === 'Ingreso')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnio = yearTransactions
-      .filter(t => t.tipo === 'Gastos' && t.tipo !== 'Retiro')
+      .filter(t => t.tipo === 'Gastos')
       .reduce((sum, t) => sum + Math.abs(t.monto), 0);
     
     // Cálculos del año anterior (para comparativo - excluyendo aportaciones y retiros)
     const ingresosAnioAnterior = lastYearTransactions
-      .filter(t => t.tipo === 'Ingreso' && t.tipo !== 'Aportación')
+      .filter(t => t.tipo === 'Ingreso')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnioAnterior = lastYearTransactions
-      .filter(t => t.tipo === 'Gastos' && t.tipo !== 'Retiro')
+      .filter(t => t.tipo === 'Gastos')
       .reduce((sum, t) => sum + Math.abs(t.monto), 0);
     
     // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses excluyendo mes actual)
@@ -117,10 +117,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       });
       
       const ingresos = monthTrans
-        .filter(t => t.tipo === 'Ingreso' && t.tipo !== 'Aportación')
+        .filter(t => t.tipo === 'Ingreso')
         .reduce((sum, t) => sum + t.ingreso, 0);
       const gastos = Math.abs(monthTrans
-        .filter(t => t.tipo === 'Gastos' && t.tipo !== 'Retiro')
+        .filter(t => t.tipo === 'Gastos')
         .reduce((sum, t) => sum + Math.abs(t.monto), 0));
       
       // Crear etiqueta del mes de forma más consistente
@@ -184,16 +184,9 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   // Función para obtener distribución por categorías filtrada por moneda (excluyendo aportaciones y retiros)
   const getFilteredDistribution = (currency: 'MXN' | 'USD' | 'EUR', type: 'Ingreso' | 'Gastos', period: 'month' | 'year') => {
     // Filtrar transacciones por divisa y tipo, excluyendo aportaciones de ingresos y retiros de gastos
-    let transactionsByType;
-    if (type === 'Ingreso') {
-      transactionsByType = transactions.filter(t => 
-        t.divisa === currency && t.tipo === 'Ingreso' && t.tipo !== 'Aportación'
-      );
-    } else {
-      transactionsByType = transactions.filter(t => 
-        t.divisa === currency && t.tipo === 'Gastos' && t.tipo !== 'Retiro'
-      );
-    }
+    const transactionsByType = transactions.filter(t => 
+      t.divisa === currency && t.tipo === type
+    );
     
     const now = new Date();
     let filteredByPeriod;
