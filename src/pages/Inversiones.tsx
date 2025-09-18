@@ -192,8 +192,8 @@ const Inversiones = (): JSX.Element => {
                   <CardTitle>Distribución del Portafolio</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-center gap-8">
-                    <div className="h-64 flex-shrink-0" style={{ width: '300px' }}>
+                  <div className="flex flex-col lg:flex-row items-center justify-center gap-6">
+                    <div className="h-64 w-full max-w-sm lg:flex-shrink-0">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -217,7 +217,7 @@ const Inversiones = (): JSX.Element => {
                     </div>
                     
                     {/* Leyenda */}
-                    <div className="flex-1 space-y-2">
+                    <div className="w-full lg:flex-1 space-y-2">
                       <h4 className="font-semibold text-sm text-muted-foreground mb-3">Leyenda</h4>
                       {pieData.map((entry, index) => (
                         <div key={entry.name} className="flex items-center gap-2">
