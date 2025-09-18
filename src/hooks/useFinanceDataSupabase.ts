@@ -141,63 +141,44 @@ export const useFinanceDataSupabase = () => {
   const calcularScoreFinanciero = (activos: any, pasivos: any, balanceMes: number, balanceMesAnterior: number, ahorroTarget: number) => {
     let score = 0;
     
-    console.log('=== CÁLCULO SCORE FINANCIERO ===');
-    console.log('Activos:', activos);
-    console.log('Pasivos:', pasivos);
-    console.log('Balance mes:', balanceMes);
-    console.log('Ahorro target:', ahorroTarget);
-    
     // Ratio de liquidez (25 puntos máximo)
     const ratioLiquidez = activos.efectivoBancos / (pasivos.total || 1);
-    console.log('Ratio liquidez:', ratioLiquidez);
     let puntosLiquidez = 0;
     if (ratioLiquidez >= 3) puntosLiquidez = 25;
     else if (ratioLiquidez >= 1) puntosLiquidez = 15;
     else puntosLiquidez = 5;
     score += puntosLiquidez;
-    console.log('Puntos por liquidez:', puntosLiquidez);
     
     // Capacidad de ahorro (35 puntos máximo) - usar balance del mes anterior
     const ratioAhorro = balanceMesAnterior / ahorroTarget;
-    console.log('Ratio ahorro:', ratioAhorro);
     let puntosAhorro = 0;
     if (ratioAhorro >= 1) puntosAhorro = 35;
     else if (ratioAhorro >= 0.5) puntosAhorro = 20;
     else if (ratioAhorro > 0) puntosAhorro = 10;
     score += puntosAhorro;
-    console.log('Puntos por ahorro:', puntosAhorro);
     
     // Diversificación de activos (40 puntos máximo)
     let puntosDiversificacion = 0;
     if (activos.inversiones > 0) {
       puntosDiversificacion += 15;
-      console.log('Tiene inversiones: +15 puntos');
     }
     if (activos.bienRaiz > 0) {
       puntosDiversificacion += 15;
-      console.log('Tiene bienes raíces:', activos.bienRaiz, '+15 puntos');
     }
     if (activos.total > activos.efectivoBancos * 2) {
       puntosDiversificacion += 10;
-      console.log('Buena diversificación (total > efectivo*2):', activos.total, '>', activos.efectivoBancos * 2, '+10 puntos');
     }
     score += puntosDiversificacion;
-    console.log('Total puntos diversificación:', puntosDiversificacion);
     
     // Ratio patrimonio vs deuda (bonus: hasta 10 puntos extra)
     const ratioPatrimonio = activos.total / (pasivos.total || 1);
-    console.log('Ratio patrimonio:', ratioPatrimonio);
     let puntosPatrimonio = 0;
     if (ratioPatrimonio >= 5) puntosPatrimonio = 10;
     else if (ratioPatrimonio >= 2.5) puntosPatrimonio = 8;
     else if (ratioPatrimonio >= 1.5) puntosPatrimonio = 5;
     score += puntosPatrimonio;
-    console.log('Puntos por ratio patrimonio:', puntosPatrimonio);
     
     const finalScore = Math.min(100, score);
-    console.log('Score final antes de límite:', score);
-    console.log('Score final:', finalScore);
-    console.log('=== FIN CÁLCULO SCORE ===');
     
     return finalScore;
   };
@@ -241,16 +222,6 @@ export const useFinanceDataSupabase = () => {
     const transactionsPreviousMonth = enrichedTransactions.filter(t => t.fecha >= startOfPreviousMonth && t.fecha <= endOfPreviousMonth);
     const transactionsThisYear = enrichedTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
     const transactionsLastYear = enrichedTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
-    
-    // Debug logs para verificar fechas
-    console.log('=== DEBUG FECHAS ===');
-    console.log('Fecha actual:', now);
-    console.log('Mes actual:', now.getMonth() + 1); // +1 porque getMonth() es 0-indexado
-    console.log('startOfPreviousMonth:', startOfPreviousMonth);
-    console.log('endOfPreviousMonth:', endOfPreviousMonth);
-    console.log('Sample enriched transactions:', enrichedTransactions.slice(0, 3).map(t => ({ fecha: t.fecha, fechaString: t.fecha.toISOString(), comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
-    console.log('transactionsPreviousMonth:', transactionsPreviousMonth.map(t => ({ fecha: t.fecha, fechaString: t.fecha.toISOString(), comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
-    
     // INGRESOS Y GASTOS MENSUALES - CONVERTIR A MXN
     // Excluir reembolsos de ingresos y restarlos de gastos
     const reembolsosMes = transactionsThisMonth

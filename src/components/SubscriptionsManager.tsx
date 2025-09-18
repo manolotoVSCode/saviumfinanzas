@@ -359,8 +359,6 @@ export const SubscriptionsManager = () => {
       // Procesar grupos con duplicados
       for (const [, items] of groups) {
         if (items.length > 1) {
-          console.log('Encontré duplicados:', items.map(i => ({name: i.service_name, id: i.id, monto: i.ultimo_pago_monto})));
-          
           // Ordenar por fecha de actualización, mantener el más reciente
           items.sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime());
           const keep = items[0];
@@ -384,7 +382,6 @@ export const SubscriptionsManager = () => {
           
           if (toDelete.length > 0) {
             const deleteIds = toDelete.map(i => i.id);
-            console.log('Eliminando duplicados:', deleteIds);
             await supabase.from('subscription_services').delete().in('id', deleteIds);
           }
         }
@@ -510,15 +507,6 @@ export const SubscriptionsManager = () => {
 
     const comment1Normalized = normalize(t1.comentario);
     const comment2Normalized = normalize(t2.comentario);
-    
-    console.log('Comparing:', {
-      original1: t1.comentario,
-      original2: t2.comentario,
-      normalized1: comment1Normalized,
-      normalized2: comment2Normalized,
-      amount1: t1.gasto,
-      amount2: t2.gasto
-    });
     
     // Si los comentarios normalizados son exactamente iguales
     if (comment1Normalized === comment2Normalized && comment1Normalized.length > 3) {

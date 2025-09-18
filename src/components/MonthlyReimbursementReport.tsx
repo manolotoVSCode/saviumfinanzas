@@ -34,47 +34,23 @@ export const MonthlyReimbursementReport = ({
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    
-    // Debug: Contador de transacciones procesadas para agosto 2025
-    let augustTransactions = 0;
-    let augustProcessed = 0;
-    let excludedTransactions = 0;
-    let augustTotalIncome = 0;
-    let augustTotalExpenses = 0;
-    let augustReimbursements = 0;
-    
-  console.log(`🔍 INICIANDO ANÁLISIS AGOSTO 2025`);
-  console.log(`Total transacciones a procesar: ${transactions.length}`);
-  
-  // Contar transacciones de agosto antes de procesarlas
-  let augustCount = 0;
-  let augustIncomeTotal = 0;
-  transactions.forEach(t => {
-    const date = new Date(t.fecha);
-    if (date.getFullYear() === 2025 && date.getMonth() === 7) {
-      augustCount++;
-      if (t.ingreso > 0) augustIncomeTotal += t.ingreso;
-    }
-  });
-  console.log(`📈 PRE-CONTEO: ${augustCount} transacciones en agosto 2025`);
-  console.log(`💰 PRE-CONTEO: ${augustIncomeTotal} ingresos totales antes de filtros`);
+
+    // Log solo para agosto 2025 - información resumida
+    console.log(`📊 ANÁLISIS AGOSTO 2025: Procesando ${transactions.length} transacciones`);
+    let augustStats = { found: 0, processed: 0, income: 0, reimbursements: 0 };
     
     transactions.forEach(transaction => {
       const date = new Date(transaction.fecha);
       const transactionMonth = date.getMonth();
       const transactionYear = date.getFullYear();
       
-      // Debug para agosto 2025
-      if (transactionYear === 2025 && transactionMonth === 7) { // agosto es mes 7
-        augustTransactions++;
-        console.log(`[${augustTransactions}] 📊 Procesando: ${transaction.comentario}, Ingreso: ${transaction.ingreso}, Gasto: ${transaction.gasto}, Fecha: ${transaction.fecha}`);
+      // Contar transacciones de agosto 2025
+      if (transactionYear === 2025 && transactionMonth === 7) {
+        augustStats.found++;
       }
       
       // Excluir el mes actual
       if (transactionYear === currentYear && transactionMonth === currentMonth) {
-        if (transactionYear === 2025 && transactionMonth === 7) {
-          console.log(`❌ EXCLUYENDO por ser mes actual: ${transaction.comentario}`);
-        }
         return;
       }
       
@@ -84,34 +60,18 @@ export const MonthlyReimbursementReport = ({
       // Buscar la categoría para verificar si es reembolso
       const category = categories.find(cat => cat.id === transaction.subcategoriaId);
       
-      // Debug para agosto 2025 - mostrar categorías
-      if (transactionYear === 2025 && transactionMonth === 7) {
-        console.log(`Categoría: "${category?.categoria}", Subcategoría: "${category?.subcategoria}", ID: ${category?.id}`);
-        console.log(`Subcategoría ID de transacción: ${transaction.subcategoriaId}`);
-      }
-      
       // Excluir solo las categorías de tipo "Inversiones" 
       const isInvestmentTransaction = category && category.categoria && 
         category.categoria.toLowerCase().trim() === 'inversiones';
       
-      // Debug adicional para agosto 2025
-      if (transactionYear === 2025 && transactionMonth === 7) {
-        console.log(`¿Es inversión? ${isInvestmentTransaction} - Categoría: "${category?.categoria}"`);
-      }
-      
       // Si es una transacción de inversión, no la procesamos
       if (isInvestmentTransaction) {
-        if (transactionYear === 2025 && transactionMonth === 7) {
-          excludedTransactions++;
-          console.log(`❌ EXCLUYENDO transacción de inversión: ${transaction.comentario}, Monto: ${transaction.ingreso || transaction.gasto}`);
-        }
         return;
       }
       
-      // Debug: transacción procesada para agosto
+      // Contar transacciones procesadas de agosto 2025
       if (transactionYear === 2025 && transactionMonth === 7) {
-        augustProcessed++;
-        console.log(`✅ PROCESANDO (${augustProcessed}): ${transaction.comentario}`);
+        augustStats.processed++;
       }
       
       // Identificar reembolsos: solo ingresos que contengan "reembolso" en su descripción
@@ -141,11 +101,11 @@ export const MonthlyReimbursementReport = ({
       if (transaction.ingreso > 0) {
         data.totalIncome += transaction.ingreso;
         
+        // Contar ingresos y reembolsos de agosto
         if (transactionYear === 2025 && transactionMonth === 7) {
-          augustTotalIncome += transaction.ingreso;
+          augustStats.income += transaction.ingreso;
           if (isReimbursement) {
-            augustReimbursements += transaction.ingreso;
-            console.log(`💰 REEMBOLSO encontrado: ${transaction.comentario}, Monto: ${transaction.ingreso}`);
+            augustStats.reimbursements += transaction.ingreso;
           }
         }
         
@@ -156,34 +116,11 @@ export const MonthlyReimbursementReport = ({
       
       if (transaction.gasto > 0) {
         data.totalExpenses += transaction.gasto;
-        
-        if (transactionYear === 2025 && transactionMonth === 7) {
-          augustTotalExpenses += transaction.gasto;
-        }
       }
     });
     
-    // Debug final para agosto - inmediato después del forEach
-    console.log(`🏁 === RESUMEN AGOSTO 2025 ===`);
-    console.log(`📊 Transacciones encontradas en agosto: ${augustTransactions}`);
-    console.log(`✅ Transacciones procesadas: ${augustProcessed}`);
-    console.log(`❌ Transacciones excluidas por inversión: ${excludedTransactions}`);
-    console.log(`💵 Total ingresos agosto calculado: ${augustTotalIncome}`);
-    console.log(`💸 Total gastos agosto calculado: ${augustTotalExpenses}`);
-    console.log(`💰 Total reembolsos agosto: ${augustReimbursements}`);
-    console.log(`🎯 Total esperado por usuario: 377052.48`);
-    console.log(`❓ Diferencia: ${377052.48 - augustTotalIncome}`);
-    
-    // Mostrar datos procesados por mes
-    console.log(`📅 Datos por mes disponibles:`, Object.keys(dataByMonth));
-    
-    const augustKey = "2025-08";
-    if (dataByMonth[augustKey]) {
-      console.log(`✅ Datos agosto encontrados en dataByMonth:`, dataByMonth[augustKey]);
-    } else {
-      console.log(`❌ No se encontraron datos para agosto (${augustKey}) en dataByMonth`);
-      console.log(`Claves disponibles:`, Object.keys(dataByMonth));
-    }
+    // Resumen final para agosto 2025
+    console.log(`✅ AGOSTO 2025: ${augustStats.processed}/${augustStats.found} transacciones procesadas | Ingresos: $${augustStats.income.toLocaleString()} | Reembolsos: $${augustStats.reimbursements.toLocaleString()}`);
     
     // Calcular balances
     Object.values(dataByMonth).forEach(data => {
@@ -419,9 +356,9 @@ export const MonthlyReimbursementReport = ({
                     }`}>
                       <span className="flex items-center gap-2 font-medium">
                         {getBalanceIcon(data.totalBalance)}
-                        Balance Total
+                        <span>Balance Total</span>
                       </span>
-                      <span className={`font-bold text-lg ${getBalanceColor(data.totalBalance)}`}>
+                      <span className={`font-semibold ${getBalanceColor(data.totalBalance)}`}>
                         {formatCurrency(data.totalBalance, data.currency)}
                       </span>
                     </div>
@@ -430,7 +367,7 @@ export const MonthlyReimbursementReport = ({
                 
                 {/* Datos Ajustados */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-lg border-b pb-2">Datos Ajustados (Sin Reembolsos)</h3>
+                  <h3 className="font-semibold text-lg border-b pb-2">Ajustados (Sin Reembolsos)</h3>
                   
                   <div className="space-y-3">
                     <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
@@ -459,15 +396,42 @@ export const MonthlyReimbursementReport = ({
                     }`}>
                       <span className="flex items-center gap-2 font-medium">
                         {getBalanceIcon(data.adjustedBalance)}
-                        Balance Ajustado
+                        <span>Balance Ajustado</span>
                       </span>
-                      <span className={`font-bold text-lg ${getBalanceColor(data.adjustedBalance)}`}>
+                      <span className={`font-semibold ${getBalanceColor(data.adjustedBalance)}`}>
                         {formatCurrency(data.adjustedBalance, data.currency)}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
+              
+              {/* Impacto de los Reembolsos */}
+              {data.reimbursementAmount > 0 && (
+                <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                  <h4 className="font-semibold text-purple-900 mb-3">Impacto de los Reembolsos</h4>
+                  <div className="grid md:grid-cols-3 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-purple-700 font-medium">Mejora en Ingresos</div>
+                      <div className="text-lg font-bold text-purple-900">
+                        {data.totalIncome > 0 ? ((data.reimbursementAmount / data.totalIncome) * 100).toFixed(1) : 0}%
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-purple-700 font-medium">Reducción en Gastos</div>
+                      <div className="text-lg font-bold text-purple-900">
+                        {data.totalExpenses > 0 ? ((data.reimbursementAmount / data.totalExpenses) * 100).toFixed(1) : 0}%
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-purple-700 font-medium">Mejora en Balance</div>
+                      <div className="text-lg font-bold text-purple-900">
+                        +{formatCurrency(data.reimbursementAmount * 2, data.currency)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

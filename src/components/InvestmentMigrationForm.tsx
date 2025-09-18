@@ -84,7 +84,6 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
     try {
       // Verificar autenticación
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('Usuario autenticado:', user);
       
       if (!user) {
         toast({
@@ -105,28 +104,17 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
       if (data.rendimiento_neto) updateData.rendimiento_neto = data.rendimiento_neto;
       if (data.ultimo_pago) updateData.ultimo_pago = data.ultimo_pago;
 
-      console.log('=== DEBUG GUARDADO ===');
-      console.log('Usuario:', user);
-      console.log('ID de cuenta:', account.id);
-      console.log('Datos a actualizar:', updateData);
-
       const { data: updatedData, error } = await supabase
         .from('cuentas')
         .update(updateData)
         .eq('id', account.id)
         .select();
 
-      console.log('Respuesta de Supabase:');
-      console.log('- Data:', updatedData);
-      console.log('- Error:', error);
-
       if (error) {
-        console.error('Supabase error completo:', JSON.stringify(error, null, 2));
         throw error;
       }
 
       if (!updatedData || updatedData.length === 0) {
-        console.error('No se encontró la cuenta o no se actualizó');
         toast({
           title: "Advertencia",
           description: "No se encontró la cuenta para actualizar",
@@ -134,8 +122,6 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
         });
         return;
       }
-
-      console.log('Actualización exitosa:', updatedData[0]);
 
       toast({
         title: "¡Inversión actualizada!",
