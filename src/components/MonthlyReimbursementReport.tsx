@@ -51,12 +51,11 @@ export const MonthlyReimbursementReport = ({
       // Buscar la categoría
       const category = categories.find(cat => cat.id === transaction.subcategoriaId);
       
-      // Excluir transacciones de tipo "Aportación" y también retiros/movimientos de inversión
-      const isInvestmentMovement = category?.tipo?.toLowerCase() === 'aportación' || 
-                                  category?.categoria?.toLowerCase() === 'inversiones';
+      // Excluir solo las transacciones de tipo "Aportación" (mantener rendimientos como ingresos)
+      const isContribution = category?.tipo?.toLowerCase() === 'aportación';
       
-      // Si es un movimiento de inversión (aportación o retiro), no la procesamos
-      if (isInvestmentMovement) {
+      // Si es una aportación, no la procesamos
+      if (isContribution) {
         return;
       }
       
