@@ -43,8 +43,21 @@ export const MonthlyReimbursementReport = ({
     let augustTotalExpenses = 0;
     let augustReimbursements = 0;
     
-    console.log(`🔍 INICIANDO ANÁLISIS AGOSTO 2025`);
-    console.log(`Total transacciones a procesar: ${transactions.length}`);
+  console.log(`🔍 INICIANDO ANÁLISIS AGOSTO 2025`);
+  console.log(`Total transacciones a procesar: ${transactions.length}`);
+  
+  // Contar transacciones de agosto antes de procesarlas
+  let augustCount = 0;
+  let augustIncomeTotal = 0;
+  transactions.forEach(t => {
+    const date = new Date(t.fecha);
+    if (date.getFullYear() === 2025 && date.getMonth() === 7) {
+      augustCount++;
+      if (t.ingreso > 0) augustIncomeTotal += t.ingreso;
+    }
+  });
+  console.log(`📈 PRE-CONTEO: ${augustCount} transacciones en agosto 2025`);
+  console.log(`💰 PRE-CONTEO: ${augustIncomeTotal} ingresos totales antes de filtros`);
     
     transactions.forEach(transaction => {
       const date = new Date(transaction.fecha);
