@@ -64,11 +64,18 @@ export const MonthlyReimbursementReport = ({
       
       // Debug para agosto 2025 - mostrar categorías
       if (transactionYear === 2025 && transactionMonth === 7) {
-        console.log(`Categoría: ${category?.categoria}, Subcategoría: ${category?.subcategoria}`);
+        console.log(`Categoría: "${category?.categoria}", Subcategoría: "${category?.subcategoria}", ID: ${category?.id}`);
+        console.log(`Subcategoría ID de transacción: ${transaction.subcategoriaId}`);
       }
       
-      // Excluir solo las categorías de tipo "Inversiones"
-      const isInvestmentTransaction = category?.categoria.toLowerCase() === 'inversiones';
+      // Excluir solo las categorías de tipo "Inversiones" 
+      const isInvestmentTransaction = category && category.categoria && 
+        category.categoria.toLowerCase().trim() === 'inversiones';
+      
+      // Debug adicional para agosto 2025
+      if (transactionYear === 2025 && transactionMonth === 7) {
+        console.log(`¿Es inversión? ${isInvestmentTransaction} - Categoría: "${category?.categoria}"`);
+      }
       
       // Si es una transacción de inversión, no la procesamos
       if (isInvestmentTransaction) {
