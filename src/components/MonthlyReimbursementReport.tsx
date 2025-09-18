@@ -35,10 +35,21 @@ export const MonthlyReimbursementReport = ({
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
+    // Debug: Contador de transacciones procesadas para agosto 2025
+    let augustTransactions = 0;
+    let excludedTransactions = 0;
+    let augustTotalIncome = 0;
+    
     transactions.forEach(transaction => {
       const date = new Date(transaction.fecha);
       const transactionMonth = date.getMonth();
       const transactionYear = date.getFullYear();
+      
+      // Debug para agosto 2025
+      if (transactionYear === 2025 && transactionMonth === 7) { // agosto es mes 7
+        augustTransactions++;
+        console.log(`Procesando transacción agosto: ${transaction.comentario}, Ingreso: ${transaction.ingreso}, Gasto: ${transaction.gasto}`);
+      }
       
       // Excluir el mes actual
       if (transactionYear === currentYear && transactionMonth === currentMonth) {
@@ -51,11 +62,20 @@ export const MonthlyReimbursementReport = ({
       // Buscar la categoría para verificar si es reembolso
       const category = categories.find(cat => cat.id === transaction.subcategoriaId);
       
+      // Debug para agosto 2025 - mostrar categorías
+      if (transactionYear === 2025 && transactionMonth === 7) {
+        console.log(`Categoría: ${category?.categoria}, Subcategoría: ${category?.subcategoria}`);
+      }
+      
       // Excluir solo las categorías de tipo "Inversiones"
       const isInvestmentTransaction = category?.categoria.toLowerCase() === 'inversiones';
       
       // Si es una transacción de inversión, no la procesamos
       if (isInvestmentTransaction) {
+        if (transactionYear === 2025 && transactionMonth === 7) {
+          excludedTransactions++;
+          console.log(`EXCLUYENDO transacción de inversión: ${transaction.comentario}, Monto: ${transaction.ingreso || transaction.gasto}`);
+        }
         return;
       }
       
@@ -86,6 +106,13 @@ export const MonthlyReimbursementReport = ({
       if (transaction.ingreso > 0) {
         data.totalIncome += transaction.ingreso;
         
+        if (transactionYear === 2025 && transactionMonth === 7) {
+          augustTotalIncome += transaction.ingreso;
+          if (isReimbursement) {
+            console.log(`REEMBOLSO encontrado: ${transaction.comentario}, Monto: ${transaction.ingreso}`);
+          }
+        }
+        
         if (isReimbursement) {
           data.reimbursementAmount += transaction.ingreso;
         }
@@ -95,6 +122,13 @@ export const MonthlyReimbursementReport = ({
         data.totalExpenses += transaction.gasto;
       }
     });
+    
+    // Debug final para agosto
+    console.log(`=== RESUMEN AGOSTO 2025 ===`);
+    console.log(`Transacciones procesadas: ${augustTransactions}`);
+    console.log(`Transacciones excluidas: ${excludedTransactions}`);
+    console.log(`Total ingresos agosto calculado: ${augustTotalIncome}`);
+    console.log(`Total esperado por usuario: 377052.48`);
     
     // Calcular balances
     Object.values(dataByMonth).forEach(data => {
