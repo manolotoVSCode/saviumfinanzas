@@ -163,7 +163,7 @@ export const MonthlyReimbursementReport = ({
       }
     });
     
-    // Debug final para agosto
+    // Debug final para agosto - inmediato después del forEach
     console.log(`🏁 === RESUMEN AGOSTO 2025 ===`);
     console.log(`📊 Transacciones encontradas en agosto: ${augustTransactions}`);
     console.log(`✅ Transacciones procesadas: ${augustProcessed}`);
@@ -173,6 +173,17 @@ export const MonthlyReimbursementReport = ({
     console.log(`💰 Total reembolsos agosto: ${augustReimbursements}`);
     console.log(`🎯 Total esperado por usuario: 377052.48`);
     console.log(`❓ Diferencia: ${377052.48 - augustTotalIncome}`);
+    
+    // Mostrar datos procesados por mes
+    console.log(`📅 Datos por mes disponibles:`, Object.keys(dataByMonth));
+    
+    const augustKey = "2025-08";
+    if (dataByMonth[augustKey]) {
+      console.log(`✅ Datos agosto encontrados en dataByMonth:`, dataByMonth[augustKey]);
+    } else {
+      console.log(`❌ No se encontraron datos para agosto (${augustKey}) en dataByMonth`);
+      console.log(`Claves disponibles:`, Object.keys(dataByMonth));
+    }
     
     // Calcular balances
     Object.values(dataByMonth).forEach(data => {
