@@ -304,7 +304,7 @@ export const DataAudit = ({ transactions, accounts, categories }: DataAuditProps
                         </AlertDescription>
                         {issue.items && issue.items.length > 0 && (
                           <div className="mt-2">
-                            <div className="text-sm text-muted-foreground mb-1">Ejemplos:</div>
+                            <div className="text-sm text-muted-foreground mb-1">Elementos encontrados:</div>
                             <ul className="text-sm space-y-1">
                               {issue.items.map((item, itemIndex) => (
                                 <li key={itemIndex} className="ml-4 text-muted-foreground">
