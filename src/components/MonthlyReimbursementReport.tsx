@@ -16,7 +16,8 @@ interface MonthlyData {
   totalIncome: number;
   totalExpenses: number;
   totalBalance: number;
-  reimbursements: number;
+  reimbursementIncome: number;
+  reimbursementExpenses: number;
   adjustedIncome: number;
   adjustedExpenses: number;
   adjustedBalance: number;
@@ -61,7 +62,8 @@ export const MonthlyReimbursementReport = ({
           totalIncome: 0,
           totalExpenses: 0,
           totalBalance: 0,
-          reimbursements: 0,
+          reimbursementIncome: 0,
+          reimbursementExpenses: 0,
           adjustedIncome: 0,
           adjustedExpenses: 0,
           adjustedBalance: 0,
@@ -75,7 +77,7 @@ export const MonthlyReimbursementReport = ({
         data.totalIncome += transaction.ingreso;
         
         if (isReimbursement) {
-          data.reimbursements += transaction.ingreso;
+          data.reimbursementIncome += transaction.ingreso;
         } else {
           data.adjustedIncome += transaction.ingreso;
         }
@@ -85,8 +87,7 @@ export const MonthlyReimbursementReport = ({
         data.totalExpenses += transaction.gasto;
         
         if (isReimbursement) {
-          // Si es un gasto reembolsado, también se suma a reembolsos y no se cuenta en gastos ajustados
-          data.reimbursements += transaction.gasto;
+          data.reimbursementExpenses += transaction.gasto;
         } else {
           data.adjustedExpenses += transaction.gasto;
         }
@@ -151,10 +152,10 @@ export const MonthlyReimbursementReport = ({
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
                 <span className="capitalize">{data.month}</span>
-                {data.reimbursements > 0 && (
+                {(data.reimbursementIncome + data.reimbursementExpenses) > 0 && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     <RotateCcw className="h-3 w-3" />
-                    {formatCurrency(data.reimbursements, data.currency)} reembolsados
+                    {formatCurrency(data.reimbursementIncome + data.reimbursementExpenses, data.currency)} reembolsados
                   </Badge>
                 )}
               </CardTitle>
@@ -243,7 +244,7 @@ export const MonthlyReimbursementReport = ({
               </div>
               
               {/* Diferencia */}
-              {data.reimbursements > 0 && (
+              {(data.reimbursementIncome + data.reimbursementExpenses) > 0 && (
                 <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
                   <div className="flex justify-between items-center">
                     <span className="text-purple-700 font-medium">Impacto de Reembolsos:</span>
