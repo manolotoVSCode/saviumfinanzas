@@ -84,8 +84,10 @@ export const MonthlyReimbursementReport = ({
       if (transaction.gasto > 0) {
         data.totalExpenses += transaction.gasto;
         
-        // Si no es un gasto reembolsado, se cuenta en gastos ajustados
-        if (!isReimbursement) {
+        if (isReimbursement) {
+          // Si es un gasto reembolsado, también se suma a reembolsos y no se cuenta en gastos ajustados
+          data.reimbursements += transaction.gasto;
+        } else {
           data.adjustedExpenses += transaction.gasto;
         }
       }
