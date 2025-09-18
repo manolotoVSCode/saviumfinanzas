@@ -44,7 +44,7 @@ const Layout = ({ children }: LayoutProps) => {
             {profile && (
               <div className="text-left sm:text-right">
                 <p className="text-sm font-medium">
-                  {profile.nombre} {profile.apellidos}
+                  Bienvenido, {profile.nombre} {profile.apellidos}
                 </p>
               </div>
             )}

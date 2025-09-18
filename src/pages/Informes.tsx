@@ -36,11 +36,19 @@ const Informes = () => {
         </div>
 
         <Tabs defaultValue="pagos-recurrentes" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1">
-            <TabsTrigger value="pagos-recurrentes" className="text-xs sm:text-sm">Pagos Recurrentes</TabsTrigger>
-            <TabsTrigger value="suscripciones" className="text-xs sm:text-sm">Suscripciones</TabsTrigger>
-            <TabsTrigger value="activos" className="text-xs sm:text-sm">Activos</TabsTrigger>
-            <TabsTrigger value="pasivos" className="text-xs sm:text-sm">Pasivos</TabsTrigger>
+          <TabsList className="flex flex-wrap w-full justify-center gap-2 h-auto p-2 bg-muted rounded-lg">
+            <TabsTrigger value="pagos-recurrentes" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
+              Pagos Recurrentes
+            </TabsTrigger>
+            <TabsTrigger value="suscripciones" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
+              Suscripciones
+            </TabsTrigger>
+            <TabsTrigger value="activos" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
+              Activos
+            </TabsTrigger>
+            <TabsTrigger value="pasivos" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
+              Pasivos
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pagos-recurrentes" className="space-y-4">
