@@ -10,8 +10,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Transaction, Account, Category } from '@/types/finance';
-import { Plus, Edit, Trash2, Calendar, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, ArrowUpDown, ArrowUp, ArrowDown, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TransactionsManagerProps {
   transactions: Transaction[];
@@ -54,6 +57,9 @@ export const TransactionsManager = ({
   // Estados para cambio de mes masivo
   const [isEditingBulkDate, setIsEditingBulkDate] = useState(false);
   const [bulkDate, setBulkDate] = useState('');
+  
+  // Estado para el filtro de categorías con búsqueda
+  const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
   
   // Filtros
   const [filters, setFilters] = useState(() => {
@@ -941,31 +947,88 @@ export const TransactionsManager = ({
             
             <div>
               <Label htmlFor="filter-categoria">Categoría</Label>
-              <Select 
-                value={filters.categoriaId} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, categoriaId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas las categorías" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                   <SelectItem value="all">Todas las categorías</SelectItem>
-                   <SelectItem value="sin-asignar" className="text-destructive font-semibold">
-                     SIN ASIGNAR
-                   </SelectItem>
-                   {categories
-                     .filter((category) => !(
-                       category.categoria && category.subcategoria &&
-                       category.categoria.trim().toLowerCase() === 'sin asignar' &&
-                       category.subcategoria.trim().toLowerCase() === 'sin asignar'
-                     ))
-                     .map((category) => (
-                       <SelectItem key={category.id} value={category.id}>
-                         <span className="font-bold">{category.categoria}</span> - <span className="font-normal">{category.subcategoria}</span>
-                       </SelectItem>
-                     ))}
-                </SelectContent>
-              </Select>
+              <Popover open={categoryFilterOpen} onOpenChange={setCategoryFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categoryFilterOpen}
+                    className="w-full justify-between"
+                  >
+                    {filters.categoriaId === 'all' 
+                      ? 'Todas las categorías' 
+                      : filters.categoriaId === 'sin-asignar'
+                      ? 'SIN ASIGNAR'
+                      : categories.find(cat => cat.id === filters.categoriaId)?.categoria + ' - ' + categories.find(cat => cat.id === filters.categoriaId)?.subcategoria || 'Seleccionar categoría'
+                    }
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-background">
+                  <Command>
+                    <CommandInput placeholder="Buscar categoría..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontraron categorías.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setFilters(prev => ({ ...prev, categoriaId: 'all' }));
+                            setCategoryFilterOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              filters.categoriaId === 'all' ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Todas las categorías
+                        </CommandItem>
+                        <CommandItem
+                          value="sin-asignar"
+                          onSelect={() => {
+                            setFilters(prev => ({ ...prev, categoriaId: 'sin-asignar' }));
+                            setCategoryFilterOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              filters.categoriaId === 'sin-asignar' ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <span className="text-destructive font-semibold">SIN ASIGNAR</span>
+                        </CommandItem>
+                        {categories
+                          .filter((category) => !(
+                            category.categoria && category.subcategoria &&
+                            category.categoria.trim().toLowerCase() === 'sin asignar' &&
+                            category.subcategoria.trim().toLowerCase() === 'sin asignar'
+                          ))
+                          .map((category) => (
+                            <CommandItem
+                              key={category.id}
+                              value={`${category.categoria} ${category.subcategoria}`}
+                              onSelect={() => {
+                                setFilters(prev => ({ ...prev, categoriaId: category.id }));
+                                setCategoryFilterOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  filters.categoriaId === category.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="font-bold">{category.categoria}</span> - <span className="font-normal">{category.subcategoria}</span>
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
