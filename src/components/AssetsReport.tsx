@@ -16,25 +16,31 @@ interface AssetsReportProps {
 
 export const AssetsReport = ({ metrics, formatCurrency, accounts, onAccountUpdate }: AssetsReportProps) => {
   
-  const handleToggleVendida = async (accountId: string, currentStatus: boolean) => {
+  const handleToggleVendida = async (accountId: string, currentStatus: boolean, currentBalance: number) => {
     try {
+      const newStatus = !currentStatus;
+      const updatedData = {
+        vendida: newStatus,
+        saldo_actual: newStatus ? 0 : currentBalance // Si se marca como vendida, saldo a 0
+      };
+
       const { error } = await supabase
         .from('cuentas')
-        .update({ vendida: !currentStatus })
+        .update(updatedData)
         .eq('id', accountId);
 
       if (error) throw error;
 
       toast.success(
-        !currentStatus ? 'Propiedad marcada como vendida' : 'Propiedad marcada como activa'
+        newStatus ? 'Propiedad/Empresa marcada como vendida' : 'Propiedad/Empresa marcada como activa'
       );
       
       if (onAccountUpdate) {
         onAccountUpdate();
       }
     } catch (error) {
-      console.error('Error updating property status:', error);
-      toast.error('Error al actualizar el estado de la propiedad');
+      console.error('Error updating property/business status:', error);
+      toast.error('Error al actualizar el estado');
     }
   };
   
@@ -239,13 +245,13 @@ export const AssetsReport = ({ metrics, formatCurrency, accounts, onAccountUpdat
                       
                        <Progress value={porcentajeCategoria} className="h-1" />
                        
-                       {/* Botón para marcar como vendida/activa en bienes raíces */}
-                       {categoria === 'bienRaiz' && (
+                       {/* Botón para marcar como vendida/activa en bienes raíces y empresas propias */}
+                       {(categoria === 'bienRaiz' || categoria === 'empresas') && (
                          <div className="flex justify-end mt-3">
                            <Button
                              size="sm"
                              variant={isVendida ? "outline" : "destructive"}
-                             onClick={() => handleToggleVendida(cuenta.id, isVendida)}
+                             onClick={() => handleToggleVendida(cuenta.id, isVendida, cuenta.saldoInicial)}
                              className="text-xs"
                            >
                              {isVendida ? (
