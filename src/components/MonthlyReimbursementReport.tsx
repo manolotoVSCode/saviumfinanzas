@@ -93,10 +93,10 @@ export const MonthlyReimbursementReport = ({
     // Calcular balances
     Object.values(dataByMonth).forEach(data => {
       data.totalBalance = data.totalIncome - data.totalExpenses;
-      // Para gastos ajustados: descontar gastos que fueron reembolsados
-      data.adjustedExpenses = data.totalExpenses - data.reimbursementExpenses;
-      // Para ingresos ajustados: descontar ingresos de reembolsos
+      // Los reembolsos se descuentan tanto de ingresos como de gastos ajustados
+      const totalReimbursements = data.reimbursementIncome + data.reimbursementExpenses;
       data.adjustedIncome = data.totalIncome - data.reimbursementIncome;
+      data.adjustedExpenses = data.totalExpenses - data.reimbursementIncome; // Descontar reembolsos de gastos
       data.adjustedBalance = data.adjustedIncome - data.adjustedExpenses;
     });
     
