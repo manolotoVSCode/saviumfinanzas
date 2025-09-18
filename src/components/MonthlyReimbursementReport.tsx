@@ -32,19 +32,18 @@ export const MonthlyReimbursementReport = ({
   const monthlyData = useMemo(() => {
     const dataByMonth: Record<string, MonthlyData> = {};
     const now = new Date();
-    const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
     transactions.forEach(transaction => {
       const date = new Date(transaction.fecha);
-      const transactionMonth = date.getMonth();
       const transactionYear = date.getFullYear();
       
-      // Excluir el mes actual
-      if (transactionYear === currentYear && transactionMonth === currentMonth) {
+      // Solo incluir transacciones del año actual (como en el Dashboard)
+      if (transactionYear !== currentYear) {
         return;
       }
       
+      const transactionMonth = date.getMonth();
       const monthKey = `${transactionYear}-${String(transactionMonth + 1).padStart(2, '0')}`;
       const monthName = `${date.toLocaleDateString('es-ES', { month: 'long' }).charAt(0).toUpperCase() + date.toLocaleDateString('es-ES', { month: 'long' }).slice(1)} ${transactionYear}`;
       
@@ -110,7 +109,7 @@ export const MonthlyReimbursementReport = ({
       data.adjustedBalance = data.adjustedIncome - data.adjustedExpenses;
     });
     
-    // Ordenar por año y mes descendente (más reciente primero), excluyendo mes actual
+    // Ordenar por año y mes descendente (más reciente primero)
     return Object.entries(dataByMonth)
       .map(([key, data]) => {
         const [year, month] = key.split('-');
@@ -119,8 +118,7 @@ export const MonthlyReimbursementReport = ({
           sortKey: parseInt(year) * 12 + parseInt(month)
         };
       })
-      .sort((a, b) => b.sortKey - a.sortKey)
-      .slice(0, 12); // Últimos 12 meses (excluyendo el actual)
+      .sort((a, b) => b.sortKey - a.sortKey);
   }, [transactions, categories]);
 
   // Calcular resumen de los últimos 12 meses
