@@ -37,8 +37,14 @@ export const MonthlyReimbursementReport = ({
     
     // Debug: Contador de transacciones procesadas para agosto 2025
     let augustTransactions = 0;
+    let augustProcessed = 0;
     let excludedTransactions = 0;
     let augustTotalIncome = 0;
+    let augustTotalExpenses = 0;
+    let augustReimbursements = 0;
+    
+    console.log(`🔍 INICIANDO ANÁLISIS AGOSTO 2025`);
+    console.log(`Total transacciones a procesar: ${transactions.length}`);
     
     transactions.forEach(transaction => {
       const date = new Date(transaction.fecha);
@@ -48,11 +54,14 @@ export const MonthlyReimbursementReport = ({
       // Debug para agosto 2025
       if (transactionYear === 2025 && transactionMonth === 7) { // agosto es mes 7
         augustTransactions++;
-        console.log(`Procesando transacción agosto: ${transaction.comentario}, Ingreso: ${transaction.ingreso}, Gasto: ${transaction.gasto}`);
+        console.log(`[${augustTransactions}] 📊 Procesando: ${transaction.comentario}, Ingreso: ${transaction.ingreso}, Gasto: ${transaction.gasto}, Fecha: ${transaction.fecha}`);
       }
       
       // Excluir el mes actual
       if (transactionYear === currentYear && transactionMonth === currentMonth) {
+        if (transactionYear === 2025 && transactionMonth === 7) {
+          console.log(`❌ EXCLUYENDO por ser mes actual: ${transaction.comentario}`);
+        }
         return;
       }
       
@@ -81,9 +90,15 @@ export const MonthlyReimbursementReport = ({
       if (isInvestmentTransaction) {
         if (transactionYear === 2025 && transactionMonth === 7) {
           excludedTransactions++;
-          console.log(`EXCLUYENDO transacción de inversión: ${transaction.comentario}, Monto: ${transaction.ingreso || transaction.gasto}`);
+          console.log(`❌ EXCLUYENDO transacción de inversión: ${transaction.comentario}, Monto: ${transaction.ingreso || transaction.gasto}`);
         }
         return;
+      }
+      
+      // Debug: transacción procesada para agosto
+      if (transactionYear === 2025 && transactionMonth === 7) {
+        augustProcessed++;
+        console.log(`✅ PROCESANDO (${augustProcessed}): ${transaction.comentario}`);
       }
       
       // Identificar reembolsos: solo ingresos que contengan "reembolso" en su descripción
@@ -116,7 +131,8 @@ export const MonthlyReimbursementReport = ({
         if (transactionYear === 2025 && transactionMonth === 7) {
           augustTotalIncome += transaction.ingreso;
           if (isReimbursement) {
-            console.log(`REEMBOLSO encontrado: ${transaction.comentario}, Monto: ${transaction.ingreso}`);
+            augustReimbursements += transaction.ingreso;
+            console.log(`💰 REEMBOLSO encontrado: ${transaction.comentario}, Monto: ${transaction.ingreso}`);
           }
         }
         
@@ -127,15 +143,23 @@ export const MonthlyReimbursementReport = ({
       
       if (transaction.gasto > 0) {
         data.totalExpenses += transaction.gasto;
+        
+        if (transactionYear === 2025 && transactionMonth === 7) {
+          augustTotalExpenses += transaction.gasto;
+        }
       }
     });
     
     // Debug final para agosto
-    console.log(`=== RESUMEN AGOSTO 2025 ===`);
-    console.log(`Transacciones procesadas: ${augustTransactions}`);
-    console.log(`Transacciones excluidas: ${excludedTransactions}`);
-    console.log(`Total ingresos agosto calculado: ${augustTotalIncome}`);
-    console.log(`Total esperado por usuario: 377052.48`);
+    console.log(`🏁 === RESUMEN AGOSTO 2025 ===`);
+    console.log(`📊 Transacciones encontradas en agosto: ${augustTransactions}`);
+    console.log(`✅ Transacciones procesadas: ${augustProcessed}`);
+    console.log(`❌ Transacciones excluidas por inversión: ${excludedTransactions}`);
+    console.log(`💵 Total ingresos agosto calculado: ${augustTotalIncome}`);
+    console.log(`💸 Total gastos agosto calculado: ${augustTotalExpenses}`);
+    console.log(`💰 Total reembolsos agosto: ${augustReimbursements}`);
+    console.log(`🎯 Total esperado por usuario: 377052.48`);
+    console.log(`❓ Diferencia: ${377052.48 - augustTotalIncome}`);
     
     // Calcular balances
     Object.values(dataByMonth).forEach(data => {
