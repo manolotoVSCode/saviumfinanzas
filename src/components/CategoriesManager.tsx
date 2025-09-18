@@ -21,7 +21,7 @@ interface CategoriesManagerProps {
   onDeleteCategory: (id: string) => void;
 }
 
-const transactionTypes: TransactionType[] = ['Ingreso', 'Gastos', 'Aportación', 'Retiro'];
+const transactionTypes: TransactionType[] = ['Ingreso', 'Gastos', 'Aportación', 'Retiro', 'Reembolso'];
 
 export const CategoriesManager = ({
   categories,

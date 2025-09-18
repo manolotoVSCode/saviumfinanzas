@@ -299,6 +299,7 @@ export const TransactionsManager = ({
       case 'Gastos': return 'destructive';
       case 'Aportación': return 'secondary';
       case 'Retiro': return 'outline';
+      case 'Reembolso': return 'default' as const;
       default: return 'outline';
     }
   };
@@ -503,6 +504,7 @@ export const TransactionsManager = ({
                       <SelectItem value="Gastos">Solo Gastos</SelectItem>
                       <SelectItem value="Aportación">Solo Aportaciones</SelectItem>
                       <SelectItem value="Retiro">Solo Retiros</SelectItem>
+                      <SelectItem value="Reembolso">Solo Reembolsos</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -739,6 +741,7 @@ export const TransactionsManager = ({
                       <SelectItem value="Gastos">Gastos</SelectItem>
                       <SelectItem value="Aportación">Aportación</SelectItem>
                       <SelectItem value="Retiro">Retiro</SelectItem>
+                      <SelectItem value="Reembolso">Reembolso</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1046,6 +1049,7 @@ export const TransactionsManager = ({
                   <SelectItem value="Gastos">Gastos</SelectItem>
                   <SelectItem value="Aportación">Aportación</SelectItem>
                   <SelectItem value="Retiro">Retiro</SelectItem>
+                  <SelectItem value="Reembolso">Reembolso</SelectItem>
                 </SelectContent>
               </Select>
             </div>
