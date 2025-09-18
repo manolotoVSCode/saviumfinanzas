@@ -47,7 +47,7 @@ export const MonthlyReimbursementReport = ({
       }
       
       const monthKey = `${transactionYear}-${String(transactionMonth + 1).padStart(2, '0')}`;
-      const monthName = date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+      const monthName = `${date.toLocaleDateString('es-ES', { month: 'long' }).charAt(0).toUpperCase() + date.toLocaleDateString('es-ES', { month: 'long' }).slice(1)} ${transactionYear}`;
       
       // Buscar la categoría para verificar si es reembolso
       const category = categories.find(cat => cat.id === transaction.subcategoriaId);
