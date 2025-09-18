@@ -26,6 +26,14 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     // Filtrar transacciones por moneda seleccionada
     const filteredTransactions = transactions.filter(t => t.divisa === currency);
     
+    console.log("=== DEBUG DASHBOARD TRANSACTIONS ===");
+    console.log("Currency:", currency);
+    console.log("Total transactions:", filteredTransactions.length);
+    console.log("Sample transaction:", filteredTransactions[0]);
+    console.log("Transaction types:", [...new Set(filteredTransactions.map(t => t.tipo))]);
+    console.log("Has ingreso field:", filteredTransactions.some(t => t.ingreso !== undefined));
+    console.log("Has gasto field:", filteredTransactions.some(t => t.gasto !== undefined));
+    
     const now = new Date();
     
     // MES ANTERIOR (para resumen del mes)
