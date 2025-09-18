@@ -75,6 +75,19 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       .filter(t => t.tipo === 'Gastos')
       .reduce((sum, t) => sum + t.gasto, 0);
     
+    // Calcular reembolsos del mes anterior
+    const reembolsosMes = lastMonthTransactions
+      .filter(t => t.ingreso > 0 && (
+        t.categoria?.toLowerCase().includes('reembolso') ||
+        t.subcategoria?.toLowerCase().includes('reembolso') ||
+        t.comentario.toLowerCase().includes('reembolso')
+      ))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    // Ajustar por reembolsos (restar de ingresos y gastos)
+    const ingresosAjustadosMes = ingresosMes - reembolsosMes;
+    const gastosAjustadosMes = gastosMes - reembolsosMes;
+    
     // Cálculos de dos meses atrás (para comparativo - excluyendo aportaciones y retiros)
     const ingresosMesAnterior = twoMonthsAgoTransactions
       .filter(t => t.tipo === 'Ingreso')
@@ -82,6 +95,19 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const gastosMesAnterior = twoMonthsAgoTransactions
       .filter(t => t.tipo === 'Gastos')
       .reduce((sum, t) => sum + t.gasto, 0);
+    
+    // Calcular reembolsos de dos meses atrás
+    const reembolsosMesAnterior = twoMonthsAgoTransactions
+      .filter(t => t.ingreso > 0 && (
+        t.categoria?.toLowerCase().includes('reembolso') ||
+        t.subcategoria?.toLowerCase().includes('reembolso') ||
+        t.comentario.toLowerCase().includes('reembolso')
+      ))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    // Ajustar por reembolsos
+    const ingresosAjustadosMesAnterior = ingresosMesAnterior - reembolsosMesAnterior;
+    const gastosAjustadosMesAnterior = gastosMesAnterior - reembolsosMesAnterior;
     
     // Cálculos del año actual (excluyendo aportaciones de ingresos y retiros de gastos)
     const ingresosAnio = yearTransactions
@@ -91,6 +117,19 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       .filter(t => t.tipo === 'Gastos')
       .reduce((sum, t) => sum + t.gasto, 0);
     
+    // Calcular reembolsos del año actual
+    const reembolsosAnio = yearTransactions
+      .filter(t => t.ingreso > 0 && (
+        t.categoria?.toLowerCase().includes('reembolso') ||
+        t.subcategoria?.toLowerCase().includes('reembolso') ||
+        t.comentario.toLowerCase().includes('reembolso')
+      ))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    // Ajustar por reembolsos
+    const ingresosAjustadosAnio = ingresosAnio - reembolsosAnio;
+    const gastosAjustadosAnio = gastosAnio - reembolsosAnio;
+    
     // Cálculos del año anterior (para comparativo - excluyendo aportaciones y retiros)
     const ingresosAnioAnterior = lastYearTransactions
       .filter(t => t.tipo === 'Ingreso')
@@ -98,6 +137,19 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const gastosAnioAnterior = lastYearTransactions
       .filter(t => t.tipo === 'Gastos')
       .reduce((sum, t) => sum + t.gasto, 0);
+    
+    // Calcular reembolsos del año anterior
+    const reembolsosAnioAnterior = lastYearTransactions
+      .filter(t => t.ingreso > 0 && (
+        t.categoria?.toLowerCase().includes('reembolso') ||
+        t.subcategoria?.toLowerCase().includes('reembolso') ||
+        t.comentario.toLowerCase().includes('reembolso')
+      ))
+      .reduce((sum, t) => sum + t.ingreso, 0);
+    
+    // Ajustar por reembolsos
+    const ingresosAjustadosAnioAnterior = ingresosAnioAnterior - reembolsosAnioAnterior;
+    const gastosAjustadosAnioAnterior = gastosAnioAnterior - reembolsosAnioAnterior;
     
     // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses excluyendo mes actual)
     const tendenciaMensual = [];
@@ -136,25 +188,25 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     }
     
     return {
-      // Datos del mes anterior (resumen del mes)
-      ingresosMes,
-      gastosMes,
-      balanceMes: ingresosMes - gastosMes,
+      // Datos del mes anterior (resumen del mes) - ajustados por reembolsos
+      ingresosMes: ingresosAjustadosMes,
+      gastosMes: gastosAjustadosMes,
+      balanceMes: ingresosAjustadosMes - gastosAjustadosMes,
       
-      // Datos del año actual (resumen del año)
-      ingresosAnio,
-      gastosAnio,
-      balanceAnio: ingresosAnio - gastosAnio,
+      // Datos del año actual (resumen del año) - ajustados por reembolsos
+      ingresosAnio: ingresosAjustadosAnio,
+      gastosAnio: gastosAjustadosAnio,
+      balanceAnio: ingresosAjustadosAnio - gastosAjustadosAnio,
       
-      // Comparativos
-      cambioIngresosMes: ingresosMesAnterior > 0 ? ((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100 : 0,
-      cambioGastosMes: gastosMesAnterior > 0 ? ((gastosMes - gastosMesAnterior) / gastosMesAnterior) * 100 : 0,
-      cambioIngresosAnio: ingresosAnioAnterior > 0 ? ((ingresosAnio - ingresosAnioAnterior) / ingresosAnioAnterior) * 100 : 0,
-      cambioGastosAnio: gastosAnioAnterior > 0 ? ((gastosAnio - gastosAnioAnterior) / gastosAnioAnterior) * 100 : 0,
+      // Comparativos - usando valores ajustados
+      cambioIngresosMes: ingresosAjustadosMesAnterior > 0 ? ((ingresosAjustadosMes - ingresosAjustadosMesAnterior) / ingresosAjustadosMesAnterior) * 100 : 0,
+      cambioGastosMes: gastosAjustadosMesAnterior > 0 ? ((gastosAjustadosMes - gastosAjustadosMesAnterior) / gastosAjustadosMesAnterior) * 100 : 0,
+      cambioIngresosAnio: ingresosAjustadosAnioAnterior > 0 ? ((ingresosAjustadosAnio - ingresosAjustadosAnioAnterior) / ingresosAjustadosAnioAnterior) * 100 : 0,
+      cambioGastosAnio: gastosAjustadosAnioAnterior > 0 ? ((gastosAjustadosAnio - gastosAjustadosAnioAnterior) / gastosAjustadosAnioAnterior) * 100 : 0,
       
-      // Comparativos de balance
-      balanceMesAnterior: ingresosMesAnterior - gastosMesAnterior,
-      balanceAnioAnterior: ingresosAnioAnterior - gastosAnioAnterior,
+      // Comparativos de balance - usando valores ajustados
+      balanceMesAnterior: ingresosAjustadosMesAnterior - gastosAjustadosMesAnterior,
+      balanceAnioAnterior: ingresosAjustadosAnioAnterior - gastosAjustadosAnioAnterior,
       
       tendenciaMensual
     };
