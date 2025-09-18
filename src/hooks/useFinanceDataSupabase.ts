@@ -1172,6 +1172,7 @@ export const useFinanceDataSupabase = () => {
     accounts: accountsWithBalances,
     categories,
     transactions: enrichedTransactions,
+    enrichedTransactions, // Add explicit reference for clarity
     accountTypes,
     dashboardMetrics,
     dateFilter,
