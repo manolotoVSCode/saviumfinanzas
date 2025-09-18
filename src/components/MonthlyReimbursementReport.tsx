@@ -48,14 +48,14 @@ export const MonthlyReimbursementReport = ({
       const monthKey = `${transactionYear}-${String(transactionMonth + 1).padStart(2, '0')}`;
       const monthName = `${date.toLocaleDateString('es-ES', { month: 'long' }).charAt(0).toUpperCase() + date.toLocaleDateString('es-ES', { month: 'long' }).slice(1)} ${transactionYear}`;
       
-      // Buscar la categoría para verificar si es reembolso
+      // Buscar la categoría
       const category = categories.find(cat => cat.id === transaction.subcategoriaId);
       
-      // Excluir solo las categorías de tipo "Inversiones"
-      const isInvestmentTransaction = category?.categoria.toLowerCase() === 'inversiones';
+      // Excluir solo las transacciones de tipo "Aportación" (no incluir aportaciones ni retiros como ingresos/gastos)
+      const isContribution = category?.tipo?.toLowerCase() === 'aportación';
       
-      // Si es una transacción de inversión, no la procesamos
-      if (isInvestmentTransaction) {
+      // Si es una aportación, no la procesamos
+      if (isContribution) {
         return;
       }
       
