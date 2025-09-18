@@ -8,12 +8,13 @@ import { AccountsManager } from '@/components/AccountsManager';
 import { CategoriesManager } from '@/components/CategoriesManager';
 import { ProfileEditor } from '@/components/ProfileEditor';
 import { AdminUserManagement } from '@/components/AdminUserManagement';
+import { DataAudit } from '@/components/DataAudit';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Settings, LogOut, Trash2, Globe } from 'lucide-react';
+import { Settings, LogOut, Trash2, Globe, Search } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useState, useEffect } from 'react';
 
@@ -117,6 +118,26 @@ const Configuracion = () => {
               onAddCategory={financeData.addCategory}
               onUpdateCategory={financeData.updateCategory}
               onDeleteCategory={financeData.deleteCategory}
+            />
+          </CardContent>
+        </Card>
+
+        {/* AUDITORÍA DE DATOS */}
+        <Card className="border-blue-200 hover:border-blue-400 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Auditoría de Datos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground text-sm">
+              Analiza tus transacciones, cuentas y categorías para detectar problemas e incoherencias en los datos.
+            </p>
+            <DataAudit
+              transactions={financeData.transactions}
+              accounts={financeData.accounts}
+              categories={financeData.categories}
             />
           </CardContent>
         </Card>
