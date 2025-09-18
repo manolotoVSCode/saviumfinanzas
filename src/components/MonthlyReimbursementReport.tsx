@@ -110,10 +110,9 @@ export const MonthlyReimbursementReport = ({
     // Calculate balances
     Object.values(dataByMonth).forEach(data => {
       data.totalBalance = data.totalIncome - data.totalExpenses;
-      // Los ajustados descuentan los reembolsos tanto de ingresos como de gastos
-      // (asumiendo que cada peso reembolsado corresponde a un peso gastado originalmente)
+      // Los ajustados excluyen completamente los reembolsos de los ingresos
       data.adjustedIncome = data.totalIncome - data.reimbursementAmount;
-      data.adjustedExpenses = data.totalExpenses - data.reimbursementAmount;
+      data.adjustedExpenses = data.totalExpenses; // Los gastos no se ven afectados por reembolsos de ingresos
       data.adjustedBalance = data.adjustedIncome - data.adjustedExpenses;
     });
     
@@ -153,7 +152,7 @@ export const MonthlyReimbursementReport = ({
     
     summary.totalBalance = summary.totalIncome - summary.totalExpenses;
     summary.adjustedIncome = summary.totalIncome - summary.reimbursementAmount;
-    summary.adjustedExpenses = summary.totalExpenses - summary.reimbursementAmount;
+    summary.adjustedExpenses = summary.totalExpenses; // Los gastos no se ven afectados por reembolsos de ingresos
     summary.adjustedBalance = summary.adjustedIncome - summary.adjustedExpenses;
     
     return summary;
@@ -390,33 +389,6 @@ export const MonthlyReimbursementReport = ({
                   </div>
                 </div>
               </div>
-              
-              {/* Impacto de los Reembolsos */}
-              {data.reimbursementAmount > 0 && (
-                <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                  <h4 className="font-semibold text-purple-900 mb-3">Impacto de los Reembolsos</h4>
-                  <div className="grid md:grid-cols-3 gap-4 text-sm">
-                    <div className="text-center">
-                      <div className="text-purple-700 font-medium">Mejora en Ingresos</div>
-                      <div className="text-lg font-bold text-purple-900">
-                        {data.totalIncome > 0 ? ((data.reimbursementAmount / data.totalIncome) * 100).toFixed(1) : 0}%
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-purple-700 font-medium">Reducción en Gastos</div>
-                      <div className="text-lg font-bold text-purple-900">
-                        {data.totalExpenses > 0 ? ((data.reimbursementAmount / data.totalExpenses) * 100).toFixed(1) : 0}%
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-purple-700 font-medium">Mejora en Balance</div>
-                      <div className="text-lg font-bold text-purple-900">
-                        +{formatCurrency(data.reimbursementAmount * 2, data.currency)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}
