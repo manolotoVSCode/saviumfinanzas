@@ -1,4 +1,4 @@
-export type TransactionType = 'Ingreso' | 'Gastos' | 'Aportación' | 'Retiro';
+export type TransactionType = 'Ingreso' | 'Gastos' | 'Aportación' | 'Retiro' | 'Reembolso';
 
 export type AccountType = 'Efectivo' | 'Banco' | 'Tarjeta de Crédito' | 'Ahorros' | 'Inversiones' | 'Hipoteca' | 'Empresa Propia' | 'Bien Raíz';
 
