@@ -269,9 +269,20 @@ const Inversiones = (): JSX.Element => {
                             </div>
                           </div>
                           <div className="text-left sm:text-right flex-shrink-0">
-                            <div className="font-bold text-sm sm:text-base">{cuenta.divisa} {formatCurrency(valorActual)}</div>
+                            <div className="space-y-1">
+                              <div className="text-xs text-muted-foreground">
+                                Inicial: {cuenta.divisa} {formatCurrency(cuenta.saldoInicial)}
+                              </div>
+                              <div className="font-bold text-base sm:text-lg">
+                                {cuenta.divisa} {formatCurrency(valorActual)}
+                              </div>
+                              <div className={`text-xs font-medium flex items-center gap-1 ${getRendimientoColor(rendimiento)}`}>
+                                {getRendimientoIcon(rendimiento)}
+                                {rendimiento >= 0 ? '+' : ''}{formatCurrency(Math.abs(rendimiento))} ({porcentaje >= 0 ? '+' : ''}{porcentaje.toFixed(2)}%)
+                              </div>
+                            </div>
                             {cuenta.rendimiento_neto ? (
-                              <div className="text-xs text-muted-foreground space-y-1">
+                              <div className="text-xs text-muted-foreground space-y-1 mt-2">
                                 <div className="hidden sm:block">
                                   {cuenta.rendimiento_neto}% mensual NETO | {rendimientoAnualizado.toFixed(2)}% anual
                                 </div>
@@ -288,7 +299,7 @@ const Inversiones = (): JSX.Element => {
                                 </div>
                               </div>
                             ) : (
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-xs text-muted-foreground mt-2">
                                 {rendimientoAnualizado.toFixed(2)}% anual
                               </div>
                             )}
