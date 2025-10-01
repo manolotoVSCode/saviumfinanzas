@@ -918,7 +918,7 @@ export const useFinanceDataSupabase = () => {
     }
   };
 
-  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string }) => {
+  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string; targetAccountType: 'Aportación' | 'Retiro' }) => {
     try {
       // Obtener el usuario actual
       const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -946,13 +946,19 @@ export const useFinanceDataSupabase = () => {
 
       // Si hay aportación automática, crear transacción adicional
       if (autoContribution && autoContribution.targetAccountId) {
+        // Encontrar la categoría del tipo seleccionado
+        const targetCategory = categories.find(cat => 
+          cat.tipo === autoContribution.targetAccountType && 
+          cat.categoria.toLowerCase().includes('sin asignar')
+        );
+
         const autoContribData = {
           cuenta_id: autoContribution.targetAccountId,
           fecha: transaction.fecha.toISOString().split('T')[0],
-          comentario: `Aportación automática: ${transaction.comentario}`,
-          ingreso: transaction.gasto, // El gasto se convierte en aportación
-          gasto: 0,
-          subcategoria_id: transaction.subcategoriaId,
+          comentario: `${autoContribution.targetAccountType} automática: ${transaction.comentario}`,
+          ingreso: autoContribution.targetAccountType === 'Aportación' ? transaction.gasto : 0,
+          gasto: autoContribution.targetAccountType === 'Retiro' ? transaction.gasto : 0,
+          subcategoria_id: targetCategory?.id || transaction.subcategoriaId,
           divisa: transaction.divisa || 'MXN',
           user_id: userData.user.id
         };
@@ -1024,7 +1030,7 @@ export const useFinanceDataSupabase = () => {
     }
   };
 
-  const updateTransaction = async (id: string, transaction: Partial<Transaction>, autoContribution?: { targetAccountId: string }) => {
+  const updateTransaction = async (id: string, transaction: Partial<Transaction>, autoContribution?: { targetAccountId: string; targetAccountType: 'Aportación' | 'Retiro' }) => {
     try {
       // Obtener el usuario actual
       const { data: userData, error: userError } = await supabase.auth.getUser();

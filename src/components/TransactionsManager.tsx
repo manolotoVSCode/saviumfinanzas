@@ -20,8 +20,8 @@ interface TransactionsManagerProps {
   transactions: Transaction[];
   accounts: Account[];
   categories: Category[];
-  onAddTransaction: (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string }) => void;
-  onUpdateTransaction: (id: string, updates: Partial<Transaction>, autoContribution?: { targetAccountId: string }) => void;
+  onAddTransaction: (transaction: Omit<Transaction, 'id' | 'monto'>, autoContribution?: { targetAccountId: string; targetAccountType: 'Aportación' | 'Retiro' }) => void;
+  onUpdateTransaction: (id: string, updates: Partial<Transaction>, autoContribution?: { targetAccountId: string; targetAccountType: 'Aportación' | 'Retiro' }) => void;
   onDeleteTransaction: (id: string) => void;
   onClearAllTransactions: () => void;
 }
@@ -104,7 +104,8 @@ export const TransactionsManager = ({
 
   const [autoContribution, setAutoContribution] = useState({
     enabled: false,
-    targetAccountId: ''
+    targetAccountId: '',
+    targetAccountType: 'Aportación' as 'Aportación' | 'Retiro'
   });
 
   const [categoryTypeFilter, setCategoryTypeFilter] = useState<string>('all');
@@ -203,7 +204,8 @@ export const TransactionsManager = ({
     });
     setAutoContribution({
       enabled: false,
-      targetAccountId: ''
+      targetAccountId: '',
+      targetAccountType: 'Aportación'
     });
     setCategoryTypeFilter('all');
     setEditingTransaction(null);
@@ -213,7 +215,7 @@ export const TransactionsManager = ({
   const openNewTransaction = () => {
     setEditingTransaction(null);
     setCategoryTypeFilter('all');
-    setAutoContribution({ enabled: false, targetAccountId: '' });
+    setAutoContribution({ enabled: false, targetAccountId: '', targetAccountType: 'Aportación' });
     setFormData({
       cuentaId: '',
       fecha: new Date().toISOString().split('T')[0],
@@ -250,12 +252,12 @@ export const TransactionsManager = ({
 
     if (editingTransaction) {
       const autoContrib = autoContribution.enabled && autoContribution.targetAccountId 
-        ? { targetAccountId: autoContribution.targetAccountId }
+        ? { targetAccountId: autoContribution.targetAccountId, targetAccountType: autoContribution.targetAccountType }
         : undefined;
       onUpdateTransaction(editingTransaction.id, transactionData, autoContrib);
     } else {
       const autoContrib = autoContribution.enabled && autoContribution.targetAccountId 
-        ? { targetAccountId: autoContribution.targetAccountId }
+        ? { targetAccountId: autoContribution.targetAccountId, targetAccountType: autoContribution.targetAccountType }
         : undefined;
       onAddTransaction(transactionData, autoContrib);
     }
@@ -282,7 +284,8 @@ export const TransactionsManager = ({
     // Resetear aportación automática al editar
     setAutoContribution({
       enabled: false,
-      targetAccountId: ''
+      targetAccountId: '',
+      targetAccountType: 'Aportación'
     });
     
     setEditingTransaction(transaction);
@@ -629,32 +632,51 @@ export const TransactionsManager = ({
                   </div>
 
                   {autoContribution.enabled && (
-                    <div className="mt-2">
-                      <Label htmlFor="targetAccount">Cuenta destino</Label>
-                      <Select 
-                        value={autoContribution.targetAccountId} 
-                        onValueChange={(value) => 
-                          setAutoContribution({ ...autoContribution, targetAccountId: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona cuenta destino" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {accounts
-                            .filter(account => account.id !== formData.cuentaId)
-                            .map((account) => (
-                            <SelectItem key={account.id} value={account.id}>
-                              {account.nombre} ({account.divisa})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {editingTransaction && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Al editar, se creará una nueva transacción automática adicional
-                        </p>
-                      )}
+                    <div className="mt-2 space-y-2">
+                      <div>
+                        <Label htmlFor="targetAccountType">Tipo de transacción en cuenta destino</Label>
+                        <Select 
+                          value={autoContribution.targetAccountType} 
+                          onValueChange={(value: 'Aportación' | 'Retiro') => 
+                            setAutoContribution({ ...autoContribution, targetAccountType: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Aportación">Aportación</SelectItem>
+                            <SelectItem value="Retiro">Retiro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="targetAccount">Cuenta destino</Label>
+                        <Select 
+                          value={autoContribution.targetAccountId} 
+                          onValueChange={(value) => 
+                            setAutoContribution({ ...autoContribution, targetAccountId: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona cuenta destino" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accounts
+                              .filter(account => account.id !== formData.cuentaId)
+                              .map((account) => (
+                              <SelectItem key={account.id} value={account.id}>
+                                {account.nombre} ({account.divisa})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {editingTransaction && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Al editar, se creará una nueva transacción automática adicional
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
