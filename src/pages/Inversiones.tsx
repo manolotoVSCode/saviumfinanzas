@@ -44,22 +44,9 @@ const Inversiones = (): JSX.Element => {
   );
 
   const calcularValorActualReinversion = (cuenta: Account): number => {
-    // Si no es modalidad de reinversión, devolver el valor actual normal
-    if (cuenta.modalidad !== 'Reinversión' || !cuenta.rendimiento_neto || !cuenta.fecha_inicio) {
-      return cuenta.valorMercado || cuenta.saldoActual;
-    }
-    
-    const fechaInicio = new Date(cuenta.fecha_inicio);
-    const fechaActual = new Date();
-    const mesesTranscurridos = Math.floor((fechaActual.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)); // Promedio de días por mes
-    
-    if (mesesTranscurridos <= 0) return cuenta.saldoInicial;
-    
-    // Calcular valor con interés compuesto mensual
-    const rendimientoDecimal = cuenta.rendimiento_neto / 100;
-    const valorConReinversion = cuenta.saldoInicial * Math.pow(1 + rendimientoDecimal, mesesTranscurridos);
-    
-    return valorConReinversion;
+    // Usar siempre el saldoActual de la cuenta, que incluye todas las aportaciones
+    // El saldoActual se actualiza automáticamente con las transacciones de aportación
+    return cuenta.valorMercado || cuenta.saldoActual;
   };
 
   const calcularRendimientoAnualizado = (cuenta: Account): number => {
