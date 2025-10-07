@@ -715,6 +715,19 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </CardContent>
       </Card>
 
+      {/* Nota explicativa de la gráfica */}
+      <Card className="bg-muted/30 border-muted -mt-2">
+        <CardContent className="pt-4 pb-3">
+          <div className="flex gap-2">
+            <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              <strong>Nota:</strong> La gráfica no incluye reembolsos en ingresos, pero el mismo monto está descontado de gastos. 
+              La categoría "Compra Venta Inmuebles" tampoco está incluida.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* RESUMEN MENSUAL */}
       <div className="mb-4">
         <h2 className="text-xl font-semibold text-center">{t('dashboard.summary_month')} ({new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })})</h2>

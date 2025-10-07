@@ -475,15 +475,20 @@ export const useFinanceDataSupabase = () => {
       const monthTransactions = enrichedTransactions.filter(t => t.fecha >= monthStart && t.fecha <= monthEnd);
       
       // Convertir todos los ingresos y gastos a MXN para el dashboard
+      // Excluir reembolsos y "Compra Venta Inmuebles"
       const reembolsosMes = monthTransactions
         .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
         .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
       
       const ingresos = monthTransactions
-        .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+        .filter(t => 
+          t.tipo === 'Ingreso' && 
+          !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') &&
+          t.categoria !== 'Compra Venta Inmuebles'
+        )
         .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
       const gastos = monthTransactions
-        .filter(t => t.tipo === 'Gastos')
+        .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
         .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMes;
       
       tendenciaMensual.push({
