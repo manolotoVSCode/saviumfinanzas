@@ -371,40 +371,55 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   return (
     <div className="space-y-6 animate-fade-in">
       {/* MEDIAS DE ÚLTIMOS 6 MESES */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base text-primary flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Media Ingresos (6 meses)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold text-primary">
-                {formatCurrencyTotals(metrics.mediaIngresosUltimos12Meses, 'MXN')}
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base text-primary flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Media Ingresos (6 meses)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="text-2xl font-bold text-primary">
+                  {formatCurrencyTotals(metrics.mediaIngresosUltimos12Meses, 'MXN')}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Promedio mensual (excl. mes actual y Compra Venta Inmuebles)
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Promedio mensual (excl. mes actual y Compra Venta Inmuebles)
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base text-destructive flex items-center gap-2">
-              <TrendingDown className="h-5 w-5" />
-              Media Gastos (6 meses)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold text-destructive">
-                {formatCurrencyTotals(metrics.mediaGastosUltimos12Meses, 'MXN')}
+          <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base text-destructive flex items-center gap-2">
+                <TrendingDown className="h-5 w-5" />
+                Media Gastos (6 meses)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="text-2xl font-bold text-destructive">
+                  {formatCurrencyTotals(metrics.mediaGastosUltimos12Meses, 'MXN')}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Promedio mensual (excl. mes actual y Compra Venta Inmuebles)
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Promedio mensual (excl. mes actual y Compra Venta Inmuebles)
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Card className="bg-muted/30 border-muted">
+          <CardContent className="pt-4">
+            <div className="flex gap-2">
+              <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong>Nota:</strong> Los reembolsos no se incluyen en los ingresos, pero el mismo monto está descontado de los gastos. 
+                La categoría "Compra Venta Inmuebles" no está incluida, aun siendo gastos e ingresos reales, 
+                porque desajustan el control y la media mensual.
               </p>
             </div>
           </CardContent>
