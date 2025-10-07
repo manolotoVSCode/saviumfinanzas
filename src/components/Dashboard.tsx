@@ -370,13 +370,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* MEDIAS DE ÚLTIMOS 12 MESES */}
+      {/* MEDIAS DE ÚLTIMOS 6 MESES */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
           <CardHeader className="pb-3">
             <CardTitle className="text-base text-primary flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Media Ingresos (12 meses)
+              Media Ingresos (6 meses)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -385,7 +385,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 {formatCurrencyTotals(metrics.mediaIngresosUltimos12Meses, 'MXN')}
               </div>
               <p className="text-xs text-muted-foreground">
-                Promedio mensual de ingresos sin reembolsos
+                Promedio mensual (excl. mes actual y Compra Venta Inmuebles)
               </p>
             </div>
           </CardContent>
@@ -395,7 +395,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           <CardHeader className="pb-3">
             <CardTitle className="text-base text-destructive flex items-center gap-2">
               <TrendingDown className="h-5 w-5" />
-              Media Gastos (11 meses)
+              Media Gastos (6 meses)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -404,7 +404,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 {formatCurrencyTotals(metrics.mediaGastosUltimos12Meses, 'MXN')}
               </div>
               <p className="text-xs text-muted-foreground">
-                Promedio mensual de gastos (excl. mes actual)
+                Promedio mensual (excl. mes actual y Compra Venta Inmuebles)
               </p>
             </div>
           </CardContent>

@@ -493,14 +493,45 @@ export const useFinanceDataSupabase = () => {
       });
     }
     
-    // MEDIA DE INGRESOS Y GASTOS DE LOS ÚLTIMOS 12 MESES
-    // Media de ingresos: últimos 12 meses sin reembolsos
-    const mediaIngresosUltimos12Meses = tendenciaMensual.reduce((sum, m) => sum + m.ingresos, 0) / 12;
+    // MEDIA DE INGRESOS Y GASTOS DE LOS ÚLTIMOS 6 MESES (excluyendo mes actual)
+    // Calcular para los últimos 6 meses completos (del mes -6 al mes -1, sin incluir el actual)
+    const tendenciaUltimos6Meses = [];
+    for (let i = 6; i >= 1; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      
+      const monthTransactions = enrichedTransactions.filter(t => t.fecha >= monthStart && t.fecha <= monthEnd);
+      
+      // Excluir reembolsos y "Compra Venta Inmuebles"
+      const reembolsosMes = monthTransactions
+        .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      
+      const ingresos = monthTransactions
+        .filter(t => 
+          t.tipo === 'Ingreso' && 
+          !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') &&
+          t.categoria !== 'Compra Venta Inmuebles'
+        )
+        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+        
+      const gastos = monthTransactions
+        .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
+        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMes;
+      
+      tendenciaUltimos6Meses.push({ ingresos, gastos });
+    }
     
-    // Media de gastos: últimos 12 meses EXCLUYENDO el mes actual
-    const tendenciaSinMesActual = tendenciaMensual.slice(0, -1); // Excluir el último mes (mes actual)
-    const mediaGastosUltimos12Meses = tendenciaSinMesActual.length > 0 
-      ? tendenciaSinMesActual.reduce((sum, m) => sum + m.gastos, 0) / tendenciaSinMesActual.length
+    // Media de ingresos: últimos 6 meses completos sin mes actual, sin reembolsos, sin "Compra Venta Inmuebles"
+    const mediaIngresosUltimos12Meses = tendenciaUltimos6Meses.length > 0
+      ? tendenciaUltimos6Meses.reduce((sum, m) => sum + m.ingresos, 0) / tendenciaUltimos6Meses.length
+      : 0;
+    
+    // Media de gastos: últimos 6 meses completos sin mes actual, sin "Compra Venta Inmuebles"
+    const mediaGastosUltimos12Meses = tendenciaUltimos6Meses.length > 0 
+      ? tendenciaUltimos6Meses.reduce((sum, m) => sum + m.gastos, 0) / tendenciaUltimos6Meses.length
       : 0;
     
     // INVERSIONES DETALLADAS (considerando saldo inicial)
