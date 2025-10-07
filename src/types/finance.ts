@@ -130,6 +130,10 @@ export interface DashboardMetrics {
   cuentasResumen: Array<{ cuenta: string; saldo: number; tipo: AccountType }>;
   tendenciaMensual: Array<{ mes: string; ingresos: number; gastos: number }>;
   
+  // Media de últimos 12 meses
+  mediaIngresosUltimos12Meses: number;
+  mediaGastosUltimos12Meses: number;
+  
   // Métricas de inversiones
   inversionesResumen: {
     totalInversiones: number;

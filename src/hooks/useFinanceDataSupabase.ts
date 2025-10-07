@@ -493,6 +493,16 @@ export const useFinanceDataSupabase = () => {
       });
     }
     
+    // MEDIA DE INGRESOS Y GASTOS DE LOS ÚLTIMOS 12 MESES
+    // Media de ingresos: últimos 12 meses sin reembolsos
+    const mediaIngresosUltimos12Meses = tendenciaMensual.reduce((sum, m) => sum + m.ingresos, 0) / 12;
+    
+    // Media de gastos: últimos 12 meses EXCLUYENDO el mes actual
+    const tendenciaSinMesActual = tendenciaMensual.slice(0, -1); // Excluir el último mes (mes actual)
+    const mediaGastosUltimos12Meses = tendenciaSinMesActual.length > 0 
+      ? tendenciaSinMesActual.reduce((sum, m) => sum + m.gastos, 0) / tendenciaSinMesActual.length
+      : 0;
+    
     // INVERSIONES DETALLADAS (considerando saldo inicial)
     const cuentasInversionIds = accountsWithBalances.filter(a => a.tipo === 'Inversiones').map(a => a.id);
     const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => {
@@ -612,6 +622,10 @@ export const useFinanceDataSupabase = () => {
       })),
       
       tendenciaMensual,
+      
+      // Media de últimos 12 meses
+      mediaIngresosUltimos12Meses,
+      mediaGastosUltimos12Meses,
       
       // Métricas de inversiones
       inversionesResumen: {
