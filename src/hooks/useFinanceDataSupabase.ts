@@ -258,10 +258,10 @@ export const useFinanceDataSupabase = () => {
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     
     const ingresosMes = transactionsThisMonth
-      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosMes = transactionsThisMonth
-      .filter(t => t.tipo === 'Gastos')
+      .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMes;
     const balanceMes = ingresosMes - gastosMes;
     
@@ -271,10 +271,10 @@ export const useFinanceDataSupabase = () => {
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     
     const ingresosMesAnterior = transactionsPreviousMonth
-      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosMesAnterior = transactionsPreviousMonth
-      .filter(t => t.tipo === 'Gastos')
+      .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMesAnterior;
     const balanceMesAnterior = ingresosMesAnterior - gastosMesAnterior;
     
@@ -284,10 +284,10 @@ export const useFinanceDataSupabase = () => {
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     
     const ingresosAnio = transactionsThisYear
-      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosAnio = transactionsThisYear
-      .filter(t => t.tipo === 'Gastos')
+      .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosAnio;
     const balanceAnio = ingresosAnio - gastosAnio;
     
@@ -297,10 +297,10 @@ export const useFinanceDataSupabase = () => {
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     
     const ingresosAnioAnterior = transactionsLastYear
-      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosAnioAnterior = transactionsLastYear
-      .filter(t => t.tipo === 'Gastos')
+      .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosAnioAnterior;
     const balanceAnioAnterior = ingresosAnioAnterior - gastosAnioAnterior;
     
