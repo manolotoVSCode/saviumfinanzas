@@ -355,8 +355,8 @@ export const useFinanceDataSupabase = () => {
       }, 0),
       total: 0
     };
-    // TOTAL ACTIVOS = efectivo + inversiones + bienes raíces (SIN empresas privadas)
-    activos.total = activos.efectivoBancos + activos.inversiones + activos.bienRaiz;
+    // TOTAL ACTIVOS = efectivo + inversiones + bienes raíces + empresas privadas
+    activos.total = activos.efectivoBancos + activos.inversiones + activos.bienRaiz + activos.empresasPrivadas;
     
     // PASIVOS DETALLADOS POR MONEDA
     const pasivosPorMoneda = {

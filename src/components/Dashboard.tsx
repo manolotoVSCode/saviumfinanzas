@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart } from 'recharts';
@@ -437,61 +438,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Mostrar categorías por moneda - solo Efectivo/Bancos e Inversiones */}
-              {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
-                const formatNumberOnly = (amount: number) => {
-                  return new Intl.NumberFormat('es-MX', {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  }).format(amount);
-                };
-
-                const hasAssets = activos.efectivoBancos > 0 || activos.inversiones > 0 || activos.bienRaiz > 0;
-                
-                if (!hasAssets) return null;
-
-                return (
-                   <div key={moneda} className="space-y-3">
-                     {activos.efectivoBancos > 0 && (
-                        <div className="p-4 rounded-lg bg-success/5 border border-success/20">
-                          <div className="flex justify-between items-center mb-2">
-                             <span className="text-sm text-muted-foreground">{t('dashboard.cash_banks')}</span>
-                             <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {t('dashboard.available_immediately')}
-                          </div>
-                       </div>
-                     )}
-                     
-                     {activos.inversiones > 0 && (
-                        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                          <div className="flex justify-between items-center mb-2">
-                             <span className="text-sm text-muted-foreground">{t('dashboard.investments_label')}</span>
-                             <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {t('dashboard.funds_stocks_etfs')}
-                          </div>
-                       </div>
-                      )}
-                      
-                      {activos.bienRaiz > 0 && (
-                         <div className="p-4 rounded-lg bg-warning/5 border border-warning/20">
-                           <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm text-muted-foreground">Bienes Raíces</span>
-                              <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
-                           </div>
-                           <div className="text-xs text-muted-foreground">
-                             Propiedades y terrenos
-                           </div>
-                        </div>
-                      )}
-                      
-                    </div>
-                );
-              })}
-              
+              {/* Total principal */}
               <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
                 <div className="flex justify-between items-center">
                     <span className="font-semibold text-success">{t('dashboard.total_assets')}</span>
@@ -499,18 +446,96 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 </div>
               </div>
 
-              {/* Empresas Privadas después del total */}
-              {metrics.activos.empresasPrivadas > 0 && (
-                 <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                   <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-muted-foreground">Empresas Privadas</span>
-                      <span className="font-bold text-primary">{new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(metrics.activos.empresasPrivadas)} MXN</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Participaciones en empresas propias
-                  </div>
+              {/* Total excluyendo Bienes Raíces y Empresas Privadas */}
+              <div className="p-4 rounded-lg bg-success/5 border border-success/20">
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Total Líquido</span>
+                    <span className="text-lg font-bold text-success">
+                      {formatCurrencyTotals(metrics.activos.efectivoBancos + metrics.activos.inversiones, 'MXN')}
+                    </span>
                 </div>
-              )}
+                <div className="text-xs text-muted-foreground mt-1">
+                  Excluyendo Bienes Raíces y Empresas Privadas
+                </div>
+              </div>
+
+              {/* Desglose colapsable */}
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="assets-detail" className="border-success/20">
+                  <AccordionTrigger className="text-sm text-success hover:text-success/80 hover:no-underline">
+                    Ver desglose de activos
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 pt-2">
+                      {/* Mostrar categorías por moneda */}
+                      {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
+                        const formatNumberOnly = (amount: number) => {
+                          return new Intl.NumberFormat('es-MX', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format(amount);
+                        };
+
+                        const hasAssets = activos.efectivoBancos > 0 || activos.inversiones > 0 || activos.bienRaiz > 0 || activos.empresasPrivadas > 0;
+                        
+                        if (!hasAssets) return null;
+
+                        return (
+                           <div key={moneda} className="space-y-3">
+                             {activos.efectivoBancos > 0 && (
+                                <div className="p-4 rounded-lg bg-success/5 border border-success/20">
+                                  <div className="flex justify-between items-center mb-2">
+                                     <span className="text-sm text-muted-foreground">{t('dashboard.cash_banks')}</span>
+                                     <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {t('dashboard.available_immediately')}
+                                  </div>
+                               </div>
+                             )}
+                             
+                             {activos.inversiones > 0 && (
+                                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                                  <div className="flex justify-between items-center mb-2">
+                                     <span className="text-sm text-muted-foreground">{t('dashboard.investments_label')}</span>
+                                     <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {t('dashboard.funds_stocks_etfs')}
+                                  </div>
+                               </div>
+                              )}
+
+                              {activos.empresasPrivadas > 0 && (
+                                 <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
+                                   <div className="flex justify-between items-center mb-2">
+                                      <span className="text-sm text-muted-foreground">Empresas Privadas</span>
+                                      <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Participaciones en empresas propias
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {activos.bienRaiz > 0 && (
+                                 <div className="p-4 rounded-lg bg-warning/5 border border-warning/20">
+                                   <div className="flex justify-between items-center mb-2">
+                                      <span className="text-sm text-muted-foreground">Bienes Raíces</span>
+                                      <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
+                                   </div>
+                                   <div className="text-xs text-muted-foreground">
+                                     Propiedades y terrenos
+                                   </div>
+                                </div>
+                              )}
+                            </div>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </CardContent>
         </Card>
@@ -524,60 +549,73 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-               {/* Mostrar categorías por moneda - separando cada cuenta */}
-               {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
-                 const formatNumberOnly = (amount: number) => {
-                   return new Intl.NumberFormat('es-MX', {
-                     minimumFractionDigits: 0,
-                     maximumFractionDigits: 0,
-                   }).format(amount);
-                 };
-
-                 // Filtrar cuentas de tarjetas de crédito por moneda
-                 const tarjetasCredito = accounts.filter(cuenta => 
-                   cuenta.tipo === 'Tarjeta de Crédito' && cuenta.divisa === moneda
-                 );
-
-                 const hasLiabilities = tarjetasCredito.length > 0 || pasivos.hipoteca > 0;
-                 
-                 if (!hasLiabilities) return null;
-
-                 return (
-                   <div key={moneda} className="space-y-3">
-                     {/* Mostrar cada tarjeta de crédito por separado */}
-                     {tarjetasCredito.map(cuenta => (
-                        <div key={cuenta.id} className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                           <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm text-muted-foreground">{cuenta.nombre}</span>
-                              <span className="font-bold text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
-                          </div>
-                         <div className="text-xs text-muted-foreground">
-                           Tarjeta de Crédito
-                         </div>
-                       </div>
-                     ))}
-                    
-                    {pasivos.hipoteca > 0 && (
-                       <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                         <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-muted-foreground">Hipoteca</span>
-                            <span className="font-bold text-destructive">{formatNumberOnly(pasivos.hipoteca)} {moneda}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Saldo pendiente del préstamo hipotecario
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              
+              {/* Total principal */}
               <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
                 <div className="flex justify-between items-center">
                     <span className="font-semibold text-destructive">{t('dashboard.total_liabilities')}</span>
                     <span className="text-xl font-bold text-destructive">{formatCurrencyTotals(metrics.pasivos.total, 'MXN')}</span>
                 </div>
               </div>
+
+              {/* Desglose colapsable */}
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="liabilities-detail" className="border-destructive/20">
+                  <AccordionTrigger className="text-sm text-destructive hover:text-destructive/80 hover:no-underline">
+                    Ver desglose de pasivos
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 pt-2">
+                      {/* Mostrar categorías por moneda - separando cada cuenta */}
+                      {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
+                        const formatNumberOnly = (amount: number) => {
+                          return new Intl.NumberFormat('es-MX', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format(amount);
+                        };
+
+                        // Filtrar cuentas de tarjetas de crédito por moneda
+                        const tarjetasCredito = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Tarjeta de Crédito' && cuenta.divisa === moneda
+                        );
+
+                        const hasLiabilities = tarjetasCredito.length > 0 || pasivos.hipoteca > 0;
+                        
+                        if (!hasLiabilities) return null;
+
+                        return (
+                          <div key={moneda} className="space-y-3">
+                            {/* Mostrar cada tarjeta de crédito por separado */}
+                            {tarjetasCredito.map(cuenta => (
+                               <div key={cuenta.id} className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                                  <div className="flex justify-between items-center mb-2">
+                                     <span className="text-sm text-muted-foreground">{cuenta.nombre}</span>
+                                     <span className="font-bold text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
+                                 </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Tarjeta de Crédito
+                                </div>
+                              </div>
+                            ))}
+                           
+                           {pasivos.hipoteca > 0 && (
+                              <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                                <div className="flex justify-between items-center mb-2">
+                                   <span className="text-sm text-muted-foreground">Hipoteca</span>
+                                   <span className="font-bold text-destructive">{formatNumberOnly(pasivos.hipoteca)} {moneda}</span>
+                               </div>
+                               <div className="text-xs text-muted-foreground">
+                                 Saldo pendiente del préstamo hipotecario
+                               </div>
+                             </div>
+                           )}
+                         </div>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </CardContent>
         </Card>
