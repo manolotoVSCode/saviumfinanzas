@@ -67,12 +67,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       return tDate.getFullYear() === now.getFullYear() - 1;
     });
     
-    // Cálculos del mes anterior (excluyendo aportaciones de ingresos y retiros de gastos)
+    // Cálculos del mes anterior (excluyendo aportaciones de ingresos y retiros de gastos, y "Compra Venta Inmuebles")
     const ingresosMes = lastMonthTransactions
-      .filter(t => t.tipo === 'Ingreso')
+      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMes = lastMonthTransactions
-      .filter(t => t.tipo === 'Gastos')
+      .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.gasto, 0);
     
     // Calcular reembolsos del mes anterior
@@ -88,12 +88,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const ingresosAjustadosMes = ingresosMes - reembolsosMes;
     const gastosAjustadosMes = gastosMes - reembolsosMes;
     
-    // Cálculos de dos meses atrás (para comparativo - excluyendo aportaciones y retiros)
+    // Cálculos de dos meses atrás (para comparativo - excluyendo aportaciones y retiros, y "Compra Venta Inmuebles")
     const ingresosMesAnterior = twoMonthsAgoTransactions
-      .filter(t => t.tipo === 'Ingreso')
+      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMesAnterior = twoMonthsAgoTransactions
-      .filter(t => t.tipo === 'Gastos')
+      .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.gasto, 0);
     
     // Calcular reembolsos de dos meses atrás
@@ -109,12 +109,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const ingresosAjustadosMesAnterior = ingresosMesAnterior - reembolsosMesAnterior;
     const gastosAjustadosMesAnterior = gastosMesAnterior - reembolsosMesAnterior;
     
-    // Cálculos del año actual (excluyendo aportaciones de ingresos y retiros de gastos)
+    // Cálculos del año actual (excluyendo aportaciones de ingresos y retiros de gastos, y "Compra Venta Inmuebles")
     const ingresosAnio = yearTransactions
-      .filter(t => t.tipo === 'Ingreso')
+      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnio = yearTransactions
-      .filter(t => t.tipo === 'Gastos')
+      .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.gasto, 0);
     
     // Calcular reembolsos del año actual
@@ -130,12 +130,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const ingresosAjustadosAnio = ingresosAnio - reembolsosAnio;
     const gastosAjustadosAnio = gastosAnio - reembolsosAnio;
     
-    // Cálculos del año anterior (para comparativo - excluyendo aportaciones y retiros)
+    // Cálculos del año anterior (para comparativo - excluyendo aportaciones y retiros, y "Compra Venta Inmuebles")
     const ingresosAnioAnterior = lastYearTransactions
-      .filter(t => t.tipo === 'Ingreso')
+      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnioAnterior = lastYearTransactions
-      .filter(t => t.tipo === 'Gastos')
+      .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.gasto, 0);
     
     // Calcular reembolsos del año anterior
@@ -175,12 +175,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       console.log(`=== DEBUG ${mesLabel} ${selectedCurrency} ===`);
       console.log('Transacciones del mes:', monthTrans.length);
       
-      // Filtrar solo transacciones no aportaciones para ingresos y gastos regulares
+      // Filtrar solo transacciones no aportaciones para ingresos y gastos regulares, excluyendo "Compra Venta Inmuebles"
       const ingresos = monthTrans
-        .filter(t => t.tipo === 'Ingreso')
+        .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
         .reduce((sum, t) => sum + t.ingreso, 0);
       const gastos = Math.abs(monthTrans
-        .filter(t => t.tipo === 'Gastos')
+        .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
         .reduce((sum, t) => sum + t.gasto, 0));
       
       // Calcular reembolsos del mes (solo ingresos que contengan "reembolso")
