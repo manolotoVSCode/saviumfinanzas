@@ -149,6 +149,69 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_health_history: {
+        Row: {
+          activos_total: number | null
+          ahorro_ratio: number | null
+          ahorro_score: number
+          balance_mensual: number | null
+          created_at: string
+          diversificacion_score: number
+          endeudamiento_ratio: number | null
+          endeudamiento_score: number
+          fecha: string
+          id: string
+          liquidez_ratio: number | null
+          liquidez_score: number
+          pasivos_total: number | null
+          rendimiento_inversiones: number | null
+          rendimiento_inversiones_score: number
+          score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activos_total?: number | null
+          ahorro_ratio?: number | null
+          ahorro_score: number
+          balance_mensual?: number | null
+          created_at?: string
+          diversificacion_score: number
+          endeudamiento_ratio?: number | null
+          endeudamiento_score: number
+          fecha: string
+          id?: string
+          liquidez_ratio?: number | null
+          liquidez_score: number
+          pasivos_total?: number | null
+          rendimiento_inversiones?: number | null
+          rendimiento_inversiones_score: number
+          score: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activos_total?: number | null
+          ahorro_ratio?: number | null
+          ahorro_score?: number
+          balance_mensual?: number | null
+          created_at?: string
+          diversificacion_score?: number
+          endeudamiento_ratio?: number | null
+          endeudamiento_score?: number
+          fecha?: string
+          id?: string
+          liquidez_ratio?: number | null
+          liquidez_score?: number
+          pasivos_total?: number | null
+          rendimiento_inversiones?: number | null
+          rendimiento_inversiones_score?: number
+          score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       inversiones: {
         Row: {
           created_at: string

@@ -107,9 +107,40 @@ export interface DashboardMetrics {
   
   // Score de salud financiera
   saludFinanciera: {
-    score: number; // 0-10
+    score: number; // 0-100
     nivel: 'Excelente' | 'Buena' | 'Regular' | 'Mejorable' | 'Crítica';
     descripcion: string;
+    detalles?: {
+      liquidez: {
+        puntos: number;
+        maxPuntos: number;
+        ratio: number;
+        mesesCobertura: string;
+      };
+      ahorro: {
+        puntos: number;
+        maxPuntos: number;
+        ratio: number;
+        porcentaje: string;
+      };
+      endeudamiento: {
+        puntos: number;
+        maxPuntos: number;
+        ratio: number;
+        porcentaje: string;
+      };
+      rendimientoInversiones: {
+        puntos: number;
+        maxPuntos: number;
+        rendimiento: number;
+        porcentaje: string;
+      };
+      diversificacion: {
+        puntos: number;
+        maxPuntos: number;
+        tiposActivos: string[];
+      };
+    };
   };
   
   // Distribución de activos y pasivos
