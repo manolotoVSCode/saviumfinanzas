@@ -312,22 +312,29 @@ export const useFinanceDataSupabase = () => {
     const variacionBalanceAnual = balanceAnioAnterior !== 0 ? ((balanceAnio - balanceAnioAnterior) / Math.abs(balanceAnioAnterior)) * 100 : 0;
     
     // ACTIVOS DETALLADOS POR MONEDA
+    // Helper para obtener el valor actual de inversiones (valorMercado si está disponible, sino saldoActual)
+    const getValorActualInversion = (cuenta: Account) => {
+      return cuenta.valorMercado !== undefined && cuenta.valorMercado !== null 
+        ? cuenta.valorMercado 
+        : cuenta.saldoActual;
+    };
+    
     const activosPorMoneda = {
       MXN: {
         efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
-        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
+        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + getValorActualInversion(a), 0),
         empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
         bienRaiz: accountsWithBalances.filter(a => a.tipo === 'Bien Raíz' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + a.saldoActual, 0),
       },
       USD: {
         efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
-        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
+        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'USD').reduce((s, a) => s + getValorActualInversion(a), 0),
         empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
         bienRaiz: accountsWithBalances.filter(a => a.tipo === 'Bien Raíz' && a.divisa === 'USD').reduce((s, a) => s + a.saldoActual, 0),
       },
       EUR: {
         efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
-        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
+        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'EUR').reduce((s, a) => s + getValorActualInversion(a), 0),
         empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
         bienRaiz: accountsWithBalances.filter(a => a.tipo === 'Bien Raíz' && a.divisa === 'EUR').reduce((s, a) => s + a.saldoActual, 0),
       }
