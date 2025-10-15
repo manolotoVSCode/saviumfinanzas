@@ -444,7 +444,12 @@ export const AccountsManager = ({
                   </TableCell>
                   <TableCell>{formatCurrency(account.saldoInicial, account.divisa || 'MXN')}</TableCell>
                   <TableCell className={account.saldoActual >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    {formatCurrency(account.saldoActual, account.divisa || 'MXN')}
+                    {formatCurrency(
+                      account.tipo === 'Inversiones' && account.valorMercado !== undefined 
+                        ? account.valorMercado 
+                        : account.saldoActual, 
+                      account.divisa || 'MXN'
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">

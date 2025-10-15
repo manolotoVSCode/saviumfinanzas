@@ -44,9 +44,12 @@ const Inversiones = (): JSX.Element => {
   );
 
   const calcularValorActualReinversion = (cuenta: Account): number => {
-    // Usar siempre el saldoActual de la cuenta, que se actualiza con aportaciones
-    // El saldoActual refleja el balance real incluyendo todas las transacciones
-    return cuenta.saldoActual;
+    // Usar valorMercado si está disponible, sino usar saldoActual
+    // valorMercado es el valor de mercado actualizado manualmente
+    // saldoActual refleja el balance incluyendo todas las transacciones
+    return cuenta.valorMercado !== undefined && cuenta.valorMercado !== null 
+      ? cuenta.valorMercado 
+      : cuenta.saldoActual;
   };
 
   const calcularRendimientoAnualizado = (cuenta: Account): number => {
