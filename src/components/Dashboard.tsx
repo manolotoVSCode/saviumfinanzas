@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Progress } from '@/components/ui/progress';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart } from 'recharts';
@@ -624,32 +625,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       {/* SCORE DE SALUD FINANCIERA */}
       <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {t('dashboard.financial_health')}
-            <TooltipProvider>
-              <UITooltip>
-                <TooltipTrigger>
-                  <Info className="h-4 w-4 text-muted-foreground hover:text-primary cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-sm p-3">
-                  <div className="space-y-2 text-xs">
-                    <p><strong>Cálculo del Score:</strong></p>
-                    <p>• <strong>Liquidez (20pts):</strong> Efectivo vs Gastos Mensuales</p>
-                    <p>• <strong>Ahorro (25pts):</strong> Capacidad de ahorro mensual</p>
-                    <p>• <strong>Endeudamiento (25pts):</strong> Ratio deuda/activos</p>
-                    <p>• <strong>Rendimiento (15pts):</strong> % anual inversiones</p>
-                    <p>• <strong>Diversificación (15pts):</strong> Tipos de activos</p>
-                  </div>
-                </TooltipContent>
-              </UITooltip>
-            </TooltipProvider>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Score principal */}
-            <div className="flex items-center justify-between mb-4">
-              <span className={`text-4xl font-bold ${getSaludColor(metrics.saludFinanciera.nivel)}`}>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              {t('dashboard.financial_health')}
+            </CardTitle>
+            <div className="flex items-center gap-3">
+              <span className={`text-3xl font-bold ${getSaludColor(metrics.saludFinanciera.nivel)}`}>
                 {metrics.saludFinanciera.score}
               </span>
               <Badge variant={metrics.saludFinanciera.nivel === 'Excelente' ? 'default' : 
@@ -657,105 +638,94 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 {metrics.saludFinanciera.nivel}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground mb-4">{metrics.saludFinanciera.descripcion}</p>
-            
-            {/* Desglose de factores */}
-            {metrics.saludFinanciera.detalles && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-foreground">Factores Ponderados:</h4>
-                
-                {/* Liquidez */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">💧 Liquidez ({metrics.saludFinanciera.detalles.liquidez.mesesCobertura} meses de gastos)</span>
-                    <span className="font-medium">{metrics.saludFinanciera.detalles.liquidez.puntos}/{metrics.saludFinanciera.detalles.liquidez.maxPuntos}</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all" 
-                      style={{ width: `${(metrics.saludFinanciera.detalles.liquidez.puntos / metrics.saludFinanciera.detalles.liquidez.maxPuntos) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Ahorro */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">💰 Ahorro ({metrics.saludFinanciera.detalles.ahorro.porcentaje}% del objetivo)</span>
-                    <span className="font-medium">{metrics.saludFinanciera.detalles.ahorro.puntos}/{metrics.saludFinanciera.detalles.ahorro.maxPuntos}</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-success h-2 rounded-full transition-all" 
-                      style={{ width: `${(metrics.saludFinanciera.detalles.ahorro.puntos / metrics.saludFinanciera.detalles.ahorro.maxPuntos) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Endeudamiento */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">📊 Endeudamiento ({metrics.saludFinanciera.detalles.endeudamiento.porcentaje}% deuda)</span>
-                    <span className="font-medium">{metrics.saludFinanciera.detalles.endeudamiento.puntos}/{metrics.saludFinanciera.detalles.endeudamiento.maxPuntos}</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-warning h-2 rounded-full transition-all" 
-                      style={{ width: `${(metrics.saludFinanciera.detalles.endeudamiento.puntos / metrics.saludFinanciera.detalles.endeudamiento.maxPuntos) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Rendimiento Inversiones */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">📈 Rendimiento ({metrics.saludFinanciera.detalles.rendimientoInversiones.porcentaje}% anual)</span>
-                    <span className="font-medium">{metrics.saludFinanciera.detalles.rendimientoInversiones.puntos}/{metrics.saludFinanciera.detalles.rendimientoInversiones.maxPuntos}</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-accent h-2 rounded-full transition-all" 
-                      style={{ width: `${(metrics.saludFinanciera.detalles.rendimientoInversiones.puntos / metrics.saludFinanciera.detalles.rendimientoInversiones.maxPuntos) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Diversificación */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">🎯 Diversificación ({metrics.saludFinanciera.detalles.diversificacion.tiposActivos.length} tipos)</span>
-                    <span className="font-medium">{metrics.saludFinanciera.detalles.diversificacion.puntos}/{metrics.saludFinanciera.detalles.diversificacion.maxPuntos}</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-secondary h-2 rounded-full transition-all" 
-                      style={{ width: `${(metrics.saludFinanciera.detalles.diversificacion.puntos / metrics.saludFinanciera.detalles.diversificacion.maxPuntos) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Comparativa con promedios de referencia */}
-            <div className="mt-4 p-3 bg-muted/30 border border-muted rounded-lg">
-              <h4 className="text-sm font-semibold text-foreground mb-2">📊 Referencias Recomendadas:</h4>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <p>• <strong>Liquidez:</strong> 3-6 meses de gastos (ideal)</p>
-                <p>• <strong>Ahorro:</strong> 20-30% de ingresos mensuales</p>
-                <p>• <strong>Endeudamiento:</strong> Máximo 30% de activos</p>
-                <p>• <strong>Rendimiento:</strong> 7-10% anual (largo plazo)</p>
-                <p>• <strong>Diversificación:</strong> Mínimo 3 tipos de activos</p>
-              </div>
-            </div>
-            
-            {/* Consejo financiero */}
-            <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-              <h4 className="text-sm font-semibold text-primary mb-2">💡 {t('dashboard.advice_title')}</h4>
-              <p className="text-xs text-muted-foreground">
-                {getFinancialAdvice(metrics.saludFinanciera.nivel, metrics.saludFinanciera.score)}
-              </p>
-            </div>
           </div>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="financial-health-details" className="border-none">
+              <AccordionTrigger className="hover:no-underline py-2">
+                <span className="text-sm text-muted-foreground">Ver análisis detallado</span>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <p className="text-sm text-muted-foreground">{metrics.saludFinanciera.descripcion}</p>
+                
+                {/* Desglose de factores */}
+                {metrics.saludFinanciera.detalles && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Info className="h-4 w-4" />
+                      Factores Ponderados
+                    </h4>
+                    
+                    {/* Liquidez */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">💧 Liquidez ({metrics.saludFinanciera.detalles.liquidez.mesesCobertura} meses de gastos)</span>
+                        <span className="font-medium">{metrics.saludFinanciera.detalles.liquidez.puntos}/{metrics.saludFinanciera.detalles.liquidez.maxPuntos}</span>
+                      </div>
+                      <Progress value={(metrics.saludFinanciera.detalles.liquidez.puntos / metrics.saludFinanciera.detalles.liquidez.maxPuntos) * 100} />
+                    </div>
+
+                    {/* Ahorro */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">💰 Ahorro ({metrics.saludFinanciera.detalles.ahorro.porcentaje}% del objetivo)</span>
+                        <span className="font-medium">{metrics.saludFinanciera.detalles.ahorro.puntos}/{metrics.saludFinanciera.detalles.ahorro.maxPuntos}</span>
+                      </div>
+                      <Progress value={(metrics.saludFinanciera.detalles.ahorro.puntos / metrics.saludFinanciera.detalles.ahorro.maxPuntos) * 100} className="[&>div]:bg-success" />
+                    </div>
+
+                    {/* Endeudamiento */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">📊 Endeudamiento ({metrics.saludFinanciera.detalles.endeudamiento.porcentaje}% deuda)</span>
+                        <span className="font-medium">{metrics.saludFinanciera.detalles.endeudamiento.puntos}/{metrics.saludFinanciera.detalles.endeudamiento.maxPuntos}</span>
+                      </div>
+                      <Progress value={(metrics.saludFinanciera.detalles.endeudamiento.puntos / metrics.saludFinanciera.detalles.endeudamiento.maxPuntos) * 100} className="[&>div]:bg-warning" />
+                    </div>
+
+                    {/* Rendimiento Inversiones */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">📈 Rendimiento ({metrics.saludFinanciera.detalles.rendimientoInversiones.porcentaje}% anual)</span>
+                        <span className="font-medium">{metrics.saludFinanciera.detalles.rendimientoInversiones.puntos}/{metrics.saludFinanciera.detalles.rendimientoInversiones.maxPuntos}</span>
+                      </div>
+                      <Progress value={(metrics.saludFinanciera.detalles.rendimientoInversiones.puntos / metrics.saludFinanciera.detalles.rendimientoInversiones.maxPuntos) * 100} className="[&>div]:bg-accent" />
+                    </div>
+
+                    {/* Diversificación */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">🎯 Diversificación ({metrics.saludFinanciera.detalles.diversificacion.tiposActivos.length} tipos)</span>
+                        <span className="font-medium">{metrics.saludFinanciera.detalles.diversificacion.puntos}/{metrics.saludFinanciera.detalles.diversificacion.maxPuntos}</span>
+                      </div>
+                      <Progress value={(metrics.saludFinanciera.detalles.diversificacion.puntos / metrics.saludFinanciera.detalles.diversificacion.maxPuntos) * 100} className="[&>div]:bg-secondary" />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Comparativa con promedios de referencia */}
+                <div className="p-3 bg-muted/30 border border-muted rounded-lg">
+                  <h4 className="text-sm font-semibold text-foreground mb-2">📊 Referencias Recomendadas</h4>
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    <p>• <strong>Liquidez:</strong> 3-6 meses de gastos (ideal)</p>
+                    <p>• <strong>Ahorro:</strong> 20-30% de ingresos mensuales</p>
+                    <p>• <strong>Endeudamiento:</strong> Máximo 30% de activos</p>
+                    <p>• <strong>Rendimiento:</strong> 7-10% anual (largo plazo)</p>
+                    <p>• <strong>Diversificación:</strong> Mínimo 3 tipos de activos</p>
+                  </div>
+                </div>
+                
+                {/* Consejo financiero */}
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                  <h4 className="text-sm font-semibold text-primary mb-2">💡 {t('dashboard.advice_title')}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {getFinancialAdvice(metrics.saludFinanciera.nivel, metrics.saludFinanciera.score)}
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
