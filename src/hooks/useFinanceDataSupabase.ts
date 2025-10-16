@@ -213,13 +213,13 @@ export const useFinanceDataSupabase = () => {
     let rendimientoPromedio = 0;
     let inversionesTotales = 0;
     cuentasInversiones.forEach((cuenta: any) => {
-      if (cuenta.rendimientoNeto !== null && cuenta.rendimientoNeto !== undefined) {
-        rendimientoPromedio += cuenta.rendimientoNeto;
+      if (cuenta.rendimiento_neto !== null && cuenta.rendimiento_neto !== undefined) {
+        rendimientoPromedio += cuenta.rendimiento_neto;
         inversionesTotales++;
       }
     });
     rendimientoPromedio = inversionesTotales > 0 ? rendimientoPromedio / inversionesTotales : 0;
-    console.log('Rendimiento promedio inversiones:', rendimientoPromedio);
+    console.log('Rendimiento promedio inversiones:', rendimientoPromedio, 'de', inversionesTotales, 'cuentas');
     let puntosRendimiento = 0;
     if (rendimientoPromedio >= 10) puntosRendimiento = 15; // ≥10% anual
     else if (rendimientoPromedio >= 7) puntosRendimiento = 12; // ≥7% anual
