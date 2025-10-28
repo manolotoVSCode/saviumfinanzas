@@ -118,6 +118,14 @@ export const useFinanceDataSupabase = () => {
       const accountTransactions = transactions.filter(t => t.cuentaId === account.id);
       const totalTransactions = accountTransactions.reduce((sum, t) => sum + t.monto, 0);
       
+      console.log(`[${account.nombre}] DEBUG:`, {
+        tipo: account.tipo,
+        valorMercado: account.valorMercado,
+        saldoInicial: account.saldoInicial,
+        totalTransactions,
+        numTransacciones: accountTransactions.length
+      });
+      
       // Para inversiones, usar valor_mercado si está disponible
       // Para otros tipos de cuenta, calcular basado en transacciones
       let saldoActual: number;
@@ -125,9 +133,11 @@ export const useFinanceDataSupabase = () => {
       if (account.tipo === 'Inversiones' && account.valorMercado !== undefined && account.valorMercado !== null) {
         // Para inversiones: valorMercado (valor de las inversiones en el mercado) + transacciones (aportaciones/retiros nuevos)
         saldoActual = account.valorMercado + totalTransactions;
+        console.log(`[${account.nombre}] INVERSIÓN - saldoActual = ${account.valorMercado} + ${totalTransactions} = ${saldoActual}`);
       } else {
         // Para el resto (o inversiones sin valor de mercado), calcular basado en saldo inicial + transacciones
         saldoActual = account.saldoInicial + totalTransactions;
+        console.log(`[${account.nombre}] NORMAL - saldoActual = ${account.saldoInicial} + ${totalTransactions} = ${saldoActual}`);
       }
       
       return {
