@@ -123,8 +123,8 @@ export const useFinanceDataSupabase = () => {
       let saldoActual: number;
       
       if (account.tipo === 'Inversiones' && account.valorMercado !== undefined && account.valorMercado !== null) {
-        // Para inversiones con valor de mercado definido, usar ese valor
-        saldoActual = account.valorMercado;
+        // Para inversiones con valor de mercado definido, usar ese valor + transacciones adicionales (aportaciones/retiros)
+        saldoActual = account.valorMercado + totalTransactions;
       } else {
         // Para el resto (o inversiones sin valor de mercado), calcular basado en transacciones
         saldoActual = account.saldoInicial + totalTransactions;
