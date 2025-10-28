@@ -117,9 +117,22 @@ export const useFinanceDataSupabase = () => {
     return accounts.map(account => {
       const accountTransactions = transactions.filter(t => t.cuentaId === account.id);
       const totalTransactions = accountTransactions.reduce((sum, t) => sum + t.monto, 0);
+      
+      // Para inversiones, usar valor_mercado si está disponible
+      // Para otros tipos de cuenta, calcular basado en transacciones
+      let saldoActual: number;
+      
+      if (account.tipo === 'Inversiones' && account.valorMercado !== undefined && account.valorMercado !== null) {
+        // Para inversiones con valor de mercado definido, usar ese valor
+        saldoActual = account.valorMercado;
+      } else {
+        // Para el resto (o inversiones sin valor de mercado), calcular basado en transacciones
+        saldoActual = account.saldoInicial + totalTransactions;
+      }
+      
       return {
         ...account,
-        saldoActual: account.saldoInicial + totalTransactions
+        saldoActual
       };
     });
   }, [accounts, transactions]);
