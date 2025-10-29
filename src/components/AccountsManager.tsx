@@ -326,15 +326,18 @@ export const AccountsManager = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="valor_mercado">Valor Actual</Label>
+                      <Label htmlFor="saldo_actual">Saldo Actual</Label>
                       <Input
-                        id="valor_mercado"
+                        id="saldo_actual"
                         type="number"
                         step="0.01"
-                        value={formData.valor_mercado}
-                        onChange={(e) => setFormData({ ...formData, valor_mercado: parseFloat(e.target.value) || 0 })}
-                        placeholder="0.00"
+                        value={editingAccount ? editingAccount.saldoActual : formData.saldoInicial}
+                        disabled
+                        className="bg-muted"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Saldo Inicial + Transacciones
+                      </p>
                     </div>
 
                     {formData.modalidad !== 'Reinversión' && (
