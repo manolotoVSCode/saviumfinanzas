@@ -123,6 +123,11 @@ All colors MUST be HSL.
   .hover-scale {
     @apply transition-transform duration-200 hover:scale-105;
   }
+
+  /* Collapsible chevron rotation */
+  [data-state="open"] .collapsible-chevron {
+    transform: rotate(180deg);
+  }
 }
 
 @keyframes fade-in {

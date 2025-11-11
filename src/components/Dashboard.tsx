@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
@@ -518,106 +520,134 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                            <div key={moneda} className="space-y-3">
                              {/* Efectivo/Bancos */}
                              {activos.efectivoBancos > 0 && (
-                                <div className="rounded-lg bg-success/5 border border-success/20">
+                                <Collapsible className="rounded-lg bg-success/5 border border-success/20">
                                   <div className="p-4">
-                                    <div className="flex justify-between items-center mb-2">
-                                       <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
-                                       <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mb-3">
+                                    <CollapsibleTrigger className="w-full">
+                                      <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                          <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 collapsible-chevron" />
+                                          <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
+                                        </div>
+                                        <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
+                                      </div>
+                                    </CollapsibleTrigger>
+                                    <div className="text-xs text-muted-foreground mt-2">
                                       {t('dashboard.available_immediately')}
                                     </div>
                                     {/* Cuentas individuales */}
                                     {cuentasEfectivo.length > 0 && (
-                                      <div className="space-y-2 pl-3 border-l-2 border-success/30">
-                                        {cuentasEfectivo.map(cuenta => (
-                                          <div key={cuenta.id} className="flex justify-between items-center text-xs">
-                                            <span className="text-muted-foreground">{cuenta.nombre}</span>
-                                            <span className="font-medium text-success">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
-                                          </div>
-                                        ))}
-                                      </div>
+                                      <CollapsibleContent className="mt-3">
+                                        <div className="space-y-2 pl-3 border-l-2 border-success/30">
+                                          {cuentasEfectivo.map(cuenta => (
+                                            <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                              <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                              <span className="font-medium text-success">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </CollapsibleContent>
                                     )}
                                   </div>
-                               </div>
+                               </Collapsible>
                              )}
                              
                              {/* Inversiones */}
                              {activos.inversiones > 0 && (
-                                <div className="rounded-lg bg-primary/5 border border-primary/20">
+                                <Collapsible className="rounded-lg bg-primary/5 border border-primary/20">
                                   <div className="p-4">
-                                    <div className="flex justify-between items-center mb-2">
-                                       <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
-                                       <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mb-3">
+                                    <CollapsibleTrigger className="w-full">
+                                      <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                          <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 collapsible-chevron" />
+                                          <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
+                                        </div>
+                                        <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
+                                      </div>
+                                    </CollapsibleTrigger>
+                                    <div className="text-xs text-muted-foreground mt-2">
                                       {t('dashboard.funds_stocks_etfs')}
                                     </div>
                                     {/* Cuentas individuales */}
                                     {cuentasInversion.length > 0 && (
-                                      <div className="space-y-2 pl-3 border-l-2 border-primary/30">
-                                        {cuentasInversion.map(cuenta => (
-                                          <div key={cuenta.id} className="flex justify-between items-center text-xs">
-                                            <span className="text-muted-foreground">{cuenta.nombre}</span>
-                                            <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
-                                          </div>
-                                        ))}
-                                      </div>
+                                      <CollapsibleContent className="mt-3">
+                                        <div className="space-y-2 pl-3 border-l-2 border-primary/30">
+                                          {cuentasInversion.map(cuenta => (
+                                            <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                              <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                              <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </CollapsibleContent>
                                     )}
                                   </div>
-                               </div>
+                               </Collapsible>
                               )}
 
                               {/* Empresas Privadas */}
                               {activos.empresasPrivadas > 0 && (
-                                 <div className="rounded-lg bg-accent/5 border border-accent/20">
+                                 <Collapsible className="rounded-lg bg-accent/5 border border-accent/20">
                                    <div className="p-4">
-                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
-                                        <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
-                                     </div>
-                                     <div className="text-xs text-muted-foreground mb-3">
+                                     <CollapsibleTrigger className="w-full">
+                                       <div className="flex justify-between items-center">
+                                         <div className="flex items-center gap-2">
+                                           <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 collapsible-chevron" />
+                                           <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
+                                         </div>
+                                         <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
+                                       </div>
+                                     </CollapsibleTrigger>
+                                     <div className="text-xs text-muted-foreground mt-2">
                                        Participaciones en empresas propias
                                      </div>
                                      {/* Cuentas individuales */}
                                      {cuentasEmpresas.length > 0 && (
-                                       <div className="space-y-2 pl-3 border-l-2 border-accent/30">
-                                         {cuentasEmpresas.map(cuenta => (
-                                           <div key={cuenta.id} className="flex justify-between items-center text-xs">
-                                             <span className="text-muted-foreground">{cuenta.nombre}</span>
-                                             <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
-                                           </div>
-                                         ))}
-                                       </div>
+                                       <CollapsibleContent className="mt-3">
+                                         <div className="space-y-2 pl-3 border-l-2 border-accent/30">
+                                           {cuentasEmpresas.map(cuenta => (
+                                             <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                               <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                               <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                             </div>
+                                           ))}
+                                         </div>
+                                       </CollapsibleContent>
                                      )}
                                    </div>
-                                </div>
+                                </Collapsible>
                               )}
                               
                               {/* Bienes Raíces */}
                               {activos.bienRaiz > 0 && (
-                                 <div className="rounded-lg bg-warning/5 border border-warning/20">
+                                 <Collapsible className="rounded-lg bg-warning/5 border border-warning/20">
                                    <div className="p-4">
-                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
-                                        <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
-                                     </div>
-                                     <div className="text-xs text-muted-foreground mb-3">
+                                     <CollapsibleTrigger className="w-full">
+                                       <div className="flex justify-between items-center">
+                                         <div className="flex items-center gap-2">
+                                           <ChevronDown className="h-4 w-4 text-warning transition-transform duration-200 collapsible-chevron" />
+                                           <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
+                                         </div>
+                                         <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
+                                       </div>
+                                     </CollapsibleTrigger>
+                                     <div className="text-xs text-muted-foreground mt-2">
                                        Propiedades y terrenos
                                      </div>
                                      {/* Cuentas individuales */}
                                      {cuentasBienRaiz.length > 0 && (
-                                       <div className="space-y-2 pl-3 border-l-2 border-warning/30">
-                                         {cuentasBienRaiz.map(cuenta => (
-                                           <div key={cuenta.id} className="flex justify-between items-center text-xs">
-                                             <span className="text-muted-foreground">{cuenta.nombre}</span>
-                                             <span className="font-medium text-warning">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
-                                           </div>
-                                         ))}
-                                       </div>
+                                       <CollapsibleContent className="mt-3">
+                                         <div className="space-y-2 pl-3 border-l-2 border-warning/30">
+                                           {cuentasBienRaiz.map(cuenta => (
+                                             <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                               <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                               <span className="font-medium text-warning">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                             </div>
+                                           ))}
+                                         </div>
+                                       </CollapsibleContent>
                                      )}
                                    </div>
-                                </div>
+                                </Collapsible>
                               )}
                             </div>
                         );
@@ -687,55 +717,68 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                           <div key={moneda} className="space-y-3">
                             {/* Tarjetas de Crédito */}
                             {tarjetasCredito.length > 0 && (
-                              <div className="rounded-lg bg-destructive/5 border border-destructive/20">
+                              <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
                                 <div className="p-4">
-                                  <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-semibold text-muted-foreground">Tarjetas de Crédito</span>
-                                    <span className="font-bold text-destructive">
-                                      {formatNumberOnly(tarjetasCredito.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
-                                    </span>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground mb-3">
+                                  <CollapsibleTrigger className="w-full">
+                                    <div className="flex justify-between items-center">
+                                      <div className="flex items-center gap-2">
+                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 collapsible-chevron" />
+                                        <span className="text-sm font-semibold text-muted-foreground">Tarjetas de Crédito</span>
+                                      </div>
+                                      <span className="font-bold text-destructive">
+                                        {formatNumberOnly(tarjetasCredito.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
+                                      </span>
+                                    </div>
+                                  </CollapsibleTrigger>
+                                  <div className="text-xs text-muted-foreground mt-2">
                                     Deuda de tarjetas activas
                                   </div>
                                   {/* Cuentas individuales */}
-                                  <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
-                                    {tarjetasCredito.map(cuenta => (
-                                      <div key={cuenta.id} className="flex justify-between items-center text-xs">
-                                        <span className="text-muted-foreground">{cuenta.nombre}</span>
-                                        <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
-                                      </div>
-                                    ))}
-                                  </div>
+                                  <CollapsibleContent className="mt-3">
+                                    <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
+                                      {tarjetasCredito.map(cuenta => (
+                                        <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                          <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                          <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </CollapsibleContent>
                                 </div>
-                              </div>
+                              </Collapsible>
                             )}
-                           
 
                             {/* Hipotecas */}
                             {cuentasHipoteca.length > 0 && (
-                              <div className="rounded-lg bg-destructive/5 border border-destructive/20">
+                              <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
                                 <div className="p-4">
-                                  <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-semibold text-muted-foreground">Hipoteca</span>
-                                    <span className="font-bold text-destructive">
-                                      {formatNumberOnly(cuentasHipoteca.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
-                                    </span>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground mb-3">
+                                  <CollapsibleTrigger className="w-full">
+                                    <div className="flex justify-between items-center">
+                                      <div className="flex items-center gap-2">
+                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 collapsible-chevron" />
+                                        <span className="text-sm font-semibold text-muted-foreground">Hipoteca</span>
+                                      </div>
+                                      <span className="font-bold text-destructive">
+                                        {formatNumberOnly(cuentasHipoteca.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
+                                      </span>
+                                    </div>
+                                  </CollapsibleTrigger>
+                                  <div className="text-xs text-muted-foreground mt-2">
                                     Saldo pendiente del préstamo hipotecario
                                   </div>
                                   {/* Cuentas individuales */}
-                                  <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
-                                    {cuentasHipoteca.map(cuenta => (
-                                      <div key={cuenta.id} className="flex justify-between items-center text-xs">
-                                        <span className="text-muted-foreground">{cuenta.nombre}</span>
-                                        <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
-                                      </div>
-                                    ))}
-                                  </div>
+                                  <CollapsibleContent className="mt-3">
+                                    <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
+                                      {cuentasHipoteca.map(cuenta => (
+                                        <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                          <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                          <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </CollapsibleContent>
                                 </div>
-                              </div>
+                              </Collapsible>
                             )}
                           </div>
                          );
