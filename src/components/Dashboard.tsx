@@ -522,10 +522,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                              {activos.efectivoBancos > 0 && (
                                 <Collapsible className="rounded-lg bg-success/5 border border-success/20">
                                   <div className="p-4">
-                                    <CollapsibleTrigger className="w-full">
-                                      <div className="flex justify-between items-center">
+                                    <CollapsibleTrigger className="w-full group">
+                                      <div className="flex justify-between items-center cursor-pointer">
                                         <div className="flex items-center gap-2">
-                                          <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 collapsible-chevron" />
+                                          <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                           <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
                                         </div>
                                         <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
@@ -555,10 +555,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                              {activos.inversiones > 0 && (
                                 <Collapsible className="rounded-lg bg-primary/5 border border-primary/20">
                                   <div className="p-4">
-                                    <CollapsibleTrigger className="w-full">
-                                      <div className="flex justify-between items-center">
+                                    <CollapsibleTrigger className="w-full group">
+                                      <div className="flex justify-between items-center cursor-pointer">
                                         <div className="flex items-center gap-2">
-                                          <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 collapsible-chevron" />
+                                          <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                           <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
                                         </div>
                                         <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
@@ -588,10 +588,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                               {activos.empresasPrivadas > 0 && (
                                  <Collapsible className="rounded-lg bg-accent/5 border border-accent/20">
                                    <div className="p-4">
-                                     <CollapsibleTrigger className="w-full">
-                                       <div className="flex justify-between items-center">
+                                     <CollapsibleTrigger className="w-full group">
+                                       <div className="flex justify-between items-center cursor-pointer">
                                          <div className="flex items-center gap-2">
-                                           <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 collapsible-chevron" />
+                                           <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                            <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
                                          </div>
                                          <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
@@ -621,10 +621,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                               {activos.bienRaiz > 0 && (
                                  <Collapsible className="rounded-lg bg-warning/5 border border-warning/20">
                                    <div className="p-4">
-                                     <CollapsibleTrigger className="w-full">
-                                       <div className="flex justify-between items-center">
+                                     <CollapsibleTrigger className="w-full group">
+                                       <div className="flex justify-between items-center cursor-pointer">
                                          <div className="flex items-center gap-2">
-                                           <ChevronDown className="h-4 w-4 text-warning transition-transform duration-200 collapsible-chevron" />
+                                           <ChevronDown className="h-4 w-4 text-warning transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                            <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
                                          </div>
                                          <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
@@ -719,10 +719,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                             {tarjetasCredito.length > 0 && (
                               <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
                                 <div className="p-4">
-                                  <CollapsibleTrigger className="w-full">
-                                    <div className="flex justify-between items-center">
+                                  <CollapsibleTrigger className="w-full group">
+                                    <div className="flex justify-between items-center cursor-pointer">
                                       <div className="flex items-center gap-2">
-                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 collapsible-chevron" />
+                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                         <span className="text-sm font-semibold text-muted-foreground">Tarjetas de Crédito</span>
                                       </div>
                                       <span className="font-bold text-destructive">
@@ -752,10 +752,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                             {cuentasHipoteca.length > 0 && (
                               <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
                                 <div className="p-4">
-                                  <CollapsibleTrigger className="w-full">
-                                    <div className="flex justify-between items-center">
+                                  <CollapsibleTrigger className="w-full group">
+                                    <div className="flex justify-between items-center cursor-pointer">
                                       <div className="flex items-center gap-2">
-                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 collapsible-chevron" />
+                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                         <span className="text-sm font-semibold text-muted-foreground">Hipoteca</span>
                                       </div>
                                       <span className="font-bold text-destructive">
