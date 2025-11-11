@@ -483,34 +483,52 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         
                         if (!hasAssets) return null;
 
-                        // Filtrar cuentas activas y no vendidas por moneda
-                        const cuentasEfectivo = accounts.filter(cuenta => 
-                          cuenta.tipo === 'Efectivo/Bancos' && 
-                          cuenta.divisa === moneda && 
-                          !cuenta.vendida &&
-                          cuenta.saldoActual > 0
-                        );
+                        // Filtrar cuentas por moneda
+                        console.log('=== DEBUG CUENTAS ACTIVOS ===');
+                        console.log('Total cuentas:', accounts.length);
+                        console.log('Moneda filtrada:', moneda);
+                        
+                        const cuentasEfectivo = accounts.filter(cuenta => {
+                          const match = cuenta.tipo === 'Efectivo/Bancos' && 
+                            cuenta.divisa === moneda && 
+                            cuenta.vendida !== true &&
+                            cuenta.saldoActual > 0;
+                          if (match) console.log('Cuenta efectivo encontrada:', cuenta.nombre, cuenta.saldoActual);
+                          return match;
+                        });
 
-                        const cuentasInversion = accounts.filter(cuenta => 
-                          cuenta.tipo === 'Inversión' && 
-                          cuenta.divisa === moneda && 
-                          !cuenta.vendida &&
-                          cuenta.saldoActual > 0
-                        );
+                        const cuentasInversion = accounts.filter(cuenta => {
+                          const match = cuenta.tipo === 'Inversión' && 
+                            cuenta.divisa === moneda && 
+                            cuenta.vendida !== true &&
+                            cuenta.saldoActual > 0;
+                          if (match) console.log('Cuenta inversión encontrada:', cuenta.nombre, cuenta.saldoActual);
+                          return match;
+                        });
 
-                        const cuentasEmpresas = accounts.filter(cuenta => 
-                          cuenta.tipo === 'Empresa Privada' && 
-                          cuenta.divisa === moneda && 
-                          !cuenta.vendida &&
-                          cuenta.saldoActual > 0
-                        );
+                        const cuentasEmpresas = accounts.filter(cuenta => {
+                          const match = cuenta.tipo === 'Empresa Privada' && 
+                            cuenta.divisa === moneda && 
+                            cuenta.vendida !== true &&
+                            cuenta.saldoActual > 0;
+                          if (match) console.log('Cuenta empresa encontrada:', cuenta.nombre, cuenta.saldoActual);
+                          return match;
+                        });
 
-                        const cuentasBienRaiz = accounts.filter(cuenta => 
-                          cuenta.tipo === 'Bien Raíz' && 
-                          cuenta.divisa === moneda && 
-                          !cuenta.vendida &&
-                          cuenta.saldoActual > 0
-                        );
+                        const cuentasBienRaiz = accounts.filter(cuenta => {
+                          const match = cuenta.tipo === 'Bien Raíz' && 
+                            cuenta.divisa === moneda && 
+                            cuenta.vendida !== true &&
+                            cuenta.saldoActual > 0;
+                          if (match) console.log('Cuenta bien raíz encontrada:', cuenta.nombre, cuenta.saldoActual);
+                          return match;
+                        });
+
+                        console.log('Cuentas efectivo:', cuentasEfectivo.length);
+                        console.log('Cuentas inversión:', cuentasInversion.length);
+                        console.log('Cuentas empresas:', cuentasEmpresas.length);
+                        console.log('Cuentas bien raíz:', cuentasBienRaiz.length);
+                        console.log('=== FIN DEBUG CUENTAS ACTIVOS ===');
 
                         return (
                            <div key={moneda} className="space-y-3">
@@ -690,11 +708,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                           }).format(amount);
                         };
 
-                        // Filtrar cuentas por moneda
+                        // Filtrar cuentas por moneda (incluyendo tarjetas con saldo positivo)
                         const tarjetasCredito = accounts.filter(cuenta => 
                           cuenta.tipo === 'Tarjeta de Crédito' && 
-                          cuenta.divisa === moneda &&
-                          cuenta.saldoActual < 0
+                          cuenta.divisa === moneda
                         );
 
                         const cuentasHipoteca = accounts.filter(cuenta => 
@@ -720,7 +737,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                         <span className="text-sm font-semibold text-muted-foreground">Tarjetas de Crédito</span>
                                       </div>
                                       <span className="font-bold text-destructive">
-                                        {formatNumberOnly(tarjetasCredito.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
+                                        {formatNumberOnly(tarjetasCredito.filter(c => c.saldoActual < 0).reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
                                       </span>
                                     </div>
                                   </CollapsibleTrigger>
@@ -732,8 +749,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                     <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
                                       {tarjetasCredito.map(cuenta => (
                                         <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
-                                          <span className="text-muted-foreground">• {cuenta.nombre}</span>
-                                          <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
+                                          <span className="text-muted-foreground">
+                                            • {cuenta.nombre}
+                                            {cuenta.saldoActual >= 0 && <span className="ml-2 text-success">(Saldo a favor)</span>}
+                                          </span>
+                                          <span className={`font-medium ${cuenta.saldoActual >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                            {formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}
+                                          </span>
                                         </div>
                                       ))}
                                     </div>
