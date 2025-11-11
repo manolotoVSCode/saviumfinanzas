@@ -64,6 +64,9 @@ export const TransactionsManager = ({
   // Estado para el selector de categorías en el formulario
   const [categoryFormOpen, setCategoryFormOpen] = useState(false);
   
+  // Estado para el selector de cuentas en el formulario
+  const [accountFormOpen, setAccountFormOpen] = useState(false);
+  
   // Filtros
   const [filters, setFilters] = useState(() => {
     try {
@@ -453,28 +456,54 @@ export const TransactionsManager = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="cuentaId">Cuenta</Label>
-                    <Select 
-                      value={formData.cuentaId} 
-                      onValueChange={(value) => {
-                        const selectedAccount = accounts.find(acc => acc.id === value);
-                        setFormData({ 
-                          ...formData, 
-                          cuentaId: value,
-                          divisa: selectedAccount?.divisa || 'MXN'
-                        });
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona una cuenta" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.nombre} ({account.divisa})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={accountFormOpen} onOpenChange={setAccountFormOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={accountFormOpen}
+                          className="w-full justify-between"
+                        >
+                          {formData.cuentaId
+                            ? accounts.find((account) => account.id === formData.cuentaId)?.nombre + 
+                              " (" + accounts.find((account) => account.id === formData.cuentaId)?.divisa + ")"
+                            : "Selecciona una cuenta"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar cuenta..." />
+                          <CommandList>
+                            <CommandEmpty>No se encontró la cuenta.</CommandEmpty>
+                            <CommandGroup>
+                              {accounts.map((account) => (
+                                <CommandItem
+                                  key={account.id}
+                                  value={`${account.nombre} ${account.divisa}`}
+                                  onSelect={() => {
+                                    setFormData({ 
+                                      ...formData, 
+                                      cuentaId: account.id,
+                                      divisa: account.divisa || 'MXN'
+                                    });
+                                    setAccountFormOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      formData.cuentaId === account.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {account.nombre} ({account.divisa})
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div>
