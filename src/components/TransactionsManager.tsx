@@ -61,6 +61,9 @@ export const TransactionsManager = ({
   // Estado para el filtro de categorías con búsqueda
   const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
   
+  // Estado para el selector de categorías en el formulario
+  const [categoryFormOpen, setCategoryFormOpen] = useState(false);
+  
   // Filtros
   const [filters, setFilters] = useState(() => {
     try {
@@ -512,32 +515,60 @@ export const TransactionsManager = ({
 
                 <div>
                   <Label htmlFor="subcategoriaId">Categoría</Label>
-                  <Select 
-                    value={formData.subcategoriaId} 
-                    onValueChange={(value) => {
-                      const selectedCategory = categories.find(cat => cat.id === value);
-                      setFormData({ 
-                        ...formData, 
-                        subcategoriaId: value,
-                        // Limpiar campos de ingreso/gasto según el tipo de categoría
-                        ingreso: selectedCategory?.tipo === 'Ingreso' || selectedCategory?.tipo === 'Aportación' ? formData.ingreso : 0,
-                        gasto: selectedCategory?.tipo === 'Gastos' || selectedCategory?.tipo === 'Retiro' ? formData.gasto : 0
-                      });
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories
-                        .filter(category => categoryTypeFilter === 'all' || category.tipo === categoryTypeFilter)
-                        .map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.categoria} - {category.subcategoria} ({category.tipo})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={categoryFormOpen} onOpenChange={setCategoryFormOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={categoryFormOpen}
+                        className="w-full justify-between"
+                      >
+                        {formData.subcategoriaId 
+                          ? categories.find(cat => cat.id === formData.subcategoriaId)
+                              ? `${categories.find(cat => cat.id === formData.subcategoriaId)?.categoria} - ${categories.find(cat => cat.id === formData.subcategoriaId)?.subcategoria}`
+                              : 'Selecciona una categoría'
+                          : 'Selecciona una categoría'
+                        }
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0 bg-background">
+                      <Command>
+                        <CommandInput placeholder="Buscar categoría..." />
+                        <CommandList>
+                          <CommandEmpty>No se encontraron categorías.</CommandEmpty>
+                          <CommandGroup>
+                            {categories
+                              .filter(category => categoryTypeFilter === 'all' || category.tipo === categoryTypeFilter)
+                              .map((category) => (
+                                <CommandItem
+                                  key={category.id}
+                                  value={`${category.categoria} ${category.subcategoria}`}
+                                  onSelect={() => {
+                                    setFormData({ 
+                                      ...formData, 
+                                      subcategoriaId: category.id,
+                                      // Limpiar campos de ingreso/gasto según el tipo de categoría
+                                      ingreso: category.tipo === 'Ingreso' || category.tipo === 'Aportación' ? formData.ingreso : 0,
+                                      gasto: category.tipo === 'Gastos' || category.tipo === 'Retiro' ? formData.gasto : 0
+                                    });
+                                    setCategoryFormOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      formData.subcategoriaId === category.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {category.categoria} - {category.subcategoria} ({category.tipo})
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div>
