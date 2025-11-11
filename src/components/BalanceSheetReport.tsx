@@ -13,8 +13,10 @@ interface BalanceSheetReportProps {
 
 export const BalanceSheetReport = ({ metrics, formatCurrency, accounts }: BalanceSheetReportProps) => {
   const balanceData = useMemo(() => {
-    const assets = accounts.filter(acc => acc.saldoActual >= 0);
-    const liabilities = accounts.filter(acc => acc.saldoActual < 0);
+    // Filtrar cuentas vendidas
+    const activeAccounts = accounts.filter(acc => !acc.vendida);
+    const assets = activeAccounts.filter(acc => acc.saldoActual >= 0);
+    const liabilities = activeAccounts.filter(acc => acc.saldoActual < 0);
     
     const totalAssets = assets.reduce((sum, acc) => sum + acc.saldoActual, 0);
     const totalLiabilities = Math.abs(liabilities.reduce((sum, acc) => sum + acc.saldoActual, 0));

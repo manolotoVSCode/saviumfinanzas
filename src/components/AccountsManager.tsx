@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Account, AccountType } from '@/types/finance';
-import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2 } from 'lucide-react';
 import { useSampleData } from '@/hooks/useSampleData';
 import { toast } from 'sonner';
 
@@ -39,6 +39,7 @@ export const AccountsManager = ({
     tipo: '' as AccountType,
     saldoInicial: 0,
     divisa: 'MXN' as 'MXN' | 'USD' | 'EUR',
+    vendida: false,
     // Campos específicos de inversión
     tipo_inversion: '' as 'Interés fijo' | 'Fondo variable' | 'Criptomoneda' | '',
     modalidad: '' as 'Reinversión' | 'Pago mensual' | 'Pago trimestral' | '',
@@ -69,6 +70,7 @@ export const AccountsManager = ({
       tipo: '' as AccountType, 
       saldoInicial: 0, 
       divisa: 'MXN',
+      vendida: false,
       tipo_inversion: '',
       modalidad: '',
       rendimiento_bruto: 0,
@@ -79,6 +81,21 @@ export const AccountsManager = ({
     });
     setEditingAccount(null);
     setIsAddingAccount(false);
+  };
+
+  const handleMarkAsSold = async (account: Account) => {
+    if (account.tipo !== 'Bien Raíz') {
+      toast.error('Solo las cuentas de tipo "Bien Raíz" pueden marcarse como vendidas');
+      return;
+    }
+
+    const updates: Partial<Account> = {
+      vendida: true,
+      saldoInicial: -account.saldoActual, // Ajustar saldo inicial para que saldo actual sea 0
+    };
+
+    onUpdateAccount(account.id, updates);
+    toast.success('Propiedad marcada como vendida');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,6 +143,7 @@ export const AccountsManager = ({
       tipo: account.tipo,
       saldoInicial: account.saldoInicial,
       divisa: account.divisa || 'MXN',
+      vendida: account.vendida || false,
       tipo_inversion: account.tipo_inversion || '',
       modalidad: account.modalidad || '',
       rendimiento_bruto: account.rendimiento_bruto || 0,
@@ -206,6 +224,13 @@ export const AccountsManager = ({
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} method="post" className="space-y-4">
+              {editingAccount?.vendida && (
+                <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                    ⚠️ Esta propiedad está marcada como vendida. Los campos están bloqueados.
+                  </p>
+                </div>
+              )}
               <div>
                 <Label htmlFor="nombre">Nombre</Label>
                 <Input
@@ -213,6 +238,7 @@ export const AccountsManager = ({
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                   placeholder="Nombre de la cuenta"
+                  disabled={editingAccount?.vendida}
                   required
                 />
               </div>
@@ -221,6 +247,7 @@ export const AccountsManager = ({
                 <Select 
                   value={formData.tipo} 
                   onValueChange={(value) => setFormData({ ...formData, tipo: value as AccountType })}
+                  disabled={editingAccount?.vendida}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona un tipo" />
@@ -237,6 +264,7 @@ export const AccountsManager = ({
                 <Select 
                   value={formData.divisa} 
                   onValueChange={(value) => setFormData({ ...formData, divisa: value as 'MXN' | 'USD' | 'EUR' })}
+                  disabled={editingAccount?.vendida}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una divisa" />
@@ -272,6 +300,7 @@ export const AccountsManager = ({
                   value={formData.saldoInicial}
                   onChange={(e) => setFormData({ ...formData, saldoInicial: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
+                  disabled={editingAccount?.vendida}
                 />
               </div>
 
@@ -371,9 +400,11 @@ export const AccountsManager = ({
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">
-                  {editingAccount ? 'Actualizar' : 'Crear'}
-                </Button>
+                {!editingAccount?.vendida && (
+                  <Button type="submit">
+                    {editingAccount ? 'Actualizar' : 'Crear'}
+                  </Button>
+                )}
               </div>
             </form>
           </DialogContent>
@@ -433,8 +464,17 @@ export const AccountsManager = ({
             </TableHeader>
             <TableBody>
               {sortedAccounts.map((account) => (
-                <TableRow key={account.id}>
-                  <TableCell className="font-medium">{account.nombre}</TableCell>
+                <TableRow key={account.id} className={account.vendida ? 'opacity-60' : ''}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {account.nombre}
+                      {account.vendida && (
+                        <Badge variant="outline" className="text-xs">
+                          Vendida
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={getAccountTypeBadgeVariant(account.tipo)}>
                       {account.tipo}
@@ -461,6 +501,16 @@ export const AccountsManager = ({
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
+                      {account.tipo === 'Bien Raíz' && !account.vendida && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleMarkAsSold(account)}
+                          title="Marcar como vendida"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button 
                         variant="outline" 
                         size="sm"
