@@ -487,7 +487,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         const cuentasEfectivo = accounts.filter(cuenta => 
                           cuenta.tipo === 'Efectivo/Bancos' && 
                           cuenta.divisa === moneda && 
-                          cuenta.activa !== false &&
                           !cuenta.vendida &&
                           cuenta.saldoActual > 0
                         );
@@ -495,7 +494,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         const cuentasInversion = accounts.filter(cuenta => 
                           cuenta.tipo === 'Inversión' && 
                           cuenta.divisa === moneda && 
-                          cuenta.activa !== false &&
                           !cuenta.vendida &&
                           cuenta.saldoActual > 0
                         );
@@ -503,7 +501,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         const cuentasEmpresas = accounts.filter(cuenta => 
                           cuenta.tipo === 'Empresa Privada' && 
                           cuenta.divisa === moneda && 
-                          cuenta.activa !== false &&
                           !cuenta.vendida &&
                           cuenta.saldoActual > 0
                         );
@@ -511,7 +508,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         const cuentasBienRaiz = accounts.filter(cuenta => 
                           cuenta.tipo === 'Bien Raíz' && 
                           cuenta.divisa === moneda && 
-                          cuenta.activa !== false &&
                           !cuenta.vendida &&
                           cuenta.saldoActual > 0
                         );
@@ -694,18 +690,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                           }).format(amount);
                         };
 
-                        // Filtrar cuentas activas por moneda
+                        // Filtrar cuentas por moneda
                         const tarjetasCredito = accounts.filter(cuenta => 
                           cuenta.tipo === 'Tarjeta de Crédito' && 
                           cuenta.divisa === moneda &&
-                          cuenta.activa !== false &&
                           cuenta.saldoActual < 0
                         );
 
                         const cuentasHipoteca = accounts.filter(cuenta => 
                           cuenta.tipo === 'Hipoteca' && 
                           cuenta.divisa === moneda &&
-                          cuenta.activa !== false &&
                           cuenta.saldoActual < 0
                         );
 
