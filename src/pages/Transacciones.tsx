@@ -56,7 +56,7 @@ const Transacciones = () => {
                       <h4 className="font-semibold mb-2">Formato del archivo CSV:</h4>
                       <p className="mb-2">El archivo debe contener las siguientes columnas en orden:</p>
                       <ol className="list-decimal list-inside space-y-1 ml-4">
-                        <li><strong>Fecha:</strong> Formato DD/MM/AA (ejemplo: 15/03/25)</li>
+                        <li><strong>Fecha:</strong> Formato DD/MM/AAAA o D/M/AAAA (ejemplo: 3/11/2025)</li>
                         <li><strong>Comentario:</strong> Descripción de la transacción</li>
                         <li><strong>Ingreso:</strong> Monto de ingreso (usar 0 si no aplica)</li>
                         <li><strong>Gasto:</strong> Monto de gasto (usar 0 si no aplica)</li>
@@ -65,7 +65,7 @@ const Transacciones = () => {
                     <div>
                       <h4 className="font-semibold mb-2">Ejemplo de formato:</h4>
                       <div className="bg-muted p-3 rounded font-mono text-xs">
-                        15/03/25;Compra de comida;0;250
+                        3/11/2025,BONO POR PROGRAMA DE REFERIDOS,"-40.000,00","0,00"
                       </div>
                     </div>
                     <div>
@@ -74,8 +74,8 @@ const Transacciones = () => {
                         <li>Al importar las transacciones, se aplicarán con la divisa elegida en el proceso</li>
                         <li>Al importar, se le asignará una cuenta en el proceso</li>
                         <li>No incluir encabezados en el archivo</li>
-                        <li>Usar punto y coma (;) como separador</li>
-                        <li>Los decimales se pueden usar con coma (,)</li>
+                        <li>Usar coma (,) como separador</li>
+                        <li>Los decimales se pueden usar con coma (,) pero el 0 siempre irá sin decimales. El sistema lo dejará como 0</li>
                       </ul>
                     </div>
                   </div>

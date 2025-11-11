@@ -47,7 +47,7 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
       
       if (char === '"') {
         inQuotes = !inQuotes;
-      } else if (char === ';' && !inQuotes) {
+      } else if (char === ',' && !inQuotes) {
         result.push(current.trim());
         current = '';
       } else {
@@ -61,10 +61,14 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
 
   const parseAmount = (amountStr: string): number => {
     if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '0') return 0;
-    // Replace comma with dot for decimal separator
-    const cleanAmount = amountStr.replace(/\s/g, '').replace(',', '.');
+    // Remove quotes, spaces, and handle thousands separator (.) and decimal separator (,)
+    let cleanAmount = amountStr
+      .replace(/"/g, '')           // Remove quotes
+      .replace(/\s/g, '')          // Remove spaces
+      .replace(/\./g, '')          // Remove thousands separator (.)
+      .replace(',', '.');          // Replace decimal separator (,) with (.)
     const parsed = parseFloat(cleanAmount);
-    return isNaN(parsed) ? 0 : parsed;
+    return isNaN(parsed) ? 0 : Math.abs(parsed); // Use absolute value to handle negative signs
   };
 
   const parseDateDDMMYY = (dateStr: string): string => {
@@ -254,12 +258,12 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
                 <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Formato esperado:</p>
-                  <p>Fecha;Comentario;Ingreso;Gasto</p>
+                  <p>Fecha,Comentario,Ingreso,Gasto</p>
                   <p className="text-xs mt-1">
-                    • Separador: punto y coma (;)<br/>
-                    • Fecha: DD/MM/AA<br/>
-                    • Montos: usar coma como decimal<br/>
-                    • Ejemplo: 15/03/25;Compra de comida;0;250
+                    • Separador: coma (,)<br/>
+                    • Fecha: DD/MM/AAAA o D/M/AAAA<br/>
+                    • Montos: usar coma como decimal y punto como separador de miles<br/>
+                    • Ejemplo: 3/11/2025,BONO POR PROGRAMA DE REFERIDOS,"-40.000,00","0,00"
                   </p>
                 </div>
               </div>
