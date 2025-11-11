@@ -468,7 +468,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-3 pt-2">
-                      {/* Mostrar categorías por moneda */}
+                      {/* Mostrar categorías por moneda con cuentas individuales */}
                       {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
                         const formatNumberOnly = (amount: number) => {
                           return new Intl.NumberFormat('es-MX', {
@@ -481,52 +481,141 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         
                         if (!hasAssets) return null;
 
+                        // Filtrar cuentas activas y no vendidas por moneda
+                        const cuentasEfectivo = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Efectivo/Bancos' && 
+                          cuenta.divisa === moneda && 
+                          cuenta.activa !== false &&
+                          !cuenta.vendida &&
+                          cuenta.saldoActual > 0
+                        );
+
+                        const cuentasInversion = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Inversión' && 
+                          cuenta.divisa === moneda && 
+                          cuenta.activa !== false &&
+                          !cuenta.vendida &&
+                          cuenta.saldoActual > 0
+                        );
+
+                        const cuentasEmpresas = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Empresa Privada' && 
+                          cuenta.divisa === moneda && 
+                          cuenta.activa !== false &&
+                          !cuenta.vendida &&
+                          cuenta.saldoActual > 0
+                        );
+
+                        const cuentasBienRaiz = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Bien Raíz' && 
+                          cuenta.divisa === moneda && 
+                          cuenta.activa !== false &&
+                          !cuenta.vendida &&
+                          cuenta.saldoActual > 0
+                        );
+
                         return (
                            <div key={moneda} className="space-y-3">
+                             {/* Efectivo/Bancos */}
                              {activos.efectivoBancos > 0 && (
-                                <div className="p-4 rounded-lg bg-success/5 border border-success/20">
-                                  <div className="flex justify-between items-center mb-2">
-                                     <span className="text-sm text-muted-foreground">{t('dashboard.cash_banks')}</span>
-                                     <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {t('dashboard.available_immediately')}
+                                <div className="rounded-lg bg-success/5 border border-success/20">
+                                  <div className="p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                       <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
+                                       <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mb-3">
+                                      {t('dashboard.available_immediately')}
+                                    </div>
+                                    {/* Cuentas individuales */}
+                                    {cuentasEfectivo.length > 0 && (
+                                      <div className="space-y-2 pl-3 border-l-2 border-success/30">
+                                        {cuentasEfectivo.map(cuenta => (
+                                          <div key={cuenta.id} className="flex justify-between items-center text-xs">
+                                            <span className="text-muted-foreground">{cuenta.nombre}</span>
+                                            <span className="font-medium text-success">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                </div>
                              )}
                              
+                             {/* Inversiones */}
                              {activos.inversiones > 0 && (
-                                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                                  <div className="flex justify-between items-center mb-2">
-                                     <span className="text-sm text-muted-foreground">{t('dashboard.investments_label')}</span>
-                                     <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {t('dashboard.funds_stocks_etfs')}
+                                <div className="rounded-lg bg-primary/5 border border-primary/20">
+                                  <div className="p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                       <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
+                                       <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mb-3">
+                                      {t('dashboard.funds_stocks_etfs')}
+                                    </div>
+                                    {/* Cuentas individuales */}
+                                    {cuentasInversion.length > 0 && (
+                                      <div className="space-y-2 pl-3 border-l-2 border-primary/30">
+                                        {cuentasInversion.map(cuenta => (
+                                          <div key={cuenta.id} className="flex justify-between items-center text-xs">
+                                            <span className="text-muted-foreground">{cuenta.nombre}</span>
+                                            <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                </div>
                               )}
 
+                              {/* Empresas Privadas */}
                               {activos.empresasPrivadas > 0 && (
-                                 <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                                   <div className="flex justify-between items-center mb-2">
-                                      <span className="text-sm text-muted-foreground">Empresas Privadas</span>
-                                      <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Participaciones en empresas propias
-                                  </div>
+                                 <div className="rounded-lg bg-accent/5 border border-accent/20">
+                                   <div className="p-4">
+                                     <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
+                                        <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
+                                     </div>
+                                     <div className="text-xs text-muted-foreground mb-3">
+                                       Participaciones en empresas propias
+                                     </div>
+                                     {/* Cuentas individuales */}
+                                     {cuentasEmpresas.length > 0 && (
+                                       <div className="space-y-2 pl-3 border-l-2 border-accent/30">
+                                         {cuentasEmpresas.map(cuenta => (
+                                           <div key={cuenta.id} className="flex justify-between items-center text-xs">
+                                             <span className="text-muted-foreground">{cuenta.nombre}</span>
+                                             <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                           </div>
+                                         ))}
+                                       </div>
+                                     )}
+                                   </div>
                                 </div>
                               )}
                               
+                              {/* Bienes Raíces */}
                               {activos.bienRaiz > 0 && (
-                                 <div className="p-4 rounded-lg bg-warning/5 border border-warning/20">
-                                   <div className="flex justify-between items-center mb-2">
-                                      <span className="text-sm text-muted-foreground">Bienes Raíces</span>
-                                      <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
-                                   </div>
-                                   <div className="text-xs text-muted-foreground">
-                                     Propiedades y terrenos
+                                 <div className="rounded-lg bg-warning/5 border border-warning/20">
+                                   <div className="p-4">
+                                     <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
+                                        <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
+                                     </div>
+                                     <div className="text-xs text-muted-foreground mb-3">
+                                       Propiedades y terrenos
+                                     </div>
+                                     {/* Cuentas individuales */}
+                                     {cuentasBienRaiz.length > 0 && (
+                                       <div className="space-y-2 pl-3 border-l-2 border-warning/30">
+                                         {cuentasBienRaiz.map(cuenta => (
+                                           <div key={cuenta.id} className="flex justify-between items-center text-xs">
+                                             <span className="text-muted-foreground">{cuenta.nombre}</span>
+                                             <span className="font-medium text-warning">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                           </div>
+                                         ))}
+                                       </div>
+                                     )}
                                    </div>
                                 </div>
                               )}
@@ -566,7 +655,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-3 pt-2">
-                      {/* Mostrar categorías por moneda - separando cada cuenta */}
+                      {/* Mostrar categorías por moneda con cuentas individuales */}
                       {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
                         const formatNumberOnly = (amount: number) => {
                           return new Intl.NumberFormat('es-MX', {
@@ -575,44 +664,82 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                           }).format(amount);
                         };
 
-                        // Filtrar cuentas de tarjetas de crédito por moneda
+                        // Filtrar cuentas activas por moneda
                         const tarjetasCredito = accounts.filter(cuenta => 
-                          cuenta.tipo === 'Tarjeta de Crédito' && cuenta.divisa === moneda
+                          cuenta.tipo === 'Tarjeta de Crédito' && 
+                          cuenta.divisa === moneda &&
+                          cuenta.activa !== false &&
+                          cuenta.saldoActual < 0
                         );
 
-                        const hasLiabilities = tarjetasCredito.length > 0 || pasivos.hipoteca > 0;
+                        const cuentasHipoteca = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Hipoteca' && 
+                          cuenta.divisa === moneda &&
+                          cuenta.activa !== false &&
+                          cuenta.saldoActual < 0
+                        );
+
+                        const hasLiabilities = tarjetasCredito.length > 0 || cuentasHipoteca.length > 0;
                         
                         if (!hasLiabilities) return null;
 
                         return (
                           <div key={moneda} className="space-y-3">
-                            {/* Mostrar cada tarjeta de crédito por separado */}
-                            {tarjetasCredito.map(cuenta => (
-                               <div key={cuenta.id} className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                            {/* Tarjetas de Crédito */}
+                            {tarjetasCredito.length > 0 && (
+                              <div className="rounded-lg bg-destructive/5 border border-destructive/20">
+                                <div className="p-4">
                                   <div className="flex justify-between items-center mb-2">
-                                     <span className="text-sm text-muted-foreground">{cuenta.nombre}</span>
-                                     <span className="font-bold text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
-                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Tarjeta de Crédito
+                                    <span className="text-sm font-semibold text-muted-foreground">Tarjetas de Crédito</span>
+                                    <span className="font-bold text-destructive">
+                                      {formatNumberOnly(tarjetasCredito.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mb-3">
+                                    Deuda de tarjetas activas
+                                  </div>
+                                  {/* Cuentas individuales */}
+                                  <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
+                                    {tarjetasCredito.map(cuenta => (
+                                      <div key={cuenta.id} className="flex justify-between items-center text-xs">
+                                        <span className="text-muted-foreground">{cuenta.nombre}</span>
+                                        <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
-                            ))}
+                            )}
                            
-                           {pasivos.hipoteca > 0 && (
-                              <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-                                <div className="flex justify-between items-center mb-2">
-                                   <span className="text-sm text-muted-foreground">Hipoteca</span>
-                                   <span className="font-bold text-destructive">{formatNumberOnly(pasivos.hipoteca)} {moneda}</span>
-                               </div>
-                               <div className="text-xs text-muted-foreground">
-                                 Saldo pendiente del préstamo hipotecario
-                               </div>
-                             </div>
-                           )}
-                         </div>
-                        );
-                      })}
+
+                            {/* Hipotecas */}
+                            {cuentasHipoteca.length > 0 && (
+                              <div className="rounded-lg bg-destructive/5 border border-destructive/20">
+                                <div className="p-4">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-semibold text-muted-foreground">Hipoteca</span>
+                                    <span className="font-bold text-destructive">
+                                      {formatNumberOnly(cuentasHipoteca.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mb-3">
+                                    Saldo pendiente del préstamo hipotecario
+                                  </div>
+                                  {/* Cuentas individuales */}
+                                  <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
+                                    {cuentasHipoteca.map(cuenta => (
+                                      <div key={cuenta.id} className="flex justify-between items-center text-xs">
+                                        <span className="text-muted-foreground">{cuenta.nombre}</span>
+                                        <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                         );
+                       })}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
