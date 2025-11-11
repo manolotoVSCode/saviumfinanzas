@@ -65,6 +65,7 @@ export const useFinanceDataSupabase = () => {
         divisa: cuenta.divisa as 'MXN' | 'USD' | 'EUR',
         valorMercado: cuenta.valor_mercado ? Number(cuenta.valor_mercado) : undefined,
         rendimientoMensual: cuenta.rendimiento_mensual ? Number(cuenta.rendimiento_mensual) : undefined,
+        vendida: cuenta.vendida || false,
         // Nuevos campos de inversión
         tipo_inversion: cuenta.tipo_inversion as 'Interés fijo' | 'Fondo variable' | 'Criptomoneda' | undefined,
         modalidad: cuenta.modalidad as 'Reinversión' | 'Pago mensual' | 'Pago trimestral' | undefined,
@@ -906,6 +907,7 @@ export const useFinanceDataSupabase = () => {
       if (updates.tipo) updateData.tipo = updates.tipo;
       if (updates.saldoInicial !== undefined) updateData.saldo_inicial = updates.saldoInicial;
       if (updates.divisa) updateData.divisa = updates.divisa;
+      if (updates.vendida !== undefined) updateData.vendida = updates.vendida;
 
       // Mapear campos específicos de inversión
       if (updates.tipo_inversion) updateData.tipo_inversion = updates.tipo_inversion;

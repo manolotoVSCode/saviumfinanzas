@@ -89,13 +89,19 @@ export const AccountsManager = ({
       return;
     }
 
+    // Calcular el ajuste necesario para que saldoActual sea 0
+    // saldoActual = saldoInicial + transacciones
+    // Queremos: 0 = nuevoSaldoInicial + transacciones
+    // Por lo tanto: nuevoSaldoInicial = -transacciones = -(saldoActual - saldoInicial) = saldoInicial - saldoActual
+    const nuevoSaldoInicial = account.saldoInicial - account.saldoActual;
+
     const updates: Partial<Account> = {
       vendida: true,
-      saldoInicial: -account.saldoActual, // Ajustar saldo inicial para que saldo actual sea 0
+      saldoInicial: nuevoSaldoInicial,
     };
 
     onUpdateAccount(account.id, updates);
-    toast.success('Propiedad marcada como vendida');
+    toast.success('Propiedad marcada como vendida. El saldo se ha ajustado a 0.');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
