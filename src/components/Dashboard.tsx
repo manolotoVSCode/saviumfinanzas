@@ -535,20 +535,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                               {/* Efectivo/Bancos */}
                               {activos.efectivoBancos > 0 && (
                                  <Collapsible className="rounded-lg bg-success/5 border border-success/20">
-                                   <div className="p-4">
-                                     <CollapsibleTrigger className="w-full group">
-                                       <div className="flex justify-between items-center cursor-pointer">
-                                         <div className="flex items-center gap-2">
-                                           <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                           <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
-                                         </div>
-                                         <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
+                                   <CollapsibleTrigger className="p-4 w-full group">
+                                     <div className="flex justify-between items-center cursor-pointer">
+                                       <div className="flex items-center gap-2">
+                                         <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                         <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
                                        </div>
-                                     </CollapsibleTrigger>
+                                       <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
+                                     </div>
                                      <div className="text-xs text-muted-foreground mt-2">
                                        {t('dashboard.available_immediately')}
                                      </div>
-                                   </div>
+                                   </CollapsibleTrigger>
                                    {/* Cuentas individuales */}
                                    {cuentasEfectivo.length > 0 && (
                                      <CollapsibleContent className="px-4 pb-4">
@@ -568,20 +566,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                               {/* Inversiones */}
                               {activos.inversiones > 0 && (
                                  <Collapsible className="rounded-lg bg-primary/5 border border-primary/20">
-                                   <div className="p-4">
-                                     <CollapsibleTrigger className="w-full group">
-                                       <div className="flex justify-between items-center cursor-pointer">
-                                         <div className="flex items-center gap-2">
-                                           <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                           <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
-                                         </div>
-                                         <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
+                                   <CollapsibleTrigger className="p-4 w-full group">
+                                     <div className="flex justify-between items-center cursor-pointer">
+                                       <div className="flex items-center gap-2">
+                                         <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                         <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
                                        </div>
-                                     </CollapsibleTrigger>
+                                       <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
+                                     </div>
                                      <div className="text-xs text-muted-foreground mt-2">
                                        {t('dashboard.funds_stocks_etfs')}
                                      </div>
-                                   </div>
+                                   </CollapsibleTrigger>
                                    {/* Cuentas individuales */}
                                    {cuentasInversion.length > 0 && (
                                      <CollapsibleContent className="px-4 pb-4">
@@ -601,20 +597,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                {/* Empresas Privadas */}
                                {activos.empresasPrivadas > 0 && (
                                   <Collapsible className="rounded-lg bg-accent/5 border border-accent/20">
-                                    <div className="p-4">
-                                      <CollapsibleTrigger className="w-full group">
-                                        <div className="flex justify-between items-center cursor-pointer">
-                                          <div className="flex items-center gap-2">
-                                            <ChevronDown className="h-4 w-4 text-accent transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                            <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
-                                          </div>
-                                          <span className="font-bold text-accent">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
+                                    <CollapsibleTrigger className="p-4 w-full group">
+                                      <div className="flex justify-between items-center cursor-pointer">
+                                        <div className="flex items-center gap-2">
+                                          <ChevronDown className="h-4 w-4 text-accent transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                          <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
                                         </div>
-                                      </CollapsibleTrigger>
+                                        <span className="font-bold text-accent">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
+                                      </div>
                                       <div className="text-xs text-muted-foreground mt-2">
                                         Participaciones en empresas propias
                                       </div>
-                                    </div>
+                                    </CollapsibleTrigger>
                                     {/* Cuentas individuales */}
                                     {cuentasEmpresas.length > 0 && (
                                       <CollapsibleContent className="px-4 pb-4">
@@ -634,20 +628,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                {/* Bienes Raíces */}
                                {activos.bienRaiz > 0 && (
                                   <Collapsible className="rounded-lg bg-secondary/5 border border-secondary/20">
-                                    <div className="p-4">
-                                      <CollapsibleTrigger className="w-full group">
-                                        <div className="flex justify-between items-center cursor-pointer">
-                                          <div className="flex items-center gap-2">
-                                            <ChevronDown className="h-4 w-4 text-secondary transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                            <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
-                                          </div>
-                                          <span className="font-bold text-secondary">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
+                                    <CollapsibleTrigger className="p-4 w-full group">
+                                      <div className="flex justify-between items-center cursor-pointer">
+                                        <div className="flex items-center gap-2">
+                                          <ChevronDown className="h-4 w-4 text-secondary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                          <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
                                         </div>
-                                      </CollapsibleTrigger>
+                                        <span className="font-bold text-secondary">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
+                                      </div>
                                       <div className="text-xs text-muted-foreground mt-2">
                                         Propiedades y terrenos
                                       </div>
-                                    </div>
+                                    </CollapsibleTrigger>
                                     {/* Cuentas individuales */}
                                     {cuentasBienRaiz.length > 0 && (
                                       <CollapsibleContent className="px-4 pb-4">
@@ -729,71 +721,67 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                             {/* Tarjetas de Crédito */}
                             {tarjetasCredito.length > 0 && (
                               <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
-                                <div className="p-4">
-                                  <CollapsibleTrigger className="w-full group">
-                                    <div className="flex justify-between items-center cursor-pointer">
-                                      <div className="flex items-center gap-2">
-                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                        <span className="text-sm font-semibold text-muted-foreground">Tarjetas de Crédito</span>
-                                      </div>
-                                      <span className="font-bold text-destructive">
-                                        {formatNumberOnly(tarjetasCredito.filter(c => c.saldoActual < 0).reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
-                                      </span>
+                                <CollapsibleTrigger className="p-4 w-full group">
+                                  <div className="flex justify-between items-center cursor-pointer">
+                                    <div className="flex items-center gap-2">
+                                      <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                      <span className="text-sm font-semibold text-muted-foreground">Tarjetas de Crédito</span>
                                     </div>
-                                  </CollapsibleTrigger>
+                                    <span className="font-bold text-destructive">
+                                      {formatNumberOnly(tarjetasCredito.filter(c => c.saldoActual < 0).reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
+                                    </span>
+                                  </div>
                                   <div className="text-xs text-muted-foreground mt-2">
                                     Deuda de tarjetas activas
                                   </div>
-                                  {/* Cuentas individuales */}
-                                  <CollapsibleContent className="mt-3">
-                                     <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
-                                       {tarjetasCredito.map(cuenta => (
-                                         <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
-                                           <span className="text-muted-foreground">
-                                             • {cuenta.nombre} {cuenta.divisa}
-                                             {cuenta.saldoActual >= 0 && <span className="ml-2 text-success">(Saldo a favor)</span>}
-                                           </span>
-                                           <span className={`font-medium ${cuenta.saldoActual >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                             {formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}
-                                           </span>
-                                         </div>
-                                       ))}
-                                     </div>
-                                  </CollapsibleContent>
-                                </div>
+                                </CollapsibleTrigger>
+                                {/* Cuentas individuales */}
+                                <CollapsibleContent className="px-4 pb-4">
+                                   <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
+                                     {tarjetasCredito.map(cuenta => (
+                                       <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                         <span className="text-muted-foreground">
+                                           • {cuenta.nombre} {cuenta.divisa}
+                                           {cuenta.saldoActual >= 0 && <span className="ml-2 text-success">(Saldo a favor)</span>}
+                                         </span>
+                                         <span className={`font-medium ${cuenta.saldoActual >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                           {formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}
+                                         </span>
+                                       </div>
+                                     ))}
+                                   </div>
+                                </CollapsibleContent>
                               </Collapsible>
                             )}
 
                             {/* Hipotecas */}
                             {cuentasHipoteca.length > 0 && (
                               <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
-                                <div className="p-4">
-                                  <CollapsibleTrigger className="w-full group">
-                                    <div className="flex justify-between items-center cursor-pointer">
-                                      <div className="flex items-center gap-2">
-                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                        <span className="text-sm font-semibold text-muted-foreground">Hipoteca</span>
-                                      </div>
-                                      <span className="font-bold text-destructive">
-                                        {formatNumberOnly(cuentasHipoteca.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
-                                      </span>
+                                <CollapsibleTrigger className="p-4 w-full group">
+                                  <div className="flex justify-between items-center cursor-pointer">
+                                    <div className="flex items-center gap-2">
+                                      <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                      <span className="text-sm font-semibold text-muted-foreground">Hipoteca</span>
                                     </div>
-                                  </CollapsibleTrigger>
+                                    <span className="font-bold text-destructive">
+                                      {formatNumberOnly(cuentasHipoteca.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
+                                    </span>
+                                  </div>
                                   <div className="text-xs text-muted-foreground mt-2">
                                     Saldo pendiente del préstamo hipotecario
                                   </div>
-                                  {/* Cuentas individuales */}
-                                  <CollapsibleContent className="mt-3">
-                                    <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
-                                          {cuentasHipoteca.map(cuenta => (
-                                            <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
-                                              <span className="text-muted-foreground">• {cuenta.nombre} {cuenta.divisa}</span>
-                                              <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
-                                            </div>
-                                          ))}
-                                    </div>
-                                  </CollapsibleContent>
-                                </div>
+                                </CollapsibleTrigger>
+                                {/* Cuentas individuales */}
+                                <CollapsibleContent className="px-4 pb-4">
+                                  <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
+                                        {cuentasHipoteca.map(cuenta => (
+                                          <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                            <span className="text-muted-foreground">• {cuenta.nombre} {cuenta.divisa}</span>
+                                            <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
+                                          </div>
+                                        ))}
+                                  </div>
+                                </CollapsibleContent>
                               </Collapsible>
                             )}
                           </div>
