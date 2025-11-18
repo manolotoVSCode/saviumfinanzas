@@ -24,9 +24,17 @@ interface DashboardProps {
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+  const [collapsibleStates, setCollapsibleStates] = useState<Record<string, boolean>>({});
   const [assetsAccordionValue, setAssetsAccordionValue] = useState<string>("");
   const [liabilitiesAccordionValue, setLiabilitiesAccordionValue] = useState<string>("");
   const { t } = useLanguage();
+
+  const toggleCollapsible = (key: string) => {
+    setCollapsibleStates(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
 
   // Función para filtrar métricas por moneda
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
@@ -467,7 +475,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   <AccordionTrigger className="text-sm text-success hover:text-success/80 hover:no-underline">
                     Ver desglose de activos
                   </AccordionTrigger>
-                  <AccordionContent>
+                  <AccordionContent forceMount>
+                    <div className="data-[state=closed]:hidden">
                     <div className="space-y-3 pt-2">
                       {/* Mostrar categorías por moneda con cuentas individuales */}
                       {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
@@ -516,7 +525,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                               {/* Efectivo/Bancos */}
                               {activos.efectivoBancos > 0 && (
                                  <Collapsible 
-                                   defaultOpen={false}
+                                   open={collapsibleStates[`efectivo-${moneda}`] || false}
+                                   onOpenChange={() => toggleCollapsible(`efectivo-${moneda}`)}
                                    className="rounded-lg bg-success/5 border border-success/20"
                                  >
                                    <CollapsibleTrigger className="group w-full p-4 flex justify-between items-center cursor-pointer text-left">
@@ -545,7 +555,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                               {/* Inversiones */}
                               {activos.inversiones > 0 && (
                                  <Collapsible 
-                                   defaultOpen={false}
+                                   open={collapsibleStates[`inversiones-${moneda}`] || false}
+                                   onOpenChange={() => toggleCollapsible(`inversiones-${moneda}`)}
                                    className="rounded-lg bg-primary/5 border border-primary/20"
                                  >
                                    <CollapsibleTrigger className="group w-full p-4 flex justify-between items-center cursor-pointer text-left">
@@ -574,7 +585,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                {/* Empresas Privadas */}
                                {activos.empresasPrivadas > 0 && (
                                  <Collapsible 
-                                   defaultOpen={false}
+                                   open={collapsibleStates[`empresas-${moneda}`] || false}
+                                   onOpenChange={() => toggleCollapsible(`empresas-${moneda}`)}
                                    className="rounded-lg bg-accent/5 border border-accent/20"
                                  >
                                      <CollapsibleTrigger className="group w-full p-4 flex justify-between items-center cursor-pointer text-left">
@@ -603,7 +615,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                {/* Bienes Raíces */}
                                {activos.bienRaiz > 0 && (
                                   <Collapsible 
-                                    defaultOpen={false}
+                                    open={collapsibleStates[`bienraiz-${moneda}`] || false}
+                                    onOpenChange={() => toggleCollapsible(`bienraiz-${moneda}`)}
                                     className="rounded-lg bg-secondary/5 border border-secondary/20"
                                   >
                                      <CollapsibleTrigger className="group w-full p-4 flex justify-between items-center cursor-pointer text-left">
@@ -631,6 +644,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                             </div>
                         );
                       })}
+                    </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -668,7 +682,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   <AccordionTrigger className="text-sm text-destructive hover:text-destructive/80 hover:no-underline">
                     Ver desglose de pasivos
                   </AccordionTrigger>
-                  <AccordionContent>
+                  <AccordionContent forceMount>
+                    <div className="data-[state=closed]:hidden">
                     <div className="space-y-3 pt-2">
                       {/* Mostrar categorías por moneda con cuentas individuales */}
                       {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
@@ -700,7 +715,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                             {/* Tarjetas de Crédito */}
                             {tarjetasCredito.length > 0 && (
                               <Collapsible 
-                                defaultOpen={false}
+                                open={collapsibleStates[`tarjetas-${moneda}`] || false}
+                                onOpenChange={() => toggleCollapsible(`tarjetas-${moneda}`)}
                                 className="rounded-lg bg-destructive/5 border border-destructive/20"
                               >
                                 <CollapsibleTrigger className="group w-full p-4 flex justify-between items-center cursor-pointer text-left">
@@ -736,7 +752,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                             {/* Hipotecas */}
                             {cuentasHipoteca.length > 0 && (
                               <Collapsible 
-                                defaultOpen={false}
+                                open={collapsibleStates[`hipoteca-${moneda}`] || false}
+                                onOpenChange={() => toggleCollapsible(`hipoteca-${moneda}`)}
                                 className="rounded-lg bg-warning/5 border border-warning/20"
                               >
                                  <CollapsibleTrigger className="group w-full p-4 flex justify-between items-center cursor-pointer text-left">
@@ -766,6 +783,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                           </div>
                          );
                        })}
+                    </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
