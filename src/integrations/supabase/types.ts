@@ -416,13 +416,16 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: undefined
       }
-      clear_sample_data: { Args: { user_uuid: string }; Returns: undefined }
+      clear_sample_data: {
+        Args: { user_uuid: string }
+        Returns: undefined
+      }
       ensure_sin_asignar_category: {
         Args: { user_uuid: string }
         Returns: string
       }
       get_admin_user_stats: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           apellidos: string
           categorias_count: number
@@ -437,7 +440,10 @@ export type Database = {
           user_id: string
         }[]
       }
-      user_has_sample_data: { Args: { user_uuid: string }; Returns: boolean }
+      user_has_sample_data: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
