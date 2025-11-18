@@ -557,9 +557,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         return (
                            <div key={moneda} className="space-y-3">
                               {/* Efectivo/Bancos */}
-                              {activos.efectivoBancos > 0 && (
+                              {activos.efectivoBancos > 0 && (() => {
+                                const isOpen = collapsibleStates[`efectivo-${moneda}`] || false;
+                                console.log(`Rendering efectivo-${moneda}, isOpen:`, isOpen, 'state:', collapsibleStates);
+                                return (
                                  <Collapsible 
-                                   open={collapsibleStates[`efectivo-${moneda}`] || false}
+                                   open={isOpen}
                                    onOpenChange={() => toggleCollapsible(`efectivo-${moneda}`)}
                                    className="rounded-lg bg-success/5 border border-success/20"
                                  >
@@ -582,9 +585,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                          </div>
                                        ))}
                                      </div>
-                                   </CollapsibleContent>
-                                </Collapsible>
-                              )}
+                                    </CollapsibleContent>
+                                 </Collapsible>
+                                );
+                              })()}
                              
                               {/* Inversiones */}
                               {activos.inversiones > 0 && (
