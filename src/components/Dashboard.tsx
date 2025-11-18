@@ -23,7 +23,15 @@ interface DashboardProps {
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+  const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
   const { t } = useLanguage();
+
+  const handleCollapsibleChange = (key: string, isOpen: boolean) => {
+    setOpenCollapsibles(prev => ({
+      ...prev,
+      [key]: isOpen
+    }));
+  };
 
   // Función para filtrar métricas por moneda
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
@@ -534,8 +542,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                            <div key={moneda} className="space-y-3">
                               {/* Efectivo/Bancos */}
                               {activos.efectivoBancos > 0 && (
-                                 <Collapsible className="rounded-lg bg-success/5 border border-success/20">
-                                   <CollapsibleTrigger className="w-full">
+                                 <Collapsible 
+                                   open={openCollapsibles[`efectivo-${moneda}`] ?? false}
+                                   onOpenChange={(isOpen) => handleCollapsibleChange(`efectivo-${moneda}`, isOpen)}
+                                   className="rounded-lg bg-success/5 border border-success/20"
+                                 >
+                                   <CollapsibleTrigger asChild>
                                      <div className="p-4 flex justify-between items-center cursor-pointer">
                                        <div className="flex items-center gap-2">
                                          <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 data-[state=open]:rotate-180" />
@@ -562,8 +574,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                              
                               {/* Inversiones */}
                               {activos.inversiones > 0 && (
-                                 <Collapsible className="rounded-lg bg-primary/5 border border-primary/20">
-                                   <CollapsibleTrigger className="w-full">
+                                 <Collapsible 
+                                   open={openCollapsibles[`inversiones-${moneda}`] ?? false}
+                                   onOpenChange={(isOpen) => handleCollapsibleChange(`inversiones-${moneda}`, isOpen)}
+                                   className="rounded-lg bg-primary/5 border border-primary/20"
+                                 >
+                                   <CollapsibleTrigger asChild>
                                      <div className="p-4 flex justify-between items-center cursor-pointer">
                                        <div className="flex items-center gap-2">
                                          <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 data-[state=open]:rotate-180" />
@@ -590,8 +606,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
                                {/* Empresas Privadas */}
                                {activos.empresasPrivadas > 0 && (
-                                  <Collapsible className="rounded-lg bg-accent/5 border border-accent/20">
-                                    <CollapsibleTrigger className="w-full">
+                                  <Collapsible 
+                                    open={openCollapsibles[`empresas-${moneda}`] ?? false}
+                                    onOpenChange={(isOpen) => handleCollapsibleChange(`empresas-${moneda}`, isOpen)}
+                                    className="rounded-lg bg-accent/5 border border-accent/20"
+                                  >
+                                    <CollapsibleTrigger asChild>
                                       <div className="p-4 flex justify-between items-center cursor-pointer">
                                         <div className="flex items-center gap-2">
                                           <ChevronDown className="h-4 w-4 text-accent transition-transform duration-200 data-[state=open]:rotate-180" />
@@ -618,8 +638,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                               
                                {/* Bienes Raíces */}
                                {activos.bienRaiz > 0 && (
-                                  <Collapsible className="rounded-lg bg-secondary/5 border border-secondary/20">
-                                    <CollapsibleTrigger className="w-full">
+                                  <Collapsible 
+                                    open={openCollapsibles[`bienraiz-${moneda}`] ?? false}
+                                    onOpenChange={(isOpen) => handleCollapsibleChange(`bienraiz-${moneda}`, isOpen)}
+                                    className="rounded-lg bg-secondary/5 border border-secondary/20"
+                                  >
+                                    <CollapsibleTrigger asChild>
                                       <div className="p-4 flex justify-between items-center cursor-pointer">
                                         <div className="flex items-center gap-2">
                                           <ChevronDown className="h-4 w-4 text-secondary transition-transform duration-200 data-[state=open]:rotate-180" />
@@ -708,8 +732,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                           <div key={moneda} className="space-y-3">
                             {/* Tarjetas de Crédito */}
                             {tarjetasCredito.length > 0 && (
-                              <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
-                                <CollapsibleTrigger className="w-full">
+                              <Collapsible 
+                                open={openCollapsibles[`tarjetas-${moneda}`] ?? false}
+                                onOpenChange={(isOpen) => handleCollapsibleChange(`tarjetas-${moneda}`, isOpen)}
+                                className="rounded-lg bg-destructive/5 border border-destructive/20"
+                              >
+                                <CollapsibleTrigger asChild>
                                   <div className="p-4 flex justify-between items-center cursor-pointer">
                                     <div className="flex items-center gap-2">
                                       <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 data-[state=open]:rotate-180" />
@@ -743,8 +771,12 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
                             {/* Hipotecas */}
                             {cuentasHipoteca.length > 0 && (
-                              <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
-                                <CollapsibleTrigger className="w-full">
+                              <Collapsible 
+                                open={openCollapsibles[`hipoteca-${moneda}`] ?? false}
+                                onOpenChange={(isOpen) => handleCollapsibleChange(`hipoteca-${moneda}`, isOpen)}
+                                className="rounded-lg bg-destructive/5 border border-destructive/20"
+                              >
+                                <CollapsibleTrigger asChild>
                                   <div className="p-4 flex justify-between items-center cursor-pointer">
                                     <div className="flex items-center gap-2">
                                       <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 data-[state=open]:rotate-180" />
