@@ -25,7 +25,8 @@ interface DashboardProps {
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
   const [collapsibleStates, setCollapsibleStates] = useState<Record<string, boolean>>({});
-  const [accordionValue, setAccordionValue] = useState<string>("");
+  const [assetsAccordionValue, setAssetsAccordionValue] = useState<string>("");
+  const [liabilitiesAccordionValue, setLiabilitiesAccordionValue] = useState<string>("");
   const { t } = useLanguage();
 
   const toggleCollapsible = (key: string) => {
@@ -467,8 +468,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 type="single" 
                 collapsible 
                 className="w-full"
-                value={accordionValue}
-                onValueChange={setAccordionValue}
+                value={assetsAccordionValue}
+                onValueChange={setAssetsAccordionValue}
               >
                 <AccordionItem value="assets-detail" className="border-success/20">
                   <AccordionTrigger className="text-sm text-success hover:text-success/80 hover:no-underline">
@@ -672,8 +673,8 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 type="single" 
                 collapsible 
                 className="w-full"
-                value={accordionValue}
-                onValueChange={setAccordionValue}
+                value={liabilitiesAccordionValue}
+                onValueChange={setLiabilitiesAccordionValue}
               >
                 <AccordionItem value="liabilities-detail" className="border-destructive/20">
                   <AccordionTrigger className="text-sm text-destructive hover:text-destructive/80 hover:no-underline">
