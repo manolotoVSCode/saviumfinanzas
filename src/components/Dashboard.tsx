@@ -25,13 +25,19 @@ interface DashboardProps {
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
   const [collapsibleStates, setCollapsibleStates] = useState<Record<string, boolean>>({});
+  const [accordionValue, setAccordionValue] = useState<string>("");
   const { t } = useLanguage();
 
   const toggleCollapsible = (key: string) => {
-    setCollapsibleStates(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
+    console.log('Toggling collapsible:', key, 'current state:', collapsibleStates[key]);
+    setCollapsibleStates(prev => {
+      const newState = {
+        ...prev,
+        [key]: !prev[key]
+      };
+      console.log('New collapsible states:', newState);
+      return newState;
+    });
   };
 
   // Función para filtrar métricas por moneda
@@ -472,7 +478,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               </div>
 
               {/* Desglose colapsable */}
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion 
+                type="single" 
+                collapsible 
+                className="w-full"
+                value={accordionValue}
+                onValueChange={(value) => {
+                  console.log('Accordion value changed:', value);
+                  setAccordionValue(value);
+                }}
+              >
                 <AccordionItem value="assets-detail" className="border-success/20">
                   <AccordionTrigger className="text-sm text-success hover:text-success/80 hover:no-underline">
                     Ver desglose de activos
@@ -689,7 +704,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
               </div>
 
               {/* Desglose colapsable */}
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion 
+                type="single" 
+                collapsible 
+                className="w-full"
+                value={accordionValue}
+                onValueChange={(value) => {
+                  console.log('Liabilities Accordion value changed:', value);
+                  setAccordionValue(value);
+                }}
+              >
                 <AccordionItem value="liabilities-detail" className="border-destructive/20">
                   <AccordionTrigger className="text-sm text-destructive hover:text-destructive/80 hover:no-underline">
                     Ver desglose de pasivos
