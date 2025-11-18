@@ -11,6 +11,7 @@ import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart } from 'recharts';
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { cn } from '@/lib/utils';
 
 
 interface DashboardProps {
@@ -468,7 +469,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   <AccordionTrigger className="text-sm text-success hover:text-success/80 hover:no-underline">
                     Ver desglose de activos
                   </AccordionTrigger>
-                  <AccordionContent>
+                  <AccordionContent forceMount className="data-[state=closed]:hidden">
                     <div className="space-y-3 pt-2">
                       {/* Mostrar categorías por moneda con cuentas individuales */}
                       {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
@@ -669,7 +670,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   <AccordionTrigger className="text-sm text-destructive hover:text-destructive/80 hover:no-underline">
                     Ver desglose de pasivos
                   </AccordionTrigger>
-                  <AccordionContent>
+                  <AccordionContent forceMount className="data-[state=closed]:hidden">
                     <div className="space-y-3 pt-2">
                       {/* Mostrar categorías por moneda con cuentas individuales */}
                       {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
