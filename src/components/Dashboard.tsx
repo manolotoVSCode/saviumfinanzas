@@ -23,15 +23,7 @@ interface DashboardProps {
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const { t } = useLanguage();
-
-  const toggleSection = (sectionId: string) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [sectionId]: !prev[sectionId]
-    }));
-  };
 
   // Función para filtrar métricas por moneda
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
@@ -542,11 +534,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                            <div key={moneda} className="space-y-3">
                               {/* Efectivo/Bancos */}
                               {activos.efectivoBancos > 0 && (
-                                 <Collapsible 
-                                   open={openSections[`efectivo-${moneda}`]} 
-                                   onOpenChange={() => toggleSection(`efectivo-${moneda}`)}
-                                   className="rounded-lg bg-success/5 border border-success/20"
-                                 >
+                                 <Collapsible className="rounded-lg bg-success/5 border border-success/20">
                                    <CollapsibleTrigger className="w-full">
                                      <div className="p-4 flex justify-between items-center cursor-pointer">
                                        <div className="flex items-center gap-2">
@@ -574,11 +562,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                              
                               {/* Inversiones */}
                               {activos.inversiones > 0 && (
-                                 <Collapsible 
-                                   open={openSections[`inversiones-${moneda}`]} 
-                                   onOpenChange={() => toggleSection(`inversiones-${moneda}`)}
-                                   className="rounded-lg bg-primary/5 border border-primary/20"
-                                 >
+                                 <Collapsible className="rounded-lg bg-primary/5 border border-primary/20">
                                    <CollapsibleTrigger className="w-full">
                                      <div className="p-4 flex justify-between items-center cursor-pointer">
                                        <div className="flex items-center gap-2">
@@ -606,11 +590,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
                                {/* Empresas Privadas */}
                                {activos.empresasPrivadas > 0 && (
-                                  <Collapsible 
-                                    open={openSections[`empresas-${moneda}`]} 
-                                    onOpenChange={() => toggleSection(`empresas-${moneda}`)}
-                                    className="rounded-lg bg-accent/5 border border-accent/20"
-                                  >
+                                  <Collapsible className="rounded-lg bg-accent/5 border border-accent/20">
                                     <CollapsibleTrigger className="w-full">
                                       <div className="p-4 flex justify-between items-center cursor-pointer">
                                         <div className="flex items-center gap-2">
@@ -638,11 +618,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                               
                                {/* Bienes Raíces */}
                                {activos.bienRaiz > 0 && (
-                                  <Collapsible 
-                                    open={openSections[`bienraiz-${moneda}`]} 
-                                    onOpenChange={() => toggleSection(`bienraiz-${moneda}`)}
-                                    className="rounded-lg bg-secondary/5 border border-secondary/20"
-                                  >
+                                  <Collapsible className="rounded-lg bg-secondary/5 border border-secondary/20">
                                     <CollapsibleTrigger className="w-full">
                                       <div className="p-4 flex justify-between items-center cursor-pointer">
                                         <div className="flex items-center gap-2">
@@ -732,11 +708,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                           <div key={moneda} className="space-y-3">
                             {/* Tarjetas de Crédito */}
                             {tarjetasCredito.length > 0 && (
-                              <Collapsible 
-                                open={openSections[`tarjetas-${moneda}`]} 
-                                onOpenChange={() => toggleSection(`tarjetas-${moneda}`)}
-                                className="rounded-lg bg-destructive/5 border border-destructive/20"
-                              >
+                              <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
                                 <CollapsibleTrigger className="w-full">
                                   <div className="p-4 flex justify-between items-center cursor-pointer">
                                     <div className="flex items-center gap-2">
@@ -771,11 +743,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
                             {/* Hipotecas */}
                             {cuentasHipoteca.length > 0 && (
-                              <Collapsible 
-                                open={openSections[`hipoteca-${moneda}`]} 
-                                onOpenChange={() => toggleSection(`hipoteca-${moneda}`)}
-                                className="rounded-lg bg-destructive/5 border border-destructive/20"
-                              >
+                              <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
                                 <CollapsibleTrigger className="w-full">
                                   <div className="p-4 flex justify-between items-center cursor-pointer">
                                     <div className="flex items-center gap-2">
