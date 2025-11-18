@@ -29,15 +29,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   const { t } = useLanguage();
 
   const toggleCollapsible = (key: string) => {
-    console.log('Toggling collapsible:', key, 'current state:', collapsibleStates[key]);
-    setCollapsibleStates(prev => {
-      const newState = {
-        ...prev,
-        [key]: !prev[key]
-      };
-      console.log('New collapsible states:', newState);
-      return newState;
-    });
+    setCollapsibleStates(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
   };
 
   // Función para filtrar métricas por moneda
@@ -191,9 +186,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       const mesLabel = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear().toString().slice(-2)}`;
       
-      console.log(`=== DEBUG ${mesLabel} ${selectedCurrency} ===`);
-      console.log('Transacciones del mes:', monthTrans.length);
-      
       // Filtrar solo transacciones no aportaciones para ingresos y gastos regulares, excluyendo "Compra Venta Inmuebles"
       const ingresos = monthTrans
         .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
@@ -214,13 +206,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       // Ajustar por reembolsos
       const ingresosAjustados = ingresos - reembolsos;
       const gastosAjustados = gastos - reembolsos;
-      
-      console.log('Ingresos brutos:', ingresos);
-      console.log('Gastos brutos:', gastos);
-      console.log('Reembolsos encontrados:', reembolsos);
-      console.log('Ingresos ajustados:', ingresosAjustados);
-      console.log('Gastos ajustados:', gastosAjustados);
-      console.log(`=== FIN DEBUG ${mesLabel} ===`);
       
       tendenciaMensual.push({
         mes: mesLabel,
@@ -483,10 +468,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 collapsible 
                 className="w-full"
                 value={accordionValue}
-                onValueChange={(value) => {
-                  console.log('Accordion value changed:', value);
-                  setAccordionValue(value);
-                }}
+                onValueChange={setAccordionValue}
               >
                 <AccordionItem value="assets-detail" className="border-success/20">
                   <AccordionTrigger className="text-sm text-success hover:text-success/80 hover:no-underline">
@@ -508,61 +490,40 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         if (!hasAssets) return null;
 
                         // Filtrar cuentas por moneda
-                        console.log('=== DEBUG CUENTAS ACTIVOS ===');
-                        console.log('Total cuentas:', accounts.length);
-                        console.log('Moneda filtrada:', moneda);
-                        
-                        const cuentasEfectivo = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Efectivo/Bancos' && 
-                            cuenta.divisa === moneda && 
-                            cuenta.vendida !== true &&
-                            cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta efectivo encontrada:', cuenta.nombre, cuenta.saldoActual);
-                          return match;
-                        });
+                        const cuentasEfectivo = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Efectivo/Bancos' && 
+                          cuenta.divisa === moneda && 
+                          cuenta.vendida !== true &&
+                          cuenta.saldoActual > 0
+                        );
 
-                        const cuentasInversion = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Inversión' && 
-                            cuenta.divisa === moneda && 
-                            cuenta.vendida !== true &&
-                            cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta inversión encontrada:', cuenta.nombre, cuenta.saldoActual);
-                          return match;
-                        });
+                        const cuentasInversion = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Inversión' && 
+                          cuenta.divisa === moneda && 
+                          cuenta.vendida !== true &&
+                          cuenta.saldoActual > 0
+                        );
 
-                        const cuentasEmpresas = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Empresa Privada' && 
-                            cuenta.divisa === moneda && 
-                            cuenta.vendida !== true &&
-                            cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta empresa encontrada:', cuenta.nombre, cuenta.saldoActual);
-                          return match;
-                        });
+                        const cuentasEmpresas = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Empresa Privada' && 
+                          cuenta.divisa === moneda && 
+                          cuenta.vendida !== true &&
+                          cuenta.saldoActual > 0
+                        );
 
-                        const cuentasBienRaiz = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Bien Raíz' && 
-                            cuenta.divisa === moneda && 
-                            cuenta.vendida !== true &&
-                            cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta bien raíz encontrada:', cuenta.nombre, cuenta.saldoActual);
-                          return match;
-                        });
-
-                        console.log('Cuentas efectivo:', cuentasEfectivo.length);
-                        console.log('Cuentas inversión:', cuentasInversion.length);
-                        console.log('Cuentas empresas:', cuentasEmpresas.length);
-                        console.log('Cuentas bien raíz:', cuentasBienRaiz.length);
-                        console.log('=== FIN DEBUG CUENTAS ACTIVOS ===');
+                        const cuentasBienRaiz = accounts.filter(cuenta => 
+                          cuenta.tipo === 'Bien Raíz' && 
+                          cuenta.divisa === moneda && 
+                          cuenta.vendida !== true &&
+                          cuenta.saldoActual > 0
+                        );
 
                         return (
                            <div key={moneda} className="space-y-3">
                               {/* Efectivo/Bancos */}
-                              {activos.efectivoBancos > 0 && (() => {
-                                const isOpen = collapsibleStates[`efectivo-${moneda}`] || false;
-                                console.log(`Rendering efectivo-${moneda}, isOpen:`, isOpen, 'state:', collapsibleStates);
-                                return (
+                              {activos.efectivoBancos > 0 && (
                                  <Collapsible 
-                                   open={isOpen}
+                                   open={collapsibleStates[`efectivo-${moneda}`] || false}
                                    onOpenChange={() => toggleCollapsible(`efectivo-${moneda}`)}
                                    className="rounded-lg bg-success/5 border border-success/20"
                                  >
@@ -587,8 +548,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                      </div>
                                     </CollapsibleContent>
                                  </Collapsible>
-                                );
-                              })()}
+                              )}
                              
                               {/* Inversiones */}
                               {activos.inversiones > 0 && (
@@ -713,10 +673,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                 collapsible 
                 className="w-full"
                 value={accordionValue}
-                onValueChange={(value) => {
-                  console.log('Liabilities Accordion value changed:', value);
-                  setAccordionValue(value);
-                }}
+                onValueChange={setAccordionValue}
               >
                 <AccordionItem value="liabilities-detail" className="border-destructive/20">
                   <AccordionTrigger className="text-sm text-destructive hover:text-destructive/80 hover:no-underline">
