@@ -23,7 +23,15 @@ interface DashboardProps {
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+  const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
   const { t } = useLanguage();
+
+  const toggleCollapsible = (key: string) => {
+    setOpenCollapsibles(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
 
   // Función para filtrar métricas por moneda
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
@@ -532,19 +540,23 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
                         return (
                            <div key={moneda} className="space-y-3">
-                             {/* Efectivo/Bancos */}
-                             {activos.efectivoBancos > 0 && (
-                                <Collapsible className="rounded-lg bg-success/5 border border-success/20">
-                                  <div className="p-4">
-                                    <CollapsibleTrigger className="w-full group">
-                                      <div className="flex justify-between items-center cursor-pointer">
-                                        <div className="flex items-center gap-2">
-                                          <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                          <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
-                                        </div>
-                                        <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
-                                      </div>
-                                    </CollapsibleTrigger>
+                              {/* Efectivo/Bancos */}
+                              {activos.efectivoBancos > 0 && (
+                                 <Collapsible 
+                                   className="rounded-lg bg-success/5 border border-success/20"
+                                   open={openCollapsibles[`efectivo-${moneda}`]}
+                                   onOpenChange={() => toggleCollapsible(`efectivo-${moneda}`)}
+                                 >
+                                   <div className="p-4">
+                                     <CollapsibleTrigger className="w-full group">
+                                       <div className="flex justify-between items-center cursor-pointer">
+                                         <div className="flex items-center gap-2">
+                                           <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                           <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
+                                         </div>
+                                         <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
+                                       </div>
+                                     </CollapsibleTrigger>
                                     <div className="text-xs text-muted-foreground mt-2">
                                       {t('dashboard.available_immediately')}
                                     </div>
@@ -565,19 +577,23 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                </Collapsible>
                              )}
                              
-                             {/* Inversiones */}
-                             {activos.inversiones > 0 && (
-                                <Collapsible className="rounded-lg bg-primary/5 border border-primary/20">
-                                  <div className="p-4">
-                                    <CollapsibleTrigger className="w-full group">
-                                      <div className="flex justify-between items-center cursor-pointer">
-                                        <div className="flex items-center gap-2">
-                                          <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                          <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
-                                        </div>
-                                        <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
-                                      </div>
-                                    </CollapsibleTrigger>
+                              {/* Inversiones */}
+                              {activos.inversiones > 0 && (
+                                 <Collapsible 
+                                   className="rounded-lg bg-primary/5 border border-primary/20"
+                                   open={openCollapsibles[`inversiones-${moneda}`]}
+                                   onOpenChange={() => toggleCollapsible(`inversiones-${moneda}`)}
+                                 >
+                                   <div className="p-4">
+                                     <CollapsibleTrigger className="w-full group">
+                                       <div className="flex justify-between items-center cursor-pointer">
+                                         <div className="flex items-center gap-2">
+                                           <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                           <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
+                                         </div>
+                                         <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
+                                       </div>
+                                     </CollapsibleTrigger>
                                     <div className="text-xs text-muted-foreground mt-2">
                                       {t('dashboard.funds_stocks_etfs')}
                                     </div>
@@ -598,19 +614,23 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                </Collapsible>
                               )}
 
-                              {/* Empresas Privadas */}
-                              {activos.empresasPrivadas > 0 && (
-                                 <Collapsible className="rounded-lg bg-accent/5 border border-accent/20">
-                                   <div className="p-4">
-                                     <CollapsibleTrigger className="w-full group">
-                                       <div className="flex justify-between items-center cursor-pointer">
-                                         <div className="flex items-center gap-2">
-                                           <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                           <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
-                                         </div>
-                                         <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
-                                       </div>
-                                     </CollapsibleTrigger>
+                               {/* Empresas Privadas */}
+                               {activos.empresasPrivadas > 0 && (
+                                  <Collapsible 
+                                    className="rounded-lg bg-accent/5 border border-accent/20"
+                                    open={openCollapsibles[`empresas-${moneda}`]}
+                                    onOpenChange={() => toggleCollapsible(`empresas-${moneda}`)}
+                                  >
+                                    <div className="p-4">
+                                      <CollapsibleTrigger className="w-full group">
+                                        <div className="flex justify-between items-center cursor-pointer">
+                                          <div className="flex items-center gap-2">
+                                            <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                            <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
+                                          </div>
+                                          <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
+                                        </div>
+                                      </CollapsibleTrigger>
                                      <div className="text-xs text-muted-foreground mt-2">
                                        Participaciones en empresas propias
                                      </div>
@@ -631,19 +651,23 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                 </Collapsible>
                               )}
                               
-                              {/* Bienes Raíces */}
-                              {activos.bienRaiz > 0 && (
-                                 <Collapsible className="rounded-lg bg-warning/5 border border-warning/20">
-                                   <div className="p-4">
-                                     <CollapsibleTrigger className="w-full group">
-                                       <div className="flex justify-between items-center cursor-pointer">
-                                         <div className="flex items-center gap-2">
-                                           <ChevronDown className="h-4 w-4 text-warning transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                           <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
-                                         </div>
-                                         <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
-                                       </div>
-                                     </CollapsibleTrigger>
+                               {/* Bienes Raíces */}
+                               {activos.bienRaiz > 0 && (
+                                  <Collapsible 
+                                    className="rounded-lg bg-warning/5 border border-warning/20"
+                                    open={openCollapsibles[`bienraiz-${moneda}`]}
+                                    onOpenChange={() => toggleCollapsible(`bienraiz-${moneda}`)}
+                                  >
+                                    <div className="p-4">
+                                      <CollapsibleTrigger className="w-full group">
+                                        <div className="flex justify-between items-center cursor-pointer">
+                                          <div className="flex items-center gap-2">
+                                            <ChevronDown className="h-4 w-4 text-warning transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                            <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
+                                          </div>
+                                          <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
+                                        </div>
+                                      </CollapsibleTrigger>
                                      <div className="text-xs text-muted-foreground mt-2">
                                        Propiedades y terrenos
                                      </div>
@@ -728,7 +752,11 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                           <div key={moneda} className="space-y-3">
                             {/* Tarjetas de Crédito */}
                             {tarjetasCredito.length > 0 && (
-                              <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
+                              <Collapsible 
+                                className="rounded-lg bg-destructive/5 border border-destructive/20"
+                                open={openCollapsibles[`tarjetas-${moneda}`]}
+                                onOpenChange={() => toggleCollapsible(`tarjetas-${moneda}`)}
+                              >
                                 <div className="p-4">
                                   <CollapsibleTrigger className="w-full group">
                                     <div className="flex justify-between items-center cursor-pointer">
@@ -766,7 +794,11 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
                             {/* Hipotecas */}
                             {cuentasHipoteca.length > 0 && (
-                              <Collapsible className="rounded-lg bg-destructive/5 border border-destructive/20">
+                              <Collapsible 
+                                className="rounded-lg bg-destructive/5 border border-destructive/20"
+                                open={openCollapsibles[`hipoteca-${moneda}`]}
+                                onOpenChange={() => toggleCollapsible(`hipoteca-${moneda}`)}
+                              >
                                 <div className="p-4">
                                   <CollapsibleTrigger className="w-full group">
                                     <div className="flex justify-between items-center cursor-pointer">
