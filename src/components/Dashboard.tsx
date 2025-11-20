@@ -497,29 +497,29 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         console.log('Moneda filtrada:', moneda);
                         
                         const cuentasEfectivo = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Efectivo/Bancos' && 
+                          const match = ['Efectivo', 'Banco', 'Ahorros'].includes(cuenta.tipo) && 
                             cuenta.divisa === moneda && 
                             cuenta.vendida !== true &&
                             cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta efectivo encontrada:', cuenta.nombre, cuenta.saldoActual);
+                          if (match) console.log('Cuenta efectivo encontrada:', cuenta.nombre, cuenta.saldoActual, cuenta.tipo, cuenta.divisa);
                           return match;
                         });
 
                         const cuentasInversion = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Inversión' && 
+                          const match = cuenta.tipo === 'Inversiones' && 
                             cuenta.divisa === moneda && 
                             cuenta.vendida !== true &&
                             cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta inversión encontrada:', cuenta.nombre, cuenta.saldoActual);
+                          if (match) console.log('Cuenta inversión encontrada:', cuenta.nombre, cuenta.saldoActual, cuenta.tipo, cuenta.divisa);
                           return match;
                         });
 
                         const cuentasEmpresas = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Empresa Privada' && 
+                          const match = cuenta.tipo === 'Empresa Propia' && 
                             cuenta.divisa === moneda && 
                             cuenta.vendida !== true &&
                             cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta empresa encontrada:', cuenta.nombre, cuenta.saldoActual);
+                          if (match) console.log('Cuenta empresa encontrada:', cuenta.nombre, cuenta.saldoActual, cuenta.tipo, cuenta.divisa);
                           return match;
                         });
 
@@ -528,7 +528,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                             cuenta.divisa === moneda && 
                             cuenta.vendida !== true &&
                             cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta bien raíz encontrada:', cuenta.nombre, cuenta.saldoActual);
+                          if (match) console.log('Cuenta bien raíz encontrada:', cuenta.nombre, cuenta.saldoActual, cuenta.tipo, cuenta.divisa);
                           return match;
                         });
 
