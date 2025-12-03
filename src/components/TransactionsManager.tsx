@@ -737,6 +737,67 @@ export const TransactionsManager = ({
                           </p>
                         )}
                       </div>
+                      
+                      {/* Preview de la transacción automática */}
+                      {autoContribution.targetAccountId && (formData.ingreso > 0 || formData.gasto > 0) && (
+                        <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-dashed">
+                          <p className="text-sm font-medium mb-2 text-muted-foreground">
+                            📋 Resumen de transacción automática:
+                          </p>
+                          {(() => {
+                            const isGasto = formData.gasto > 0;
+                            const originalAmount = isGasto ? formData.gasto : formData.ingreso;
+                            const targetAccount = accounts.find(a => a.id === autoContribution.targetAccountId);
+                            
+                            let autoTipo: string;
+                            let autoMonto: string;
+                            let badgeClass: string;
+                            
+                            if (autoContribution.targetAccountType === 'Aportación') {
+                              autoTipo = 'Aportación (Ingreso)';
+                              autoMonto = `+${formatCurrency(originalAmount)}`;
+                              badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                            } else if (autoContribution.targetAccountType === 'Retiro') {
+                              autoTipo = 'Retiro (Gasto)';
+                              autoMonto = `-${formatCurrency(originalAmount)}`;
+                              badgeClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                            } else if (isGasto) {
+                              autoTipo = 'Ingreso';
+                              autoMonto = `+${formatCurrency(originalAmount)}`;
+                              badgeClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                            } else {
+                              autoTipo = 'Gasto';
+                              autoMonto = `-${formatCurrency(originalAmount)}`;
+                              badgeClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+                            }
+                            
+                            return (
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-muted-foreground">Cuenta destino:</span>
+                                  <span className="font-medium">{targetAccount?.nombre || 'No seleccionada'}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-muted-foreground">Tipo:</span>
+                                  <Badge className={badgeClass}>{autoTipo}</Badge>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-muted-foreground">Monto:</span>
+                                  <span className={`font-bold ${autoMonto.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
+                                    {autoMonto}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-muted-foreground">Comentario:</span>
+                                  <span className="text-xs truncate max-w-[200px]">
+                                    Automática ({autoTipo}): {formData.comentario || '...'}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
