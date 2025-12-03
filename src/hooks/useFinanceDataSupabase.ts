@@ -1118,20 +1118,55 @@ export const useFinanceDataSupabase = () => {
 
       if (error) throw error;
 
-      // Si hay aportación automática, crear transacción adicional
+      // Si hay aportación automática, crear transacción adicional (INVERSA)
       if (autoContribution && autoContribution.targetAccountId) {
-        // Encontrar la categoría del tipo seleccionado
-        const targetCategory = categories.find(cat => 
-          cat.tipo === autoContribution.targetAccountType && 
-          cat.categoria.toLowerCase().includes('sin asignar')
-        );
+        // Determinar el tipo de transacción original
+        const isGasto = transaction.gasto > 0;
+        const isIngreso = transaction.ingreso > 0;
+        const originalAmount = isGasto ? transaction.gasto : transaction.ingreso;
+        
+        // La transacción automática es INVERSA:
+        // - Gasto original → Ingreso en cuenta destino
+        // - Ingreso original → Gasto en cuenta destino
+        // - Aportación → Retiro en cuenta destino
+        // - Retiro → Aportación en cuenta destino
+        
+        // Determinar el tipo inverso para la transacción automática
+        let autoTipo: string;
+        let autoIngreso = 0;
+        let autoGasto = 0;
+        
+        if (autoContribution.targetAccountType === 'Aportación') {
+          // Si es aportación en destino, viene de un retiro en origen
+          autoTipo = 'Aportación';
+          autoIngreso = originalAmount;
+          autoGasto = 0;
+        } else if (autoContribution.targetAccountType === 'Retiro') {
+          // Si es retiro en destino, viene de una aportación en origen
+          autoTipo = 'Retiro';
+          autoIngreso = 0;
+          autoGasto = originalAmount;
+        } else if (isGasto) {
+          // Gasto en origen → Ingreso en destino
+          autoTipo = 'Ingreso';
+          autoIngreso = originalAmount;
+          autoGasto = 0;
+        } else {
+          // Ingreso en origen → Gasto en destino
+          autoTipo = 'Gastos';
+          autoIngreso = 0;
+          autoGasto = originalAmount;
+        }
+
+        // Buscar categoría apropiada para la transacción automática
+        const targetCategory = categories.find(cat => cat.tipo === autoTipo);
 
         const autoContribData = {
           cuenta_id: autoContribution.targetAccountId,
           fecha: transaction.fecha.toISOString().split('T')[0],
-          comentario: `${autoContribution.targetAccountType} automática: ${transaction.comentario}`,
-          ingreso: autoContribution.targetAccountType === 'Aportación' ? transaction.gasto : 0,
-          gasto: autoContribution.targetAccountType === 'Retiro' ? transaction.gasto : 0,
+          comentario: `Automática (${autoTipo}): ${transaction.comentario}`,
+          ingreso: autoIngreso,
+          gasto: autoGasto,
           subcategoria_id: targetCategory?.id || transaction.subcategoriaId,
           divisa: transaction.divisa || 'MXN',
           user_id: userData.user.id
@@ -1232,42 +1267,63 @@ export const useFinanceDataSupabase = () => {
       
       if (error) throw error;
 
-      // Si hay aportación automática, crear la transacción complementaria
+      // Si hay aportación automática, crear la transacción complementaria (INVERSA)
       if (autoContribution && autoContribution.targetAccountId) {
-        // Determinar si es aportación o retiro basado en el tipo de transacción
-        const isContribution = transaction.ingreso && transaction.ingreso > 0;
-        const amount = isContribution ? transaction.ingreso : transaction.gasto;
+        const isGasto = transaction.gasto && transaction.gasto > 0;
+        const isIngreso = transaction.ingreso && transaction.ingreso > 0;
+        const originalAmount = isGasto ? transaction.gasto : (transaction.ingreso || 0);
         
-        if (amount && amount > 0) {
-          // Buscar categoría de aportación o retiro
-          const targetCategory = categories.find(cat => 
-            cat.tipo === (isContribution ? 'Aportación' : 'Retiro')
-          );
+        if (originalAmount > 0) {
+          // Determinar el tipo inverso para la transacción automática
+          let autoTipo: string;
+          let autoIngreso = 0;
+          let autoGasto = 0;
           
-          if (targetCategory) {
-            const autoTransactionData = {
-              user_id: userData.user.id,
-              cuenta_id: autoContribution.targetAccountId,
-              subcategoria_id: targetCategory.id,
-              fecha: transaction.fecha?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-              comentario: `${isContribution ? 'Aportación' : 'Retiro'} automático - ${transaction.comentario}`,
-              ingreso: isContribution ? amount : 0,
-              gasto: isContribution ? 0 : amount,
-              divisa: transaction.divisa || 'MXN'
-            };
-            
-            const { error: autoError } = await supabase
-              .from('transacciones')
-              .insert(autoTransactionData);
-            
-            if (autoError) {
-              console.error('Error creating auto contribution:', autoError);
-              toast({
-                title: "Advertencia",
-                description: "Transacción actualizada pero no se pudo crear la aportación automática",
-                variant: "destructive"
-              });
-            }
+          if (autoContribution.targetAccountType === 'Aportación') {
+            autoTipo = 'Aportación';
+            autoIngreso = originalAmount;
+            autoGasto = 0;
+          } else if (autoContribution.targetAccountType === 'Retiro') {
+            autoTipo = 'Retiro';
+            autoIngreso = 0;
+            autoGasto = originalAmount;
+          } else if (isGasto) {
+            // Gasto en origen → Ingreso en destino
+            autoTipo = 'Ingreso';
+            autoIngreso = originalAmount;
+            autoGasto = 0;
+          } else {
+            // Ingreso en origen → Gasto en destino
+            autoTipo = 'Gastos';
+            autoIngreso = 0;
+            autoGasto = originalAmount;
+          }
+
+          // Buscar categoría apropiada
+          const targetCategory = categories.find(cat => cat.tipo === autoTipo);
+          
+          const autoTransactionData = {
+            user_id: userData.user.id,
+            cuenta_id: autoContribution.targetAccountId,
+            subcategoria_id: targetCategory?.id || transaction.subcategoriaId,
+            fecha: transaction.fecha?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+            comentario: `Automática (${autoTipo}): ${transaction.comentario}`,
+            ingreso: autoIngreso,
+            gasto: autoGasto,
+            divisa: transaction.divisa || 'MXN'
+          };
+          
+          const { error: autoError } = await supabase
+            .from('transacciones')
+            .insert(autoTransactionData);
+          
+          if (autoError) {
+            console.error('Error creating auto contribution:', autoError);
+            toast({
+              title: "Advertencia",
+              description: "Transacción actualizada pero no se pudo crear la transacción automática",
+              variant: "destructive"
+            });
           }
         }
       }
