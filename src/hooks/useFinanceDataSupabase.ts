@@ -47,11 +47,12 @@ export const useFinanceDataSupabase = () => {
       
       if (categoriasError) throw categoriasError;
 
-      // Cargar transacciones
+      // Cargar transacciones (aumentar límite para obtener todas)
       const { data: transaccionesData, error: transaccionesError } = await supabase
         .from('transacciones')
         .select('*')
-        .order('fecha', { ascending: false });
+        .order('fecha', { ascending: false })
+        .limit(10000);
       
       if (transaccionesError) throw transaccionesError;
 
