@@ -117,88 +117,105 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       return tDate.getFullYear() === compareYear;
     });
     
-    // Cálculos del mes anterior (excluyendo aportaciones de ingresos y retiros de gastos, y "Compra Venta Inmuebles")
+    // Calcular reembolsos del mes PRIMERO para ajustar ingresos y gastos
+    const reembolsosMes = lastMonthTransactions
+      .filter(t => 
+        t.tipo === 'Reembolso' || 
+        t.categoria?.toLowerCase().includes('reembolso') ||
+        t.subcategoria?.toLowerCase().includes('reembolso') ||
+        t.comentario?.toLowerCase().includes('reembolso')
+      )
+      .reduce((sum, t) => sum + (t.ingreso || 0), 0);
+    
+    // Cálculos del mes (excluyendo aportaciones, retiros, "Compra Venta Inmuebles" y REEMBOLSOS de ingresos)
     const ingresosMes = lastMonthTransactions
-      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
+      .filter(t => t.tipo === 'Ingreso' && 
+        t.categoria !== 'Compra Venta Inmuebles' &&
+        !t.categoria?.toLowerCase().includes('reembolso') &&
+        !t.subcategoria?.toLowerCase().includes('reembolso') &&
+        !t.comentario?.toLowerCase().includes('reembolso')
+      )
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMes = lastMonthTransactions
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.gasto, 0);
     
-    // Calcular reembolsos del mes anterior
-    const reembolsosMes = lastMonthTransactions
-      .filter(t => t.ingreso > 0 && (
-        t.categoria?.toLowerCase().includes('reembolso') ||
-        t.subcategoria?.toLowerCase().includes('reembolso') ||
-        t.comentario.toLowerCase().includes('reembolso')
-      ))
-      .reduce((sum, t) => sum + t.ingreso, 0);
-    
-    // Ajustar por reembolsos (restar de ingresos y gastos)
-    const ingresosAjustadosMes = ingresosMes - reembolsosMes;
+    // Los reembolsos SOLO se restan de gastos (no de ingresos, ya que no están incluidos en ingresos)
     const gastosAjustadosMes = gastosMes - reembolsosMes;
     
-    // Cálculos de dos meses atrás (para comparativo - excluyendo aportaciones y retiros, y "Compra Venta Inmuebles")
+    // Calcular reembolsos del mes anterior (para comparativo)
+    const reembolsosMesAnterior = twoMonthsAgoTransactions
+      .filter(t => 
+        t.tipo === 'Reembolso' || 
+        t.categoria?.toLowerCase().includes('reembolso') ||
+        t.subcategoria?.toLowerCase().includes('reembolso') ||
+        t.comentario?.toLowerCase().includes('reembolso')
+      )
+      .reduce((sum, t) => sum + (t.ingreso || 0), 0);
+    
+    // Cálculos de dos meses atrás (para comparativo)
     const ingresosMesAnterior = twoMonthsAgoTransactions
-      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
+      .filter(t => t.tipo === 'Ingreso' && 
+        t.categoria !== 'Compra Venta Inmuebles' &&
+        !t.categoria?.toLowerCase().includes('reembolso') &&
+        !t.subcategoria?.toLowerCase().includes('reembolso') &&
+        !t.comentario?.toLowerCase().includes('reembolso')
+      )
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMesAnterior = twoMonthsAgoTransactions
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.gasto, 0);
     
-    // Calcular reembolsos de dos meses atrás
-    const reembolsosMesAnterior = twoMonthsAgoTransactions
-      .filter(t => t.ingreso > 0 && (
-        t.categoria?.toLowerCase().includes('reembolso') ||
-        t.subcategoria?.toLowerCase().includes('reembolso') ||
-        t.comentario.toLowerCase().includes('reembolso')
-      ))
-      .reduce((sum, t) => sum + t.ingreso, 0);
-    
-    // Ajustar por reembolsos
-    const ingresosAjustadosMesAnterior = ingresosMesAnterior - reembolsosMesAnterior;
     const gastosAjustadosMesAnterior = gastosMesAnterior - reembolsosMesAnterior;
     
-    // Cálculos del año actual (excluyendo aportaciones de ingresos y retiros de gastos, y "Compra Venta Inmuebles")
+    // Calcular reembolsos del año
+    const reembolsosAnio = yearTransactions
+      .filter(t => 
+        t.tipo === 'Reembolso' || 
+        t.categoria?.toLowerCase().includes('reembolso') ||
+        t.subcategoria?.toLowerCase().includes('reembolso') ||
+        t.comentario?.toLowerCase().includes('reembolso')
+      )
+      .reduce((sum, t) => sum + (t.ingreso || 0), 0);
+    
+    // Cálculos del año (excluyendo reembolsos de ingresos)
     const ingresosAnio = yearTransactions
-      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
+      .filter(t => t.tipo === 'Ingreso' && 
+        t.categoria !== 'Compra Venta Inmuebles' &&
+        !t.categoria?.toLowerCase().includes('reembolso') &&
+        !t.subcategoria?.toLowerCase().includes('reembolso') &&
+        !t.comentario?.toLowerCase().includes('reembolso')
+      )
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnio = yearTransactions
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.gasto, 0);
     
-    // Calcular reembolsos del año actual
-    const reembolsosAnio = yearTransactions
-      .filter(t => t.ingreso > 0 && (
-        t.categoria?.toLowerCase().includes('reembolso') ||
-        t.subcategoria?.toLowerCase().includes('reembolso') ||
-        t.comentario.toLowerCase().includes('reembolso')
-      ))
-      .reduce((sum, t) => sum + t.ingreso, 0);
-    
-    // Ajustar por reembolsos
-    const ingresosAjustadosAnio = ingresosAnio - reembolsosAnio;
     const gastosAjustadosAnio = gastosAnio - reembolsosAnio;
     
-    // Cálculos del año anterior (para comparativo - excluyendo aportaciones y retiros, y "Compra Venta Inmuebles")
+    // Calcular reembolsos del año anterior
+    const reembolsosAnioAnterior = lastYearTransactions
+      .filter(t => 
+        t.tipo === 'Reembolso' || 
+        t.categoria?.toLowerCase().includes('reembolso') ||
+        t.subcategoria?.toLowerCase().includes('reembolso') ||
+        t.comentario?.toLowerCase().includes('reembolso')
+      )
+      .reduce((sum, t) => sum + (t.ingreso || 0), 0);
+    
+    // Cálculos del año anterior (para comparativo)
     const ingresosAnioAnterior = lastYearTransactions
-      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
+      .filter(t => t.tipo === 'Ingreso' && 
+        t.categoria !== 'Compra Venta Inmuebles' &&
+        !t.categoria?.toLowerCase().includes('reembolso') &&
+        !t.subcategoria?.toLowerCase().includes('reembolso') &&
+        !t.comentario?.toLowerCase().includes('reembolso')
+      )
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnioAnterior = lastYearTransactions
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.gasto, 0);
     
-    // Calcular reembolsos del año anterior
-    const reembolsosAnioAnterior = lastYearTransactions
-      .filter(t => t.ingreso > 0 && (
-        t.categoria?.toLowerCase().includes('reembolso') ||
-        t.subcategoria?.toLowerCase().includes('reembolso') ||
-        t.comentario.toLowerCase().includes('reembolso')
-      ))
-      .reduce((sum, t) => sum + t.ingreso, 0);
-    
-    // Ajustar por reembolsos
-    const ingresosAjustadosAnioAnterior = ingresosAnioAnterior - reembolsosAnioAnterior;
     const gastosAjustadosAnioAnterior = gastosAnioAnterior - reembolsosAnioAnterior;
     
     // Generar datos de tendencia mensual para la moneda seleccionada (últimos 12 meses excluyendo mes actual)
@@ -214,73 +231,68 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       const monthEnd = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
       
       const monthTrans = filteredTransactions.filter(t => {
-        const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
-        return adjustedDate >= monthStart && adjustedDate <= monthEnd;
+        const tDate = new Date(t.fecha);
+        return tDate.getMonth() === targetDate.getMonth() && tDate.getFullYear() === targetDate.getFullYear();
       });
       
-      // Debug general
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       const mesLabel = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear().toString().slice(-2)}`;
       
-      console.log(`=== DEBUG ${mesLabel} ${selectedCurrency} ===`);
-      console.log('Transacciones del mes:', monthTrans.length);
+      // Calcular reembolsos primero
+      const reembolsos = monthTrans
+        .filter(t => 
+          t.tipo === 'Reembolso' || 
+          t.categoria?.toLowerCase().includes('reembolso') ||
+          t.subcategoria?.toLowerCase().includes('reembolso') ||
+          t.comentario?.toLowerCase().includes('reembolso')
+        )
+        .reduce((sum, t) => sum + (t.ingreso || 0), 0);
       
-      // Filtrar solo transacciones no aportaciones para ingresos y gastos regulares, excluyendo "Compra Venta Inmuebles"
+      // Ingresos (excluyendo reembolsos)
       const ingresos = monthTrans
-        .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
+        .filter(t => t.tipo === 'Ingreso' && 
+          t.categoria !== 'Compra Venta Inmuebles' &&
+          !t.categoria?.toLowerCase().includes('reembolso') &&
+          !t.subcategoria?.toLowerCase().includes('reembolso') &&
+          !t.comentario?.toLowerCase().includes('reembolso')
+        )
         .reduce((sum, t) => sum + t.ingreso, 0);
-      const gastos = Math.abs(monthTrans
+      
+      // Gastos (solo se restan reembolsos de los gastos)
+      const gastosBrutos = Math.abs(monthTrans
         .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
         .reduce((sum, t) => sum + t.gasto, 0));
       
-      // Calcular reembolsos del mes (solo ingresos que contengan "reembolso")
-      const reembolsos = monthTrans
-        .filter(t => t.ingreso > 0 && (
-          t.categoria?.toLowerCase().includes('reembolso') ||
-          t.subcategoria?.toLowerCase().includes('reembolso') ||
-          t.comentario.toLowerCase().includes('reembolso')
-        ))
-        .reduce((sum, t) => sum + t.ingreso, 0);
-      
-      // Ajustar por reembolsos
-      const ingresosAjustados = ingresos - reembolsos;
-      const gastosAjustados = gastos - reembolsos;
-      
-      console.log('Ingresos brutos:', ingresos);
-      console.log('Gastos brutos:', gastos);
-      console.log('Reembolsos encontrados:', reembolsos);
-      console.log('Ingresos ajustados:', ingresosAjustados);
-      console.log('Gastos ajustados:', gastosAjustados);
-      console.log(`=== FIN DEBUG ${mesLabel} ===`);
+      const gastosAjustados = gastosBrutos - reembolsos;
       
       tendenciaMensual.push({
         mes: mesLabel,
-        ingresos: ingresosAjustados,
+        ingresos: ingresos,
         gastos: gastosAjustados,
-        balance: ingresosAjustados - gastosAjustados
+        balance: ingresos - gastosAjustados
       });
     }
     
     return {
-      // Datos del mes anterior (resumen del mes) - ajustados por reembolsos
-      ingresosMes: ingresosAjustadosMes,
+      // Datos del mes (ingresos sin ajustar porque ya excluyen reembolsos, gastos ajustados)
+      ingresosMes: ingresosMes,
       gastosMes: gastosAjustadosMes,
-      balanceMes: ingresosAjustadosMes - gastosAjustadosMes,
+      balanceMes: ingresosMes - gastosAjustadosMes,
       
-      // Datos del año actual (resumen del año) - ajustados por reembolsos
-      ingresosAnio: ingresosAjustadosAnio,
+      // Datos del año (ingresos sin ajustar, gastos ajustados)
+      ingresosAnio: ingresosAnio,
       gastosAnio: gastosAjustadosAnio,
-      balanceAnio: ingresosAjustadosAnio - gastosAjustadosAnio,
+      balanceAnio: ingresosAnio - gastosAjustadosAnio,
       
-      // Comparativos - usando valores ajustados
-      cambioIngresosMes: ingresosAjustadosMesAnterior > 0 ? ((ingresosAjustadosMes - ingresosAjustadosMesAnterior) / ingresosAjustadosMesAnterior) * 100 : 0,
+      // Comparativos
+      cambioIngresosMes: ingresosMesAnterior > 0 ? ((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100 : 0,
       cambioGastosMes: gastosAjustadosMesAnterior > 0 ? ((gastosAjustadosMes - gastosAjustadosMesAnterior) / gastosAjustadosMesAnterior) * 100 : 0,
-      cambioIngresosAnio: ingresosAjustadosAnioAnterior > 0 ? ((ingresosAjustadosAnio - ingresosAjustadosAnioAnterior) / ingresosAjustadosAnioAnterior) * 100 : 0,
+      cambioIngresosAnio: ingresosAnioAnterior > 0 ? ((ingresosAnio - ingresosAnioAnterior) / ingresosAnioAnterior) * 100 : 0,
       cambioGastosAnio: gastosAjustadosAnioAnterior > 0 ? ((gastosAjustadosAnio - gastosAjustadosAnioAnterior) / gastosAjustadosAnioAnterior) * 100 : 0,
       
-      // Comparativos de balance - usando valores ajustados
-      balanceMesAnterior: ingresosAjustadosMesAnterior - gastosAjustadosMesAnterior,
-      balanceAnioAnterior: ingresosAjustadosAnioAnterior - gastosAjustadosAnioAnterior,
+      // Comparativos de balance
+      balanceMesAnterior: ingresosMesAnterior - gastosAjustadosMesAnterior,
+      balanceAnioAnterior: ingresosAnioAnterior - gastosAjustadosAnioAnterior,
       
       tendenciaMensual
     };
