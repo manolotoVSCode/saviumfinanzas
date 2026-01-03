@@ -116,6 +116,7 @@ serve(async (req) => {
 Tu tarea es:
 1. EXTRAER todas las transacciones del documento (fechas, descripciones, montos)
 2. CLASIFICAR cada transacción en la categoría y subcategoría más apropiada
+3. SUGERIR nuevas categorías cuando no exista una apropiada
 
 CATEGORÍAS DISPONIBLES DEL USUARIO:
 ${categoriesInfo}
@@ -131,9 +132,20 @@ REGLAS DE EXTRACCIÓN:
 - IMPORTANTE: Ignora líneas de saldo, totales, o información que no sea una transacción individual
 
 REGLAS DE CLASIFICACIÓN:
-- Si hay categoría existente que encaje, úsala (confidence: "high" o "medium")
-- Si no hay categoría apropiada, sugiere una nueva (isNewCategory: true, confidence: "low")
+- Si hay categoría existente que encaje EXACTAMENTE, úsala (confidence: "high")
+- Si hay categoría similar pero no exacta, úsala (confidence: "medium")  
+- Si NO hay categoría apropiada en la lista del usuario:
+  * Marca isNewCategory: true
+  * Sugiere una nueva categoría y subcategoría lógica
+  * confidence: "low"
+  * IMPORTANTE: Agrega la sugerencia al array "newCategorySuggestions"
 - Prioriza las categorías del historial cuando el comentario sea similar
+
+REGLAS PARA NUEVAS CATEGORÍAS:
+- Si una transacción NO encaja en ninguna categoría existente, DEBES agregarla a "newCategorySuggestions"
+- Agrupa transacciones similares en la misma sugerencia de categoría
+- Las sugerencias deben ser específicas pero reutilizables (ej: "Salud > Farmacia" no "Salud > Farmacia San Pablo")
+- Incluye una razón breve y clara de por qué se necesita esta categoría
 
 FORMATO DE RESPUESTA (SOLO JSON, sin explicaciones):
 {
@@ -147,9 +159,25 @@ FORMATO DE RESPUESTA (SOLO JSON, sin explicaciones):
       "suggestedSubcategory": "Restaurantes",
       "confidence": "high",
       "isNewCategory": false
+    },
+    {
+      "fecha": "2025-01-16",
+      "comentario": "FARMACIA GUADALAJARA",
+      "ingreso": 0,
+      "gasto": 250.00,
+      "suggestedCategory": "Salud",
+      "suggestedSubcategory": "Farmacia",
+      "confidence": "low",
+      "isNewCategory": true
     }
   ],
-  "newCategorySuggestions": []
+  "newCategorySuggestions": [
+    {
+      "categoria": "Salud",
+      "subcategoria": "Farmacia",
+      "razon": "Compras en farmacias y medicamentos no tienen categoría existente"
+    }
+  ]
 }
 
 IMPORTANTE:
@@ -157,7 +185,9 @@ IMPORTANTE:
 - Montos como números positivos (sin símbolos)
 - Si es gasto, ingreso = 0 y viceversa
 - Limpia los comentarios de caracteres especiales
-- NO incluyas saldos, solo transacciones individuales`;
+- NO incluyas saldos, solo transacciones individuales
+- SIEMPRE incluye newCategorySuggestions cuando hay transacciones con isNewCategory: true
+- Cada categoría nueva debe aparecer UNA sola vez en newCategorySuggestions aunque haya múltiples transacciones`;
 
     let messages: any[];
 
