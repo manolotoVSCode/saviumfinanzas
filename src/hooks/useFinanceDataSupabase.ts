@@ -134,12 +134,19 @@ export const useFinanceDataSupabase = () => {
       const accountTransactions = transactions.filter(t => t.cuentaId === account.id);
       const totalTransactions = accountTransactions.reduce((sum, t) => sum + t.monto, 0);
       
-      // Para TODAS las cuentas: saldoActual = saldoInicial + transacciones
-      const saldoActual = account.saldoInicial + totalTransactions;
+      // Saldo calculado basado en transacciones
+      const saldoCalculado = account.saldoInicial + totalTransactions;
+      
+      // Para Inversiones: usar valorMercado si está disponible, sino el saldo calculado
+      // Para otras cuentas: usar el saldo calculado
+      const saldoActual = account.tipo === 'Inversiones' && account.valorMercado !== undefined && account.valorMercado !== null
+        ? account.valorMercado
+        : saldoCalculado;
       
       return {
         ...account,
-        saldoActual
+        saldoActual,
+        saldoCalculado // También exponemos el saldo calculado por si se necesita
       };
     });
   }, [accounts, transactions]);
