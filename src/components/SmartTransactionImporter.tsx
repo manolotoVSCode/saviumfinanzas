@@ -314,28 +314,32 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
         )}
 
         {step === 'preview' && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4 max-h-[70vh]">
             {importStatus && (
-              <Alert className={importStatus.type === 'error' ? 'border-destructive' : 'border-green-500'}>
+              <Alert className={`flex-shrink-0 ${importStatus.type === 'error' ? 'border-destructive' : 'border-green-500'}`}>
                 <AlertDescription>{importStatus.message}</AlertDescription>
               </Alert>
             )}
 
             {newCategorySuggestions.length > 0 && (
-              <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
+              <Alert className="flex-shrink-0 border-orange-500 bg-orange-50 dark:bg-orange-950/30">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
                 <AlertDescription>
-                  <span className="font-medium">Sugerencias de nuevas categorías:</span>
-                  <ul className="mt-1 text-xs">
+                  <span className="font-medium text-orange-700 dark:text-orange-400">💡 La IA sugiere crear estas nuevas categorías:</span>
+                  <ul className="mt-2 text-xs space-y-1">
                     {newCategorySuggestions.map((s, i) => (
-                      <li key={i}>• {s.categoria} &gt; {s.subcategoria}: {s.razon}</li>
+                      <li key={i} className="flex items-start gap-1">
+                        <Badge variant="outline" className="text-xs border-orange-500 text-orange-600 shrink-0">Nueva</Badge>
+                        <span><strong>{s.categoria} &gt; {s.subcategoria}</strong>: {s.razon}</span>
+                      </li>
                     ))}
                   </ul>
+                  <p className="mt-2 text-xs text-muted-foreground">Puedes crearlas en Configuración &gt; Categorías</p>
                 </AlertDescription>
               </Alert>
             )}
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -375,7 +379,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
               </div>
             </div>
 
-            <ScrollArea className="h-[350px] border rounded-md">
+            <ScrollArea className="flex-1 min-h-[200px] max-h-[300px] border rounded-md">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -449,7 +453,10 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
               </Table>
             </ScrollArea>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0 pt-2 border-t">
+              <Button variant="outline" onClick={handleClose}>
+                Cancelar
+              </Button>
               <Button variant="outline" onClick={() => setStep('upload')} className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Volver
