@@ -477,6 +477,31 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
 
             <div className="space-y-3">
               <div className="space-y-2">
+                <Label>Cuenta de destino</Label>
+                <Select 
+                  value={selectedAccount} 
+                  onValueChange={(value) => {
+                    setSelectedAccount(value);
+                    const account = accounts.find(a => a.id === value);
+                    if (account) {
+                      setSelectedCurrency(account.divisa as 'MXN' | 'USD' | 'EUR');
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una cuenta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.nombre} ({account.divisa})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label>Divisa de las transacciones</Label>
                 <Select value={selectedCurrency} onValueChange={(value: string) => setSelectedCurrency(value as 'MXN' | 'USD' | 'EUR')}>
                   <SelectTrigger>
@@ -490,24 +515,9 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Cuenta de destino</Label>
-                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts
-                      .filter(account => !selectedCurrency || account.divisa === selectedCurrency)
-                      .map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.nombre} ({account.divisa})
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <p className="text-xs text-muted-foreground">
+                  La divisa se auto-selecciona según la cuenta, pero puedes cambiarla si las transacciones están en otra moneda.
+                </p>
               </div>
 
               <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md flex items-start gap-2">
