@@ -56,12 +56,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     const startOfTwoMonthsAgo = new Date(twoMonthsAgoYear, twoMonthsAgo, 1);
     const endOfTwoMonthsAgo = new Date(twoMonthsAgoYear, twoMonthsAgo + 1, 0);
     
-    // AÑO ACTUAL (para resumen del año)
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    // Si estamos en enero, mostrar año anterior ya que probablemente no hay datos significativos del año actual
+    const targetYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const compareYear = targetYear - 1;
     
-    // AÑO ANTERIOR (para comparativo)
-    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
-    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
+    // AÑO OBJETIVO (para resumen del año)
+    const startOfYear = new Date(targetYear, 0, 1);
+    
+    // AÑO ANTERIOR AL OBJETIVO (para comparativo)
+    const startOfLastYear = new Date(compareYear, 0, 1);
+    const endOfLastYear = new Date(compareYear, 11, 31);
     
     // Transacciones del mes anterior
     const lastMonthTransactions = filteredTransactions.filter(t => {
@@ -75,16 +79,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       return tDate.getMonth() === twoMonthsAgo && tDate.getFullYear() === twoMonthsAgoYear;
     });
     
-    // Transacciones del año actual
+    // Transacciones del año objetivo
     const yearTransactions = filteredTransactions.filter(t => {
       const tDate = new Date(t.fecha);
-      return tDate.getFullYear() === now.getFullYear();
+      return tDate.getFullYear() === targetYear;
     });
     
-    // Transacciones del año anterior
+    // Transacciones del año anterior al objetivo
     const lastYearTransactions = filteredTransactions.filter(t => {
       const tDate = new Date(t.fecha);
-      return tDate.getFullYear() === now.getFullYear() - 1;
+      return tDate.getFullYear() === compareYear;
     });
     
     // Cálculos del mes anterior (excluyendo aportaciones de ingresos y retiros de gastos, y "Compra Venta Inmuebles")
@@ -1215,7 +1219,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
       {/* RESUMEN ANUAL */}
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">{t('dashboard.summary_year')} {new Date().getFullYear()}</h2>
+        <h2 className="text-xl font-semibold text-center">{t('dashboard.summary_year')} {new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear()}</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Resultado anual */}
