@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info, Calendar } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart, ReferenceLine } from 'recharts';
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -672,79 +672,89 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
             </div>
           ) : (
             <div className="space-y-2">
-              {top10Data.categories.map((category, index) => (
-                <Collapsible 
-                  key={category.name}
-                  open={openCollapsibles[`cat-${category.name}`]}
-                  onOpenChange={() => toggleCollapsible(`cat-${category.name}`)}
-                >
-                  <div className="rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
-                    <div className="flex items-center justify-between p-3">
-                      <CollapsibleTrigger className="flex items-center gap-3 cursor-pointer flex-1">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: category.color }}
-                        />
-                        <span className="font-medium text-sm">{category.name}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {category.subcategories.length} subcategorías
-                        </Badge>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 ml-auto" />
-                      </CollapsibleTrigger>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold ml-2"
-                        onClick={() => {
-                          const periodo = selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses';
-                          const params = new URLSearchParams({
-                            categoria: category.name,
-                            divisa: selectedCurrency,
-                            periodo: periodo
-                          });
-                          if (selectedCategoryMonth !== null) {
-                            params.set('mes', selectedCategoryMonth.toString());
-                          }
-                          navigate(`/transacciones-categoria?${params.toString()}`);
-                        }}
-                      >
-                        {formatCurrencyConsistent(category.total, selectedCurrency)}
-                      </Button>
-                    </div>
-                    <CollapsibleContent>
-                      <div className="px-3 pb-3 pt-1">
-                        <div className="pl-6 space-y-1 border-l-2 border-muted">
-                          {category.subcategories.map((sub) => (
-                            <div key={sub.name} className="flex justify-between items-center text-sm py-1">
-                              <span className="text-muted-foreground">• {sub.name}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-auto p-1 font-medium hover:bg-muted"
-                                onClick={() => {
-                                  const periodo = selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses';
-                                  const params = new URLSearchParams({
-                                    categoria: category.name,
-                                    subcategoria: sub.name,
-                                    divisa: selectedCurrency,
-                                    periodo: periodo
-                                  });
-                                  if (selectedCategoryMonth !== null) {
-                                    params.set('mes', selectedCategoryMonth.toString());
-                                  }
-                                  navigate(`/transacciones-categoria?${params.toString()}`);
-                                }}
-                              >
-                                {formatCurrencyConsistent(sub.total, selectedCurrency)}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
+              {top10Data.categories.map((category, index) => {
+                const [isAmountHovered, setIsAmountHovered] = React.useState(false);
+                return (
+                  <Collapsible 
+                    key={category.name}
+                    open={openCollapsibles[`cat-${category.name}`]}
+                    onOpenChange={() => toggleCollapsible(`cat-${category.name}`)}
+                  >
+                    <div className="rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                      <div className="flex items-center justify-between p-3">
+                        <CollapsibleTrigger className="flex items-center gap-3 cursor-pointer flex-1">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: category.color }}
+                          />
+                          <span className={`font-medium text-sm transition-colors ${isAmountHovered ? 'text-primary underline' : ''}`}>{category.name}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {category.subcategories.length} subcategorías
+                          </Badge>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 ml-auto" />
+                        </CollapsibleTrigger>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold ml-2"
+                          onMouseEnter={() => setIsAmountHovered(true)}
+                          onMouseLeave={() => setIsAmountHovered(false)}
+                          onClick={() => {
+                            const periodo = selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses';
+                            const params = new URLSearchParams({
+                              categoria: category.name,
+                              divisa: selectedCurrency,
+                              periodo: periodo
+                            });
+                            if (selectedCategoryMonth !== null) {
+                              params.set('mes', selectedCategoryMonth.toString());
+                            }
+                            navigate(`/transacciones-categoria?${params.toString()}`);
+                          }}
+                        >
+                          {formatCurrencyConsistent(category.total, selectedCurrency)}
+                        </Button>
                       </div>
-                    </CollapsibleContent>
-                  </div>
-                </Collapsible>
-              ))}
+                      <CollapsibleContent>
+                        <div className="px-3 pb-3 pt-1">
+                          <div className="pl-6 space-y-1 border-l-2 border-muted">
+                            {category.subcategories.map((sub) => {
+                              const [isSubAmountHovered, setIsSubAmountHovered] = React.useState(false);
+                              return (
+                                <div key={sub.name} className="flex justify-between items-center text-sm py-1">
+                                  <span className={`text-muted-foreground transition-colors ${isSubAmountHovered ? 'text-primary underline' : ''}`}>• {sub.name}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-auto p-1 font-medium hover:bg-muted"
+                                    onMouseEnter={() => setIsSubAmountHovered(true)}
+                                    onMouseLeave={() => setIsSubAmountHovered(false)}
+                                    onClick={() => {
+                                      const periodo = selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses';
+                                      const params = new URLSearchParams({
+                                        categoria: category.name,
+                                        subcategoria: sub.name,
+                                        divisa: selectedCurrency,
+                                        periodo: periodo
+                                      });
+                                      if (selectedCategoryMonth !== null) {
+                                        params.set('mes', selectedCategoryMonth.toString());
+                                      }
+                                      navigate(`/transacciones-categoria?${params.toString()}`);
+                                    }}
+                                  >
+                                    {formatCurrencyConsistent(sub.total, selectedCurrency)}
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                );
+              })}
             </div>
           )}
         </CardContent>
