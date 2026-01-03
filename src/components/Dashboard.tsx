@@ -29,9 +29,14 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   
   // Estados para selectores de período
   const now = new Date();
-  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth() === 0 ? 11 : now.getMonth() - 1);
-  const [selectedMonthYear, setSelectedMonthYear] = useState<number>(now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
+  // En enero, por defecto mostrar el año anterior (que tiene datos completos)
+  const defaultYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const defaultMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+  const defaultMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  
+  const [selectedYear, setSelectedYear] = useState<number>(defaultYear);
+  const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth);
+  const [selectedMonthYear, setSelectedMonthYear] = useState<number>(defaultMonthYear);
 
   // Años disponibles
   const availableYears = useMemo(() => {
