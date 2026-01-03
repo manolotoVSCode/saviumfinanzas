@@ -292,19 +292,21 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     let filteredByPeriod;
     
     if (period === 'month') {
-      // Mes anterior (no mes actual)
-      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      // Mes anterior (manejando cambio de año)
+      const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+      const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      
       filteredByPeriod = transactionsByType.filter(t => {
-        const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
-        return adjustedDate >= startOfLastMonth && adjustedDate <= endOfLastMonth;
+        const tDate = new Date(t.fecha);
+        return tDate.getMonth() === lastMonth && tDate.getFullYear() === lastMonthYear;
       });
     } else {
-      // Año actual
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      // Año objetivo (año anterior si estamos en enero)
+      const targetYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      
       filteredByPeriod = transactionsByType.filter(t => {
-        const adjustedDate = new Date(t.fecha.getTime() + t.fecha.getTimezoneOffset() * 60000);
-        return adjustedDate >= startOfYear;
+        const tDate = new Date(t.fecha);
+        return tDate.getFullYear() === targetYear;
       });
     }
     
