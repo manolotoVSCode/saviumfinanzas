@@ -32,14 +32,17 @@ export const MonthlyReimbursementReport = ({
   const monthlyData = useMemo(() => {
     const dataByMonth: Record<string, MonthlyData> = {};
     const now = new Date();
-    const currentYear = now.getFullYear();
+    
+    // Si estamos en enero, mostrar el año anterior ya que probablemente no hay datos significativos del año actual
+    const currentMonth = now.getMonth();
+    const targetYear = currentMonth === 0 ? now.getFullYear() - 1 : now.getFullYear();
     
     transactions.forEach(transaction => {
       const date = new Date(transaction.fecha);
       const transactionYear = date.getFullYear();
       
-      // Solo incluir transacciones del año actual (como en el Dashboard)
-      if (transactionYear !== currentYear) {
+      // Solo incluir transacciones del año objetivo
+      if (transactionYear !== targetYear) {
         return;
       }
       
