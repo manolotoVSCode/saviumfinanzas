@@ -1,5 +1,6 @@
 import { TransactionsManager } from '@/components/TransactionsManager';
 import TransactionImporter from '@/components/TransactionImporter';
+import SmartTransactionImporter from '@/components/SmartTransactionImporter';
 import { ExcelExporter } from '@/components/ExcelExporter';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
@@ -35,7 +36,12 @@ const Transacciones = () => {
               accounts={financeData.accounts}
               categories={financeData.categories}
             />
-            <div className={`flex items-center ${isMobile ? 'w-full justify-between' : 'gap-2'}`}>
+            <div className={`flex items-center ${isMobile ? 'w-full justify-between flex-wrap gap-2' : 'gap-2'}`}>
+              <SmartTransactionImporter
+                accounts={financeData.accounts}
+                categories={financeData.categories}
+                onImportTransactions={financeData.addTransactionsBatch}
+              />
               <TransactionImporter
                 accounts={financeData.accounts}
                 categories={financeData.categories}

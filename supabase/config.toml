@@ -1,1 +1,16 @@
 project_id = "alexhdutnvlxwhziudnr"
+
+[functions.admin-create-user]
+verify_jwt = true
+
+[functions.analyze-subscriptions]
+verify_jwt = true
+
+[functions.crypto-prices]
+verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.parse-transactions]
+verify_jwt = true
