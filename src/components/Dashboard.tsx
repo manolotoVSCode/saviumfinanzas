@@ -9,9 +9,10 @@ import { Progress } from '@/components/ui/progress';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart } from 'recharts';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from 'lucide-react';
 
 interface DashboardProps {
   metrics: DashboardMetrics;
@@ -25,6 +26,40 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
   const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
   const { t } = useLanguage();
+  
+  // Estados para selectores de período
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth() === 0 ? 11 : now.getMonth() - 1);
+  const [selectedMonthYear, setSelectedMonthYear] = useState<number>(now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
+
+  // Años disponibles
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    transactions.forEach(t => {
+      const year = new Date(t.fecha).getFullYear();
+      years.add(year);
+    });
+    if (years.size === 0) {
+      years.add(now.getFullYear());
+    }
+    return Array.from(years).sort((a, b) => b - a);
+  }, [transactions]);
+
+  const months = [
+    { value: 0, label: 'Enero' },
+    { value: 1, label: 'Febrero' },
+    { value: 2, label: 'Marzo' },
+    { value: 3, label: 'Abril' },
+    { value: 4, label: 'Mayo' },
+    { value: 5, label: 'Junio' },
+    { value: 6, label: 'Julio' },
+    { value: 7, label: 'Agosto' },
+    { value: 8, label: 'Septiembre' },
+    { value: 9, label: 'Octubre' },
+    { value: 10, label: 'Noviembre' },
+    { value: 11, label: 'Diciembre' },
+  ];
 
   const toggleCollapsible = (key: string) => {
     setOpenCollapsibles(prev => ({
@@ -33,50 +68,36 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     }));
   };
 
-  // Función para filtrar métricas por moneda
+  // Función para filtrar métricas por moneda - AHORA USA SELECTORES
   const getFilteredMetrics = (currency: 'MXN' | 'USD' | 'EUR') => {
     // Filtrar transacciones por moneda seleccionada
     const filteredTransactions = transactions.filter(t => t.divisa === currency);
     
-    const now = new Date();
+    // USAR SELECTORES EN VEZ DE FECHAS FIJAS
+    const targetMonth = selectedMonth;
+    const targetMonthYear = selectedMonthYear;
     
-    // Calcular mes anterior correctamente (manejando cambio de año)
-    const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-    const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    // Calcular mes anterior para comparativo
+    const prevMonth = targetMonth === 0 ? 11 : targetMonth - 1;
+    const prevMonthYear = targetMonth === 0 ? targetMonthYear - 1 : targetMonthYear;
     
-    // Calcular dos meses atrás correctamente
-    const twoMonthsAgo = lastMonth === 0 ? 11 : lastMonth - 1;
-    const twoMonthsAgoYear = lastMonth === 0 ? lastMonthYear - 1 : lastMonthYear;
-    
-    // MES ANTERIOR (para resumen del mes)
-    const startOfLastMonth = new Date(lastMonthYear, lastMonth, 1);
-    const endOfLastMonth = new Date(lastMonthYear, lastMonth + 1, 0);
-    
-    // DOS MESES ATRÁS (para comparativo)
-    const startOfTwoMonthsAgo = new Date(twoMonthsAgoYear, twoMonthsAgo, 1);
-    const endOfTwoMonthsAgo = new Date(twoMonthsAgoYear, twoMonthsAgo + 1, 0);
-    
-    // Si estamos en enero, mostrar año anterior ya que probablemente no hay datos significativos del año actual
-    const targetYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    // USAR SELECTOR DE AÑO
+    const targetYear = selectedYear;
     const compareYear = targetYear - 1;
-    
-    // AÑO OBJETIVO (para resumen del año)
-    const startOfYear = new Date(targetYear, 0, 1);
-    
     // AÑO ANTERIOR AL OBJETIVO (para comparativo)
     const startOfLastYear = new Date(compareYear, 0, 1);
     const endOfLastYear = new Date(compareYear, 11, 31);
     
-    // Transacciones del mes anterior
+    // Transacciones del mes seleccionado
     const lastMonthTransactions = filteredTransactions.filter(t => {
       const tDate = new Date(t.fecha);
-      return tDate.getMonth() === lastMonth && tDate.getFullYear() === lastMonthYear;
+      return tDate.getMonth() === targetMonth && tDate.getFullYear() === targetMonthYear;
     });
     
-    // Transacciones de dos meses atrás
+    // Transacciones del mes anterior al seleccionado (para comparativo)
     const twoMonthsAgoTransactions = filteredTransactions.filter(t => {
       const tDate = new Date(t.fecha);
-      return tDate.getMonth() === twoMonthsAgo && tDate.getFullYear() === twoMonthsAgoYear;
+      return tDate.getMonth() === prevMonth && tDate.getFullYear() === prevMonthYear;
     });
     
     // Transacciones del año objetivo
@@ -281,32 +302,26 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     '#6366F1', // Índigo
   ];
 
-  // Función para obtener distribución por categorías filtrada por moneda (excluyendo aportaciones y retiros)
+  // Función para obtener distribución por categorías filtrada por moneda - USA SELECTORES
   const getFilteredDistribution = (currency: 'MXN' | 'USD' | 'EUR', type: 'Ingreso' | 'Gastos', period: 'month' | 'year') => {
-    // Filtrar transacciones por divisa y tipo, excluyendo aportaciones de ingresos y retiros de gastos
+    // Filtrar transacciones por divisa y tipo
     const transactionsByType = transactions.filter(t => 
       t.divisa === currency && t.tipo === type
     );
     
-    const now = new Date();
     let filteredByPeriod;
     
     if (period === 'month') {
-      // Mes anterior (manejando cambio de año)
-      const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-      const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-      
+      // Usar mes seleccionado
       filteredByPeriod = transactionsByType.filter(t => {
         const tDate = new Date(t.fecha);
-        return tDate.getMonth() === lastMonth && tDate.getFullYear() === lastMonthYear;
+        return tDate.getMonth() === selectedMonth && tDate.getFullYear() === selectedMonthYear;
       });
     } else {
-      // Año objetivo (año anterior si estamos en enero)
-      const targetYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-      
+      // Usar año seleccionado
       filteredByPeriod = transactionsByType.filter(t => {
         const tDate = new Date(t.fecha);
-        return tDate.getFullYear() === targetYear;
+        return tDate.getFullYear() === selectedYear;
       });
     }
     
@@ -326,7 +341,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         color: COLORS[index % COLORS.length]
       }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 10); // Top 10 categorías
+      .slice(0, 10);
   };
 
   // Preparar datos para gráficos filtrados por moneda seleccionada
@@ -1062,11 +1077,46 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </CardContent>
       </Card>
 
-      {/* RESUMEN MENSUAL */}
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">{t('dashboard.summary_month')} ({new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })})</h2>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* RESUMEN MENSUAL CON SELECTORES */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              {t('dashboard.summary_month')}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Select 
+                value={selectedMonth.toString()} 
+                onValueChange={(v) => setSelectedMonth(parseInt(v))}
+              >
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map(m => (
+                    <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select 
+                value={selectedMonthYear.toString()} 
+                onValueChange={(v) => setSelectedMonthYear(parseInt(v))}
+              >
+                <SelectTrigger className="w-[90px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
         {/* Resultado del mes */}
         <Card className="border-2 border-primary/50 bg-primary/5 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -1112,270 +1162,293 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
             <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosMes)}`}>
               {filteredMetrics.cambioGastosMes > 0 ? '+' : ''}{filteredMetrics.cambioGastosMes.toFixed(1)}% vs mes anterior
             </p>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+          </div>
 
-      {/* DISTRIBUCIÓN DE GASTOS E INGRESOS MENSUAL */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Distribución de Gastos */}
-        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="text-center">{t('dashboard.expenses_distribution')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie
-                    data={pieDataGastosMesAnterior}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieDataGastosMesAnterior.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                   <Tooltip 
-                     formatter={(value: any) => [
-                       formatCurrencyConsistent(Number(value), selectedCurrency), 
-                       'Monto'
-                     ]}
-                   />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 space-y-2">
-              {pieDataGastosMesAnterior.map((entry, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span>{entry.name}</span>
-                  </div>
-                  <span className="font-medium">
-                    {formatCurrencyConsistent(entry.value, selectedCurrency)}
-                  </span>
+          {/* DISTRIBUCIÓN DE GASTOS E INGRESOS MENSUAL */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Distribución de Gastos */}
+            <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="text-center">{t('dashboard.expenses_distribution')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPieChart>
+                      <Pie
+                        data={pieDataGastosMesAnterior}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={85}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {pieDataGastosMesAnterior.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any) => [
+                          formatCurrencyConsistent(Number(value), selectedCurrency), 
+                          'Monto'
+                        ]}
+                      />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Distribución de Ingresos */}
-        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="text-center">{t('dashboard.income_distribution')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie
-                    data={pieDataIngresosMesAnterior}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieDataIngresosMesAnterior.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: any) => [
-                      formatCurrencyConsistent(Number(value), selectedCurrency), 
-                      'Monto'
-                    ]}
-                  />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 space-y-2">
-              {pieDataIngresosMesAnterior.map((entry, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span>{entry.name}</span>
-                  </div>
-                  <span className="font-medium">
-                    {formatCurrencyConsistent(entry.value, selectedCurrency)}
-                  </span>
+                <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
+                  {pieDataGastosMesAnterior.map((entry, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="truncate">{entry.name}</span>
+                      </div>
+                      <span className="font-medium">
+                        {formatCurrencyConsistent(entry.value, selectedCurrency)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
 
-      {/* RESUMEN ANUAL */}
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-center">{t('dashboard.summary_year')} {new Date().getMonth() === 0 ? new Date().getFullYear() - 1 : new Date().getFullYear()}</h2>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* Resultado anual */}
-        <Card className="border-2 border-primary/50 bg-primary/5 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">{t('dashboard.annual_result')}</CardTitle>
-            {getTrendIcon(cambioBalanceAnio)}
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${getBalanceColor(filteredMetrics.balanceAnio)}`}>
-              {formatCurrencyConsistent(filteredMetrics.balanceAnio, selectedCurrency)}
-            </div>
-            <p className={`text-xs ${getTrendColor(cambioBalanceAnio)}`}>
-              {cambioBalanceAnio > 0 ? '+' : ''}{cambioBalanceAnio.toFixed(1)}% vs año anterior
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Ingresos anuales */}
-        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('dashboard.annual_income_label')}</CardTitle>
-            {getTrendIcon(filteredMetrics.cambioIngresosAnio)}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">
-              {formatCurrencyConsistent(filteredMetrics.ingresosAnio, selectedCurrency)}
-            </div>
-            <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosAnio)}`}>
-              {filteredMetrics.cambioIngresosAnio > 0 ? '+' : ''}{filteredMetrics.cambioIngresosAnio.toFixed(1)}% vs año anterior
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Gastos anuales */}
-        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('dashboard.annual_expenses_label')}</CardTitle>
-            {getTrendIcon(filteredMetrics.cambioGastosAnio)}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {formatCurrencyConsistent(filteredMetrics.gastosAnio, selectedCurrency)}
-            </div>
-            <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosAnio)}`}>
-              {filteredMetrics.cambioGastosAnio > 0 ? '+' : ''}{filteredMetrics.cambioGastosAnio.toFixed(1)}% vs año anterior
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* DISTRIBUCIÓN DE GASTOS E INGRESOS ANUAL */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Distribución de Gastos Anual */}
-        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="text-center">{t('dashboard.expenses_distribution')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie
-                    data={pieDataGastosAnual}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieDataGastosAnual.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: any) => [
-                      formatCurrencyConsistent(Number(value), selectedCurrency), 
-                      'Monto'
-                    ]}
-                  />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 space-y-2">
-              {pieDataGastosAnual.map((entry, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span>{entry.name}</span>
-                  </div>
-                   <span className="font-medium">
-                     {formatCurrencyConsistent(entry.value, selectedCurrency)}
-                   </span>
+            {/* Distribución de Ingresos */}
+            <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="text-center">{t('dashboard.income_distribution')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPieChart>
+                      <Pie
+                        data={pieDataIngresosMesAnterior}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={85}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {pieDataIngresosMesAnterior.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any) => [
+                          formatCurrencyConsistent(Number(value), selectedCurrency), 
+                          'Monto'
+                        ]}
+                      />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Distribución de Ingresos Anual */}
-        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="text-center">{t('dashboard.income_distribution')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie
-                    data={pieDataIngresosAnual}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieDataIngresosAnual.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                   <Tooltip 
-                     formatter={(value: any) => [
-                       formatCurrencyConsistent(Number(value), selectedCurrency), 
-                       'Monto'
-                     ]}
-                   />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 space-y-2">
-              {pieDataIngresosAnual.map((entry, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span>{entry.name}</span>
-                  </div>
-                    <span className="font-medium">
-                      {formatCurrencyConsistent(entry.value, selectedCurrency)}
-                    </span>
+                <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
+                  {pieDataIngresosMesAnterior.map((entry, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="truncate">{entry.name}</span>
+                      </div>
+                      <span className="font-medium">
+                        {formatCurrencyConsistent(entry.value, selectedCurrency)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* RESUMEN ANUAL CON SELECTOR */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              {t('dashboard.summary_year')}
+            </CardTitle>
+            <Select 
+              value={selectedYear.toString()} 
+              onValueChange={(v) => setSelectedYear(parseInt(v))}
+            >
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableYears.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+            {/* Resultado anual */}
+            <Card className="border-2 border-primary/50 bg-primary/5 transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-primary">{t('dashboard.annual_result')}</CardTitle>
+                {getTrendIcon(cambioBalanceAnio)}
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${getBalanceColor(filteredMetrics.balanceAnio)}`}>
+                  {formatCurrencyConsistent(filteredMetrics.balanceAnio, selectedCurrency)}
+                </div>
+                <p className={`text-xs ${getTrendColor(cambioBalanceAnio)}`}>
+                  {cambioBalanceAnio > 0 ? '+' : ''}{cambioBalanceAnio.toFixed(1)}% vs año anterior
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Ingresos anuales */}
+            <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t('dashboard.annual_income_label')}</CardTitle>
+                {getTrendIcon(filteredMetrics.cambioIngresosAnio)}
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-success">
+                  {formatCurrencyConsistent(filteredMetrics.ingresosAnio, selectedCurrency)}
+                </div>
+                <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosAnio)}`}>
+                  {filteredMetrics.cambioIngresosAnio > 0 ? '+' : ''}{filteredMetrics.cambioIngresosAnio.toFixed(1)}% vs año anterior
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Gastos anuales */}
+            <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{t('dashboard.annual_expenses_label')}</CardTitle>
+                {getTrendIcon(filteredMetrics.cambioGastosAnio)}
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-destructive">
+                  {formatCurrencyConsistent(filteredMetrics.gastosAnio, selectedCurrency)}
+                </div>
+                <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosAnio)}`}>
+                  {filteredMetrics.cambioGastosAnio > 0 ? '+' : ''}{filteredMetrics.cambioGastosAnio.toFixed(1)}% vs año anterior
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* DISTRIBUCIÓN DE GASTOS E INGRESOS ANUAL */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Distribución de Gastos Anual */}
+            <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="text-center">{t('dashboard.expenses_distribution')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPieChart>
+                      <Pie
+                        data={pieDataGastosAnual}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={85}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {pieDataGastosAnual.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any) => [
+                          formatCurrencyConsistent(Number(value), selectedCurrency), 
+                          'Monto'
+                        ]}
+                      />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
+                  {pieDataGastosAnual.map((entry, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="truncate">{entry.name}</span>
+                      </div>
+                      <span className="font-medium">
+                        {formatCurrencyConsistent(entry.value, selectedCurrency)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Distribución de Ingresos Anual */}
+            <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="text-center">{t('dashboard.income_distribution')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPieChart>
+                      <Pie
+                        data={pieDataIngresosAnual}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={85}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {pieDataIngresosAnual.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any) => [
+                          formatCurrencyConsistent(Number(value), selectedCurrency), 
+                          'Monto'
+                        ]}
+                      />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
+                  {pieDataIngresosAnual.map((entry, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="truncate">{entry.name}</span>
+                      </div>
+                      <span className="font-medium">
+                        {formatCurrencyConsistent(entry.value, selectedCurrency)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
 
     </div>
   );

@@ -6,6 +6,7 @@ import { AssetsReport } from '@/components/AssetsReport';
 import { LiabilitiesReport } from '@/components/LiabilitiesReport';
 import { MonthlyPaymentsControl } from '@/components/MonthlyPaymentsControl';
 import { MonthlyReimbursementReport } from '@/components/MonthlyReimbursementReport';
+import { CategoryAnalysisReport } from '@/components/CategoryAnalysisReport';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SampleDataBanner } from '@/components/SampleDataBanner';
 
@@ -36,8 +37,11 @@ const Informes = () => {
           <p className="text-muted-foreground">Reportes detallados de tu situación financiera</p>
         </div>
 
-        <Tabs defaultValue="pagos-recurrentes" className="w-full">
+        <Tabs defaultValue="categorias" className="w-full">
           <TabsList className="flex flex-wrap w-full justify-center gap-2 h-auto p-2 bg-muted rounded-lg">
+            <TabsTrigger value="categorias" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
+              Análisis Categorías
+            </TabsTrigger>
             <TabsTrigger value="pagos-recurrentes" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
               Pagos Recurrentes
             </TabsTrigger>
@@ -54,6 +58,14 @@ const Informes = () => {
               Pasivos
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="categorias" className="space-y-4">
+            <CategoryAnalysisReport
+              transactions={financeData.transactions}
+              categories={financeData.categories}
+              formatCurrency={formatCurrency}
+            />
+          </TabsContent>
 
           <TabsContent value="pagos-recurrentes" className="space-y-4">
             <MonthlyPaymentsControl 
