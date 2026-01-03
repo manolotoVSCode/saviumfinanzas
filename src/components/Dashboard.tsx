@@ -4,14 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info, Calendar } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart, ReferenceLine } from 'recharts';
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -24,16 +23,11 @@ interface DashboardProps {
 }
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
+  const navigate = useNavigate();
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
   const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
   const { t } = useLanguage();
   
-  // Estado para modal de transacciones
-  const [transactionsModal, setTransactionsModal] = useState<{
-    open: boolean;
-    title: string;
-    transactions: any[];
-  }>({ open: false, title: '', transactions: [] });
   
   // Estados para selectores de período
   const now = new Date();
@@ -702,11 +696,16 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                         size="sm"
                         className="h-auto p-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold ml-2"
                         onClick={() => {
-                          setTransactionsModal({
-                            open: true,
-                            title: `${category.name} - ${selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses'}`,
-                            transactions: category.transactions.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+                          const periodo = selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses';
+                          const params = new URLSearchParams({
+                            categoria: category.name,
+                            divisa: selectedCurrency,
+                            periodo: periodo
                           });
+                          if (selectedCategoryMonth !== null) {
+                            params.set('mes', selectedCategoryMonth.toString());
+                          }
+                          navigate(`/transacciones-categoria?${params.toString()}`);
                         }}
                       >
                         {formatCurrencyConsistent(category.total, selectedCurrency)}
@@ -723,11 +722,17 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                                 size="sm"
                                 className="h-auto p-1 font-medium hover:bg-muted"
                                 onClick={() => {
-                                  setTransactionsModal({
-                                    open: true,
-                                    title: `${category.name} > ${sub.name} - ${selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses'}`,
-                                    transactions: sub.transactions.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+                                  const periodo = selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses';
+                                  const params = new URLSearchParams({
+                                    categoria: category.name,
+                                    subcategoria: sub.name,
+                                    divisa: selectedCurrency,
+                                    periodo: periodo
                                   });
+                                  if (selectedCategoryMonth !== null) {
+                                    params.set('mes', selectedCategoryMonth.toString());
+                                  }
+                                  navigate(`/transacciones-categoria?${params.toString()}`);
                                 }}
                               >
                                 {formatCurrencyConsistent(sub.total, selectedCurrency)}
@@ -1214,50 +1219,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </CardContent>
       </Card>
 
-      {/* Modal de transacciones */}
-      <Dialog open={transactionsModal.open} onOpenChange={(open) => setTransactionsModal(prev => ({ ...prev, open }))}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="text-lg">{transactionsModal.title}</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-4">
-            <div className="space-y-2">
-              {transactionsModal.transactions.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No hay transacciones</p>
-              ) : (
-                <>
-                  <div className="text-sm text-muted-foreground mb-3">
-                    {transactionsModal.transactions.length} transacción{transactionsModal.transactions.length !== 1 ? 'es' : ''} • 
-                    Total: <span className="font-semibold text-destructive">
-                      {formatCurrencyConsistent(
-                        transactionsModal.transactions.reduce((sum, t) => sum + Math.abs(t.gasto || 0), 0),
-                        selectedCurrency
-                      )}
-                    </span>
-                  </div>
-                  {transactionsModal.transactions.map((t, idx) => (
-                    <div 
-                      key={t.id || idx}
-                      className="flex justify-between items-start p-3 rounded-lg bg-muted/30 border border-border/50"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{t.comentario || 'Sin comentario'}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {new Date(t.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          {t.cuenta && ` • ${t.cuenta}`}
-                        </div>
-                      </div>
-                      <div className="text-destructive font-semibold text-sm">
-                        {formatCurrencyConsistent(Math.abs(t.gasto || 0), t.divisa || selectedCurrency)}
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
 
     </div>
   );
