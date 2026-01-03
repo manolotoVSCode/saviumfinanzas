@@ -47,14 +47,28 @@ export const useFinanceDataSupabase = () => {
       
       if (categoriasError) throw categoriasError;
 
-      // Cargar transacciones (aumentar límite para obtener todas)
-      const { data: transaccionesData, error: transaccionesError } = await supabase
-        .from('transacciones')
-        .select('*')
-        .order('fecha', { ascending: false })
-        .limit(10000);
-      
-      if (transaccionesError) throw transaccionesError;
+      // Cargar transacciones (Supabase/PostgREST capea en 1000 por request, así que paginamos)
+      const pageSize = 1000;
+      let allTransacciones: any[] = [];
+      let from = 0;
+
+      while (true) {
+        const { data: pageData, error: pageError } = await supabase
+          .from('transacciones')
+          .select('*')
+          .order('fecha', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (pageError) throw pageError;
+
+        const rows = pageData ?? [];
+        allTransacciones = allTransacciones.concat(rows);
+
+        if (rows.length < pageSize) break;
+        from += pageSize;
+      }
+
+      const transaccionesData = allTransacciones;
 
       // Mapear datos de Supabase a tipos locales
       const mappedAccounts: Account[] = cuentasData.map(cuenta => ({
