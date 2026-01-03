@@ -32,6 +32,16 @@ interface ParsedTransaction {
   isNewCategory: boolean;
 }
 
+// Convert ArrayBuffer to base64
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -68,7 +78,12 @@ serve(async (req) => {
     }
 
     const categories: Category[] = JSON.parse(categoriesJson || '[]');
+    const fileName = file.name.toLowerCase();
+    const isPDF = fileName.endsWith('.pdf');
+    const isImage = fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg');
     
+    console.log(`Processing file: ${file.name}, size: ${file.size} bytes, isPDF: ${isPDF}, isImage: ${isImage}`);
+
     // Fetch user's historical transactions for learning
     const { data: historicalData } = await supabaseClient
       .from('transacciones')
@@ -90,78 +105,107 @@ serve(async (req) => {
         subcategoria: t.categorias.subcategoria,
       }));
 
-    // Read file content
-    const fileContent = await file.text();
-    const fileType = file.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 
-                     file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls') ? 'excel' : 'csv';
-    
-    console.log(`Processing ${fileType} file: ${file.name}, size: ${file.size} bytes`);
-
-    // Build prompt for AI
+    // Build categories info
     const categoriesInfo = categories.map(c => `- ${c.categoria} > ${c.subcategoria}`).join('\n');
-    const historicalExamples = historicalTransactions.slice(0, 50).map(t => 
+    const historicalExamples = historicalTransactions.slice(0, 30).map(t => 
       `"${t.comentario}" → ${t.categoria} > ${t.subcategoria}`
     ).join('\n');
 
-    const systemPrompt = `Eres un asistente financiero experto en clasificar transacciones bancarias.
+    const systemPrompt = `Eres un asistente financiero experto en extraer y clasificar transacciones de estados de cuenta bancarios.
 
 Tu tarea es:
-1. Extraer las transacciones del contenido del archivo (puede ser CSV, texto de PDF, o datos de Excel)
-2. Para cada transacción, clasificarla en la categoría y subcategoría más apropiada
+1. EXTRAER todas las transacciones del documento (fechas, descripciones, montos)
+2. CLASIFICAR cada transacción en la categoría y subcategoría más apropiada
 
 CATEGORÍAS DISPONIBLES DEL USUARIO:
 ${categoriesInfo}
 
-EJEMPLOS DEL HISTORIAL DEL USUARIO (para aprender su estilo de clasificación):
+EJEMPLOS DEL HISTORIAL DEL USUARIO (aprende su estilo de clasificación):
 ${historicalExamples || 'Sin historial previo'}
 
-REGLAS DE CLASIFICACIÓN:
-- Si encuentras una categoría existente que encaje bien, úsala (confidence: "high" o "medium")
-- Si no hay categoría apropiada, sugiere una nueva (isNewCategory: true, confidence: "low")
-- Prioriza las categorías del historial del usuario cuando el comentario sea similar
-- Para transferencias entre cuentas, usa "Interno > Transferencia Entre Cuentas" si existe
-- Para gastos de supermercado, busca "Alimentación" o similar
-- Para salarios, busca "Trabajo" o "Salario"
+REGLAS DE EXTRACCIÓN:
+- Busca patrones de fecha (DD/MM/AAAA, DD-MM-AAAA, MM/DD/AAAA, etc.)
+- Identifica montos con símbolos de moneda ($, €, MXN, USD) o sin ellos
+- Los cargos/compras son GASTOS (gasto > 0)
+- Los abonos/depósitos/pagos recibidos son INGRESOS (ingreso > 0)
+- IMPORTANTE: Ignora líneas de saldo, totales, o información que no sea una transacción individual
 
-FORMATO DE RESPUESTA:
-Devuelve ÚNICAMENTE un JSON válido con este formato:
+REGLAS DE CLASIFICACIÓN:
+- Si hay categoría existente que encaje, úsala (confidence: "high" o "medium")
+- Si no hay categoría apropiada, sugiere una nueva (isNewCategory: true, confidence: "low")
+- Prioriza las categorías del historial cuando el comentario sea similar
+
+FORMATO DE RESPUESTA (SOLO JSON, sin explicaciones):
 {
   "transactions": [
     {
-      "fecha": "YYYY-MM-DD",
-      "comentario": "descripción de la transacción",
+      "fecha": "2025-01-15",
+      "comentario": "UBER EATS",
       "ingreso": 0,
-      "gasto": 1500.50,
+      "gasto": 350.50,
       "suggestedCategory": "Alimentación",
-      "suggestedSubcategory": "Supermercado",
+      "suggestedSubcategory": "Restaurantes",
       "confidence": "high",
       "isNewCategory": false
     }
   ],
-  "newCategorySuggestions": [
-    {
-      "categoria": "Nueva Categoría",
-      "subcategoria": "Nueva Subcategoría",
-      "razon": "Por qué sugieres crear esta categoría"
-    }
-  ]
+  "newCategorySuggestions": []
 }
 
 IMPORTANTE:
-- Las fechas deben estar en formato YYYY-MM-DD
-- Los montos deben ser números positivos (sin símbolos de moneda)
-- Si una transacción es ingreso, gasto = 0 y viceversa
-- Limpia los comentarios de caracteres especiales innecesarios`;
+- Fechas en formato YYYY-MM-DD
+- Montos como números positivos (sin símbolos)
+- Si es gasto, ingreso = 0 y viceversa
+- Limpia los comentarios de caracteres especiales
+- NO incluyas saldos, solo transacciones individuales`;
 
-    const userPrompt = `Analiza este contenido de archivo ${fileType} y extrae las transacciones:
+    let messages: any[];
 
----CONTENIDO DEL ARCHIVO---
-${fileContent.substring(0, 30000)}
----FIN DEL CONTENIDO---
+    if (isPDF || isImage) {
+      // For PDFs and images, use vision model with base64
+      const fileBuffer = await file.arrayBuffer();
+      const base64Content = arrayBufferToBase64(fileBuffer);
+      const mimeType = isPDF ? 'application/pdf' : (fileName.endsWith('.png') ? 'image/png' : 'image/jpeg');
+      
+      console.log(`Sending ${mimeType} to AI with vision capabilities...`);
 
-Extrae todas las transacciones y clasifícalas según las categorías del usuario.`;
+      messages = [
+        { role: 'system', content: systemPrompt },
+        { 
+          role: 'user', 
+          content: [
+            {
+              type: 'text',
+              text: 'Analiza este estado de cuenta y extrae TODAS las transacciones. Devuelve SOLO el JSON con las transacciones encontradas.'
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${base64Content}`
+              }
+            }
+          ]
+        }
+      ];
+    } else {
+      // For CSV/Excel/text files, read as text
+      const fileContent = await file.text();
+      console.log(`Processing text file, content length: ${fileContent.length} chars`);
+      
+      messages = [
+        { role: 'system', content: systemPrompt },
+        { 
+          role: 'user', 
+          content: `Analiza este contenido y extrae TODAS las transacciones:\n\n${fileContent.substring(0, 50000)}`
+        }
+      ];
+    }
 
     console.log('Calling AI for transaction parsing...');
+
+    // Use gemini-2.5-pro for vision capabilities with PDFs
+    const modelToUse = (isPDF || isImage) ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
+    console.log(`Using model: ${modelToUse}`);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -170,11 +214,8 @@ Extrae todas las transacciones y clasifícalas según las categorías del usuari
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
+        model: modelToUse,
+        messages,
       }),
     });
 
@@ -194,27 +235,35 @@ Extrae todas las transacciones y clasifícalas según las categorías del usuari
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw new Error(`AI gateway error: ${response.status} - ${errorText}`);
     }
 
     const aiResponse = await response.json();
     const aiContent = aiResponse.choices?.[0]?.message?.content || '';
     
-    console.log('AI response received, parsing JSON...');
+    console.log('AI response received, length:', aiContent.length);
+    console.log('AI response preview:', aiContent.substring(0, 500));
 
     // Extract JSON from response (handle markdown code blocks)
     let jsonStr = aiContent;
     const jsonMatch = aiContent.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) {
       jsonStr = jsonMatch[1].trim();
+    } else {
+      // Try to find JSON object directly
+      const jsonStart = aiContent.indexOf('{');
+      const jsonEnd = aiContent.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        jsonStr = aiContent.substring(jsonStart, jsonEnd + 1);
+      }
     }
 
     let parsedResult;
     try {
       parsedResult = JSON.parse(jsonStr);
     } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', jsonStr.substring(0, 500));
-      throw new Error('Failed to parse AI response');
+      console.error('Failed to parse AI response as JSON:', jsonStr.substring(0, 1000));
+      throw new Error('Failed to parse AI response. The AI could not extract transactions from this file format.');
     }
 
     // Map suggested categories to category IDs
@@ -224,13 +273,18 @@ Extrae todas las transacciones y clasifícalas según las categorías del usuari
         c.subcategoria.toLowerCase() === (t.suggestedSubcategory || '').toLowerCase()
       );
 
-      // If no exact match, try partial match
+      // If no exact match, try partial match on subcategory
       const partialMatch = !matchedCategory ? categories.find(c => 
         c.subcategoria.toLowerCase().includes((t.suggestedSubcategory || '').toLowerCase()) ||
         (t.suggestedSubcategory || '').toLowerCase().includes(c.subcategoria.toLowerCase())
       ) : null;
 
-      const finalCategory = matchedCategory || partialMatch;
+      // If still no match, try matching just the category
+      const categoryMatch = (!matchedCategory && !partialMatch) ? categories.find(c => 
+        c.categoria.toLowerCase() === (t.suggestedCategory || '').toLowerCase()
+      ) : null;
+
+      const finalCategory = matchedCategory || partialMatch || categoryMatch;
       const sinAsignar = categories.find(c => c.subcategoria.toUpperCase() === 'SIN ASIGNAR');
 
       return {
@@ -241,12 +295,12 @@ Extrae todas las transacciones y clasifícalas según las categorías del usuari
         suggestedCategoryId: finalCategory?.id || sinAsignar?.id || '',
         suggestedCategory: finalCategory?.categoria || t.suggestedCategory || 'SIN ASIGNAR',
         suggestedSubcategory: finalCategory?.subcategoria || t.suggestedSubcategory || 'SIN ASIGNAR',
-        confidence: matchedCategory ? 'high' : (partialMatch ? 'medium' : 'low'),
+        confidence: matchedCategory ? 'high' : (partialMatch || categoryMatch ? 'medium' : 'low'),
         isNewCategory: !finalCategory && t.isNewCategory,
       };
     });
 
-    console.log(`Parsed ${transactions.length} transactions`);
+    console.log(`Successfully parsed ${transactions.length} transactions`);
 
     return new Response(
       JSON.stringify({
