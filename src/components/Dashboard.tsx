@@ -685,38 +685,33 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                   onOpenChange={() => toggleCollapsible(`cat-${category.name}`)}
                 >
                   <div className="rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
-                    <CollapsibleTrigger className="w-full">
-                      <div className="flex items-center justify-between p-3 cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: category.color }}
-                          />
-                          <span className="font-medium text-sm">{category.name}</span>
-                          <Badge variant="secondary" className="text-xs">
-                            {category.subcategories.length} subcategorías
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-auto p-1 text-destructive hover:text-destructive font-bold"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTransactionsModal({
-                                open: true,
-                                title: `${category.name} - ${selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses'}`,
-                                transactions: category.transactions.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-                              });
-                            }}
-                          >
-                            {formatCurrencyConsistent(category.total, selectedCurrency)}
-                          </Button>
-                          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-180" />
-                        </div>
-                      </div>
-                    </CollapsibleTrigger>
+                    <div className="flex items-center justify-between p-3">
+                      <CollapsibleTrigger className="flex items-center gap-3 cursor-pointer flex-1">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <span className="font-medium text-sm">{category.name}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {category.subcategories.length} subcategorías
+                        </Badge>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 ml-auto" />
+                      </CollapsibleTrigger>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold ml-2"
+                        onClick={() => {
+                          setTransactionsModal({
+                            open: true,
+                            title: `${category.name} - ${selectedCategoryMonth !== null ? top10Data.months[selectedCategoryMonth].label : 'Últimos 12 meses'}`,
+                            transactions: category.transactions.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+                          });
+                        }}
+                      >
+                        {formatCurrencyConsistent(category.total, selectedCurrency)}
+                      </Button>
+                    </div>
                     <CollapsibleContent>
                       <div className="px-3 pb-3 pt-1">
                         <div className="pl-6 space-y-1 border-l-2 border-muted">
