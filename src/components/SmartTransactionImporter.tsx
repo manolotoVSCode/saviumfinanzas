@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, FileText, ArrowRight, ArrowLeft, Sparkles, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Upload, FileText, ArrowRight, ArrowLeft, Sparkles, AlertCircle, CheckCircle2, Loader2, Search, Filter } from 'lucide-react';
 import { Account, Category, Transaction } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -57,7 +57,8 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR' | ''>('');
   const [selectedAccount, setSelectedAccount] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
-
+  const [searchTerm, setSearchTerm] = useState('');
+  const [confidenceFilter, setConfidenceFilter] = useState<'all' | 'high' | 'medium' | 'low' | 'new'>('all');
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'decimal',
@@ -214,9 +215,26 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
     setSelectedAccount('');
     setImportStatus(null);
     setFileName('');
+    setSearchTerm('');
+    setConfidenceFilter('all');
   };
 
+  const filteredTransactions = parsedTransactions.filter(t => {
+    const matchesSearch = searchTerm === '' || 
+      t.comentario.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.suggestedCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.suggestedSubcategory.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesConfidence = 
+      confidenceFilter === 'all' ||
+      (confidenceFilter === 'new' && t.isNewCategory) ||
+      t.confidence === confidenceFilter;
+    
+    return matchesSearch && matchesConfidence;
+  });
+
   const selectedCount = parsedTransactions.filter(t => t.selected).length;
+  const filteredSelectedCount = filteredTransactions.filter(t => t.selected).length;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -317,17 +335,47 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
               </Alert>
             )}
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={selectAll}>Seleccionar todo</Button>
-                <Button variant="outline" size="sm" onClick={deselectAll}>Deseleccionar todo</Button>
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por comentario o categoría..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8 h-9"
+                  />
+                </div>
+                <Select value={confidenceFilter} onValueChange={(value: 'all' | 'high' | 'medium' | 'low' | 'new') => setConfidenceFilter(value)}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filtrar por..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="high">Alta confianza</SelectItem>
+                    <SelectItem value="medium">Media confianza</SelectItem>
+                    <SelectItem value="low">Baja confianza</SelectItem>
+                    <SelectItem value="new">Categoría nueva</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <span className="text-sm text-muted-foreground">
-                {selectedCount} de {parsedTransactions.length} seleccionadas
-              </span>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={selectAll}>Seleccionar todo</Button>
+                  <Button variant="outline" size="sm" onClick={deselectAll}>Deseleccionar todo</Button>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {filteredTransactions.length !== parsedTransactions.length && (
+                    <span className="mr-2">Mostrando {filteredTransactions.length} de {parsedTransactions.length} •</span>
+                  )}
+                  {selectedCount} seleccionadas
+                </span>
+              </div>
             </div>
 
-            <ScrollArea className="h-[400px] border rounded-md">
+            <ScrollArea className="h-[350px] border rounded-md">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -341,46 +389,62 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {parsedTransactions.map((transaction, index) => (
-                    <TableRow key={index} className={!transaction.selected ? 'opacity-50' : ''}>
-                      <TableCell>
-                        <Checkbox 
-                          checked={transaction.selected}
-                          onCheckedChange={() => toggleTransactionSelection(index)}
-                        />
+                  {filteredTransactions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        No hay transacciones que coincidan con los filtros
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">{transaction.fecha}</TableCell>
-                      <TableCell className="max-w-[200px] truncate" title={transaction.comentario}>
-                        {transaction.comentario}
-                      </TableCell>
-                      <TableCell className="text-right text-green-600">
-                        {transaction.ingreso > 0 ? `+${formatCurrency(transaction.ingreso)}` : '-'}
-                      </TableCell>
-                      <TableCell className="text-right text-red-600">
-                        {transaction.gasto > 0 ? `-${formatCurrency(transaction.gasto)}` : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Select 
-                          value={transaction.editedCategoryId || transaction.suggestedCategoryId}
-                          onValueChange={(value) => updateTransactionCategory(index, value)}
-                        >
-                          <SelectTrigger className="w-[200px] h-8 text-xs">
-                            <SelectValue>
-                              {transaction.suggestedCategory} &gt; {transaction.suggestedSubcategory}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id} className="text-xs">
-                                {cat.categoria} &gt; {cat.subcategoria}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>{getConfidenceBadge(transaction.confidence)}</TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredTransactions.map((transaction) => {
+                      const originalIndex = parsedTransactions.findIndex(t => t === transaction);
+                      return (
+                        <TableRow key={originalIndex} className={!transaction.selected ? 'opacity-50' : ''}>
+                          <TableCell>
+                            <Checkbox 
+                              checked={transaction.selected}
+                              onCheckedChange={() => toggleTransactionSelection(originalIndex)}
+                            />
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">{transaction.fecha}</TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={transaction.comentario}>
+                            {transaction.comentario}
+                          </TableCell>
+                          <TableCell className="text-right text-green-600">
+                            {transaction.ingreso > 0 ? `+${formatCurrency(transaction.ingreso)}` : '-'}
+                          </TableCell>
+                          <TableCell className="text-right text-red-600">
+                            {transaction.gasto > 0 ? `-${formatCurrency(transaction.gasto)}` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {transaction.isNewCategory && (
+                                <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">Nueva</Badge>
+                              )}
+                              <Select 
+                                value={transaction.editedCategoryId || transaction.suggestedCategoryId}
+                                onValueChange={(value) => updateTransactionCategory(originalIndex, value)}
+                              >
+                                <SelectTrigger className="w-[180px] h-8 text-xs">
+                                  <SelectValue>
+                                    {transaction.suggestedCategory} &gt; {transaction.suggestedSubcategory}
+                                  </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map((cat) => (
+                                    <SelectItem key={cat.id} value={cat.id} className="text-xs">
+                                      {cat.categoria} &gt; {cat.subcategoria}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </TableCell>
+                          <TableCell>{getConfidenceBadge(transaction.confidence)}</TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </ScrollArea>
