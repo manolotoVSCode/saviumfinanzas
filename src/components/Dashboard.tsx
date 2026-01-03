@@ -926,8 +926,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                       cuenta.saldoActual > 0
                     );
 
+                    const totalMoneda = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas + activos.bienRaiz;
+                    
                     return (
                       <div key={moneda} className="space-y-3">
+                        {/* Encabezado de divisa */}
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold">{moneda === 'MXN' ? '🇲🇽' : moneda === 'USD' ? '🇺🇸' : '🇪🇺'}</span>
+                            <span className="font-semibold text-foreground">{moneda}</span>
+                          </div>
+                          <span className="text-lg font-bold text-success">{formatNumberOnly(totalMoneda)} {moneda}</span>
+                        </div>
                         {/* Efectivo/Bancos */}
                         {activos.efectivoBancos > 0 && (
                           <Collapsible 
@@ -1122,8 +1132,18 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                       cuenta.saldoActual < 0
                     );
 
+                    const totalPasivosMoneda = pasivos.tarjetasCredito + pasivos.hipoteca;
+                    
                     return (
                       <div key={moneda} className="space-y-3">
+                        {/* Encabezado de divisa */}
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold">{moneda === 'MXN' ? '🇲🇽' : moneda === 'USD' ? '🇺🇸' : '🇪🇺'}</span>
+                            <span className="font-semibold text-foreground">{moneda}</span>
+                          </div>
+                          <span className="text-lg font-bold text-destructive">{formatNumberOnly(totalPasivosMoneda)} {moneda}</span>
+                        </div>
                         {/* Tarjetas de Crédito */}
                         {pasivos.tarjetasCredito > 0 && (
                           <Collapsible 
