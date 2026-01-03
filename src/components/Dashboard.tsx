@@ -4,15 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { DashboardMetrics } from '@/types/finance';
-import { TrendingUp, TrendingDown, Info } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart } from 'recharts';
+import { TrendingUp, TrendingDown, Info, Calendar } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart, ReferenceLine } from 'recharts';
 import { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from 'lucide-react';
 
 interface DashboardProps {
   metrics: DashboardMetrics;
@@ -37,6 +36,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   const [selectedYear, setSelectedYear] = useState<number>(defaultYear);
   const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth);
   const [selectedMonthYear, setSelectedMonthYear] = useState<number>(defaultMonthYear);
+  const [selectedCategoryMonth, setSelectedCategoryMonth] = useState<number | null>(null); // null = todos los 12 meses
 
   // Años disponibles
   const availableYears = useMemo(() => {
@@ -273,6 +273,14 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       });
     }
     
+    // Calcular medias
+    const avgIngresos = tendenciaMensual.length > 0 
+      ? tendenciaMensual.reduce((sum, m) => sum + m.ingresos, 0) / tendenciaMensual.length 
+      : 0;
+    const avgGastos = tendenciaMensual.length > 0 
+      ? tendenciaMensual.reduce((sum, m) => sum + m.gastos, 0) / tendenciaMensual.length 
+      : 0;
+    
     return {
       // Datos del mes (ingresos sin ajustar porque ya excluyen reembolsos, gastos ajustados)
       ingresosMes: ingresosMes,
@@ -294,7 +302,9 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       balanceMesAnterior: ingresosMesAnterior - gastosAjustadosMesAnterior,
       balanceAnioAnterior: ingresosAnioAnterior - gastosAjustadosAnioAnterior,
       
-      tendenciaMensual
+      tendenciaMensual,
+      avgIngresos,
+      avgGastos
     };
   };
 
@@ -360,6 +370,75 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   };
+
+  // Función para obtener Top 10 categorías con subcategorías de los últimos 12 meses
+  const getTop10CategoriesWithSubcategories = (currency: 'MXN' | 'USD' | 'EUR') => {
+    const now = new Date();
+    
+    // Generar array de últimos 12 meses (excluyendo mes actual)
+    const last12Months: Array<{ month: number; year: number; label: string }> = [];
+    for (let i = 12; i >= 1; i--) {
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      last12Months.push({
+        month: targetDate.getMonth(),
+        year: targetDate.getFullYear(),
+        label: `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear().toString().slice(-2)}`
+      });
+    }
+    
+    // Filtrar transacciones por divisa y tipo Gastos
+    let filteredTrans = transactions.filter(t => 
+      t.divisa === currency && t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles'
+    );
+    
+    // Si hay mes seleccionado, filtrar por ese mes específico
+    if (selectedCategoryMonth !== null) {
+      const targetMonthData = last12Months[selectedCategoryMonth];
+      filteredTrans = filteredTrans.filter(t => {
+        const tDate = new Date(t.fecha);
+        return tDate.getMonth() === targetMonthData.month && tDate.getFullYear() === targetMonthData.year;
+      });
+    } else {
+      // Filtrar por últimos 12 meses
+      filteredTrans = filteredTrans.filter(t => {
+        const tDate = new Date(t.fecha);
+        return last12Months.some(m => m.month === tDate.getMonth() && m.year === tDate.getFullYear());
+      });
+    }
+    
+    // Agrupar por categoría y subcategoría
+    const categoryData: Record<string, { total: number; subcategories: Record<string, number> }> = {};
+    
+    filteredTrans.forEach(t => {
+      const categoria = t.categoria || 'Sin categoría';
+      const subcategoria = t.subcategoria || 'Sin subcategoría';
+      const amount = Math.abs(t.gasto);
+      
+      if (!categoryData[categoria]) {
+        categoryData[categoria] = { total: 0, subcategories: {} };
+      }
+      categoryData[categoria].total += amount;
+      categoryData[categoria].subcategories[subcategoria] = (categoryData[categoria].subcategories[subcategoria] || 0) + amount;
+    });
+    
+    // Convertir a array, ordenar y tomar top 10
+    const sortedCategories = Object.entries(categoryData)
+      .map(([name, data], index) => ({
+        name,
+        total: data.total,
+        subcategories: Object.entries(data.subcategories)
+          .map(([subName, subTotal]) => ({ name: subName, total: subTotal }))
+          .sort((a, b) => b.total - a.total),
+        color: COLORS[index % COLORS.length]
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+    
+    return { categories: sortedCategories, months: last12Months };
+  };
+
+  const top10Data = getTop10CategoriesWithSubcategories(selectedCurrency);
 
   // Preparar datos para gráficos filtrados por moneda seleccionada
   const pieDataGastosMesAnterior = getFilteredDistribution(selectedCurrency, 'Gastos', 'month');
@@ -428,477 +507,213 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* MEDIAS DE ÚLTIMOS 6 MESES */}
-      <div className="space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base text-primary flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Media Ingresos (6 meses)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-primary">
-                  {formatCurrencyTotals(metrics.mediaIngresosUltimos12Meses, 'MXN')}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Promedio mensual (excl. mes actual y Compra Venta Inmuebles)
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base text-destructive flex items-center gap-2">
-                <TrendingDown className="h-5 w-5" />
-                Media Gastos (6 meses)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-destructive">
-                  {formatCurrencyTotals(metrics.mediaGastosUltimos12Meses, 'MXN')}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Promedio mensual (excl. mes actual y Compra Venta Inmuebles)
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+      {/* SELECTOR DE MONEDA */}
+      <div className="flex justify-center">
+        <div className="flex rounded-lg bg-muted p-1">
+          {(['MXN', 'USD', 'EUR'] as const).map((currency) => (
+            <Button
+              key={currency}
+              variant={selectedCurrency === currency ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedCurrency(currency)}
+              className="px-4 py-2"
+            >
+              {currency}
+            </Button>
+          ))}
         </div>
-        
-        <Card className="bg-muted/30 border-muted">
-          <CardContent className="pt-4">
-            <div className="flex gap-2">
-              <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                <strong>Nota:</strong> Los reembolsos no se incluyen en los ingresos, pero el mismo monto está descontado de los gastos. 
-                La categoría "Compra Venta Inmuebles" no está incluida, aun siendo gastos e ingresos reales, 
-                porque desajustan el control y la media mensual.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* BALANCE GENERAL - Activos y Pasivos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* ACTIVOS */}
-        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="text-success">
-              {t('dashboard.assets')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Total principal */}
-              <div className="p-4 rounded-lg bg-success/10 border-2 border-success/30">
-                <div className="flex justify-between items-center">
-                    <span className="font-semibold text-success">{t('dashboard.total_assets')}</span>
-                    <span className="text-xl font-bold text-success">{formatCurrencyTotals(metrics.activos.total, 'MXN')}</span>
-                </div>
-              </div>
-
-              {/* Total excluyendo Bienes Raíces y Empresas Privadas */}
-              <div className="p-4 rounded-lg bg-success/5 border border-success/20">
-                <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total Líquido</span>
-                    <span className="text-lg font-bold text-success">
-                      {formatCurrencyTotals(metrics.activos.efectivoBancos + metrics.activos.inversiones, 'MXN')}
-                    </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  Excluyendo Bienes Raíces y Empresas Privadas
-                </div>
-              </div>
-
-              {/* Desglose colapsable */}
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="assets-detail" className="border-success/20">
-                  <AccordionTrigger className="text-sm text-success hover:text-success/80 hover:no-underline">
-                    Ver desglose de activos
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3 pt-2">
-                      {/* Mostrar categorías por moneda con cuentas individuales */}
-                      {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
-                        const formatNumberOnly = (amount: number) => {
-                          return new Intl.NumberFormat('es-MX', {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          }).format(amount);
-                        };
-
-                        const hasAssets = activos.efectivoBancos > 0 || activos.inversiones > 0 || activos.bienRaiz > 0 || activos.empresasPrivadas > 0;
-                        
-                        if (!hasAssets) return null;
-
-                        // Filtrar cuentas por moneda
-                        console.log('=== DEBUG CUENTAS ACTIVOS ===');
-                        console.log('Total cuentas:', accounts.length);
-                        console.log('Moneda filtrada:', moneda);
-                        
-                        const cuentasEfectivo = accounts.filter(cuenta => {
-                          const match = ['Efectivo', 'Banco', 'Ahorros'].includes(cuenta.tipo) && 
-                            cuenta.divisa === moneda && 
-                            cuenta.vendida !== true &&
-                            cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta efectivo encontrada:', cuenta.nombre, cuenta.saldoActual, cuenta.tipo, cuenta.divisa);
-                          return match;
-                        });
-
-                        const cuentasInversion = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Inversiones' && 
-                            cuenta.divisa === moneda && 
-                            cuenta.vendida !== true &&
-                            cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta inversión encontrada:', cuenta.nombre, cuenta.saldoActual, cuenta.tipo, cuenta.divisa);
-                          return match;
-                        });
-
-                        const cuentasEmpresas = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Empresa Propia' && 
-                            cuenta.divisa === moneda && 
-                            cuenta.vendida !== true &&
-                            cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta empresa encontrada:', cuenta.nombre, cuenta.saldoActual, cuenta.tipo, cuenta.divisa);
-                          return match;
-                        });
-
-                        const cuentasBienRaiz = accounts.filter(cuenta => {
-                          const match = cuenta.tipo === 'Bien Raíz' && 
-                            cuenta.divisa === moneda && 
-                            cuenta.vendida !== true &&
-                            cuenta.saldoActual > 0;
-                          if (match) console.log('Cuenta bien raíz encontrada:', cuenta.nombre, cuenta.saldoActual, cuenta.tipo, cuenta.divisa);
-                          return match;
-                        });
-
-                        console.log('Cuentas efectivo:', cuentasEfectivo.length);
-                        console.log('Cuentas inversión:', cuentasInversion.length);
-                        console.log('Cuentas empresas:', cuentasEmpresas.length);
-                        console.log('Cuentas bien raíz:', cuentasBienRaiz.length);
-                        console.log('=== FIN DEBUG CUENTAS ACTIVOS ===');
-
-                        return (
-                           <div key={moneda} className="space-y-3">
-                              {/* Efectivo/Bancos */}
-                              {activos.efectivoBancos > 0 && (
-                                 <Collapsible 
-                                   className="rounded-lg bg-success/5 border border-success/20"
-                                   open={openCollapsibles[`efectivo-${moneda}`]}
-                                   onOpenChange={() => toggleCollapsible(`efectivo-${moneda}`)}
-                                 >
-                                   <div className="p-4">
-                                     <CollapsibleTrigger className="w-full group">
-                                       <div className="flex justify-between items-center cursor-pointer">
-                                         <div className="flex items-center gap-2">
-                                           <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                           <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
-                                         </div>
-                                         <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
-                                       </div>
-                                     </CollapsibleTrigger>
-                                    <div className="text-xs text-muted-foreground mt-2">
-                                      {t('dashboard.available_immediately')}
-                                    </div>
-                                    {/* Cuentas individuales */}
-                                    {cuentasEfectivo.length > 0 && (
-                                      <CollapsibleContent className="mt-3">
-                                        <div className="space-y-2 pl-3 border-l-2 border-success/30">
-                                          {cuentasEfectivo.map(cuenta => (
-                                            <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
-                                              <span className="text-muted-foreground">• {cuenta.nombre}</span>
-                                              <span className="font-medium text-success">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </CollapsibleContent>
-                                    )}
-                                  </div>
-                               </Collapsible>
-                             )}
-                             
-                              {/* Inversiones */}
-                              {activos.inversiones > 0 && (
-                                 <Collapsible 
-                                   className="rounded-lg bg-primary/5 border border-primary/20"
-                                   open={openCollapsibles[`inversiones-${moneda}`]}
-                                   onOpenChange={() => toggleCollapsible(`inversiones-${moneda}`)}
-                                 >
-                                   <div className="p-4">
-                                     <CollapsibleTrigger className="w-full group">
-                                       <div className="flex justify-between items-center cursor-pointer">
-                                         <div className="flex items-center gap-2">
-                                           <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                           <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
-                                         </div>
-                                         <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
-                                       </div>
-                                     </CollapsibleTrigger>
-                                    <div className="text-xs text-muted-foreground mt-2">
-                                      {t('dashboard.funds_stocks_etfs')}
-                                    </div>
-                                    {/* Cuentas individuales */}
-                                    {cuentasInversion.length > 0 && (
-                                      <CollapsibleContent className="mt-3">
-                                        <div className="space-y-2 pl-3 border-l-2 border-primary/30">
-                                          {cuentasInversion.map(cuenta => (
-                                            <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
-                                              <span className="text-muted-foreground">• {cuenta.nombre}</span>
-                                              <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </CollapsibleContent>
-                                    )}
-                                  </div>
-                               </Collapsible>
-                              )}
-
-                               {/* Empresas Privadas */}
-                               {activos.empresasPrivadas > 0 && (
-                                  <Collapsible 
-                                    className="rounded-lg bg-accent/5 border border-accent/20"
-                                    open={openCollapsibles[`empresas-${moneda}`]}
-                                    onOpenChange={() => toggleCollapsible(`empresas-${moneda}`)}
-                                  >
-                                    <div className="p-4">
-                                      <CollapsibleTrigger className="w-full group">
-                                        <div className="flex justify-between items-center cursor-pointer">
-                                          <div className="flex items-center gap-2">
-                                            <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                            <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
-                                          </div>
-                                          <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
-                                        </div>
-                                      </CollapsibleTrigger>
-                                     <div className="text-xs text-muted-foreground mt-2">
-                                       Participaciones en empresas propias
-                                     </div>
-                                     {/* Cuentas individuales */}
-                                     {cuentasEmpresas.length > 0 && (
-                                       <CollapsibleContent className="mt-3">
-                                         <div className="space-y-2 pl-3 border-l-2 border-accent/30">
-                                           {cuentasEmpresas.map(cuenta => (
-                                             <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
-                                               <span className="text-muted-foreground">• {cuenta.nombre}</span>
-                                               <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
-                                             </div>
-                                           ))}
-                                         </div>
-                                       </CollapsibleContent>
-                                     )}
-                                   </div>
-                                </Collapsible>
-                              )}
-                              
-                               {/* Bienes Raíces */}
-                               {activos.bienRaiz > 0 && (
-                                  <Collapsible 
-                                    className="rounded-lg bg-warning/5 border border-warning/20"
-                                    open={openCollapsibles[`bienraiz-${moneda}`]}
-                                    onOpenChange={() => toggleCollapsible(`bienraiz-${moneda}`)}
-                                  >
-                                    <div className="p-4">
-                                      <CollapsibleTrigger className="w-full group">
-                                        <div className="flex justify-between items-center cursor-pointer">
-                                          <div className="flex items-center gap-2">
-                                            <ChevronDown className="h-4 w-4 text-warning transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                            <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
-                                          </div>
-                                          <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
-                                        </div>
-                                      </CollapsibleTrigger>
-                                     <div className="text-xs text-muted-foreground mt-2">
-                                       Propiedades y terrenos
-                                     </div>
-                                     {/* Cuentas individuales */}
-                                     {cuentasBienRaiz.length > 0 && (
-                                       <CollapsibleContent className="mt-3">
-                                         <div className="space-y-2 pl-3 border-l-2 border-warning/30">
-                                           {cuentasBienRaiz.map(cuenta => (
-                                             <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
-                                               <span className="text-muted-foreground">• {cuenta.nombre}</span>
-                                               <span className="font-medium text-warning">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
-                                             </div>
-                                           ))}
-                                         </div>
-                                       </CollapsibleContent>
-                                     )}
-                                   </div>
-                                </Collapsible>
-                              )}
-                            </div>
-                        );
-                      })}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* PASIVOS */}
-        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-          <CardHeader>
-             <CardTitle className="text-destructive">
-               {t('dashboard.liabilities')}
-             </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Total principal */}
-              <div className="p-4 rounded-lg bg-destructive/10 border-2 border-destructive/30">
-                <div className="flex justify-between items-center">
-                    <span className="font-semibold text-destructive">{t('dashboard.total_liabilities')}</span>
-                    <span className="text-xl font-bold text-destructive">{formatCurrencyTotals(metrics.pasivos.total, 'MXN')}</span>
-                </div>
-              </div>
-
-              {/* Desglose colapsable */}
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="liabilities-detail" className="border-destructive/20">
-                  <AccordionTrigger className="text-sm text-destructive hover:text-destructive/80 hover:no-underline">
-                    Ver desglose de pasivos
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3 pt-2">
-                      {/* Mostrar categorías por moneda con cuentas individuales */}
-                      {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
-                        const formatNumberOnly = (amount: number) => {
-                          return new Intl.NumberFormat('es-MX', {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          }).format(amount);
-                        };
-
-                        // Filtrar cuentas por moneda (incluyendo tarjetas con saldo positivo)
-                        const tarjetasCredito = accounts.filter(cuenta => 
-                          cuenta.tipo === 'Tarjeta de Crédito' && 
-                          cuenta.divisa === moneda
-                        );
-
-                        const cuentasHipoteca = accounts.filter(cuenta => 
-                          cuenta.tipo === 'Hipoteca' && 
-                          cuenta.divisa === moneda &&
-                          cuenta.saldoActual < 0
-                        );
-
-                        const hasLiabilities = tarjetasCredito.length > 0 || cuentasHipoteca.length > 0;
-                        
-                        if (!hasLiabilities) return null;
-
-                        return (
-                          <div key={moneda} className="space-y-3">
-                            {/* Tarjetas de Crédito */}
-                            {tarjetasCredito.length > 0 && (
-                              <Collapsible 
-                                className="rounded-lg bg-destructive/5 border border-destructive/20"
-                                open={openCollapsibles[`tarjetas-${moneda}`]}
-                                onOpenChange={() => toggleCollapsible(`tarjetas-${moneda}`)}
-                              >
-                                <div className="p-4">
-                                  <CollapsibleTrigger className="w-full group">
-                                    <div className="flex justify-between items-center cursor-pointer">
-                                      <div className="flex items-center gap-2">
-                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                        <span className="text-sm font-semibold text-muted-foreground">Tarjetas de Crédito</span>
-                                      </div>
-                                      <span className="font-bold text-destructive">
-                                        {formatNumberOnly(tarjetasCredito.filter(c => c.saldoActual < 0).reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
-                                      </span>
-                                    </div>
-                                  </CollapsibleTrigger>
-                                  <div className="text-xs text-muted-foreground mt-2">
-                                    Deuda de tarjetas activas
-                                  </div>
-                                  {/* Cuentas individuales */}
-                                  <CollapsibleContent className="mt-3">
-                                    <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
-                                      {tarjetasCredito.map(cuenta => (
-                                        <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
-                                          <span className="text-muted-foreground">
-                                            • {cuenta.nombre}
-                                            {cuenta.saldoActual >= 0 && <span className="ml-2 text-success">(Saldo a favor)</span>}
-                                          </span>
-                                          <span className={`font-medium ${cuenta.saldoActual >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                            {formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </CollapsibleContent>
-                                </div>
-                              </Collapsible>
-                            )}
-
-                            {/* Hipotecas */}
-                            {cuentasHipoteca.length > 0 && (
-                              <Collapsible 
-                                className="rounded-lg bg-destructive/5 border border-destructive/20"
-                                open={openCollapsibles[`hipoteca-${moneda}`]}
-                                onOpenChange={() => toggleCollapsible(`hipoteca-${moneda}`)}
-                              >
-                                <div className="p-4">
-                                  <CollapsibleTrigger className="w-full group">
-                                    <div className="flex justify-between items-center cursor-pointer">
-                                      <div className="flex items-center gap-2">
-                                        <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                        <span className="text-sm font-semibold text-muted-foreground">Hipoteca</span>
-                                      </div>
-                                      <span className="font-bold text-destructive">
-                                        {formatNumberOnly(cuentasHipoteca.reduce((sum, c) => sum + Math.abs(c.saldoActual), 0))} {moneda}
-                                      </span>
-                                    </div>
-                                  </CollapsibleTrigger>
-                                  <div className="text-xs text-muted-foreground mt-2">
-                                    Saldo pendiente del préstamo hipotecario
-                                  </div>
-                                  {/* Cuentas individuales */}
-                                  <CollapsibleContent className="mt-3">
-                                    <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
-                                      {cuentasHipoteca.map(cuenta => (
-                                        <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
-                                          <span className="text-muted-foreground">• {cuenta.nombre}</span>
-                                          <span className="font-medium text-destructive">{formatNumberOnly(Math.abs(cuenta.saldoActual))} {moneda}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </CollapsibleContent>
-                                </div>
-                              </Collapsible>
-                            )}
-                          </div>
-                         );
-                       })}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* SCORE DE SALUD FINANCIERA */}
+      {/* 1. GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES CON MEDIAS */}
       <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
+          <CardTitle className="text-center">{t('dashboard.income_vs_expenses')} - Últimos 12 Meses <strong>{selectedCurrency}</strong></CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart 
+                data={filteredMetrics.tendenciaMensual}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis 
+                  dataKey="mes" 
+                  tick={{ fontSize: 12 }}
+                  className="text-muted-foreground"
+                />
+                <YAxis 
+                  tick={false}
+                  className="text-muted-foreground"
+                  width={0}
+                />
+                <Tooltip 
+                  formatter={(value: any, name: string) => [
+                    formatCurrencyConsistent(Number(value), selectedCurrency), 
+                    name === 'ingresos' ? t('transactions.income') : name === 'gastos' ? t('transactions.expense') : 'Balance'
+                  ]}
+                  labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                />
+                <Bar 
+                  dataKey="ingresos" 
+                  fill="hsl(var(--success))" 
+                  radius={[2, 2, 0, 0]}
+                  name="ingresos"
+                />
+                <Bar 
+                  dataKey="gastos" 
+                  fill="hsl(var(--destructive))" 
+                  radius={[2, 2, 0, 0]}
+                  name="gastos"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="balance" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={3}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                  name="Balance"
+                />
+                {/* Líneas de media */}
+                <ReferenceLine 
+                  y={filteredMetrics.avgIngresos} 
+                  stroke="hsl(var(--success))" 
+                  strokeDasharray="5 5" 
+                  strokeWidth={2}
+                  label={{ value: `Media: ${formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)}`, position: 'insideTopRight', fill: 'hsl(var(--success))', fontSize: 11 }}
+                />
+                <ReferenceLine 
+                  y={filteredMetrics.avgGastos} 
+                  stroke="hsl(var(--destructive))" 
+                  strokeDasharray="5 5" 
+                  strokeWidth={2}
+                  label={{ value: `Media: ${formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)}`, position: 'insideBottomRight', fill: 'hsl(var(--destructive))', fontSize: 11 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-center gap-6 mt-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
+              <span>{t('transactions.income')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
+              <span>{t('transactions.expense')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-1 rounded" style={{ backgroundColor: 'hsl(var(--success))', opacity: 0.7 }}></div>
+              <span className="text-xs">Media Ingresos</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-1 rounded" style={{ backgroundColor: 'hsl(var(--destructive))', opacity: 0.7 }}></div>
+              <span className="text-xs">Media Gastos</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2. TOP 10 CATEGORÍAS - ÚLTIMOS 12 MESES */}
+      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <CardHeader>
+          <div className="flex flex-col gap-4">
+            <CardTitle className="text-center">Top 10 Categorías de Gastos</CardTitle>
+            {/* Selector visual de meses */}
+            <div className="flex flex-wrap justify-center items-center gap-2">
+              <Button
+                variant={selectedCategoryMonth === null ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategoryMonth(null)}
+                className="text-xs"
+              >
+                Todos (12 meses)
+              </Button>
+              {top10Data.months.map((month, index) => (
+                <Button
+                  key={`${month.year}-${month.month}`}
+                  variant={selectedCategoryMonth === index ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategoryMonth(index)}
+                  className="text-xs px-2"
+                >
+                  {month.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {top10Data.categories.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              No hay gastos en el período seleccionado
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {top10Data.categories.map((category, index) => (
+                <Collapsible 
+                  key={category.name}
+                  open={openCollapsibles[`cat-${category.name}`]}
+                  onOpenChange={() => toggleCollapsible(`cat-${category.name}`)}
+                >
+                  <div className="rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
+                    <CollapsibleTrigger className="w-full">
+                      <div className="flex items-center justify-between p-3 cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: category.color }}
+                          />
+                          <span className="font-medium text-sm">{category.name}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {category.subcategories.length} subcategorías
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-destructive">
+                            {formatCurrencyConsistent(category.total, selectedCurrency)}
+                          </span>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-180" />
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="px-3 pb-3 pt-1">
+                        <div className="pl-6 space-y-1 border-l-2 border-muted">
+                          {category.subcategories.map((sub) => (
+                            <div key={sub.name} className="flex justify-between items-center text-sm py-1">
+                              <span className="text-muted-foreground">• {sub.name}</span>
+                              <span className="font-medium">{formatCurrencyConsistent(sub.total, selectedCurrency)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 3. SALUD FINANCIERA */}
+      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              {t('dashboard.financial_health')}
+              💪 {t('dashboard.financial_health')}
             </CardTitle>
             <div className="flex items-center gap-3">
               <span className={`text-3xl font-bold ${getSaludColor(metrics.saludFinanciera.nivel)}`}>
                 {metrics.saludFinanciera.score}
               </span>
               <Badge variant={metrics.saludFinanciera.nivel === 'Excelente' ? 'default' : 
-                              metrics.saludFinanciera.nivel === 'Buena' ? 'secondary' : 'destructive'}>
+                            metrics.saludFinanciera.nivel === 'Buena' ? 'secondary' : 'destructive'}>
                 {metrics.saludFinanciera.nivel}
               </Badge>
             </div>
@@ -993,479 +808,701 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
         </CardContent>
       </Card>
 
-      {/* BOTONES DE SELECCIÓN DE MONEDA */}
-      <div className="flex justify-center mb-6">
-        <div className="flex rounded-lg bg-muted p-1">
-          {(['MXN', 'USD', 'EUR'] as const).map((currency) => (
-            <Button
-              key={currency}
-              variant={selectedCurrency === currency ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setSelectedCurrency(currency)}
-              className="px-4 py-2"
-            >
-              {currency}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES */}
-      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+      {/* 4. ACTIVOS */}
+      <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle className="text-center">{t('dashboard.income_vs_expenses')} <strong>{selectedCurrency}</strong></CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart 
-                data={filteredMetrics.tendenciaMensual}
-                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="mes" 
-                  tick={{ fontSize: 12 }}
-                  className="text-muted-foreground"
-                />
-                <YAxis 
-                  tick={false}
-                  className="text-muted-foreground"
-                  width={0}
-                />
-                <Tooltip 
-                  formatter={(value: any, name: string) => [
-                    formatCurrencyConsistent(Number(value), selectedCurrency), 
-                    name === 'ingresos' ? t('transactions.income') : name === 'gastos' ? t('transactions.expense') : 'Balance'
-                  ]}
-                  labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--background))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
-                  }}
-                />
-                <Bar 
-                  dataKey="ingresos" 
-                  fill="hsl(var(--success))" 
-                  radius={[2, 2, 0, 0]}
-                  name="ingresos"
-                />
-                <Bar 
-                  dataKey="gastos" 
-                  fill="hsl(var(--destructive))" 
-                  radius={[2, 2, 0, 0]}
-                  name="gastos"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="balance" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                  name="Balance"
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex justify-center gap-6 mt-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
-              <span>{t('transactions.income')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
-              <span>{t('transactions.expense')}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Nota explicativa de la gráfica */}
-      <Card className="bg-muted/30 border-muted -mt-2">
-        <CardContent className="pt-4 pb-3">
-          <div className="flex gap-2">
-            <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              <strong>Nota:</strong> La gráfica no incluye reembolsos en ingresos, pero el mismo monto está descontado de gastos. 
-              La categoría "Compra Venta Inmuebles" tampoco está incluida.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* RESUMEN MENSUAL CON SELECTORES */}
-      <Card className="border-primary/20">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              {t('dashboard.summary_month')}
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-success">
+              {t('dashboard.assets')}
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Select 
-                value={selectedMonth.toString()} 
-                onValueChange={(v) => setSelectedMonth(parseInt(v))}
-              >
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map(m => (
-                    <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select 
-                value={selectedMonthYear.toString()} 
-                onValueChange={(v) => setSelectedMonthYear(parseInt(v))}
-              >
-                <SelectTrigger className="w-[90px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableYears.map(year => (
-                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <span className="text-2xl font-bold text-success">{formatCurrencyTotals(metrics.activos.total, 'MXN')}</span>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-        {/* Resultado del mes */}
-        <Card className="border-2 border-primary/50 bg-primary/5 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-primary">{t('dashboard.monthly_result')}</CardTitle>
-            {getTrendIcon(cambioBalanceMes)}
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${getBalanceColor(filteredMetrics.balanceMes)}`}>
-              {formatCurrencyConsistent(filteredMetrics.balanceMes, selectedCurrency)}
-            </div>
-            <p className={`text-xs ${getTrendColor(cambioBalanceMes)}`}>
-              {cambioBalanceMes > 0 ? '+' : ''}{cambioBalanceMes.toFixed(1)}% vs mes anterior
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Ingresos del mes */}
-        <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('dashboard.monthly_income_label')}</CardTitle>
-            {getTrendIcon(filteredMetrics.cambioIngresosMes)}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">
-              {formatCurrencyConsistent(filteredMetrics.ingresosMes, selectedCurrency)}
-            </div>
-            <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosMes)}`}>
-              {filteredMetrics.cambioIngresosMes > 0 ? '+' : ''}{filteredMetrics.cambioIngresosMes.toFixed(1)}% vs mes anterior
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Gastos del mes */}
-        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('dashboard.monthly_expenses_label')}</CardTitle>
-            {getTrendIcon(filteredMetrics.cambioGastosMes)}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {formatCurrencyConsistent(filteredMetrics.gastosMes, selectedCurrency)}
-            </div>
-            <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosMes)}`}>
-              {filteredMetrics.cambioGastosMes > 0 ? '+' : ''}{filteredMetrics.cambioGastosMes.toFixed(1)}% vs mes anterior
-            </p>
-            </CardContent>
-          </Card>
-          </div>
-
-          {/* DISTRIBUCIÓN DE GASTOS E INGRESOS MENSUAL */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Distribución de Gastos */}
-            <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-center">{t('dashboard.expenses_distribution')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={pieDataGastosMesAnterior}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={85}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {pieDataGastosMesAnterior.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: any) => [
-                          formatCurrencyConsistent(Number(value), selectedCurrency), 
-                          'Monto'
-                        ]}
-                      />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
-                  {pieDataGastosMesAnterior.map((entry, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="truncate">{entry.name}</span>
-                      </div>
-                      <span className="font-medium">
-                        {formatCurrencyConsistent(entry.value, selectedCurrency)}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="assets-detail" className="border-success/20">
+              <AccordionTrigger className="text-sm text-success hover:text-success/80 hover:no-underline">
+                Ver desglose de activos
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  {/* Total líquido */}
+                  <div className="p-4 rounded-lg bg-success/5 border border-success/20">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Total Líquido (excl. Bienes Raíces y Empresas)</span>
+                      <span className="text-lg font-bold text-success">
+                        {formatCurrencyTotals(metrics.activos.efectivoBancos + metrics.activos.inversiones, 'MXN')}
                       </span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                  
+                  {/* Mostrar categorías por moneda con cuentas individuales */}
+                  {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
+                    const formatNumberOnly = (amount: number) => {
+                      return new Intl.NumberFormat('es-MX', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(amount);
+                    };
 
-            {/* Distribución de Ingresos */}
-            <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-center">{t('dashboard.income_distribution')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={pieDataIngresosMesAnterior}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={85}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {pieDataIngresosMesAnterior.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: any) => [
-                          formatCurrencyConsistent(Number(value), selectedCurrency), 
-                          'Monto'
-                        ]}
-                      />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
-                  {pieDataIngresosMesAnterior.map((entry, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="truncate">{entry.name}</span>
+                    const hasAssets = activos.efectivoBancos > 0 || activos.inversiones > 0 || activos.bienRaiz > 0 || activos.empresasPrivadas > 0;
+                    
+                    if (!hasAssets) return null;
+
+                    const cuentasEfectivo = accounts.filter(cuenta => 
+                      ['Efectivo', 'Banco', 'Ahorros', 'Líquido'].includes(cuenta.tipo) && 
+                      cuenta.divisa === moneda && 
+                      cuenta.vendida !== true &&
+                      cuenta.saldoActual > 0
+                    );
+
+                    const cuentasInversion = accounts.filter(cuenta => 
+                      cuenta.tipo === 'Inversiones' && 
+                      cuenta.divisa === moneda && 
+                      cuenta.vendida !== true &&
+                      cuenta.saldoActual > 0
+                    );
+
+                    const cuentasEmpresas = accounts.filter(cuenta => 
+                      cuenta.tipo === 'Empresa Propia' && 
+                      cuenta.divisa === moneda && 
+                      cuenta.vendida !== true &&
+                      cuenta.saldoActual > 0
+                    );
+
+                    const cuentasBienRaiz = accounts.filter(cuenta => 
+                      cuenta.tipo === 'Bien Raíz' && 
+                      cuenta.divisa === moneda && 
+                      cuenta.vendida !== true &&
+                      cuenta.saldoActual > 0
+                    );
+
+                    return (
+                      <div key={moneda} className="space-y-3">
+                        {/* Efectivo/Bancos */}
+                        {activos.efectivoBancos > 0 && (
+                          <Collapsible 
+                            className="rounded-lg bg-success/5 border border-success/20"
+                            open={openCollapsibles[`efectivo-${moneda}`]}
+                            onOpenChange={() => toggleCollapsible(`efectivo-${moneda}`)}
+                          >
+                            <div className="p-4">
+                              <CollapsibleTrigger className="w-full group">
+                                <div className="flex justify-between items-center cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                    <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
+                                  </div>
+                                  <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
+                                </div>
+                              </CollapsibleTrigger>
+                              {cuentasEfectivo.length > 0 && (
+                                <CollapsibleContent className="mt-3">
+                                  <div className="space-y-2 pl-3 border-l-2 border-success/30">
+                                    {cuentasEfectivo.map(cuenta => (
+                                      <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                        <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                        <span className="font-medium text-success">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CollapsibleContent>
+                              )}
+                            </div>
+                          </Collapsible>
+                        )}
+                        
+                        {/* Inversiones */}
+                        {activos.inversiones > 0 && (
+                          <Collapsible 
+                            className="rounded-lg bg-primary/5 border border-primary/20"
+                            open={openCollapsibles[`inversiones-${moneda}`]}
+                            onOpenChange={() => toggleCollapsible(`inversiones-${moneda}`)}
+                          >
+                            <div className="p-4">
+                              <CollapsibleTrigger className="w-full group">
+                                <div className="flex justify-between items-center cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                    <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
+                                  </div>
+                                  <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
+                                </div>
+                              </CollapsibleTrigger>
+                              {cuentasInversion.length > 0 && (
+                                <CollapsibleContent className="mt-3">
+                                  <div className="space-y-2 pl-3 border-l-2 border-primary/30">
+                                    {cuentasInversion.map(cuenta => (
+                                      <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                        <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                        <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CollapsibleContent>
+                              )}
+                            </div>
+                          </Collapsible>
+                        )}
+
+                        {/* Empresas Privadas */}
+                        {activos.empresasPrivadas > 0 && (
+                          <Collapsible 
+                            className="rounded-lg bg-accent/5 border border-accent/20"
+                            open={openCollapsibles[`empresas-${moneda}`]}
+                            onOpenChange={() => toggleCollapsible(`empresas-${moneda}`)}
+                          >
+                            <div className="p-4">
+                              <CollapsibleTrigger className="w-full group">
+                                <div className="flex justify-between items-center cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                    <span className="text-sm font-semibold text-muted-foreground">Empresas Privadas</span>
+                                  </div>
+                                  <span className="font-bold text-primary">{formatNumberOnly(activos.empresasPrivadas)} {moneda}</span>
+                                </div>
+                              </CollapsibleTrigger>
+                              {cuentasEmpresas.length > 0 && (
+                                <CollapsibleContent className="mt-3">
+                                  <div className="space-y-2 pl-3 border-l-2 border-accent/30">
+                                    {cuentasEmpresas.map(cuenta => (
+                                      <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                        <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                        <span className="font-medium text-primary">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CollapsibleContent>
+                              )}
+                            </div>
+                          </Collapsible>
+                        )}
+                        
+                        {/* Bienes Raíces */}
+                        {activos.bienRaiz > 0 && (
+                          <Collapsible 
+                            className="rounded-lg bg-warning/5 border border-warning/20"
+                            open={openCollapsibles[`bienraiz-${moneda}`]}
+                            onOpenChange={() => toggleCollapsible(`bienraiz-${moneda}`)}
+                          >
+                            <div className="p-4">
+                              <CollapsibleTrigger className="w-full group">
+                                <div className="flex justify-between items-center cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <ChevronDown className="h-4 w-4 text-warning transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                    <span className="text-sm font-semibold text-muted-foreground">Bienes Raíces</span>
+                                  </div>
+                                  <span className="font-bold text-warning">{formatNumberOnly(activos.bienRaiz)} {moneda}</span>
+                                </div>
+                              </CollapsibleTrigger>
+                              {cuentasBienRaiz.length > 0 && (
+                                <CollapsibleContent className="mt-3">
+                                  <div className="space-y-2 pl-3 border-l-2 border-warning/30">
+                                    {cuentasBienRaiz.map(cuenta => (
+                                      <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                        <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                        <span className="font-medium text-warning">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CollapsibleContent>
+                              )}
+                            </div>
+                          </Collapsible>
+                        )}
                       </div>
-                      <span className="font-medium">
-                        {formatCurrencyConsistent(entry.value, selectedCurrency)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
-      {/* RESUMEN ANUAL CON SELECTOR */}
-      <Card className="border-primary/20">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              {t('dashboard.summary_year')}
+      {/* 5. PASIVOS */}
+      <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-destructive">
+              {t('dashboard.liabilities')}
             </CardTitle>
-            <Select 
-              value={selectedYear.toString()} 
-              onValueChange={(v) => setSelectedYear(parseInt(v))}
-            >
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {availableYears.map(year => (
-                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <span className="text-2xl font-bold text-destructive">{formatCurrencyTotals(metrics.pasivos.total, 'MXN')}</span>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-            {/* Resultado anual */}
-            <Card className="border-2 border-primary/50 bg-primary/5 transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-primary">{t('dashboard.annual_result')}</CardTitle>
-                {getTrendIcon(cambioBalanceAnio)}
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${getBalanceColor(filteredMetrics.balanceAnio)}`}>
-                  {formatCurrencyConsistent(filteredMetrics.balanceAnio, selectedCurrency)}
-                </div>
-                <p className={`text-xs ${getTrendColor(cambioBalanceAnio)}`}>
-                  {cambioBalanceAnio > 0 ? '+' : ''}{cambioBalanceAnio.toFixed(1)}% vs año anterior
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Ingresos anuales */}
-            <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t('dashboard.annual_income_label')}</CardTitle>
-                {getTrendIcon(filteredMetrics.cambioIngresosAnio)}
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-success">
-                  {formatCurrencyConsistent(filteredMetrics.ingresosAnio, selectedCurrency)}
-                </div>
-                <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosAnio)}`}>
-                  {filteredMetrics.cambioIngresosAnio > 0 ? '+' : ''}{filteredMetrics.cambioIngresosAnio.toFixed(1)}% vs año anterior
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Gastos anuales */}
-            <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t('dashboard.annual_expenses_label')}</CardTitle>
-                {getTrendIcon(filteredMetrics.cambioGastosAnio)}
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-destructive">
-                  {formatCurrencyConsistent(filteredMetrics.gastosAnio, selectedCurrency)}
-                </div>
-                <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosAnio)}`}>
-                  {filteredMetrics.cambioGastosAnio > 0 ? '+' : ''}{filteredMetrics.cambioGastosAnio.toFixed(1)}% vs año anterior
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* DISTRIBUCIÓN DE GASTOS E INGRESOS ANUAL */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Distribución de Gastos Anual */}
-            <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-center">{t('dashboard.expenses_distribution')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={pieDataGastosAnual}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={85}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {pieDataGastosAnual.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: any) => [
-                          formatCurrencyConsistent(Number(value), selectedCurrency), 
-                          'Monto'
-                        ]}
-                      />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
-                  {pieDataGastosAnual.map((entry, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="truncate">{entry.name}</span>
-                      </div>
-                      <span className="font-medium">
-                        {formatCurrencyConsistent(entry.value, selectedCurrency)}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="liabilities-detail" className="border-destructive/20">
+              <AccordionTrigger className="text-sm text-destructive hover:text-destructive/80 hover:no-underline">
+                Ver desglose de pasivos
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  {/* Patrimonio neto */}
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-muted-foreground">Patrimonio Neto</span>
+                      <span className={`text-lg font-bold ${getBalanceColor(metrics.activos.total - metrics.pasivos.total)}`}>
+                        {formatCurrencyTotals(metrics.activos.total - metrics.pasivos.total, 'MXN')}
                       </span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
 
-            {/* Distribución de Ingresos Anual */}
-            <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-center">{t('dashboard.income_distribution')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={pieDataIngresosAnual}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={85}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {pieDataIngresosAnual.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: any) => [
-                          formatCurrencyConsistent(Number(value), selectedCurrency), 
-                          'Monto'
-                        ]}
-                      />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
-                  {pieDataIngresosAnual.map((entry, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="truncate">{entry.name}</span>
+                  {/* Mostrar pasivos por moneda */}
+                  {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
+                    const formatNumberOnly = (amount: number) => {
+                      return new Intl.NumberFormat('es-MX', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(Math.abs(amount));
+                    };
+
+                    const hasLiabilities = pasivos.tarjetasCredito > 0 || pasivos.hipoteca > 0;
+                    
+                    if (!hasLiabilities) return null;
+
+                    const cuentasTarjetas = accounts.filter(cuenta => 
+                      cuenta.tipo === 'Tarjeta de Crédito' && 
+                      cuenta.divisa === moneda && 
+                      cuenta.saldoActual < 0
+                    );
+
+                    const cuentasHipoteca = accounts.filter(cuenta => 
+                      cuenta.tipo === 'Hipoteca' && 
+                      cuenta.divisa === moneda && 
+                      cuenta.saldoActual < 0
+                    );
+
+                    return (
+                      <div key={moneda} className="space-y-3">
+                        {/* Tarjetas de Crédito */}
+                        {pasivos.tarjetasCredito > 0 && (
+                          <Collapsible 
+                            className="rounded-lg bg-destructive/5 border border-destructive/20"
+                            open={openCollapsibles[`tarjetas-${moneda}`]}
+                            onOpenChange={() => toggleCollapsible(`tarjetas-${moneda}`)}
+                          >
+                            <div className="p-4">
+                              <CollapsibleTrigger className="w-full group">
+                                <div className="flex justify-between items-center cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                    <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.credit_cards')}</span>
+                                  </div>
+                                  <span className="font-bold text-destructive">{formatNumberOnly(pasivos.tarjetasCredito)} {moneda}</span>
+                                </div>
+                              </CollapsibleTrigger>
+                              {cuentasTarjetas.length > 0 && (
+                                <CollapsibleContent className="mt-3">
+                                  <div className="space-y-2 pl-3 border-l-2 border-destructive/30">
+                                    {cuentasTarjetas.map(cuenta => (
+                                      <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                        <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                        <span className="font-medium text-destructive">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CollapsibleContent>
+                              )}
+                            </div>
+                          </Collapsible>
+                        )}
+                        
+                        {/* Hipotecas */}
+                        {pasivos.hipoteca > 0 && (
+                          <Collapsible 
+                            className="rounded-lg bg-warning/5 border border-warning/20"
+                            open={openCollapsibles[`hipoteca-${moneda}`]}
+                            onOpenChange={() => toggleCollapsible(`hipoteca-${moneda}`)}
+                          >
+                            <div className="p-4">
+                              <CollapsibleTrigger className="w-full group">
+                                <div className="flex justify-between items-center cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <ChevronDown className="h-4 w-4 text-warning transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                    <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.mortgage')}</span>
+                                  </div>
+                                  <span className="font-bold text-warning">{formatNumberOnly(pasivos.hipoteca)} {moneda}</span>
+                                </div>
+                              </CollapsibleTrigger>
+                              {cuentasHipoteca.length > 0 && (
+                                <CollapsibleContent className="mt-3">
+                                  <div className="space-y-2 pl-3 border-l-2 border-warning/30">
+                                    {cuentasHipoteca.map(cuenta => (
+                                      <div key={cuenta.id} className="flex justify-between items-center text-xs py-1">
+                                        <span className="text-muted-foreground">• {cuenta.nombre}</span>
+                                        <span className="font-medium text-warning">{formatNumberOnly(cuenta.saldoActual)} {moneda}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CollapsibleContent>
+                              )}
+                            </div>
+                          </Collapsible>
+                        )}
                       </div>
-                      <span className="font-medium">
-                        {formatCurrencyConsistent(entry.value, selectedCurrency)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
+
+      {/* RESÚMENES MENSUALES Y ANUALES (COLAPSABLES) */}
+      <Accordion type="multiple" className="w-full space-y-4">
+        {/* RESUMEN MENSUAL */}
+        <AccordionItem value="monthly-summary" className="border rounded-lg">
+          <AccordionTrigger className="px-6 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              <span className="font-semibold">{t('dashboard.summary_month')}</span>
+              <div className="flex items-center gap-2 ml-4">
+                <Select 
+                  value={selectedMonth.toString()} 
+                  onValueChange={(v) => { v && setSelectedMonth(parseInt(v)); }}
+                >
+                  <SelectTrigger className="w-[110px] h-8" onClick={(e) => e.stopPropagation()}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map(m => (
+                      <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select 
+                  value={selectedMonthYear.toString()} 
+                  onValueChange={(v) => { v && setSelectedMonthYear(parseInt(v)); }}
+                >
+                  <SelectTrigger className="w-[80px] h-8" onClick={(e) => e.stopPropagation()}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableYears.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Resultado del mes */}
+              <Card className="border-2 border-primary/50 bg-primary/5">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-primary">{t('dashboard.monthly_result')}</CardTitle>
+                  {getTrendIcon(cambioBalanceMes)}
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${getBalanceColor(filteredMetrics.balanceMes)}`}>
+                    {formatCurrencyConsistent(filteredMetrics.balanceMes, selectedCurrency)}
+                  </div>
+                  <p className={`text-xs ${getTrendColor(cambioBalanceMes)}`}>
+                    {cambioBalanceMes > 0 ? '+' : ''}{cambioBalanceMes.toFixed(1)}% vs mes anterior
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Ingresos del mes */}
+              <Card className="border-success/20">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">{t('dashboard.monthly_income_label')}</CardTitle>
+                  {getTrendIcon(filteredMetrics.cambioIngresosMes)}
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-success">
+                    {formatCurrencyConsistent(filteredMetrics.ingresosMes, selectedCurrency)}
+                  </div>
+                  <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosMes)}`}>
+                    {filteredMetrics.cambioIngresosMes > 0 ? '+' : ''}{filteredMetrics.cambioIngresosMes.toFixed(1)}% vs mes anterior
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Gastos del mes */}
+              <Card className="border-destructive/20">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">{t('dashboard.monthly_expenses_label')}</CardTitle>
+                  {getTrendIcon(filteredMetrics.cambioGastosMes)}
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-destructive">
+                    {formatCurrencyConsistent(filteredMetrics.gastosMes, selectedCurrency)}
+                  </div>
+                  <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosMes)}`}>
+                    {filteredMetrics.cambioGastosMes > 0 ? '+' : ''}{filteredMetrics.cambioGastosMes.toFixed(1)}% vs mes anterior
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Distribución de Gastos e Ingresos Mensual */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Distribución de Gastos */}
+              <Card className="border-destructive/20">
+                <CardHeader>
+                  <CardTitle className="text-center text-sm">{t('dashboard.expenses_distribution')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-52">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie
+                          data={pieDataGastosMesAnterior}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={70}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {pieDataGastosMesAnterior.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: any) => [
+                            formatCurrencyConsistent(Number(value), selectedCurrency), 
+                            'Monto'
+                          ]}
+                        />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                    {pieDataGastosMesAnterior.map((entry, index) => (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span className="truncate">{entry.name}</span>
+                        </div>
+                        <span className="font-medium">{formatCurrencyConsistent(entry.value, selectedCurrency)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Distribución de Ingresos */}
+              <Card className="border-success/20">
+                <CardHeader>
+                  <CardTitle className="text-center text-sm">{t('dashboard.income_distribution')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-52">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie
+                          data={pieDataIngresosMesAnterior}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={70}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {pieDataIngresosMesAnterior.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: any) => [
+                            formatCurrencyConsistent(Number(value), selectedCurrency), 
+                            'Monto'
+                          ]}
+                        />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                    {pieDataIngresosMesAnterior.map((entry, index) => (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span className="truncate">{entry.name}</span>
+                        </div>
+                        <span className="font-medium">{formatCurrencyConsistent(entry.value, selectedCurrency)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* RESUMEN ANUAL */}
+        <AccordionItem value="annual-summary" className="border rounded-lg">
+          <AccordionTrigger className="px-6 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              <span className="font-semibold">{t('dashboard.summary_year')}</span>
+              <div className="ml-4">
+                <Select 
+                  value={selectedYear.toString()} 
+                  onValueChange={(v) => { v && setSelectedYear(parseInt(v)); }}
+                >
+                  <SelectTrigger className="w-[90px] h-8" onClick={(e) => e.stopPropagation()}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableYears.map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Resultado anual */}
+              <Card className="border-2 border-primary/50 bg-primary/5">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-primary">{t('dashboard.annual_result')}</CardTitle>
+                  {getTrendIcon(cambioBalanceAnio)}
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${getBalanceColor(filteredMetrics.balanceAnio)}`}>
+                    {formatCurrencyConsistent(filteredMetrics.balanceAnio, selectedCurrency)}
+                  </div>
+                  <p className={`text-xs ${getTrendColor(cambioBalanceAnio)}`}>
+                    {cambioBalanceAnio > 0 ? '+' : ''}{cambioBalanceAnio.toFixed(1)}% vs año anterior
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Ingresos anuales */}
+              <Card className="border-success/20">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">{t('dashboard.annual_income_label')}</CardTitle>
+                  {getTrendIcon(filteredMetrics.cambioIngresosAnio)}
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-success">
+                    {formatCurrencyConsistent(filteredMetrics.ingresosAnio, selectedCurrency)}
+                  </div>
+                  <p className={`text-xs ${getTrendColor(filteredMetrics.cambioIngresosAnio)}`}>
+                    {filteredMetrics.cambioIngresosAnio > 0 ? '+' : ''}{filteredMetrics.cambioIngresosAnio.toFixed(1)}% vs año anterior
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Gastos anuales */}
+              <Card className="border-destructive/20">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">{t('dashboard.annual_expenses_label')}</CardTitle>
+                  {getTrendIcon(filteredMetrics.cambioGastosAnio)}
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-destructive">
+                    {formatCurrencyConsistent(filteredMetrics.gastosAnio, selectedCurrency)}
+                  </div>
+                  <p className={`text-xs ${getTrendColor(filteredMetrics.cambioGastosAnio)}`}>
+                    {filteredMetrics.cambioGastosAnio > 0 ? '+' : ''}{filteredMetrics.cambioGastosAnio.toFixed(1)}% vs año anterior
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Distribución de Gastos e Ingresos Anual */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Distribución de Gastos Anual */}
+              <Card className="border-destructive/20">
+                <CardHeader>
+                  <CardTitle className="text-center text-sm">{t('dashboard.expenses_distribution')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-52">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie
+                          data={pieDataGastosAnual}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={70}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {pieDataGastosAnual.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: any) => [
+                            formatCurrencyConsistent(Number(value), selectedCurrency), 
+                            'Monto'
+                          ]}
+                        />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                    {pieDataGastosAnual.map((entry, index) => (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span className="truncate">{entry.name}</span>
+                        </div>
+                        <span className="font-medium">{formatCurrencyConsistent(entry.value, selectedCurrency)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Distribución de Ingresos Anual */}
+              <Card className="border-success/20">
+                <CardHeader>
+                  <CardTitle className="text-center text-sm">{t('dashboard.income_distribution')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-52">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie
+                          data={pieDataIngresosAnual}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={40}
+                          outerRadius={70}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {pieDataIngresosAnual.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: any) => [
+                            formatCurrencyConsistent(Number(value), selectedCurrency), 
+                            'Monto'
+                          ]}
+                        />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                    {pieDataIngresosAnual.map((entry, index) => (
+                      <div key={index} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span className="truncate">{entry.name}</span>
+                        </div>
+                        <span className="font-medium">{formatCurrencyConsistent(entry.value, selectedCurrency)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
     </div>
   );
