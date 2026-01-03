@@ -40,13 +40,21 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     
     const now = new Date();
     
+    // Calcular mes anterior correctamente (manejando cambio de año)
+    const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    
+    // Calcular dos meses atrás correctamente
+    const twoMonthsAgo = lastMonth === 0 ? 11 : lastMonth - 1;
+    const twoMonthsAgoYear = lastMonth === 0 ? lastMonthYear - 1 : lastMonthYear;
+    
     // MES ANTERIOR (para resumen del mes)
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    const startOfLastMonth = new Date(lastMonthYear, lastMonth, 1);
+    const endOfLastMonth = new Date(lastMonthYear, lastMonth + 1, 0);
     
     // DOS MESES ATRÁS (para comparativo)
-    const startOfTwoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-    const endOfTwoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 1, 0);
+    const startOfTwoMonthsAgo = new Date(twoMonthsAgoYear, twoMonthsAgo, 1);
+    const endOfTwoMonthsAgo = new Date(twoMonthsAgoYear, twoMonthsAgo + 1, 0);
     
     // AÑO ACTUAL (para resumen del año)
     const startOfYear = new Date(now.getFullYear(), 0, 1);
@@ -58,13 +66,13 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
     // Transacciones del mes anterior
     const lastMonthTransactions = filteredTransactions.filter(t => {
       const tDate = new Date(t.fecha);
-      return tDate.getMonth() === now.getMonth() - 1 && tDate.getFullYear() === now.getFullYear();
+      return tDate.getMonth() === lastMonth && tDate.getFullYear() === lastMonthYear;
     });
     
     // Transacciones de dos meses atrás
     const twoMonthsAgoTransactions = filteredTransactions.filter(t => {
       const tDate = new Date(t.fecha);
-      return tDate.getMonth() === now.getMonth() - 2 && tDate.getFullYear() === now.getFullYear();
+      return tDate.getMonth() === twoMonthsAgo && tDate.getFullYear() === twoMonthsAgoYear;
     });
     
     // Transacciones del año actual
