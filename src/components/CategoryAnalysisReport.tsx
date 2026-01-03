@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, ArrowRightLeft, ArrowDownCircle, Calendar, Filter } from 'lucide-react';
-import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { TrendingUp, TrendingDown, ArrowRightLeft, ArrowDownCircle, Calendar, Filter, Sun, LayoutGrid, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Treemap, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart as RechartsPieChart, Pie, Cell, Legend } from 'recharts';
 
 interface Transaction {
   id: string;
@@ -34,11 +34,12 @@ interface CategoryAnalysisReportProps {
 }
 
 type TransactionTypeFilter = 'Gastos' | 'Ingreso' | 'Aportación' | 'Retiro' | 'all';
-type PeriodType = 'month' | 'year' | 'range';
+type ChartType = 'sunburst' | 'treemap' | 'stacked';
 
 const COLORS = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
   '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1',
+  '#14B8A6', '#A855F7', '#F43F5E', '#22C55E', '#0EA5E9',
 ];
 
 export const CategoryAnalysisReport = ({ transactions, categories, formatCurrency }: CategoryAnalysisReportProps) => {
@@ -49,6 +50,7 @@ export const CategoryAnalysisReport = ({ transactions, categories, formatCurrenc
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>(now.getMonth());
   const [selectedType, setSelectedType] = useState<TransactionTypeFilter>('Gastos');
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+  const [chartType, setChartType] = useState<ChartType>('sunburst');
 
   // Obtener años disponibles
   const availableYears = useMemo(() => {
@@ -60,21 +62,48 @@ export const CategoryAnalysisReport = ({ transactions, categories, formatCurrenc
     return Array.from(years).sort((a, b) => b - a);
   }, [transactions]);
 
-  // Meses
+  // Meses con abreviaturas
   const months = [
-    { value: 0, label: 'Enero' },
-    { value: 1, label: 'Febrero' },
-    { value: 2, label: 'Marzo' },
-    { value: 3, label: 'Abril' },
-    { value: 4, label: 'Mayo' },
-    { value: 5, label: 'Junio' },
-    { value: 6, label: 'Julio' },
-    { value: 7, label: 'Agosto' },
-    { value: 8, label: 'Septiembre' },
-    { value: 9, label: 'Octubre' },
-    { value: 10, label: 'Noviembre' },
-    { value: 11, label: 'Diciembre' },
+    { value: 0, label: 'Enero', short: 'Ene' },
+    { value: 1, label: 'Febrero', short: 'Feb' },
+    { value: 2, label: 'Marzo', short: 'Mar' },
+    { value: 3, label: 'Abril', short: 'Abr' },
+    { value: 4, label: 'Mayo', short: 'May' },
+    { value: 5, label: 'Junio', short: 'Jun' },
+    { value: 6, label: 'Julio', short: 'Jul' },
+    { value: 7, label: 'Agosto', short: 'Ago' },
+    { value: 8, label: 'Septiembre', short: 'Sep' },
+    { value: 9, label: 'Octubre', short: 'Oct' },
+    { value: 10, label: 'Noviembre', short: 'Nov' },
+    { value: 11, label: 'Diciembre', short: 'Dic' },
   ];
+
+  // Navegación de año
+  const handlePrevYear = useCallback(() => {
+    const idx = availableYears.indexOf(selectedYear);
+    if (idx < availableYears.length - 1) {
+      setSelectedYear(availableYears[idx + 1]);
+    }
+  }, [availableYears, selectedYear]);
+
+  const handleNextYear = useCallback(() => {
+    const idx = availableYears.indexOf(selectedYear);
+    if (idx > 0) {
+      setSelectedYear(availableYears[idx - 1]);
+    }
+  }, [availableYears, selectedYear]);
+
+  // Verificar qué meses tienen datos
+  const monthsWithData = useMemo(() => {
+    const monthSet = new Set<number>();
+    transactions.forEach(t => {
+      const tDate = new Date(t.fecha);
+      if (tDate.getFullYear() === selectedYear && t.divisa === selectedCurrency) {
+        monthSet.add(tDate.getMonth());
+      }
+    });
+    return monthSet;
+  }, [transactions, selectedYear, selectedCurrency]);
 
   // Filtrar transacciones según selección
   const filteredTransactions = useMemo(() => {
@@ -140,23 +169,59 @@ export const CategoryAnalysisReport = ({ transactions, categories, formatCurrenc
     };
   }, [categoryData]);
 
-  // Datos para gráfica de barras mensual
-  const monthlyData = useMemo(() => {
-    if (selectedMonth !== 'all') return [];
-
-    const monthTotals: Record<number, number> = {};
+  // Datos para gráfica de barras apiladas por mes
+  const stackedBarData = useMemo(() => {
+    const monthCategoryTotals: Record<number, Record<string, number>> = {};
     
     filteredTransactions.forEach(t => {
       const month = new Date(t.fecha).getMonth();
+      const categoria = t.categoria || 'Sin categoría';
       const amount = selectedType === 'Gastos' || selectedType === 'Retiro' ? t.gasto : t.ingreso;
-      monthTotals[month] = (monthTotals[month] || 0) + amount;
+      
+      if (!monthCategoryTotals[month]) monthCategoryTotals[month] = {};
+      monthCategoryTotals[month][categoria] = (monthCategoryTotals[month][categoria] || 0) + amount;
     });
 
-    return months.map(m => ({
-      mes: m.label.slice(0, 3),
-      total: monthTotals[m.value] || 0
-    }));
-  }, [filteredTransactions, selectedMonth, selectedType]);
+    return months.map(m => {
+      const monthData: Record<string, any> = { mes: m.short };
+      categoryData.forEach(cat => {
+        monthData[cat.name] = monthCategoryTotals[m.value]?.[cat.name] || 0;
+      });
+      return monthData;
+    });
+  }, [filteredTransactions, categoryData, selectedType]);
+
+  // Datos para Treemap (formato plano para evitar problemas con children)
+  const treemapData = useMemo(() => {
+    const data: { name: string; size: number; fill: string }[] = [];
+    categoryData.forEach((cat, idx) => {
+      cat.subcategories.forEach((sub, subIdx) => {
+        data.push({
+          name: `${cat.name} - ${sub.name}`,
+          size: sub.value,
+          fill: COLORS[(idx * 2 + subIdx) % COLORS.length],
+        });
+      });
+    });
+    return data;
+  }, [categoryData]);
+
+  // Datos para Sunburst (usamos Pie anidado)
+  const sunburstInnerData = useMemo(() => categoryData, [categoryData]);
+  const sunburstOuterData = useMemo(() => {
+    const outer: { name: string; value: number; color: string; category: string }[] = [];
+    categoryData.forEach((cat, idx) => {
+      cat.subcategories.forEach((sub, subIdx) => {
+        outer.push({
+          name: sub.name,
+          value: sub.value,
+          color: COLORS[(idx * 3 + subIdx + 5) % COLORS.length],
+          category: cat.name,
+        });
+      });
+    });
+    return outer;
+  }, [categoryData]);
 
   const getTypeIcon = (type: TransactionTypeFilter) => {
     switch (type) {
@@ -200,54 +265,75 @@ export const CategoryAnalysisReport = ({ transactions, categories, formatCurrenc
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Selectores de período */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Año</label>
-              <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableYears.map(year => (
-                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Mes</label>
-              <Select 
-                value={selectedMonth === 'all' ? 'all' : selectedMonth.toString()} 
-                onValueChange={(v) => setSelectedMonth(v === 'all' ? 'all' : parseInt(v))}
+          {/* Selector visual de año */}
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground font-medium">Año</label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 flex-shrink-0"
+                onClick={handlePrevYear}
+                disabled={availableYears.indexOf(selectedYear) >= availableYears.length - 1}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los meses</SelectItem>
-                  {months.map(m => (
-                    <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex gap-1 flex-wrap justify-center flex-1">
+                {availableYears.slice(0, 5).map(year => (
+                  <Button
+                    key={year}
+                    variant={selectedYear === year ? 'default' : 'outline'}
+                    size="sm"
+                    className="min-w-[60px]"
+                    onClick={() => setSelectedYear(year)}
+                  >
+                    {year}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 flex-shrink-0"
+                onClick={handleNextYear}
+                disabled={availableYears.indexOf(selectedYear) <= 0}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
+          </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Moneda</label>
-              <Select value={selectedCurrency} onValueChange={(v) => setSelectedCurrency(v as 'MXN' | 'USD' | 'EUR')}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MXN">MXN</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Selector visual de mes */}
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground font-medium">Mes</label>
+            <div className="flex flex-wrap gap-1 justify-center">
+              <Button
+                variant={selectedMonth === 'all' ? 'default' : 'outline'}
+                size="sm"
+                className="min-w-[50px]"
+                onClick={() => setSelectedMonth('all')}
+              >
+                Año
+              </Button>
+              {months.map(m => {
+                const hasData = monthsWithData.has(m.value);
+                return (
+                  <Button
+                    key={m.value}
+                    variant={selectedMonth === m.value ? 'default' : 'outline'}
+                    size="sm"
+                    className={`min-w-[44px] ${!hasData ? 'opacity-40' : ''}`}
+                    onClick={() => setSelectedMonth(m.value)}
+                  >
+                    {m.short}
+                  </Button>
+                );
+              })}
             </div>
+          </div>
 
+          {/* Tipo y Moneda en una fila */}
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Tipo</label>
               <Select value={selectedType} onValueChange={(v) => setSelectedType(v as TransactionTypeFilter)}>
@@ -259,6 +345,19 @@ export const CategoryAnalysisReport = ({ transactions, categories, formatCurrenc
                   <SelectItem value="Ingreso">Ingresos</SelectItem>
                   <SelectItem value="Aportación">Aportaciones</SelectItem>
                   <SelectItem value="Retiro">Retiros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Moneda</label>
+              <Select value={selectedCurrency} onValueChange={(v) => setSelectedCurrency(v as 'MXN' | 'USD' | 'EUR')}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MXN">MXN</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -282,7 +381,35 @@ export const CategoryAnalysisReport = ({ transactions, categories, formatCurrenc
         </CardContent>
       </Card>
 
-      {/* Contenido principal */}
+      {/* Selector de tipo de gráfico */}
+      {categoryData.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <span className="text-sm text-muted-foreground">Visualización:</span>
+              <ToggleGroup type="single" value={chartType} onValueChange={(v) => v && setChartType(v as ChartType)}>
+                <ToggleGroupItem value="sunburst" className="flex items-center gap-2 px-4">
+                  <Sun className="h-4 w-4" />
+                  <span className="hidden sm:inline">Gráfico de Sol</span>
+                  <span className="sm:hidden">Sol</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="treemap" className="flex items-center gap-2 px-4">
+                  <LayoutGrid className="h-4 w-4" />
+                  <span className="hidden sm:inline">Mapa de Árbol</span>
+                  <span className="sm:hidden">Árbol</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="stacked" className="flex items-center gap-2 px-4">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Barras Apiladas</span>
+                  <span className="sm:hidden">Barras</span>
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Contenido principal - Gráficos */}
       {categoryData.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -290,106 +417,141 @@ export const CategoryAnalysisReport = ({ transactions, categories, formatCurrenc
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Gráfica de pastel */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Distribución por Categoría</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              {chartType === 'sunburst' && 'Gráfico de Sol - Categorías y Subcategorías'}
+              {chartType === 'treemap' && 'Mapa de Árbol - Distribución por Categoría'}
+              {chartType === 'stacked' && 'Barras Apiladas - Evolución Mensual'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                {chartType === 'sunburst' ? (
                   <RechartsPieChart>
+                    {/* Círculo interior - Categorías */}
                     <Pie
-                      data={categoryData}
+                      data={sunburstInnerData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
-                      outerRadius={90}
-                      paddingAngle={2}
+                      innerRadius={0}
+                      outerRadius={70}
+                      paddingAngle={1}
                       dataKey="value"
                     >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      {sunburstInnerData.map((entry, index) => (
+                        <Cell key={`inner-${index}`} fill={entry.color} stroke="hsl(var(--background))" strokeWidth={2} />
+                      ))}
+                    </Pie>
+                    {/* Círculo exterior - Subcategorías */}
+                    <Pie
+                      data={sunburstOuterData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={80}
+                      outerRadius={130}
+                      paddingAngle={0.5}
+                      dataKey="value"
+                    >
+                      {sunburstOuterData.map((entry, index) => (
+                        <Cell key={`outer-${index}`} fill={entry.color} stroke="hsl(var(--background))" strokeWidth={1} />
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: any) => [formatCurrencyValue(Number(value)), 'Monto']}
+                      formatter={(value: any, name: any) => [formatCurrencyValue(Number(value)), name]}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--popover))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Legend 
+                      formatter={(value) => <span className="text-xs">{value}</span>}
+                      wrapperStyle={{ fontSize: '11px' }}
                     />
                   </RechartsPieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Gráfica de barras (solo si es año completo) */}
-          {selectedMonth === 'all' && monthlyData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Evolución Mensual</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                      <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                      <YAxis tick={false} width={0} />
-                      <Tooltip 
-                        formatter={(value: any) => [formatCurrencyValue(Number(value)), 'Total']}
-                      />
+                ) : chartType === 'treemap' ? (
+                  <Treemap
+                    data={treemapData}
+                    dataKey="size"
+                    aspectRatio={4/3}
+                    stroke="hsl(var(--background))"
+                    isAnimationActive={false}
+                  >
+                    {treemapData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                    <Tooltip 
+                      formatter={(value: any, name: any) => [formatCurrencyValue(Number(value)), name]}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--popover))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  </Treemap>
+                ) : (
+                  <BarChart data={stackedBarData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+                    <Tooltip 
+                      formatter={(value: any, name: any) => [formatCurrencyValue(Number(value)), name]}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--popover))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Legend 
+                      formatter={(value) => <span className="text-xs">{value}</span>}
+                      wrapperStyle={{ fontSize: '10px' }}
+                    />
+                    {categoryData.slice(0, 8).map((cat, index) => (
                       <Bar 
-                        dataKey="total" 
-                        fill={selectedType === 'Gastos' ? 'hsl(var(--destructive))' : 
-                              selectedType === 'Ingreso' ? 'hsl(var(--success))' :
-                              selectedType === 'Aportación' ? 'hsl(var(--primary))' : 
-                              'hsl(var(--warning))'}
-                        radius={[4, 4, 0, 0]}
+                        key={cat.name}
+                        dataKey={cat.name} 
+                        stackId="a"
+                        fill={cat.color}
+                        radius={index === categoryData.slice(0, 8).length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                       />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                    ))}
+                  </BarChart>
+                )}
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {/* Lista si solo hay un mes seleccionado */}
-          {selectedMonth !== 'all' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Top Categorías</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {categoryData.slice(0, 8).map((cat, index) => {
-                    const percentage = totals.amount > 0 ? (cat.value / totals.amount) * 100 : 0;
-                    return (
-                      <div key={cat.name} className="flex items-center gap-3">
-                        <div 
-                          className="w-3 h-3 rounded-full flex-shrink-0" 
-                          style={{ backgroundColor: cat.color }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{cat.name}</p>
-                          <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                            <div 
-                              className="h-1.5 rounded-full" 
-                              style={{ width: `${percentage}%`, backgroundColor: cat.color }}
-                            />
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-medium">{formatCurrencyValue(cat.value)}</p>
-                          <p className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+      {/* Leyenda de categorías */}
+      {categoryData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top Categorías</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {categoryData.slice(0, 9).map((cat) => {
+                const percentage = totals.amount > 0 ? (cat.value / totals.amount) * 100 : 0;
+                return (
+                  <div key={cat.name} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+                    <div 
+                      className="w-4 h-4 rounded flex-shrink-0" 
+                      style={{ backgroundColor: cat.color }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{cat.name}</p>
+                      <p className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</p>
+                    </div>
+                    <p className="text-sm font-bold">{formatCurrencyValue(cat.value)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Desglose detallado por categoría */}
@@ -400,7 +562,7 @@ export const CategoryAnalysisReport = ({ transactions, categories, formatCurrenc
           </CardHeader>
           <CardContent>
             <Accordion type="multiple" className="w-full">
-              {categoryData.map((cat, index) => {
+              {categoryData.map((cat) => {
                 const percentage = totals.amount > 0 ? (cat.value / totals.amount) * 100 : 0;
                 return (
                   <AccordionItem key={cat.name} value={cat.name}>
@@ -420,7 +582,7 @@ export const CategoryAnalysisReport = ({ transactions, categories, formatCurrenc
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="pl-6 space-y-2 pt-2">
-                        {cat.subcategories.map((sub, subIndex) => {
+                        {cat.subcategories.map((sub) => {
                           const subPercentage = cat.value > 0 ? (sub.value / cat.value) * 100 : 0;
                           return (
                             <div key={sub.name} className="flex items-center justify-between py-1 border-l-2 pl-3" style={{ borderColor: cat.color }}>
