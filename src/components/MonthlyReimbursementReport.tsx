@@ -61,12 +61,8 @@ export const MonthlyReimbursementReport = ({
         return;
       }
       
-      // Identificar reembolsos: solo ingresos que contengan "reembolso" en su descripción
-      const isReimbursement = (transaction.ingreso > 0) && (
-        category?.subcategoria.toLowerCase().includes('reembolso') || 
-        category?.categoria.toLowerCase().includes('reembolso') ||
-        transaction.comentario.toLowerCase().includes('reembolso')
-      );
+      // Identificar reembolsos: ingreso > 0 asociado a categoría tipo 'Gastos'
+      const isReimbursement = (transaction.ingreso > 0) && (category?.tipo === 'Gastos');
       
       if (!dataByMonth[monthKey]) {
         dataByMonth[monthKey] = {

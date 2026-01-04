@@ -341,13 +341,13 @@ export const useFinanceDataSupabase = () => {
     console.log('transactionsPreviousMonth:', transactionsPreviousMonth.map(t => ({ fecha: t.fecha, fechaString: t.fecha.toISOString(), comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
     
     // INGRESOS Y GASTOS MENSUALES - CONVERTIR A MXN
-    // Excluir reembolsos de ingresos y restarlos de gastos
+    // Reembolso = ingreso > 0 asociado a categoría tipo 'Gastos' (ingreso en categoría de gasto)
     const reembolsosMes = transactionsThisMonth
-      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     
     const ingresosMes = transactionsThisMonth
-      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') && t.categoria !== 'Compra Venta Inmuebles')
+      .filter(t => t.ingreso > 0 && t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosMes = transactionsThisMonth
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
@@ -356,11 +356,11 @@ export const useFinanceDataSupabase = () => {
     
     // MES ANTERIOR (dinámico) - CONVERTIR A MXN
     const reembolsosMesAnterior = transactionsPreviousMonth
-      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     
     const ingresosMesAnterior = transactionsPreviousMonth
-      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') && t.categoria !== 'Compra Venta Inmuebles')
+      .filter(t => t.ingreso > 0 && t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosMesAnterior = transactionsPreviousMonth
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
@@ -369,11 +369,11 @@ export const useFinanceDataSupabase = () => {
     
     // ANUALES - CONVERTIR A MXN
     const reembolsosAnio = transactionsThisYear
-      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     
     const ingresosAnio = transactionsThisYear
-      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') && t.categoria !== 'Compra Venta Inmuebles')
+      .filter(t => t.ingreso > 0 && t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosAnio = transactionsThisYear
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
@@ -382,11 +382,11 @@ export const useFinanceDataSupabase = () => {
     
     // AÑO ANTERIOR - CONVERTIR A MXN
     const reembolsosAnioAnterior = transactionsLastYear
-      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     
     const ingresosAnioAnterior = transactionsLastYear
-      .filter(t => t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') && t.categoria !== 'Compra Venta Inmuebles')
+      .filter(t => t.ingreso > 0 && t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
     const gastosAnioAnterior = transactionsLastYear
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
