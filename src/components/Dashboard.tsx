@@ -687,7 +687,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                             className="w-3 h-3 rounded-full" 
                             style={{ backgroundColor: category.color }}
                           />
-                          <span className={`font-medium text-sm transition-colors ${isAmountHovered ? 'text-primary underline' : ''}`}>{category.name}</span>
+                          <span className="font-medium text-sm flex items-center gap-1">
+                            {category.name}
+                            <ChevronLeft className={`h-3 w-3 text-primary transition-opacity duration-200 ${isAmountHovered ? 'opacity-100' : 'opacity-0'}`} />
+                          </span>
                           <Badge variant="secondary" className="text-xs">
                             {category.subcategories.length} subcategorías
                           </Badge>
@@ -722,7 +725,10 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
                               const [isSubAmountHovered, setIsSubAmountHovered] = React.useState(false);
                               return (
                                 <div key={sub.name} className="flex justify-between items-center text-sm py-1">
-                                  <span className={`text-muted-foreground transition-colors ${isSubAmountHovered ? 'text-primary underline' : ''}`}>• {sub.name}</span>
+                                  <span className="text-muted-foreground flex items-center gap-1">
+                                    • {sub.name}
+                                    <ChevronLeft className={`h-3 w-3 text-primary transition-opacity duration-200 ${isSubAmountHovered ? 'opacity-100' : 'opacity-0'}`} />
+                                  </span>
                                   <Button
                                     variant="ghost"
                                     size="sm"
