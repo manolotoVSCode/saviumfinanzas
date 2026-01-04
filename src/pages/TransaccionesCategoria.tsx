@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -7,7 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Calendar, CreditCard, FileText } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Calendar, CreditCard, FileText, Pencil } from 'lucide-react';
+import { Transaction } from '@/types/finance';
 
 const TransaccionesCategoria = () => {
   const navigate = useNavigate();
@@ -15,12 +19,28 @@ const TransaccionesCategoria = () => {
   const financeData = useFinanceDataSupabase();
   const { formatCurrency } = useAppConfig();
 
+  // Estado para el diálogo de edición
+  const [editingTransaction, setEditingTransaction] = useState<(Transaction & { categoria?: string; subcategoria?: string }) | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+
   // Obtener parámetros de la URL
   const categoria = searchParams.get('categoria') || '';
   const subcategoria = searchParams.get('subcategoria') || '';
   const divisa = searchParams.get('divisa') || 'MXN';
   const periodo = searchParams.get('periodo') || 'Últimos 12 meses';
   const mesIndex = searchParams.get('mes');
+
+  // Obtener categorías únicas agrupadas
+  const categoriesGrouped = useMemo(() => {
+    const grouped: Record<string, { id: string; subcategoria: string }[]> = {};
+    financeData.categories.forEach(cat => {
+      if (!grouped[cat.categoria]) {
+        grouped[cat.categoria] = [];
+      }
+      grouped[cat.categoria].push({ id: cat.id, subcategoria: cat.subcategoria });
+    });
+    return grouped;
+  }, [financeData.categories]);
 
   // Filtrar transacciones según los parámetros
   const filteredTransactions = useMemo(() => {
@@ -85,6 +105,22 @@ const TransaccionesCategoria = () => {
 
   const formatCurrencyValue = (amount: number, currency: string) => {
     return `${new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)} ${currency}`;
+  };
+
+  const handleEditClick = (transaction: Transaction & { categoria?: string; subcategoria?: string }) => {
+    setEditingTransaction(transaction);
+    setSelectedCategoryId(transaction.subcategoriaId);
+  };
+
+  const handleSaveCategory = async () => {
+    if (!editingTransaction || !selectedCategoryId) return;
+    
+    await financeData.updateTransaction(editingTransaction.id, { 
+      subcategoriaId: selectedCategoryId 
+    });
+    
+    setEditingTransaction(null);
+    setSelectedCategoryId('');
   };
 
   if (financeData.loading) {
@@ -178,11 +214,16 @@ const TransaccionesCategoria = () => {
                       {!subcategoria && <TableHead>Subcategoría</TableHead>}
                       <TableHead className="max-w-[300px]">Comentario / Notas</TableHead>
                       <TableHead className="text-right">Monto</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredTransactions.map((t) => (
-                      <TableRow key={t.id} className="hover:bg-muted/50">
+                      <TableRow 
+                        key={t.id} 
+                        className="hover:bg-muted/50 cursor-pointer group"
+                        onClick={() => handleEditClick(t)}
+                      >
                         <TableCell className="font-medium whitespace-nowrap">
                           {new Date(t.fecha).toLocaleDateString('es-ES', { 
                             day: '2-digit', 
@@ -213,6 +254,9 @@ const TransaccionesCategoria = () => {
                         <TableCell className="text-right font-semibold text-destructive whitespace-nowrap">
                           {formatCurrencyValue(Math.abs(t.gasto || 0), t.divisa || divisa)}
                         </TableCell>
+                        <TableCell>
+                          <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -233,6 +277,60 @@ const TransaccionesCategoria = () => {
             Volver al Dashboard
           </Button>
         </div>
+
+        {/* Diálogo de edición de categoría */}
+        <Dialog open={!!editingTransaction} onOpenChange={(open) => !open && setEditingTransaction(null)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Editar Categoría</DialogTitle>
+            </DialogHeader>
+            {editingTransaction && (
+              <div className="space-y-4 py-4">
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <p className="text-sm font-medium">{editingTransaction.comentario || 'Sin comentario'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(editingTransaction.fecha).toLocaleDateString('es-ES', { 
+                      day: 'numeric', 
+                      month: 'long',
+                      year: 'numeric'
+                    })} • {formatCurrencyValue(Math.abs(editingTransaction.gasto || 0), editingTransaction.divisa || 'MXN')}
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Categoría / Subcategoría</Label>
+                  <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar categoría" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {Object.entries(categoriesGrouped).map(([catName, subcats]) => (
+                        <div key={catName}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                            {catName}
+                          </div>
+                          {subcats.map(sub => (
+                            <SelectItem key={sub.id} value={sub.id}>
+                              {sub.subcategoria}
+                            </SelectItem>
+                          ))}
+                        </div>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingTransaction(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveCategory} disabled={!selectedCategoryId}>
+                Guardar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
