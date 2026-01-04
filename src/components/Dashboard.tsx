@@ -12,40 +12,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-// Componente personalizado para etiquetas de líneas de referencia con fondo
-const CustomReferenceLabel = ({ viewBox, value, color, position }: { viewBox?: any; value: string; color: string; position: 'top' | 'bottom' }) => {
-  const x = viewBox?.width ? viewBox.width - 10 : 100;
-  const y = viewBox?.y ?? 0;
-  const yOffset = position === 'top' ? -8 : 16;
-  
-  return (
-    <g>
-      <rect
-        x={x - 75}
-        y={y + yOffset - 10}
-        width={80}
-        height={18}
-        rx={4}
-        fill="hsl(var(--background))"
-        fillOpacity={0.9}
-        stroke={color}
-        strokeWidth={1}
-      />
-      <text
-        x={x - 35}
-        y={y + yOffset + 2}
-        fill={color}
-        fontSize={11}
-        fontWeight={600}
-        textAnchor="middle"
-      >
-        {value}
-      </text>
-    </g>
-  );
-};
 
 // Componente para subcategoría con hover state
 const SubcategoryItem = ({ 
@@ -915,34 +881,24 @@ const CategoryItem = ({
                   stroke="hsl(var(--success))" 
                   strokeDasharray="5 5" 
                   strokeWidth={2}
-                  label={<CustomReferenceLabel value={`Ø ${formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)}`} color="hsl(var(--success))" position="top" />}
                 />
                 <ReferenceLine 
                   y={filteredMetrics.avgGastos} 
                   stroke="hsl(var(--destructive))" 
                   strokeDasharray="5 5" 
                   strokeWidth={2}
-                  label={<CustomReferenceLabel value={`Ø ${formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)}`} color="hsl(var(--destructive))" position="bottom" />}
                 />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-center gap-6 mt-4 text-sm">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
-              <span>{t('transactions.income')}</span>
+              <span>{t('transactions.income')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)})</span></span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
-              <span>{t('transactions.expense')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-1 rounded" style={{ backgroundColor: 'hsl(var(--success))', opacity: 0.7 }}></div>
-              <span className="text-xs">Media Ingresos</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-1 rounded" style={{ backgroundColor: 'hsl(var(--destructive))', opacity: 0.7 }}></div>
-              <span className="text-xs">Media Gastos</span>
+              <span>{t('transactions.expense')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
             </div>
           </div>
         </CardContent>
