@@ -91,25 +91,28 @@ const CategoryItem = ({
   return (
     <Collapsible open={isOpen} onOpenChange={onToggle}>
       <div className="rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
-        <div className="flex items-center justify-between p-3">
-          <CollapsibleTrigger className="flex items-center gap-3 cursor-pointer flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-2">
+          <CollapsibleTrigger className="flex items-center gap-2 sm:gap-3 cursor-pointer flex-1 min-w-0">
             <div 
-              className="w-3 h-3 rounded-full" 
+              className="w-3 h-3 rounded-full shrink-0" 
               style={{ backgroundColor: category.color }}
             />
-            <span className="font-medium text-sm flex items-center gap-1">
+            <span className="font-medium text-sm flex items-center gap-1 truncate">
               {category.name}
-              <ChevronLeft className={`h-3 w-3 text-primary transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+              <ChevronLeft className={`h-3 w-3 text-primary transition-opacity duration-200 shrink-0 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
             </span>
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs shrink-0 hidden sm:inline-flex">
               {category.subcategories.length} subcategorías
             </Badge>
-            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 ml-auto" />
+            <Badge variant="secondary" className="text-xs shrink-0 sm:hidden">
+              {category.subcategories.length}
+            </Badge>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 ml-auto shrink-0" />
           </CollapsibleTrigger>
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto p-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold ml-2"
+            className="h-auto p-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold text-right whitespace-nowrap"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onClick={() => {
@@ -242,25 +245,28 @@ const CategoryItem = ({
   return (
     <Collapsible open={isOpen} onOpenChange={onToggle}>
       <div className="rounded-lg border border-border/50 hover:border-primary/30 transition-colors">
-        <div className="flex items-center justify-between p-3">
-          <CollapsibleTrigger className="flex items-center gap-3 cursor-pointer flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-2">
+          <CollapsibleTrigger className="flex items-center gap-2 sm:gap-3 cursor-pointer flex-1 min-w-0">
             <div 
-              className="w-3 h-3 rounded-full" 
+              className="w-3 h-3 rounded-full shrink-0" 
               style={{ backgroundColor: category.color }}
             />
-            <span className="font-medium text-sm flex items-center gap-1">
+            <span className="font-medium text-sm flex items-center gap-1 truncate">
               {category.name}
-              <ChevronLeft className={`h-3 w-3 text-primary transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+              <ChevronLeft className={`h-3 w-3 text-primary transition-opacity duration-200 shrink-0 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
             </span>
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs shrink-0 hidden sm:inline-flex">
               {category.subcategories.length} subcategorías
             </Badge>
-            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 ml-auto" />
+            <Badge variant="secondary" className="text-xs shrink-0 sm:hidden">
+              {category.subcategories.length}
+            </Badge>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 ml-auto shrink-0" />
           </CollapsibleTrigger>
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto p-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold ml-2"
+            className="h-auto p-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold text-right whitespace-nowrap"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onClick={() => {
@@ -818,7 +824,7 @@ const CategoryItem = ({
       {/* 1. GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES CON MEDIAS */}
       <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
-          <CardTitle className="text-center">{t('dashboard.income_vs_expenses')} - Últimos 12 Meses <strong>{selectedCurrency}</strong></CardTitle>
+          <CardTitle className="text-center">{t('dashboard.income_vs_expenses')} - Últimos 12 Meses<br className="sm:hidden" /><strong className="block sm:inline"> {selectedCurrency}</strong></CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
