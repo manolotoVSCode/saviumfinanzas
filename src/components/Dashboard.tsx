@@ -854,18 +854,42 @@ const CategoryItem = ({
               <span>{t('transactions.expense')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
             </div>
           </div>
-          {/* Indicador de reembolsos del mes anterior */}
-          {filteredMetrics.reembolsosMes > 0 && (
-            <div className="flex justify-center mt-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700">
-                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                  ↩️ Reembolsos del mes: {formatCurrencyConsistent(filteredMetrics.reembolsosMes, selectedCurrency)}
-                </span>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      {/* RESUMEN DE REEMBOLSOS */}
+      {(filteredMetrics.reembolsosMes > 0 || filteredMetrics.reembolsosAnio > 0) && (
+        <Card className="border-amber-500/20 hover:border-amber-500/40 transition-all duration-300">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <span className="text-lg">↩️</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Reembolsos Recibidos</h3>
+                  <p className="text-xs text-muted-foreground">Gastos que te han devuelto</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">{months[selectedMonth].label} {selectedMonthYear}</p>
+                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                    {formatCurrencyConsistent(filteredMetrics.reembolsosMes, selectedCurrency)}
+                  </p>
+                </div>
+                <div className="h-8 w-px bg-border"></div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Año {selectedYear}</p>
+                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                    {formatCurrencyConsistent(filteredMetrics.reembolsosAnio, selectedCurrency)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 2. TOP 10 CATEGORÍAS - ÚLTIMOS 12 MESES */}
       <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
