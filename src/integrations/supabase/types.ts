@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           categoria: string
           created_at: string
+          frecuencia_seguimiento: string | null
           id: string
           seguimiento_pago: boolean
           subcategoria: string
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           categoria: string
           created_at?: string
+          frecuencia_seguimiento?: string | null
           id?: string
           seguimiento_pago?: boolean
           subcategoria: string
@@ -38,6 +40,7 @@ export type Database = {
         Update: {
           categoria?: string
           created_at?: string
+          frecuencia_seguimiento?: string | null
           id?: string
           seguimiento_pago?: boolean
           subcategoria?: string

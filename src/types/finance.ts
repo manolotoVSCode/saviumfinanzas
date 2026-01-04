@@ -8,6 +8,7 @@ export interface Category {
   categoria: string;
   tipo: TransactionType;
   seguimiento_pago?: boolean;
+  frecuencia_seguimiento?: 'mensual' | 'anual' | null;
 }
 
 export interface Account {
