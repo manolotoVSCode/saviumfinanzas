@@ -23,12 +23,19 @@ export const ProfitLossReport = ({ metrics, formatCurrency, transactions, catego
       return transactionDate >= startOfPreviousMonth && transactionDate <= endOfPreviousMonth;
     });
 
+    // Obtener tipo de categoría para cada transacción
+    const getCategoryType = (subcategoriaId: string) => {
+      const category = categories.find(c => c.id === subcategoriaId);
+      return category?.tipo;
+    };
+
+    // Reembolso = ingreso > 0 asociado a categoría tipo 'Gastos'
     const reembolsos = previousMonthTransactions
-      .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      .filter(t => t.ingreso > 0 && getCategoryType(t.subcategoriaId) === 'Gastos')
       .reduce((sum, t) => sum + t.ingreso, 0);
 
     const income = previousMonthTransactions
-      .filter(t => t.ingreso > 0 && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos'))
+      .filter(t => t.ingreso > 0 && getCategoryType(t.subcategoriaId) === 'Ingreso')
       .reduce((sum, t) => sum + t.ingreso, 0);
 
     const expenses = previousMonthTransactions
@@ -44,27 +51,28 @@ export const ProfitLossReport = ({ metrics, formatCurrency, transactions, catego
     previousMonthTransactions.forEach(t => {
       const category = categories.find(c => c.id === t.subcategoriaId);
       const categoryName = category ? category.categoria : 'Sin categoría';
+      const categoryType = category?.tipo;
 
-      // Excluir reembolsos de ingresos
-      if (t.ingreso > 0 && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')) {
+      // Reembolso = ingreso en categoría de gasto -> resta del gasto de esa categoría
+      if (t.ingreso > 0 && categoryType === 'Gastos') {
+        // Es un reembolso - restar de la categoría de gasto correspondiente
+        expensesByCategory[categoryName] = (expensesByCategory[categoryName] || 0) - t.ingreso;
+      } else if (t.ingreso > 0 && categoryType === 'Ingreso') {
+        // Es un ingreso normal
         incomeByCategory[categoryName] = (incomeByCategory[categoryName] || 0) + t.ingreso;
       }
+      
       if (t.gasto > 0) {
         expensesByCategory[categoryName] = (expensesByCategory[categoryName] || 0) + t.gasto;
       }
     });
 
-    // Restar reembolsos proporcionalmente de gastos
-    if (reembolsos > 0) {
-      const totalExpenses = Object.values(expensesByCategory).reduce((sum, val) => sum + val, 0);
-      if (totalExpenses > 0) {
-        Object.keys(expensesByCategory).forEach(categoryName => {
-          const proportion = expensesByCategory[categoryName] / totalExpenses;
-          const reembolsoCategory = reembolsos * proportion;
-          expensesByCategory[categoryName] = Math.max(0, expensesByCategory[categoryName] - reembolsoCategory);
-        });
+    // Eliminar categorías con gasto negativo o cero después de reembolsos
+    Object.keys(expensesByCategory).forEach(key => {
+      if (expensesByCategory[key] <= 0) {
+        delete expensesByCategory[key];
       }
-    }
+    });
 
     return {
       income,
