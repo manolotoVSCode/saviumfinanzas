@@ -49,6 +49,7 @@ export const TransactionsManager = ({
   const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
   const [isEditingBulk, setIsEditingBulk] = useState(false);
   const [bulkCategoryId, setBulkCategoryId] = useState('');
+  const [bulkIsReimbursement, setBulkIsReimbursement] = useState(false);
   const [bulkFilters, setBulkFilters] = useState({
     tipo: 'all',
     busqueda: ''
@@ -423,11 +424,23 @@ export const TransactionsManager = ({
 
   const handleBulkCategoryChange = async () => {
     for (const transactionId of selectedTransactions) {
-      onUpdateTransaction(transactionId, { subcategoriaId: bulkCategoryId });
+      const transaction = transactions.find(t => t.id === transactionId);
+      if (!transaction) continue;
+
+      const updates: Partial<Transaction> = { subcategoriaId: bulkCategoryId };
+      
+      // Si es reembolso, convertir el gasto a ingreso
+      if (bulkIsReimbursement && transaction.gasto > 0) {
+        updates.ingreso = transaction.gasto;
+        updates.gasto = 0;
+      }
+      
+      onUpdateTransaction(transactionId, updates);
     }
     setSelectedTransactions(new Set());
     setIsEditingBulk(false);
     setBulkCategoryId('');
+    setBulkIsReimbursement(false);
   };
 
   const handleBulkDateChange = async () => {
@@ -937,6 +950,29 @@ export const TransactionsManager = ({
                   )}
                 </div>
               </div>
+              {/* Checkbox de Reembolso */}
+              <div className="flex items-center space-x-2 p-3 rounded-lg border bg-amber-50 dark:bg-amber-950/30">
+                <Checkbox
+                  id="bulk-reimbursement"
+                  checked={bulkIsReimbursement}
+                  onCheckedChange={(checked) => {
+                    setBulkIsReimbursement(checked as boolean);
+                    if (checked) {
+                      // Forzar filtro a categorías de gasto
+                      setBulkFilters(prev => ({ ...prev, tipo: 'Gastos' }));
+                    }
+                  }}
+                />
+                <div className="space-y-0.5">
+                  <Label htmlFor="bulk-reimbursement" className="text-sm font-medium cursor-pointer">
+                    Marcar como reembolso
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Convierte el gasto en ingreso y lo asocia a la categoría de gasto seleccionada
+                  </p>
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="bulk-categoria">Nueva Categoría</Label>
                 <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
@@ -947,9 +983,10 @@ export const TransactionsManager = ({
                     {useMemo(() => {
                       let filteredCategories = categories;
                       
-                      // Filtrar por tipo
-                      if (bulkFilters.tipo !== 'all') {
-                        filteredCategories = filteredCategories.filter(cat => cat.tipo === bulkFilters.tipo);
+                      // Filtrar por tipo (forzar Gastos si es reembolso)
+                      const effectiveTypeFilter = bulkIsReimbursement ? 'Gastos' : bulkFilters.tipo;
+                      if (effectiveTypeFilter !== 'all') {
+                        filteredCategories = filteredCategories.filter(cat => cat.tipo === effectiveTypeFilter);
                       }
                       
                       // Filtrar por búsqueda (solo si tiene 3+ caracteres)
@@ -962,7 +999,7 @@ export const TransactionsManager = ({
                       }
                       
                       return filteredCategories;
-                    }, [bulkFilters]).map((category) => (
+                    }, [bulkFilters, bulkIsReimbursement]).map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.categoria} - {category.subcategoria}
                       </SelectItem>
