@@ -1466,9 +1466,23 @@ export const TransactionsManager = ({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getTypeBadgeVariant(transaction.tipo)}>
-                      {transaction.tipo}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant={getTypeBadgeVariant(transaction.tipo)}>
+                        {transaction.tipo}
+                      </Badge>
+                      {(() => {
+                        const category = categories.find(c => c.id === transaction.subcategoriaId);
+                        const isReimbursement = transaction.ingreso > 0 && category?.tipo === 'Gastos';
+                        if (isReimbursement) {
+                          return (
+                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-700">
+                              Reembolso
+                            </Badge>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
