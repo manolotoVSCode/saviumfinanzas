@@ -115,6 +115,9 @@ export const TransactionsManager = ({
   });
 
   const [categoryTypeFilter, setCategoryTypeFilter] = useState<string>('all');
+  
+  // Estado para marcar transacción como reembolso (ingreso asociado a categoría de gasto)
+  const [isReimbursement, setIsReimbursement] = useState(false);
 
 
   // Aplicar filtros a las transacciones
@@ -214,6 +217,7 @@ export const TransactionsManager = ({
       targetAccountType: 'Aportación'
     });
     setCategoryTypeFilter('all');
+    setIsReimbursement(false);
     setEditingTransaction(null);
     // Mantener los filtros para conservar la vista del usuario
   };
@@ -221,6 +225,7 @@ export const TransactionsManager = ({
   const openNewTransaction = () => {
     setEditingTransaction(null);
     setCategoryTypeFilter('all');
+    setIsReimbursement(false);
     setAutoContribution({ enabled: false, targetAccountId: '', targetAccountType: 'Aportación' });
     setFormData({
       cuentaId: '',
@@ -518,6 +523,33 @@ export const TransactionsManager = ({
                   </div>
                 </div>
 
+                {/* Checkbox para marcar como reembolso */}
+                <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg border">
+                  <Checkbox
+                    id="isReimbursement"
+                    checked={isReimbursement}
+                    onCheckedChange={(checked) => {
+                      setIsReimbursement(checked as boolean);
+                      // Si es reembolso, forzar filtro a Gastos y limpiar selección
+                      if (checked) {
+                        setCategoryTypeFilter('Gastos');
+                        setFormData({ ...formData, subcategoriaId: '', gasto: 0 });
+                      } else {
+                        setCategoryTypeFilter('all');
+                        setFormData({ ...formData, subcategoriaId: '', ingreso: 0 });
+                      }
+                    }}
+                  />
+                  <div className="flex flex-col">
+                    <Label htmlFor="isReimbursement" className="cursor-pointer font-medium">
+                      Es un reembolso
+                    </Label>
+                    <span className="text-xs text-muted-foreground">
+                      Registrar un ingreso asociado a una categoría de gasto
+                    </span>
+                  </div>
+                </div>
+
                 {/* Filtro de categorías por tipo - después de cuenta y fecha */}
                 <div>
                   <Label htmlFor="tipo-categoria">Filtrar categorías por tipo</Label>
@@ -528,6 +560,7 @@ export const TransactionsManager = ({
                       // Limpiar la categoría seleccionada cuando se cambia el filtro
                       setFormData({ ...formData, subcategoriaId: '' });
                     }}
+                    disabled={isReimbursement} // Deshabilitar si es reembolso
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Filtrar por tipo" />
@@ -615,13 +648,17 @@ export const TransactionsManager = ({
                 <div className="grid grid-cols-3 gap-4">
                   {(() => {
                     const selectedCategory = categories.find(cat => cat.id === formData.subcategoriaId);
-                    const isIngresoType = selectedCategory?.tipo === 'Ingreso' || selectedCategory?.tipo === 'Aportación';
-                    const isGastoType = selectedCategory?.tipo === 'Gastos' || selectedCategory?.tipo === 'Retiro';
+                    // Si es reembolso, permitir ingreso aunque sea categoría de gasto
+                    const isIngresoType = isReimbursement || selectedCategory?.tipo === 'Ingreso' || selectedCategory?.tipo === 'Aportación';
+                    // Si es reembolso, bloquear gasto
+                    const isGastoType = !isReimbursement && (selectedCategory?.tipo === 'Gastos' || selectedCategory?.tipo === 'Retiro');
                     
                     return (
                       <>
                         <div>
-                          <Label htmlFor="ingreso">Ingreso</Label>
+                          <Label htmlFor="ingreso">
+                            {isReimbursement ? 'Monto del reembolso' : 'Ingreso'}
+                          </Label>
                           <Input
                             id="ingreso"
                             type="number"
@@ -643,8 +680,8 @@ export const TransactionsManager = ({
                             min="0"
                             value={formData.gasto || ''}
                             onChange={(e) => setFormData({ ...formData, gasto: parseFloat(e.target.value) || 0 })}
-                            disabled={selectedCategory && !isGastoType}
-                            placeholder={selectedCategory && !isGastoType ? "Bloqueado para este tipo" : "0.00"}
+                            disabled={isReimbursement || (selectedCategory && !isGastoType)}
+                            placeholder={isReimbursement ? "Deshabilitado (es reembolso)" : (selectedCategory && !isGastoType ? "Bloqueado para este tipo" : "0.00")}
                           />
                         </div>
 
