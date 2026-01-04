@@ -14,6 +14,39 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+// Componente personalizado para etiquetas de líneas de referencia con fondo
+const CustomReferenceLabel = ({ viewBox, value, color, position }: { viewBox?: any; value: string; color: string; position: 'top' | 'bottom' }) => {
+  const x = viewBox?.width ? viewBox.width - 10 : 100;
+  const y = viewBox?.y ?? 0;
+  const yOffset = position === 'top' ? -8 : 16;
+  
+  return (
+    <g>
+      <rect
+        x={x - 75}
+        y={y + yOffset - 10}
+        width={80}
+        height={18}
+        rx={4}
+        fill="hsl(var(--background))"
+        fillOpacity={0.9}
+        stroke={color}
+        strokeWidth={1}
+      />
+      <text
+        x={x - 35}
+        y={y + yOffset + 2}
+        fill={color}
+        fontSize={11}
+        fontWeight={600}
+        textAnchor="middle"
+      >
+        {value}
+      </text>
+    </g>
+  );
+};
+
 // Componente para subcategoría con hover state
 const SubcategoryItem = ({ 
   sub, 
@@ -882,14 +915,14 @@ const CategoryItem = ({
                   stroke="hsl(var(--success))" 
                   strokeDasharray="5 5" 
                   strokeWidth={2}
-                  label={{ value: `Media: ${formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)}`, position: 'insideTopRight', fill: 'hsl(var(--success))', fontSize: 11 }}
+                  label={<CustomReferenceLabel value={`Ø ${formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)}`} color="hsl(var(--success))" position="top" />}
                 />
                 <ReferenceLine 
                   y={filteredMetrics.avgGastos} 
                   stroke="hsl(var(--destructive))" 
                   strokeDasharray="5 5" 
                   strokeWidth={2}
-                  label={{ value: `Media: ${formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)}`, position: 'insideBottomRight', fill: 'hsl(var(--destructive))', fontSize: 11 }}
+                  label={<CustomReferenceLabel value={`Ø ${formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)}`} color="hsl(var(--destructive))" position="bottom" />}
                 />
               </ComposedChart>
             </ResponsiveContainer>
