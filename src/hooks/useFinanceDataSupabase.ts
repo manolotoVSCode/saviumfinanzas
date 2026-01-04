@@ -501,32 +501,21 @@ export const useFinanceDataSupabase = () => {
     ].filter(item => item.monto > 0);
     
     // TOP CATEGORÍAS GASTOS E INGRESOS
+    // Reembolso = ingreso > 0 asociado a categoría tipo 'Gastos' (ingreso en categoría de gasto)
     const getCategoryTotalsGastos = (transactions: typeof enrichedTransactions) => {
       const categoryTotals = new Map<string, number>();
-      const reembolsosTotal = transactions
-        .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
-        .reduce((sum, t) => sum + t.ingreso, 0);
       
       transactions.forEach(t => {
         if (t.categoria && t.tipo === 'Gastos') {
           const current = categoryTotals.get(t.categoria) || 0;
-          categoryTotals.set(t.categoria, current + t.gasto);
+          // Sumar gastos y restar reembolsos (ingreso en categoría de gasto)
+          const gastoNeto = t.gasto - (t.ingreso || 0);
+          categoryTotals.set(t.categoria, current + gastoNeto);
         }
       });
       
-      // Restar reembolsos proporcionalmente de todas las categorías de gastos
-      if (reembolsosTotal > 0) {
-        const totalGastos = Array.from(categoryTotals.values()).reduce((sum, val) => sum + val, 0);
-        if (totalGastos > 0) {
-          categoryTotals.forEach((monto, categoria) => {
-            const proporcion = monto / totalGastos;
-            const reembolsoCategoria = reembolsosTotal * proporcion;
-            categoryTotals.set(categoria, Math.max(0, monto - reembolsoCategoria));
-          });
-        }
-      }
-      
       return Array.from(categoryTotals.entries())
+        .filter(([, monto]) => monto > 0) // Solo categorías con gasto neto positivo
         .map(([categoria, monto]) => ({ categoria, monto, tipo: 'Gastos' as TransactionType }))
         .sort((a, b) => b.monto - a.monto)
         .slice(0, 5);
@@ -535,8 +524,8 @@ export const useFinanceDataSupabase = () => {
     const getCategoryTotalsIngresos = (transactions: typeof enrichedTransactions) => {
       const categoryTotals = new Map<string, number>();
       transactions.forEach(t => {
-        // Excluir reembolsos de los ingresos
-        if (t.categoria && t.tipo === 'Ingreso' && !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')) {
+        // Solo ingresos de categorías tipo 'Ingreso' (NO reembolsos que están en categorías tipo 'Gastos')
+        if (t.categoria && t.tipo === 'Ingreso' && t.ingreso > 0) {
           const current = categoryTotals.get(t.categoria) || 0;
           categoryTotals.set(t.categoria, current + t.ingreso);
         }
@@ -586,21 +575,20 @@ export const useFinanceDataSupabase = () => {
       }
       
       // Convertir todos los ingresos y gastos a MXN para el dashboard
-      // Excluir reembolsos y "Compra Venta Inmuebles"
-      const reembolsosMes = monthTransactions
-        .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      // Reembolso = ingreso > 0 asociado a categoría tipo 'Gastos'
+      const reembolsosMesTendencia = monthTransactions
+        .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
         .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
       
       const ingresos = monthTransactions
         .filter(t => 
           t.tipo === 'Ingreso' && 
-          !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') &&
           t.categoria !== 'Compra Venta Inmuebles'
         )
         .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
       const gastos = monthTransactions
         .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
-        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMes;
+        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMesTendencia;
       
       // Debug log para septiembre 2025 - resultado final
       if (monthLabel === 'sep 25') {
@@ -626,22 +614,21 @@ export const useFinanceDataSupabase = () => {
       
       const monthTransactions = enrichedTransactions.filter(t => t.fecha >= monthStart && t.fecha <= monthEnd);
       
-      // Excluir reembolsos y "Compra Venta Inmuebles"
-      const reembolsosMes = monthTransactions
-        .filter(t => t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos')
+      // Reembolso = ingreso > 0 asociado a categoría tipo 'Gastos'
+      const reembolsosMesMedia = monthTransactions
+        .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
         .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
       
       const ingresos = monthTransactions
         .filter(t => 
           t.tipo === 'Ingreso' && 
-          !(t.categoria === 'Ingresos adicionales' && t.subcategoria === 'Reembolsos') &&
           t.categoria !== 'Compra Venta Inmuebles'
         )
         .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
         
       const gastos = monthTransactions
         .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
-        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMes;
+        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMesMedia;
       
       tendenciaUltimos6Meses.push({ ingresos, gastos });
     }
