@@ -398,50 +398,31 @@ const CategoryItem = ({
       return tDate.getFullYear() === compareYear;
     });
     
-    // Calcular reembolsos del mes PRIMERO para ajustar ingresos y gastos
+    // Calcular reembolsos del mes: ingreso > 0 asociado a categoría tipo 'Gastos'
     const reembolsosMes = lastMonthTransactions
-      .filter(t => 
-        t.tipo === 'Reembolso' || 
-        t.categoria?.toLowerCase().includes('reembolso') ||
-        t.subcategoria?.toLowerCase().includes('reembolso') ||
-        t.comentario?.toLowerCase().includes('reembolso')
-      )
+      .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
       .reduce((sum, t) => sum + (t.ingreso || 0), 0);
     
-    // Cálculos del mes (excluyendo aportaciones, retiros, "Compra Venta Inmuebles" y REEMBOLSOS de ingresos)
+    // Cálculos del mes (excluyendo aportaciones, retiros, "Compra Venta Inmuebles")
+    // Los ingresos son solo de categorías tipo 'Ingreso'
     const ingresosMes = lastMonthTransactions
-      .filter(t => t.tipo === 'Ingreso' && 
-        t.categoria !== 'Compra Venta Inmuebles' &&
-        !t.categoria?.toLowerCase().includes('reembolso') &&
-        !t.subcategoria?.toLowerCase().includes('reembolso') &&
-        !t.comentario?.toLowerCase().includes('reembolso')
-      )
+      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMes = lastMonthTransactions
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.gasto, 0);
     
-    // Los reembolsos SOLO se restan de gastos (no de ingresos, ya que no están incluidos en ingresos)
+    // Los reembolsos se restan de gastos (son ingresos en categorías de gastos)
     const gastosAjustadosMes = gastosMes - reembolsosMes;
     
     // Calcular reembolsos del mes anterior (para comparativo)
     const reembolsosMesAnterior = twoMonthsAgoTransactions
-      .filter(t => 
-        t.tipo === 'Reembolso' || 
-        t.categoria?.toLowerCase().includes('reembolso') ||
-        t.subcategoria?.toLowerCase().includes('reembolso') ||
-        t.comentario?.toLowerCase().includes('reembolso')
-      )
+      .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
       .reduce((sum, t) => sum + (t.ingreso || 0), 0);
     
     // Cálculos de dos meses atrás (para comparativo)
     const ingresosMesAnterior = twoMonthsAgoTransactions
-      .filter(t => t.tipo === 'Ingreso' && 
-        t.categoria !== 'Compra Venta Inmuebles' &&
-        !t.categoria?.toLowerCase().includes('reembolso') &&
-        !t.subcategoria?.toLowerCase().includes('reembolso') &&
-        !t.comentario?.toLowerCase().includes('reembolso')
-      )
+      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosMesAnterior = twoMonthsAgoTransactions
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
@@ -451,22 +432,12 @@ const CategoryItem = ({
     
     // Calcular reembolsos del año
     const reembolsosAnio = yearTransactions
-      .filter(t => 
-        t.tipo === 'Reembolso' || 
-        t.categoria?.toLowerCase().includes('reembolso') ||
-        t.subcategoria?.toLowerCase().includes('reembolso') ||
-        t.comentario?.toLowerCase().includes('reembolso')
-      )
+      .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
       .reduce((sum, t) => sum + (t.ingreso || 0), 0);
     
-    // Cálculos del año (excluyendo reembolsos de ingresos)
+    // Cálculos del año
     const ingresosAnio = yearTransactions
-      .filter(t => t.tipo === 'Ingreso' && 
-        t.categoria !== 'Compra Venta Inmuebles' &&
-        !t.categoria?.toLowerCase().includes('reembolso') &&
-        !t.subcategoria?.toLowerCase().includes('reembolso') &&
-        !t.comentario?.toLowerCase().includes('reembolso')
-      )
+      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnio = yearTransactions
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
@@ -476,22 +447,12 @@ const CategoryItem = ({
     
     // Calcular reembolsos del año anterior
     const reembolsosAnioAnterior = lastYearTransactions
-      .filter(t => 
-        t.tipo === 'Reembolso' || 
-        t.categoria?.toLowerCase().includes('reembolso') ||
-        t.subcategoria?.toLowerCase().includes('reembolso') ||
-        t.comentario?.toLowerCase().includes('reembolso')
-      )
+      .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
       .reduce((sum, t) => sum + (t.ingreso || 0), 0);
     
     // Cálculos del año anterior (para comparativo)
     const ingresosAnioAnterior = lastYearTransactions
-      .filter(t => t.tipo === 'Ingreso' && 
-        t.categoria !== 'Compra Venta Inmuebles' &&
-        !t.categoria?.toLowerCase().includes('reembolso') &&
-        !t.subcategoria?.toLowerCase().includes('reembolso') &&
-        !t.comentario?.toLowerCase().includes('reembolso')
-      )
+      .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
       .reduce((sum, t) => sum + t.ingreso, 0);
     const gastosAnioAnterior = lastYearTransactions
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
@@ -519,27 +480,17 @@ const CategoryItem = ({
       const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       const mesLabel = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear().toString().slice(-2)}`;
       
-      // Calcular reembolsos primero
+      // Calcular reembolsos: ingreso > 0 en categoría tipo 'Gastos'
       const reembolsos = monthTrans
-        .filter(t => 
-          t.tipo === 'Reembolso' || 
-          t.categoria?.toLowerCase().includes('reembolso') ||
-          t.subcategoria?.toLowerCase().includes('reembolso') ||
-          t.comentario?.toLowerCase().includes('reembolso')
-        )
+        .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
         .reduce((sum, t) => sum + (t.ingreso || 0), 0);
       
-      // Ingresos (excluyendo reembolsos)
+      // Ingresos: solo categorías tipo 'Ingreso'
       const ingresos = monthTrans
-        .filter(t => t.tipo === 'Ingreso' && 
-          t.categoria !== 'Compra Venta Inmuebles' &&
-          !t.categoria?.toLowerCase().includes('reembolso') &&
-          !t.subcategoria?.toLowerCase().includes('reembolso') &&
-          !t.comentario?.toLowerCase().includes('reembolso')
-        )
+        .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
         .reduce((sum, t) => sum + t.ingreso, 0);
       
-      // Gastos (solo se restan reembolsos de los gastos)
+      // Gastos (restando reembolsos)
       const gastosBrutos = Math.abs(monthTrans
         .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
         .reduce((sum, t) => sum + t.gasto, 0));
@@ -567,11 +518,13 @@ const CategoryItem = ({
       ingresosMes: ingresosMes,
       gastosMes: gastosAjustadosMes,
       balanceMes: ingresosMes - gastosAjustadosMes,
+      reembolsosMes: reembolsosMes, // Total de reembolsos del mes
       
       // Datos del año (ingresos sin ajustar, gastos ajustados)
       ingresosAnio: ingresosAnio,
       gastosAnio: gastosAjustadosAnio,
       balanceAnio: ingresosAnio - gastosAjustadosAnio,
+      reembolsosAnio: reembolsosAnio, // Total de reembolsos del año
       
       // Comparativos
       cambioIngresosMes: ingresosMesAnterior > 0 ? ((ingresosMes - ingresosMesAnterior) / ingresosMesAnterior) * 100 : 0,
@@ -901,6 +854,16 @@ const CategoryItem = ({
               <span>{t('transactions.expense')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
             </div>
           </div>
+          {/* Indicador de reembolsos del mes anterior */}
+          {filteredMetrics.reembolsosMes > 0 && (
+            <div className="flex justify-center mt-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700">
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                  ↩️ Reembolsos del mes: {formatCurrencyConsistent(filteredMetrics.reembolsosMes, selectedCurrency)}
+                </span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

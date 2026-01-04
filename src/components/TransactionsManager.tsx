@@ -74,7 +74,7 @@ export const TransactionsManager = ({
   // Filtros
   const [filters, setFilters] = useState(() => {
     try {
-      const stored = localStorage.getItem('transactions_filters_v1');
+      const stored = localStorage.getItem('transactions_filters_v2');
       if (stored) return JSON.parse(stored);
     } catch (e) {
       // ignore parsing errors
@@ -89,14 +89,15 @@ export const TransactionsManager = ({
       minAmount: '',
       maxAmount: '',
       importadas: 'all',
-      montos: 'all'
+      montos: 'all',
+      reembolsos: 'all' // 'all' | 'solo' | 'excluir'
     };
   });
 
   // Persistir filtros para mantenerlos tras recargas/refetch
   useEffect(() => {
     try {
-      localStorage.setItem('transactions_filters_v1', JSON.stringify(filters));
+      localStorage.setItem('transactions_filters_v2', JSON.stringify(filters));
     } catch (e) {
       // ignore storage errors
     }
@@ -191,6 +192,15 @@ export const TransactionsManager = ({
       if (filters.montos === 'negativos' && transaction.monto >= 0) return false;
     }
     
+    // Filtro por reembolsos (ingreso > 0 asociado a categoría tipo 'Gastos')
+    if (filters.reembolsos && filters.reembolsos !== 'all') {
+      const category = categories.find(c => c.id === transaction.subcategoriaId);
+      const isReembolso = transaction.ingreso > 0 && category?.tipo === 'Gastos';
+      
+      if (filters.reembolsos === 'solo' && !isReembolso) return false;
+      if (filters.reembolsos === 'excluir' && isReembolso) return false;
+    }
+    
     return true;
   });
 
@@ -202,7 +212,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '', importadas: 'all', montos: 'all' });
+    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '', importadas: 'all', montos: 'all', reembolsos: 'all' });
   };
 
   const resetForm = () => {
@@ -1387,6 +1397,23 @@ export const TransactionsManager = ({
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="positivos">Solo Positivos (Ingresos)</SelectItem>
                   <SelectItem value="negativos">Solo Negativos (Gastos)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="filter-reembolsos">Reembolsos</Label>
+              <Select 
+                value={filters.reembolsos} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, reembolsos: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="solo">Solo Reembolsos</SelectItem>
+                  <SelectItem value="excluir">Excluir Reembolsos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
