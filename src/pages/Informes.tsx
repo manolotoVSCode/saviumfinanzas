@@ -2,11 +2,7 @@ import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { SubscriptionsManager } from '@/components/SubscriptionsManager';
-import { AssetsReport } from '@/components/AssetsReport';
-import { LiabilitiesReport } from '@/components/LiabilitiesReport';
 import { MonthlyPaymentsControl } from '@/components/MonthlyPaymentsControl';
-import { MonthlyReimbursementReport } from '@/components/MonthlyReimbursementReport';
-import { CategoryAnalysisReport } from '@/components/CategoryAnalysisReport';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SampleDataBanner } from '@/components/SampleDataBanner';
 
@@ -37,34 +33,18 @@ const Informes = () => {
           <p className="text-muted-foreground">Reportes detallados de tu situación financiera</p>
         </div>
 
-        <Tabs defaultValue="categorias" className="w-full">
+        <Tabs defaultValue="suscripciones" className="w-full">
           <TabsList className="flex flex-wrap w-full justify-center gap-2 h-auto p-2 bg-muted rounded-lg">
-            <TabsTrigger value="categorias" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
-              Análisis Categorías
+            <TabsTrigger value="suscripciones" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
+              Suscripciones
             </TabsTrigger>
             <TabsTrigger value="pagos-recurrentes" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
               Pagos Recurrentes
             </TabsTrigger>
-            <TabsTrigger value="reembolsos" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
-              Análisis Reembolsos
-            </TabsTrigger>
-            <TabsTrigger value="suscripciones" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
-              Suscripciones
-            </TabsTrigger>
-            <TabsTrigger value="activos" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
-              Activos
-            </TabsTrigger>
-            <TabsTrigger value="pasivos" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
-              Pasivos
-            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="categorias" className="space-y-4">
-            <CategoryAnalysisReport
-              transactions={financeData.transactions}
-              categories={financeData.categories}
-              formatCurrency={formatCurrency}
-            />
+          <TabsContent value="suscripciones" className="space-y-4">
+            <SubscriptionsManager />
           </TabsContent>
 
           <TabsContent value="pagos-recurrentes" className="space-y-4">
@@ -72,35 +52,6 @@ const Informes = () => {
               transactions={financeData.transactions}
               formatCurrency={formatCurrency}
               categories={financeData.categories}
-            />
-          </TabsContent>
-
-          <TabsContent value="reembolsos" className="space-y-4">
-            <MonthlyReimbursementReport
-              transactions={financeData.transactions}
-              categories={financeData.categories}
-              formatCurrency={formatCurrency}
-            />
-          </TabsContent>
-
-          <TabsContent value="suscripciones" className="space-y-4">
-            <SubscriptionsManager />
-          </TabsContent>
-
-          <TabsContent value="activos" className="space-y-4">
-            <AssetsReport 
-              metrics={financeData.dashboardMetrics}
-              formatCurrency={formatCurrency}
-              accounts={financeData.accounts}
-              onAccountUpdate={financeData.refreshData}
-            />
-          </TabsContent>
-
-          <TabsContent value="pasivos" className="space-y-4">
-            <LiabilitiesReport 
-              metrics={financeData.dashboardMetrics}
-              formatCurrency={formatCurrency}
-              accounts={financeData.accounts}
             />
           </TabsContent>
         </Tabs>
