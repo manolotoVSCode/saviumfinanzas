@@ -68,6 +68,9 @@ export const TransactionsManager = ({
   // Estado para el selector de cuentas en el formulario
   const [accountFormOpen, setAccountFormOpen] = useState(false);
   
+  // Estado para el selector de categorías en cambio masivo
+  const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
+  
   // Filtros
   const [filters, setFilters] = useState(() => {
     try {
@@ -984,37 +987,71 @@ export const TransactionsManager = ({
 
               <div>
                 <Label htmlFor="bulk-categoria">Nueva Categoría</Label>
-                <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {useMemo(() => {
-                      let filteredCategories = categories;
-                      
-                      // Filtrar por tipo (forzar Gastos si es reembolso)
-                      const effectiveTypeFilter = bulkIsReimbursement ? 'Gastos' : bulkFilters.tipo;
-                      if (effectiveTypeFilter !== 'all') {
-                        filteredCategories = filteredCategories.filter(cat => cat.tipo === effectiveTypeFilter);
-                      }
-                      
-                      // Filtrar por búsqueda (solo si tiene 3+ caracteres)
-                      if (bulkFilters.busqueda.length >= 3) {
-                        const searchTerm = bulkFilters.busqueda.toLowerCase();
-                        filteredCategories = filteredCategories.filter(cat => 
-                          cat.categoria.toLowerCase().includes(searchTerm) ||
-                          cat.subcategoria.toLowerCase().includes(searchTerm)
-                        );
-                      }
-                      
-                      return filteredCategories;
-                    }, [bulkFilters, bulkIsReimbursement]).map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.categoria} - {category.subcategoria}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={bulkCategoryOpen} onOpenChange={setBulkCategoryOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={bulkCategoryOpen}
+                      className="w-full justify-between"
+                    >
+                      {bulkCategoryId
+                        ? (() => {
+                            const cat = categories.find(c => c.id === bulkCategoryId);
+                            return cat ? `${cat.categoria} - ${cat.subcategoria}` : 'Selecciona una categoría';
+                          })()
+                        : 'Selecciona una categoría'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-background z-50" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar categoría..." />
+                      <CommandList>
+                        <CommandEmpty>No se encontró categoría.</CommandEmpty>
+                        <CommandGroup>
+                          {(() => {
+                            let filteredCategories = categories;
+                            
+                            // Filtrar por tipo (forzar Gastos si es reembolso)
+                            const effectiveTypeFilter = bulkIsReimbursement ? 'Gastos' : bulkFilters.tipo;
+                            if (effectiveTypeFilter !== 'all') {
+                              filteredCategories = filteredCategories.filter(cat => cat.tipo === effectiveTypeFilter);
+                            }
+                            
+                            // Filtrar por búsqueda externa (solo si tiene 3+ caracteres)
+                            if (bulkFilters.busqueda.length >= 3) {
+                              const searchTerm = bulkFilters.busqueda.toLowerCase();
+                              filteredCategories = filteredCategories.filter(cat => 
+                                cat.categoria.toLowerCase().includes(searchTerm) ||
+                                cat.subcategoria.toLowerCase().includes(searchTerm)
+                              );
+                            }
+                            
+                            return filteredCategories.map((category) => (
+                              <CommandItem
+                                key={category.id}
+                                value={`${category.categoria} ${category.subcategoria}`}
+                                onSelect={() => {
+                                  setBulkCategoryId(category.id);
+                                  setBulkCategoryOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    bulkCategoryId === category.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span className="font-bold">{category.categoria}</span> - <span className="font-normal">{category.subcategoria}</span>
+                              </CommandItem>
+                            ));
+                          })()}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsEditingBulk(false)}>
