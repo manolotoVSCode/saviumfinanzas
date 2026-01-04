@@ -15,6 +15,7 @@ interface TrackedPayment {
   categoryId: string;
   categoryName: string;
   subcategoryName: string;
+  concept: string; // Concepto/comentario para diferenciar pagos similares
   lastPayment: {
     amount: number;
     date: Date;
@@ -25,6 +26,7 @@ interface TrackedPayment {
     date: Date;
     amount: number;
     formattedDate: string;
+    comment: string;
   }>;
   totalPaid: number;
   active: boolean;
@@ -55,7 +57,7 @@ export const AnnualPaymentsTracker = () => {
     );
   }, [categories]);
 
-  // Process transactions for annual tracked categories
+  // Process transactions for annual tracked categories - group by similar concept
   useEffect(() => {
     if (!transactions || !annualCategories || annualCategories.length === 0) {
       setTrackedPayments([]);
@@ -63,6 +65,18 @@ export const AnnualPaymentsTracker = () => {
     }
 
     const payments: TrackedPayment[] = [];
+
+    // Normalize comment for grouping similar payments
+    const normalizeComment = (comment: string): string => {
+      return comment
+        .toLowerCase()
+        .replace(/\d{4}/g, '') // Remove years
+        .replace(/\d{1,2}\/\d{1,2}/g, '') // Remove dates
+        .replace(/[^\w\sáéíóúñ]/g, '') // Remove special chars
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 30); // Take first 30 chars for grouping
+    };
 
     annualCategories.forEach(category => {
       // Get all transactions for this category
@@ -72,45 +86,67 @@ export const AnnualPaymentsTracker = () => {
 
       if (categoryTransactions.length === 0) return;
 
-      const lastTransaction = categoryTransactions[0];
-      const lastPaymentDate = new Date(lastTransaction.fecha);
+      // Group transactions by normalized comment to detect different payments
+      const groupedByComment: { [key: string]: typeof categoryTransactions } = {};
       
-      // Calculate next payment (1 year from last payment)
-      const nextPayment = new Date(lastPaymentDate);
-      nextPayment.setFullYear(nextPayment.getFullYear() + 1);
+      categoryTransactions.forEach(t => {
+        const key = normalizeComment(t.comentario);
+        if (!groupedByComment[key]) {
+          groupedByComment[key] = [];
+        }
+        groupedByComment[key].push(t);
+      });
 
-      // Build payment history
-      const paymentHistory = categoryTransactions.map(t => ({
-        date: new Date(t.fecha),
-        amount: t.gasto,
-        formattedDate: new Date(t.fecha).toLocaleDateString('es-ES', { 
-          day: 'numeric', 
-          month: 'long', 
-          year: 'numeric' 
-        })
-      }));
+      // Create a tracked payment for each unique group
+      Object.entries(groupedByComment).forEach(([normalizedKey, groupTransactions]) => {
+        const lastTransaction = groupTransactions[0];
+        const lastPaymentDate = new Date(lastTransaction.fecha);
+        
+        // Calculate next payment (1 year from last payment)
+        const nextPayment = new Date(lastPaymentDate);
+        nextPayment.setFullYear(nextPayment.getFullYear() + 1);
 
-      // Calculate total paid
-      const totalPaid = categoryTransactions.reduce((sum, t) => sum + t.gasto, 0);
-
-      payments.push({
-        id: category.id,
-        categoryId: category.id,
-        categoryName: category.categoria,
-        subcategoryName: category.subcategoria,
-        lastPayment: {
-          amount: lastTransaction.gasto,
-          date: lastPaymentDate,
-          formattedDate: lastPaymentDate.toLocaleDateString('es-ES', { 
+        // Build payment history with comments
+        const paymentHistory = groupTransactions.map(t => ({
+          date: new Date(t.fecha),
+          amount: t.gasto,
+          formattedDate: new Date(t.fecha).toLocaleDateString('es-ES', { 
             day: 'numeric', 
             month: 'long', 
             year: 'numeric' 
-          })
-        },
-        nextPayment,
-        paymentHistory,
-        totalPaid,
-        active: !inactivePayments.has(category.id)
+          }),
+          comment: t.comentario
+        }));
+
+        // Calculate total paid
+        const totalPaid = groupTransactions.reduce((sum, t) => sum + t.gasto, 0);
+
+        // Use the most recent comment as the concept display
+        const concept = lastTransaction.comentario;
+        
+        // Generate unique ID for this payment group
+        const uniqueId = `${category.id}-${normalizedKey}`;
+
+        payments.push({
+          id: uniqueId,
+          categoryId: category.id,
+          categoryName: category.categoria,
+          subcategoryName: category.subcategoria,
+          concept,
+          lastPayment: {
+            amount: lastTransaction.gasto,
+            date: lastPaymentDate,
+            formattedDate: lastPaymentDate.toLocaleDateString('es-ES', { 
+              day: 'numeric', 
+              month: 'long', 
+              year: 'numeric' 
+            })
+          },
+          nextPayment,
+          paymentHistory,
+          totalPaid,
+          active: !inactivePayments.has(uniqueId)
+        });
       });
     });
 
@@ -296,6 +332,9 @@ export const AnnualPaymentsTracker = () => {
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground">{payment.categoryName}</p>
+                            {payment.concept && (
+                              <p className="text-xs text-primary/80 mt-1 italic">📝 {payment.concept}</p>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
@@ -347,8 +386,11 @@ export const AnnualPaymentsTracker = () => {
                           </div>
                           <div className="space-y-1 max-h-40 overflow-y-auto">
                             {payment.paymentHistory.map((hist, idx) => (
-                              <div key={idx} className="flex justify-between text-sm py-1 border-b border-border/50 last:border-0">
-                                <span className="text-muted-foreground">{hist.formattedDate}</span>
+                              <div key={idx} className="flex flex-col sm:flex-row sm:justify-between text-sm py-2 border-b border-border/50 last:border-0 gap-1">
+                                <div className="flex flex-col">
+                                  <span className="text-muted-foreground">{hist.formattedDate}</span>
+                                  <span className="text-xs text-muted-foreground/70 italic">{hist.comment}</span>
+                                </div>
                                 <span className="font-medium">${formatCurrency(hist.amount)}</span>
                               </div>
                             ))}
