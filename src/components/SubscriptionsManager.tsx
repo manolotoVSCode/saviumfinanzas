@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Calendar, Clock, Repeat, RefreshCw, Edit2, Check, X } from 'lucide-react';
+import { CreditCard, Calendar, Clock, Repeat, RefreshCw, Edit2, Check, X, TrendingUp } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface SubscriptionService {
   id?: string;
@@ -736,6 +737,44 @@ export const SubscriptionsManager = () => {
     };
   }, [services]);
 
+  // Calculate monthly evolution data for chart
+  const monthlyEvolutionData = useMemo(() => {
+    if (!subscriptionTransactions || subscriptionTransactions.length === 0) {
+      return [];
+    }
+
+    const monthlyTotals: { [key: string]: number } = {};
+    const now = new Date();
+    
+    // Initialize last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyTotals[key] = 0;
+    }
+
+    // Aggregate transactions by month
+    subscriptionTransactions.forEach(t => {
+      const date = new Date(t.fecha);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (monthlyTotals.hasOwnProperty(key)) {
+        monthlyTotals[key] += t.gasto;
+      }
+    });
+
+    // Convert to chart data
+    return Object.entries(monthlyTotals).map(([key, total]) => {
+      const [year, month] = key.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1);
+      return {
+        month: date.toLocaleDateString('es-ES', { month: 'short' }),
+        fullMonth: date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
+        total,
+        key
+      };
+    });
+  }, [subscriptionTransactions]);
+
   // Función para obtener el color del badge de frecuencia
   const getFrequencyBadgeVariant = (frequency: string) => {
     switch (frequency) {
@@ -800,6 +839,55 @@ export const SubscriptionsManager = () => {
                 </div>
                 <div className="text-sm text-muted-foreground">por mes</div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Monthly Evolution Chart */}
+        {monthlyEvolutionData.length > 0 && monthlyEvolutionData.some(d => d.total > 0) && (
+          <div className="bg-card border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <h4 className="font-semibold">Evolución Mensual de Suscripciones</h4>
+            </div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyEvolutionData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                    className="fill-muted-foreground"
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    className="fill-muted-foreground"
+                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-popover border rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold capitalize">{data.fullMonth}</p>
+                            <p className="text-primary font-bold">${formatCurrency(data.total)}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                    {monthlyEvolutionData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={index === monthlyEvolutionData.length - 1 ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.6)'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         )}
