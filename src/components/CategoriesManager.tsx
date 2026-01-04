@@ -93,6 +93,11 @@ export const CategoriesManager = ({
     onUpdateCategory(categoryId, { seguimiento_pago: !currentValue });
   };
 
+  // Función para cambiar la frecuencia de seguimiento
+  const updateTrackingFrequency = (categoryId: string, frecuencia: 'mensual' | 'anual' | null) => {
+    onUpdateCategory(categoryId, { frecuencia_seguimiento: frecuencia });
+  };
+
   const handleSort = (key: keyof Category) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -260,8 +265,8 @@ export const CategoriesManager = ({
                   return (
                     <TableRow key={category.id}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {selectedType === 'Ingreso' && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {(selectedType === 'Ingreso' || selectedType === 'Gastos') && (
                             <Checkbox 
                               checked={category.seguimiento_pago || false}
                               onCheckedChange={() => togglePaymentTracking(category.id, category.seguimiento_pago || false)}
@@ -273,6 +278,20 @@ export const CategoriesManager = ({
                               <Calendar className="h-3 w-3 mr-1" />
                               Seguimiento
                             </Badge>
+                          )}
+                          {selectedType === 'Gastos' && category.seguimiento_pago && (
+                            <Select
+                              value={(category as any).frecuencia_seguimiento || 'mensual'}
+                              onValueChange={(value) => updateTrackingFrequency(category.id, value as 'mensual' | 'anual')}
+                            >
+                              <SelectTrigger className="h-6 w-auto text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="mensual">Mensual</SelectItem>
+                                <SelectItem value="anual">Anual</SelectItem>
+                              </SelectContent>
+                            </Select>
                           )}
                         </div>
                       </TableCell>
