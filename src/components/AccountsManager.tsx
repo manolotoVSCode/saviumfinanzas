@@ -51,17 +51,18 @@ export const AccountsManager = ({
   });
 
   const formatCurrency = (amount: number, currency: 'MXN' | 'USD' | 'EUR' = 'MXN') => {
-    const currencyInfo = {
-      'MXN': { code: 'MXN', locale: 'es-MX' },
-      'USD': { code: 'USD', locale: 'en-US' },
-      'EUR': { code: 'EUR', locale: 'de-DE' }
+    const currencySymbol = {
+      'MXN': '$',
+      'USD': '$',
+      'EUR': '€'
     };
     
-    const { code, locale } = currencyInfo[currency];
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: code
+    const formatted = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
+    
+    return `${currencySymbol[currency]}${formatted}`;
   };
 
   const resetForm = () => {

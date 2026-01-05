@@ -162,9 +162,9 @@ const CriptomonedasManager: React.FC = () => {
   const { formatCurrency } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
 
-  // Función para formatear con decimales
+  // Función para formatear con decimales usando el formato estándar (coma miles, punto decimales)
   const formatWithDecimals = (amount: number, decimals: number = 2): string => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     }).format(amount);
@@ -172,10 +172,10 @@ const CriptomonedasManager: React.FC = () => {
 
   // Función específica para formatear precios de criptomonedas (más decimales para números muy pequeños)
   const formatCryptoPrice = (amount: number): string => {
-    if (amount === 0) return '0,00';
+    if (amount === 0) return '0.00';
     if (amount < 0.01) {
       // Para precios muy pequeños, usar hasta 8 decimales
-      return new Intl.NumberFormat('es-ES', {
+      return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 8,
       }).format(amount);

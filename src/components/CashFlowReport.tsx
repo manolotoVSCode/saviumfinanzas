@@ -198,7 +198,7 @@ export const CashFlowReport = ({ metrics, formatCurrency, transactions }: CashFl
               <p className="text-muted-foreground">Cobertura de Gastos Operativos</p>
               <p className="font-semibold">
                 {cashFlowData.operatingOutflows > 0 
-                  ? ((cashFlowData.operatingInflows / cashFlowData.operatingOutflows) * 100).toFixed(1) 
+                  ? ((cashFlowData.operatingInflows / cashFlowData.operatingOutflows) * 100).toFixed(2) 
                   : '∞'}%
               </p>
             </div>
@@ -206,8 +206,8 @@ export const CashFlowReport = ({ metrics, formatCurrency, transactions }: CashFl
               <p className="text-muted-foreground">Ratio de Flujo de Inversión</p>
               <p className="font-semibold">
                 {cashFlowData.operatingInflows > 0 
-                  ? ((Math.abs(cashFlowData.netInvestmentCashFlow) / cashFlowData.operatingInflows) * 100).toFixed(1) 
-                  : '0'}%
+                  ? ((Math.abs(cashFlowData.netInvestmentCashFlow) / cashFlowData.operatingInflows) * 100).toFixed(2) 
+                  : '0.00'}%
               </p>
             </div>
           </div>

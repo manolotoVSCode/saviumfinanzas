@@ -708,14 +708,14 @@ const CategoryItem = ({
     return 'text-muted-foreground';
   };
 
-  // Función para formatear moneda consistentemente
+  // Función para formatear moneda consistentemente: coma para miles, punto para decimales, 2 decimales
   const formatCurrencyConsistent = (amount: number, currency: string) => {
-    return `${new Intl.NumberFormat('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(amount)} ${currency}`;
+    return `${new Intl.NumberFormat('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(amount)} ${currency}`;
   };
 
-  // Función para formatear totales sin decimales
+  // Función para formatear totales (también con 2 decimales)
   const formatCurrencyTotals = (amount: number, currency: string) => {
-    return `${new Intl.NumberFormat('es-ES', {minimumFractionDigits: 0, maximumFractionDigits: 0}).format(amount)} ${currency}`;
+    return `${new Intl.NumberFormat('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(amount)} ${currency}`;
   };
 
   // Calcular cambios en balance
@@ -1084,9 +1084,9 @@ const CategoryItem = ({
                   {/* Mostrar categorías por moneda con cuentas individuales */}
                   {Object.entries(metrics.activosPorMoneda).map(([moneda, activos]) => {
                     const formatNumberOnly = (amount: number) => {
-                      return new Intl.NumberFormat('es-MX', {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
+                      return new Intl.NumberFormat('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
                       }).format(amount);
                     };
 
@@ -1306,9 +1306,9 @@ const CategoryItem = ({
                   {/* Mostrar pasivos por moneda */}
                   {Object.entries(metrics.pasivosPorMoneda).map(([moneda, pasivos]) => {
                     const formatNumberOnly = (amount: number) => {
-                      return new Intl.NumberFormat('es-MX', {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
+                      return new Intl.NumberFormat('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
                       }).format(Math.abs(amount));
                     };
 

@@ -119,7 +119,7 @@ export const LiabilitiesReport = ({ metrics, formatCurrency, accounts }: Liabili
             <div className={`p-4 rounded-lg bg-${riskInfo.color}/5 border border-${riskInfo.color}/20`}>
               <h4 className="font-semibold mb-2">Ratio de Endeudamiento</h4>
               <div className={`text-3xl font-bold text-${riskInfo.color} mb-2`}>
-                {ratioDeuda.toFixed(1)}%
+                {ratioDeuda.toFixed(2)}%
               </div>
               <Progress value={Math.min(ratioDeuda, 100)} className="h-2 mb-2" />
               <Badge variant={riskInfo.color === 'success' ? 'default' : 'destructive'} className="text-xs">
@@ -144,7 +144,7 @@ export const LiabilitiesReport = ({ metrics, formatCurrency, accounts }: Liabili
                 <div className="flex justify-between border-t pt-2">
                   <span>Cobertura:</span>
                   <span className={`font-bold ${totalActivos > totalPasivos ? 'text-success' : 'text-destructive'}`}>
-                    {totalPasivos > 0 ? `${(totalActivos / totalPasivos).toFixed(1)}x` : '∞'}
+                    {totalPasivos > 0 ? `${(totalActivos / totalPasivos).toFixed(2)}x` : '∞'}
                   </span>
                 </div>
               </div>
@@ -156,13 +156,13 @@ export const LiabilitiesReport = ({ metrics, formatCurrency, accounts }: Liabili
                 {totales.creditCards > 0 && (
                   <div className="flex justify-between">
                     <span>Tarjetas:</span>
-                    <span>{calcularPorcentaje(totales.creditCards).toFixed(0)}%</span>
+                    <span>{calcularPorcentaje(totales.creditCards).toFixed(2)}%</span>
                   </div>
                 )}
                 {totales.mortgage > 0 && (
                   <div className="flex justify-between">
                     <span>Hipoteca:</span>
-                    <span>{calcularPorcentaje(totales.mortgage).toFixed(0)}%</span>
+                    <span>{calcularPorcentaje(totales.mortgage).toFixed(2)}%</span>
                   </div>
                 )}
               </div>
@@ -211,7 +211,7 @@ export const LiabilitiesReport = ({ metrics, formatCurrency, accounts }: Liabili
                 </div>
                 <Progress value={calcularPorcentaje(total)} className="h-2" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {calcularPorcentaje(total).toFixed(1)}% de todos los pasivos
+                  {calcularPorcentaje(total).toFixed(2)}% de todos los pasivos
                 </p>
               </div>
 
@@ -250,14 +250,14 @@ export const LiabilitiesReport = ({ metrics, formatCurrency, accounts }: Liabili
                             <div className="text-sm mt-1">
                               <span className="text-muted-foreground">Utilización:</span>
                               <span className={`ml-1 font-medium ${utilizacion > 80 ? 'text-destructive' : utilizacion > 50 ? 'text-warning' : 'text-success'}`}>
-                                {utilizacion.toFixed(1)}%
+                                {utilizacion.toFixed(2)}%
                               </span>
                             </div>
                           )}
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground mb-1">
-                            {porcentajeCategoria.toFixed(1)}% de {info.nombre.toLowerCase()}
+                            {porcentajeCategoria.toFixed(2)}% de {info.nombre.toLowerCase()}
                           </div>
                         </div>
                       </div>
