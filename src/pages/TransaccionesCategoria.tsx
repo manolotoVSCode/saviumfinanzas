@@ -104,7 +104,7 @@ const TransaccionesCategoria = () => {
   const totalGastos = filteredTransactions.reduce((sum, t) => sum + Math.abs(t.gasto || 0), 0);
 
   const formatCurrencyValue = (amount: number, currency: string) => {
-    return `${new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)} ${currency}`;
+    return `${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)} ${currency}`;
   };
 
   const handleEditClick = (transaction: Transaction & { categoria?: string; subcategoria?: string }) => {

@@ -77,7 +77,7 @@ export const ExchangeRates = () => {
     if (currency === 'MXN') {
       return '1.00';
     }
-    return new Intl.NumberFormat('es-MX', {
+    return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 4
     }).format(rate);

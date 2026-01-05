@@ -343,7 +343,7 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
                             categoryData.variacion > 0 ? 'text-success' : 
                             categoryData.variacion < 0 ? 'text-destructive' : ''
                           }`}>
-                            {categoryData.variacion > 0 ? '+' : ''}{categoryData.variacion.toFixed(1)}%
+                            {categoryData.variacion > 0 ? '+' : ''}{categoryData.variacion.toFixed(2)}%
                           </div>
                         </div>
                       </div>

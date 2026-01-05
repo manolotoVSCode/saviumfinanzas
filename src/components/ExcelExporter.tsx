@@ -34,7 +34,7 @@ export const ExcelExporter = ({ transactions, accounts, categories }: ExcelExpor
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
+    return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);

@@ -122,25 +122,25 @@ export const AssetsReport = ({ metrics, formatCurrency, accounts, onAccountUpdat
               <Wallet className="h-8 w-8 mx-auto mb-2 text-success" />
               <p className="text-sm text-muted-foreground">Liquidez Inmediata</p>
               <p className="text-xl font-bold text-success">{formatCurrency(totales.liquidez)}</p>
-              <p className="text-xs text-muted-foreground">{calcularPorcentaje(totales.liquidez).toFixed(1)}% del total</p>
+              <p className="text-xs text-muted-foreground">{calcularPorcentaje(totales.liquidez).toFixed(2)}% del total</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-primary/5">
               <PieChart className="h-8 w-8 mx-auto mb-2 text-primary" />
               <p className="text-sm text-muted-foreground">Inversiones</p>
               <p className="text-xl font-bold text-primary">{formatCurrency(totales.inversiones)}</p>
-              <p className="text-xs text-muted-foreground">{calcularPorcentaje(totales.inversiones).toFixed(1)}% del total</p>
+              <p className="text-xs text-muted-foreground">{calcularPorcentaje(totales.inversiones).toFixed(2)}% del total</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-warning/5">
               <Building className="h-8 w-8 mx-auto mb-2 text-warning" />
               <p className="text-sm text-muted-foreground">Bienes Raíces</p>
               <p className="text-xl font-bold text-warning">{formatCurrency(totales.bienRaiz)}</p>
-              <p className="text-xs text-muted-foreground">{calcularPorcentaje(totales.bienRaiz).toFixed(1)}% del total</p>
+              <p className="text-xs text-muted-foreground">{calcularPorcentaje(totales.bienRaiz).toFixed(2)}% del total</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-accent/5">
               <DollarSign className="h-8 w-8 mx-auto mb-2 text-accent" />
               <p className="text-sm text-muted-foreground">Empresas Propias</p>
               <p className="text-xl font-bold text-accent">{formatCurrency(totales.empresas)}</p>
-              <p className="text-xs text-muted-foreground">{calcularPorcentaje(totales.empresas).toFixed(1)}% del total</p>
+              <p className="text-xs text-muted-foreground">{calcularPorcentaje(totales.empresas).toFixed(2)}% del total</p>
             </div>
           </div>
           
@@ -185,7 +185,7 @@ export const AssetsReport = ({ metrics, formatCurrency, accounts, onAccountUpdat
                 </div>
                 <Progress value={calcularPorcentaje(total)} className="h-2" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {calcularPorcentaje(total).toFixed(1)}% de todos los activos
+                  {calcularPorcentaje(total).toFixed(2)}% de todos los activos
                 </p>
               </div>
 
@@ -233,11 +233,11 @@ export const AssetsReport = ({ metrics, formatCurrency, accounts, onAccountUpdat
                          </div>
                          <div className="text-right">
                            <div className="text-sm text-muted-foreground mb-1">
-                             {porcentajeCategoria.toFixed(1)}% de {info.nombre.toLowerCase()}
+                             {porcentajeCategoria.toFixed(2)}% de {info.nombre.toLowerCase()}
                            </div>
                            {categoria === 'inversiones' && rendimiento !== 0 && (
                              <div className={`text-xs ${getTrendColor(rendimiento)}`}>
-                               {rendimiento > 0 ? '+' : ''}{((rendimiento / cuenta.saldoInicial) * 100).toFixed(1)}%
+                               {rendimiento > 0 ? '+' : ''}{((rendimiento / cuenta.saldoInicial) * 100).toFixed(2)}%
                              </div>
                            )}
                          </div>
@@ -308,19 +308,19 @@ export const AssetsReport = ({ metrics, formatCurrency, accounts, onAccountUpdat
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Liquidez:</span>
-                  <span>{calcularPorcentaje(totales.liquidez).toFixed(1)}%</span>
+                  <span>{calcularPorcentaje(totales.liquidez).toFixed(2)}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Inversiones:</span>
-                  <span>{calcularPorcentaje(totales.inversiones).toFixed(1)}%</span>
+                  <span>{calcularPorcentaje(totales.inversiones).toFixed(2)}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Bienes Raíces:</span>
-                  <span>{calcularPorcentaje(totales.bienRaiz).toFixed(1)}%</span>
+                  <span>{calcularPorcentaje(totales.bienRaiz).toFixed(2)}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Empresas:</span>
-                  <span>{calcularPorcentaje(totales.empresas).toFixed(1)}%</span>
+                  <span>{calcularPorcentaje(totales.empresas).toFixed(2)}%</span>
                 </div>
               </div>
             </div>

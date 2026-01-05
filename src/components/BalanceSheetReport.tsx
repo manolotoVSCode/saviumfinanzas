@@ -157,7 +157,7 @@ export const BalanceSheetReport = ({ metrics, formatCurrency, accounts }: Balanc
                                 ${formatCurrency(totalCategoria)}
                               </span>
                               <p className="text-xs text-muted-foreground">
-                                {((totalCategoria / balanceData.totalAssets) * 100).toFixed(1)}%
+                                {((totalCategoria / balanceData.totalAssets) * 100).toFixed(2)}%
                               </p>
                             </div>
                             <ChevronDown className={`h-4 w-4 transition-transform ${openAssetCategories[tipo] ? 'rotate-180' : ''}`} />
@@ -180,7 +180,7 @@ export const BalanceSheetReport = ({ metrics, formatCurrency, accounts }: Balanc
                                     ${formatCurrency(account.saldoActual)}
                                   </span>
                                   <p className="text-xs text-muted-foreground">
-                                    {((account.saldoActual / balanceData.totalAssets) * 100).toFixed(1)}%
+                                    {((account.saldoActual / balanceData.totalAssets) * 100).toFixed(2)}%
                                   </p>
                                 </div>
                               </div>
@@ -224,7 +224,7 @@ export const BalanceSheetReport = ({ metrics, formatCurrency, accounts }: Balanc
                                 ${formatCurrency(totalCategoria)}
                               </span>
                               <p className="text-xs text-muted-foreground">
-                                {((totalCategoria / balanceData.totalLiabilities) * 100).toFixed(1)}%
+                                {((totalCategoria / balanceData.totalLiabilities) * 100).toFixed(2)}%
                               </p>
                             </div>
                             <ChevronDown className={`h-4 w-4 transition-transform ${openLiabilityCategories[tipo] ? 'rotate-180' : ''}`} />
@@ -247,7 +247,7 @@ export const BalanceSheetReport = ({ metrics, formatCurrency, accounts }: Balanc
                                     ${formatCurrency(Math.abs(account.saldoActual))}
                                   </span>
                                   <p className="text-xs text-muted-foreground">
-                                    {((Math.abs(account.saldoActual) / balanceData.totalLiabilities) * 100).toFixed(1)}%
+                                    {((Math.abs(account.saldoActual) / balanceData.totalLiabilities) * 100).toFixed(2)}%
                                   </p>
                                 </div>
                               </div>
@@ -271,16 +271,16 @@ export const BalanceSheetReport = ({ metrics, formatCurrency, accounts }: Balanc
               <p className="text-muted-foreground">Ratio de Endeudamiento</p>
               <p className="font-semibold">
                 {balanceData.totalAssets > 0 
-                  ? ((balanceData.totalLiabilities / balanceData.totalAssets) * 100).toFixed(1) 
-                  : '0'}%
+                  ? ((balanceData.totalLiabilities / balanceData.totalAssets) * 100).toFixed(2) 
+                  : '0.00'}%
               </p>
             </div>
             <div className="p-3 rounded-lg bg-muted">
               <p className="text-muted-foreground">Ratio de Patrimonio</p>
               <p className="font-semibold">
                 {balanceData.totalAssets > 0 
-                  ? ((balanceData.netWorth / balanceData.totalAssets) * 100).toFixed(1) 
-                  : '0'}%
+                  ? ((balanceData.netWorth / balanceData.totalAssets) * 100).toFixed(2) 
+                  : '0.00'}%
               </p>
             </div>
             <div className="p-3 rounded-lg bg-muted">

@@ -146,7 +146,7 @@ export const ProfitLossReport = ({ metrics, formatCurrency, transactions, catego
                     ${formatCurrency(previousMonthPL.netIncome)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Margen: {profitMargin.toFixed(1)}%
+                    Margen: {profitMargin.toFixed(2)}%
                   </p>
                 </div>
                 <DollarSign className={`h-8 w-8 ${
@@ -172,7 +172,7 @@ export const ProfitLossReport = ({ metrics, formatCurrency, transactions, catego
                           ${formatCurrency(item.amount)}
                         </span>
                         <p className="text-xs text-muted-foreground">
-                          {((item.amount / previousMonthPL.income) * 100).toFixed(1)}%
+                          {((item.amount / previousMonthPL.income) * 100).toFixed(2)}%
                         </p>
                       </div>
                     </div>
@@ -196,7 +196,7 @@ export const ProfitLossReport = ({ metrics, formatCurrency, transactions, catego
                           ${formatCurrency(item.amount)}
                         </span>
                         <p className="text-xs text-muted-foreground">
-                          {((item.amount / previousMonthPL.expenses) * 100).toFixed(1)}%
+                          {((item.amount / previousMonthPL.expenses) * 100).toFixed(2)}%
                         </p>
                       </div>
                     </div>
@@ -218,12 +218,12 @@ export const ProfitLossReport = ({ metrics, formatCurrency, transactions, catego
               </div>
               <div className="p-3 rounded-lg bg-muted">
                 <p className="text-muted-foreground">Margen de Ganancia</p>
-                <p className="font-semibold">{profitMargin.toFixed(1)}%</p>
+                <p className="font-semibold">{profitMargin.toFixed(2)}%</p>
               </div>
               <div className="p-3 rounded-lg bg-muted">
                 <p className="text-muted-foreground">Eficiencia de Gastos</p>
                 <p className="font-semibold">
-                  {previousMonthPL.income > 0 ? ((previousMonthPL.expenses / previousMonthPL.income) * 100).toFixed(1) : '0'}%
+                  {previousMonthPL.income > 0 ? ((previousMonthPL.expenses / previousMonthPL.income) * 100).toFixed(2) : '0.00'}%
                 </p>
               </div>
             </div>

@@ -205,9 +205,9 @@ export const TransactionsManager = ({
   });
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -1568,7 +1568,7 @@ export const TransactionsManager = ({
                   </TableCell>
                   <TableCell className="max-w-xs truncate">{transaction.comentario}</TableCell>
                   <TableCell className={transaction.monto >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    {new Intl.NumberFormat('es-ES').format(Math.abs(transaction.monto))}
+                    {new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(transaction.monto))}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-xs">
