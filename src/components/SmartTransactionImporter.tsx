@@ -79,6 +79,17 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (!accountType) {
+      toast({
+        title: 'Selecciona el tipo de cuenta',
+        description: 'Antes de importar, elige si es cuenta bancaria o tarjeta de crédito.',
+        variant: 'destructive',
+      });
+      setImportStatus({ type: 'error', message: 'Seleccione el tipo de cuenta (banco o tarjeta) antes de importar.' });
+      event.target.value = '';
+      return;
+    }
+
     setIsProcessing(true);
     setImportStatus({ type: 'info', message: '🤖 Analizando archivo con IA...' });
     setFileName(file.name);

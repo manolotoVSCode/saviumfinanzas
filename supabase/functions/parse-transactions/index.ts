@@ -41,6 +41,130 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
+type CsvSignedEntry = {
+  fechaIso: string;
+  descripcion: string;
+  importe: number; // signed
+};
+
+function normalizeText(s: string) {
+  return (s || '')
+    .toUpperCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^A-Z0-9 ]/g, '')
+    .trim();
+}
+
+function parseAmexDateToIso(value: string): string | null {
+  // Example: "06 Jan 2026"
+  const parts = (value || '').trim().split(/\s+/);
+  if (parts.length !== 3) return null;
+  const [ddStr, monStr, yyyyStr] = parts;
+  const dd = Number(ddStr);
+  const yyyy = Number(yyyyStr);
+  const months: Record<string, number> = {
+    JAN: 1,
+    FEB: 2,
+    MAR: 3,
+    APR: 4,
+    MAY: 5,
+    JUN: 6,
+    JUL: 7,
+    AUG: 8,
+    SEP: 9,
+    OCT: 10,
+    NOV: 11,
+    DEC: 12,
+  };
+  const mm = months[monStr.toUpperCase()];
+  if (!dd || !mm || !yyyy) return null;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${yyyy}-${pad(mm)}-${pad(dd)}`;
+}
+
+function parseCsv(content: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i];
+
+    if (inQuotes) {
+      if (ch === '"') {
+        const next = content[i + 1];
+        if (next === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inQuotes = true;
+      continue;
+    }
+
+    if (ch === ',') {
+      row.push(field);
+      field = '';
+      continue;
+    }
+
+    if (ch === '\n') {
+      row.push(field);
+      field = '';
+      rows.push(row);
+      row = [];
+      continue;
+    }
+
+    if (ch === '\r') {
+      continue;
+    }
+
+    field += ch;
+  }
+
+  // Flush last field
+  row.push(field);
+  rows.push(row);
+
+  return rows.filter((r) => r.some((c) => (c || '').trim() !== ''));
+}
+
+function tryParseAmexSignedEntries(fileContent: string): CsvSignedEntry[] | null {
+  // Only attempt for CSV exports that contain the "Importe" column
+  if (!fileContent.includes('Importe')) return null;
+
+  const rows = parseCsv(fileContent);
+  if (!rows.length) return null;
+
+  const header = rows[0].map((h) => (h || '').trim());
+  const idxFecha = header.findIndex((h) => h.toLowerCase() === 'fecha');
+  const idxDesc = header.findIndex((h) => h.toLowerCase() === 'descripción' || h.toLowerCase() === 'descripcion');
+  const idxImporte = header.findIndex((h) => h.toLowerCase() === 'importe');
+
+  if (idxFecha === -1 || idxDesc === -1 || idxImporte === -1) return null;
+
+  const entries: CsvSignedEntry[] = [];
+  for (const r of rows.slice(1)) {
+    const fechaIso = parseAmexDateToIso(r[idxFecha] || '');
+    const descripcion = (r[idxDesc] || '').trim();
+    const importe = Number(String(r[idxImporte] || '').replace(/,/g, '').trim());
+    if (!fechaIso || !descripcion || !Number.isFinite(importe)) continue;
+    entries.push({ fechaIso, descripcion, importe });
+  }
+
+  return entries.length ? entries : null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -225,6 +349,7 @@ IMPORTANTE:
 - NUNCA agregues "SIN ASIGNAR" a newCategorySuggestions - es una categoría del sistema que ya existe`;
 
     let messages: any[];
+    let signedEntries: CsvSignedEntry[] | null = null;
 
     if (isPDF || isImage) {
       // For PDFs and images, use vision model with base64
@@ -256,6 +381,10 @@ IMPORTANTE:
       // For CSV/Excel/text files, read as text
       const fileContent = await file.text();
       console.log(`Processing text file, content length: ${fileContent.length} chars`);
+      signedEntries = tryParseAmexSignedEntries(fileContent);
+      if (signedEntries) {
+        console.log(`Detected CSV signed amounts (rows): ${signedEntries.length}`);
+      }
       
       messages = [
         { role: 'system', content: systemPrompt },
@@ -385,43 +514,50 @@ IMPORTANTE:
       const finalCategory = matchedCategory || partialMatch || categoryMatch;
       const sinAsignar = categories.find((c) => c.subcategoria.toUpperCase() === 'SIN ASIGNAR');
 
-      // Get raw amounts from AI response
-      let rawIngreso = Number(t.ingreso) || 0;
-      let rawGasto = Number(t.gasto) || 0;
-      
-      // Determine the base amount (whichever is non-zero)
-      const baseAmount = rawIngreso > 0 ? rawIngreso : rawGasto;
-      
+      // Amount normalization
+      const signedAmount = (() => {
+        if (!signedEntries || !t?.fecha || !t?.comentario) return null;
+        const fechaIso = String(t.fecha).trim();
+        const target = normalizeText(String(t.comentario));
+        // Find best match by same date and description similarity
+        for (const e of signedEntries) {
+          if (e.fechaIso !== fechaIso) continue;
+          const cand = normalizeText(e.descripcion);
+          if (cand.includes(target) || target.includes(cand)) return e.importe;
+        }
+        // fallback: date only
+        const first = signedEntries.find((e) => e.fechaIso === fechaIso);
+        return first?.importe ?? null;
+      })();
+
+      const abs = (n: number) => Math.abs(n);
       let ingreso = 0;
       let gasto = 0;
 
-      if (isCreditCard) {
-        // CREDIT CARD LOGIC:
-        // - Negative amounts in CSV = income (payment/refund to card)
-        // - Positive amounts in CSV = expense (purchase/charge)
-        // The AI may have parsed signs as it saw them, so we trust the raw values
-        // and apply our rule: if AI marked as gasto, it's an expense; if ingreso, it's income
-        
-        // Special case: refunds and payments to card are always income
+      if (signedAmount !== null) {
+        // When we can read the signed amount from the CSV, it's the source of truth.
+        if (isCreditCard) {
+          // CREDIT CARD: negative = income, positive = expense (as requested)
+          if (signedAmount < 0) ingreso = abs(signedAmount);
+          else gasto = abs(signedAmount);
+        } else {
+          // BANK: negative = expense, positive = income
+          if (signedAmount < 0) gasto = abs(signedAmount);
+          else ingreso = abs(signedAmount);
+        }
+      } else {
+        // Fallback to AI output when we couldn't detect signed amounts
+        const rawIngreso = Number(t.ingreso) || 0;
+        const rawGasto = Number(t.gasto) || 0;
+
+        // Refunds and payments to card are always income
         if (isRefundLike(t.comentario) || isPaymentToCard(t.comentario)) {
+          const baseAmount = rawIngreso > 0 ? rawIngreso : rawGasto;
           ingreso = baseAmount;
           gasto = 0;
         } else {
-          // For credit cards, AI's gasto means expense, ingreso means income
           ingreso = rawIngreso;
           gasto = rawGasto;
-        }
-      } else {
-        // BANK ACCOUNT LOGIC:
-        // - Negative amounts = expense
-        // - Positive amounts = income
-        ingreso = rawIngreso;
-        gasto = rawGasto;
-        
-        // Still apply refund heuristics for bank accounts
-        if (gasto > 0 && ingreso === 0 && isRefundLike(t.comentario)) {
-          ingreso = gasto;
-          gasto = 0;
         }
       }
 
