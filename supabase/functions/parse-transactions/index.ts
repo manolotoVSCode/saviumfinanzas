@@ -233,8 +233,8 @@ IMPORTANTE:
 
     console.log('Calling AI for transaction parsing...');
 
-    // Use gemini-2.5-pro for vision capabilities with PDFs
-    const modelToUse = (isPDF || isImage) ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
+    // Use gemini-2.5-flash for all files to reduce credit consumption
+    const modelToUse = 'google/gemini-2.5-flash';
     console.log(`Using model: ${modelToUse}`);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
