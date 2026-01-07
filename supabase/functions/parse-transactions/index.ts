@@ -71,6 +71,7 @@ serve(async (req) => {
     const formData = await req.formData();
     const file = formData.get('file') as File;
     const categoriesJson = formData.get('categories') as string;
+    const accountType = formData.get('accountType') as string || 'bank'; // 'bank' or 'credit_card'
     
     if (!file) {
       throw new Error('No file provided');
@@ -81,7 +82,11 @@ serve(async (req) => {
     const isPDF = fileName.endsWith('.pdf');
     const isImage = fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg');
     
-    console.log(`Processing file: ${file.name}, size: ${file.size} bytes, isPDF: ${isPDF}, isImage: ${isImage}`);
+    // For credit cards: negative = income, positive = expense
+    // For banks: negative = expense, positive = income
+    const isCreditCard = accountType === 'credit_card';
+    
+    console.log(`Processing file: ${file.name}, size: ${file.size} bytes, isPDF: ${isPDF}, isImage: ${isImage}, accountType: ${accountType}`);
 
     // Fetch user's historical transactions for learning
     const { data: historicalData } = await supabaseClient
@@ -110,12 +115,25 @@ serve(async (req) => {
       `"${t.comentario}" → ${t.categoria} > ${t.subcategoria}`
     ).join('\n');
 
-    const systemPrompt = `Eres un asistente financiero experto en extraer y clasificar transacciones de estados de cuenta bancarios.
+    const signLogicInstructions = isCreditCard
+      ? `TIPO DE CUENTA: TARJETA DE CRÉDITO
+REGLAS DE SIGNOS PARA TARJETA DE CRÉDITO:
+- Los MONTOS NEGATIVOS en el archivo son INGRESOS (pagos a la tarjeta, reembolsos, bonificaciones) → ingreso > 0, gasto = 0
+- Los MONTOS POSITIVOS en el archivo son GASTOS (cargos, compras, consumos) → gasto > 0, ingreso = 0
+- IMPORTANTE: El signo en el archivo CSV/PDF indica el flujo real de dinero desde la perspectiva del estado de cuenta de la tarjeta`
+      : `TIPO DE CUENTA: CUENTA BANCARIA
+REGLAS DE SIGNOS PARA CUENTA BANCARIA:
+- Los MONTOS NEGATIVOS en el archivo son GASTOS (retiros, pagos, transferencias enviadas) → gasto > 0, ingreso = 0
+- Los MONTOS POSITIVOS en el archivo son INGRESOS (depósitos, transferencias recibidas) → ingreso > 0, gasto = 0`;
+
+    const systemPrompt = `Eres un asistente financiero experto en extraer y clasificar transacciones de estados de cuenta.
 
 Tu tarea es:
 1. EXTRAER todas las transacciones del documento (fechas, descripciones, montos)
 2. CLASIFICAR cada transacción en la categoría y subcategoría más apropiada
 3. SUGERIR nuevas categorías cuando no exista una apropiada
+
+${signLogicInstructions}
 
 CATEGORÍAS DISPONIBLES DEL USUARIO:
 ${categoriesInfo}
@@ -127,13 +145,12 @@ REGLAS DE EXTRACCIÓN:
 - Busca patrones de fecha (DD/MM/AAAA, DD-MM-AAAA, MM/DD/AAAA, etc.)
 - Identifica montos con símbolos de moneda ($, €, MXN, USD) o sin ellos
 - IMPORTANTE: Ignora líneas de saldo, totales, o información que no sea una transacción individual
+- CRÍTICO: Respeta el signo del monto según las reglas de tipo de cuenta indicadas arriba
 
-REGLAS CRÍTICAS DE CLASIFICACIÓN INGRESO/GASTO:
-1. Los CARGOS/COMPRAS/CONSUMOS son GASTOS (gasto > 0, ingreso = 0)
-2. Los ABONOS/REEMBOLSOS/DEVOLUCIONES/BONIFICACIONES son INGRESOS (ingreso > 0, gasto = 0)
-   - Si ves palabras como: DEVOLUCION, REEMBOLSO, BONIFICACION, AJUSTE A FAVOR, CASHBACK, PUNTOS → es INGRESO
-   - Un monto negativo en un cargo o un crédito a favor → es INGRESO
-3. Los PAGOS realizados a la tarjeta (ej: PAGO RECIBIDO, PAGO GRACIAS, TU PAGO, PAGO EN LINEA) son APORTACIONES → usar "SIN ASIGNAR > SIN ASIGNAR"
+REGLAS ADICIONALES DE CLASIFICACIÓN INGRESO/GASTO:
+1. REEMBOLSOS/DEVOLUCIONES/BONIFICACIONES siempre son INGRESOS (ingreso > 0, gasto = 0)
+   - Palabras clave: DEVOLUCION, REEMBOLSO, BONIFICACION, AJUSTE A FAVOR, CASHBACK
+2. Los PAGOS realizados a la tarjeta (ej: PAGO RECIBIDO, GRACIAS POR SU PAGO, TU PAGO, PAGO EN LINEA) son APORTACIONES → usar "SIN ASIGNAR > SIN ASIGNAR" y son INGRESOS
 
 REGLAS DE CLASIFICACIÓN DE CATEGORÍAS:
 - Si hay categoría existente que encaje EXACTAMENTE, úsala (confidence: "high")
@@ -314,7 +331,7 @@ IMPORTANTE:
       throw new Error('Failed to parse AI response. The AI could not extract transactions from this file format.');
     }
 
-    // Map suggested categories to category IDs + enforce critical income/expense heuristics
+    // Map suggested categories to category IDs + apply sign logic based on account type
     const isRefundLike = (comentarioRaw: string) => {
       const comentario = (comentarioRaw || '').toUpperCase();
       return [
@@ -328,12 +345,10 @@ IMPORTANTE:
         'REFUND',
         'CHARGEBACK',
         'DISPUTE',
-        'CREDITO',
-        'CRÉDITO',
       ].some((k) => comentario.includes(k));
     };
 
-    const isAmexPaymentLike = (comentarioRaw: string) => {
+    const isPaymentToCard = (comentarioRaw: string) => {
       const comentario = (comentarioRaw || '').toUpperCase();
       return [
         'PAGO RECIBIDO',
@@ -342,6 +357,7 @@ IMPORTANTE:
         'PAGO EN LINEA',
         'PAYMENT RECEIVED',
         'THANK YOU',
+        'GRACIAS POR SU PAGO',
       ].some((k) => comentario.includes(k));
     };
 
@@ -369,13 +385,44 @@ IMPORTANTE:
       const finalCategory = matchedCategory || partialMatch || categoryMatch;
       const sinAsignar = categories.find((c) => c.subcategoria.toUpperCase() === 'SIN ASIGNAR');
 
-      let ingreso = Number(t.ingreso) || 0;
-      let gasto = Number(t.gasto) || 0;
+      // Get raw amounts from AI response
+      let rawIngreso = Number(t.ingreso) || 0;
+      let rawGasto = Number(t.gasto) || 0;
+      
+      // Determine the base amount (whichever is non-zero)
+      const baseAmount = rawIngreso > 0 ? rawIngreso : rawGasto;
+      
+      let ingreso = 0;
+      let gasto = 0;
 
-      // Enforce refund/reimbursement as income (even if model got the sign wrong)
-      if (ingreso === 0 && gasto > 0 && isRefundLike(t.comentario)) {
-        ingreso = gasto;
-        gasto = 0;
+      if (isCreditCard) {
+        // CREDIT CARD LOGIC:
+        // - Negative amounts in CSV = income (payment/refund to card)
+        // - Positive amounts in CSV = expense (purchase/charge)
+        // The AI may have parsed signs as it saw them, so we trust the raw values
+        // and apply our rule: if AI marked as gasto, it's an expense; if ingreso, it's income
+        
+        // Special case: refunds and payments to card are always income
+        if (isRefundLike(t.comentario) || isPaymentToCard(t.comentario)) {
+          ingreso = baseAmount;
+          gasto = 0;
+        } else {
+          // For credit cards, AI's gasto means expense, ingreso means income
+          ingreso = rawIngreso;
+          gasto = rawGasto;
+        }
+      } else {
+        // BANK ACCOUNT LOGIC:
+        // - Negative amounts = expense
+        // - Positive amounts = income
+        ingreso = rawIngreso;
+        gasto = rawGasto;
+        
+        // Still apply refund heuristics for bank accounts
+        if (gasto > 0 && ingreso === 0 && isRefundLike(t.comentario)) {
+          ingreso = gasto;
+          gasto = 0;
+        }
       }
 
       return {
