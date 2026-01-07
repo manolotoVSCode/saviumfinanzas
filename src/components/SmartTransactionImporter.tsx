@@ -46,10 +46,17 @@ const CURRENCIES: Array<{ value: 'MXN' | 'USD' | 'EUR'; label: string }> = [
   { value: 'EUR', label: 'Euro (EUR)' }
 ];
 
+type AccountType = 'bank' | 'credit_card';
+
+const ACCOUNT_TYPES: Array<{ value: AccountType; label: string; description: string }> = [
+  { value: 'bank', label: 'Cuenta Bancaria', description: 'Negativo = gasto, Positivo = ingreso' },
+  { value: 'credit_card', label: 'Tarjeta de Crédito', description: 'Negativo = ingreso/abono, Positivo = gasto/cargo' }
+];
+
 const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }: SmartTransactionImporterProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<'upload' | 'preview' | 'configure'>('upload');
+  const [step, setStep] = useState<'select_type' | 'upload' | 'preview' | 'configure'>('select_type');
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; message: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [parsedTransactions, setParsedTransactions] = useState<ParsedTransaction[]>([]);
@@ -59,6 +66,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
   const [fileName, setFileName] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [confidenceFilter, setConfidenceFilter] = useState<'all' | 'high' | 'medium' | 'low' | 'new'>('all');
+  const [accountType, setAccountType] = useState<AccountType | ''>('');
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'decimal',
@@ -79,6 +87,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
       const formData = new FormData();
       formData.append('file', file);
       formData.append('categories', JSON.stringify(categories));
+      formData.append('accountType', accountType);
 
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -208,7 +217,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
 
   const handleClose = () => {
     setIsOpen(false);
-    setStep('upload');
+    setStep('select_type');
     setParsedTransactions([]);
     setNewCategorySuggestions([]);
     setSelectedCurrency('');
@@ -217,6 +226,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
     setFileName('');
     setSearchTerm('');
     setConfidenceFilter('all');
+    setAccountType('');
   };
 
   const filteredTransactions = parsedTransactions.filter(t => {
@@ -248,11 +258,51 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
+            {step === 'select_type' && '¿Qué tipo de cuenta estás importando?'}
             {step === 'upload' && 'Importar Transacciones con IA'}
             {step === 'preview' && `Vista Previa - ${fileName}`}
             {step === 'configure' && 'Configurar Importación'}
           </DialogTitle>
         </DialogHeader>
+
+        {step === 'select_type' && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Esto determina cómo interpretar los signos (+/-) de los montos:
+            </p>
+            
+            <div className="grid gap-3">
+              {ACCOUNT_TYPES.map((type) => (
+                <button
+                  key={type.value}
+                  onClick={() => setAccountType(type.value)}
+                  className={`flex flex-col items-start gap-1 p-4 rounded-lg border-2 text-left transition-all ${
+                    accountType === type.value 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <span className="font-medium">{type.label}</span>
+                  <span className="text-xs text-muted-foreground">{type.description}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" onClick={handleClose}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => setStep('upload')} 
+                className="flex-1 gap-2" 
+                disabled={!accountType}
+              >
+                <ArrowRight className="h-4 w-4" />
+                Continuar
+              </Button>
+            </div>
+          </div>
+        )}
         
         {step === 'upload' && (
           <div className="space-y-4">
@@ -305,9 +355,13 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
               </Alert>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={handleClose}>
                 Cancelar
+              </Button>
+              <Button variant="outline" onClick={() => setStep('select_type')} className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Volver
               </Button>
             </div>
           </div>
