@@ -89,21 +89,32 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
         body: formData,
       });
 
+      // Check for specific error codes in the response
       if (response.error) {
-        // Check for specific error types
         const errorMessage = response.error.message || 'Error al procesar archivo';
-        if (errorMessage.includes('402') || errorMessage.includes('payment_required') || errorMessage.includes('credits')) {
-          throw new Error('Sin créditos disponibles para el procesamiento con IA. Por favor, contacta al administrador.');
+        const errorContext = response.error.context;
+        
+        // Check if it's a credit/payment error
+        if (errorContext?.status === 402 || errorMessage.includes('402') || errorMessage.includes('Payment required') || errorMessage.includes('credits')) {
+          throw new Error('Sin créditos disponibles para el procesamiento con IA. Ve a Settings → Workspace → Usage para agregar créditos.');
+        }
+        // Check for rate limits
+        if (errorContext?.status === 429 || errorMessage.includes('429') || errorMessage.includes('Rate limit')) {
+          throw new Error('Demasiadas solicitudes. Por favor espera un momento e intenta de nuevo.');
         }
         throw new Error(errorMessage);
       }
 
       const result = response.data;
 
+      if (!result) {
+        throw new Error('No se recibió respuesta del servidor');
+      }
+
       if (!result.success) {
         const errorMsg = result.error || 'Error al analizar el archivo';
-        if (errorMsg.includes('402') || errorMsg.includes('payment_required') || errorMsg.includes('credits')) {
-          throw new Error('Sin créditos disponibles para el procesamiento con IA. Por favor, contacta al administrador.');
+        if (errorMsg.includes('402') || errorMsg.includes('Payment required') || errorMsg.includes('credits')) {
+          throw new Error('Sin créditos disponibles para el procesamiento con IA. Ve a Settings → Workspace → Usage para agregar créditos.');
         }
         throw new Error(errorMsg);
       }
