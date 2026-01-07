@@ -314,36 +314,79 @@ IMPORTANTE:
       throw new Error('Failed to parse AI response. The AI could not extract transactions from this file format.');
     }
 
-    // Map suggested categories to category IDs
+    // Map suggested categories to category IDs + enforce critical income/expense heuristics
+    const isRefundLike = (comentarioRaw: string) => {
+      const comentario = (comentarioRaw || '').toUpperCase();
+      return [
+        'REEMBOL',
+        'DEVOLUC',
+        'BONIFIC',
+        'AJUSTE A FAVOR',
+        'A FAVOR',
+        'CASHBACK',
+        'REVERS',
+        'REFUND',
+        'CHARGEBACK',
+        'DISPUTE',
+        'CREDITO',
+        'CRÉDITO',
+      ].some((k) => comentario.includes(k));
+    };
+
+    const isAmexPaymentLike = (comentarioRaw: string) => {
+      const comentario = (comentarioRaw || '').toUpperCase();
+      return [
+        'PAGO RECIBIDO',
+        'PAGO GRACIAS',
+        'TU PAGO',
+        'PAGO EN LINEA',
+        'PAYMENT RECEIVED',
+        'THANK YOU',
+      ].some((k) => comentario.includes(k));
+    };
+
     const transactions: ParsedTransaction[] = (parsedResult.transactions || []).map((t: any) => {
-      const matchedCategory = categories.find(c => 
-        c.categoria.toLowerCase() === (t.suggestedCategory || '').toLowerCase() &&
-        c.subcategoria.toLowerCase() === (t.suggestedSubcategory || '').toLowerCase()
+      const matchedCategory = categories.find(
+        (c) =>
+          c.categoria.toLowerCase() === (t.suggestedCategory || '').toLowerCase() &&
+          c.subcategoria.toLowerCase() === (t.suggestedSubcategory || '').toLowerCase()
       );
 
       // If no exact match, try partial match on subcategory
-      const partialMatch = !matchedCategory ? categories.find(c => 
-        c.subcategoria.toLowerCase().includes((t.suggestedSubcategory || '').toLowerCase()) ||
-        (t.suggestedSubcategory || '').toLowerCase().includes(c.subcategoria.toLowerCase())
-      ) : null;
+      const partialMatch = !matchedCategory
+        ? categories.find(
+            (c) =>
+              c.subcategoria.toLowerCase().includes((t.suggestedSubcategory || '').toLowerCase()) ||
+              (t.suggestedSubcategory || '').toLowerCase().includes(c.subcategoria.toLowerCase())
+          )
+        : null;
 
       // If still no match, try matching just the category
-      const categoryMatch = (!matchedCategory && !partialMatch) ? categories.find(c => 
-        c.categoria.toLowerCase() === (t.suggestedCategory || '').toLowerCase()
-      ) : null;
+      const categoryMatch = !matchedCategory && !partialMatch
+        ? categories.find((c) => c.categoria.toLowerCase() === (t.suggestedCategory || '').toLowerCase())
+        : null;
 
       const finalCategory = matchedCategory || partialMatch || categoryMatch;
-      const sinAsignar = categories.find(c => c.subcategoria.toUpperCase() === 'SIN ASIGNAR');
+      const sinAsignar = categories.find((c) => c.subcategoria.toUpperCase() === 'SIN ASIGNAR');
+
+      let ingreso = Number(t.ingreso) || 0;
+      let gasto = Number(t.gasto) || 0;
+
+      // Enforce refund/reimbursement as income (even if model got the sign wrong)
+      if (ingreso === 0 && gasto > 0 && isRefundLike(t.comentario)) {
+        ingreso = gasto;
+        gasto = 0;
+      }
 
       return {
         fecha: t.fecha,
         comentario: t.comentario,
-        ingreso: Number(t.ingreso) || 0,
-        gasto: Number(t.gasto) || 0,
+        ingreso,
+        gasto,
         suggestedCategoryId: finalCategory?.id || sinAsignar?.id || '',
         suggestedCategory: finalCategory?.categoria || t.suggestedCategory || 'SIN ASIGNAR',
         suggestedSubcategory: finalCategory?.subcategoria || t.suggestedSubcategory || 'SIN ASIGNAR',
-        confidence: matchedCategory ? 'high' : (partialMatch || categoryMatch ? 'medium' : 'low'),
+        confidence: matchedCategory ? 'high' : partialMatch || categoryMatch ? 'medium' : 'low',
         isNewCategory: !finalCategory && t.isNewCategory,
       };
     });
