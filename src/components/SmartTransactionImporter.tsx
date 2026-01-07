@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, FileText, ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2, Search, Filter } from 'lucide-react';
+import { Upload, FileText, ArrowRight, ArrowLeft, Sparkles, AlertCircle, CheckCircle2, Loader2, Search, Filter } from 'lucide-react';
 import { Account, Category, Transaction } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +32,6 @@ interface ParsedTransaction {
   isNewCategory: boolean;
   selected: boolean;
   editedCategoryId?: string;
-  isRefund?: boolean;
 }
 
 interface NewCategorySuggestion {
@@ -47,16 +46,10 @@ const CURRENCIES: Array<{ value: 'MXN' | 'USD' | 'EUR'; label: string }> = [
   { value: 'EUR', label: 'Euro (EUR)' }
 ];
 
-const isCreditCardAccount = (accountTypeLabel?: string | null) => {
-  const s = (accountTypeLabel || '').toLowerCase();
-  return s.includes('tarjeta') || s.includes('credit') || s.includes('crédito') || s.includes('credito');
-};
-
-
 const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }: SmartTransactionImporterProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<'select_account' | 'upload' | 'preview'>('select_account');
+  const [step, setStep] = useState<'upload' | 'preview' | 'configure'>('upload');
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; message: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [parsedTransactions, setParsedTransactions] = useState<ParsedTransaction[]>([]);
@@ -74,47 +67,9 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
     }).format(amount);
   };
 
-  const isRefundLike = (comment: string) => {
-    const s = (comment || '').toLowerCase();
-    return [
-      'reembolso',
-      'devolucion',
-      'devolución',
-      'refund',
-      'bonificacion',
-      'bonificación',
-      'cashback',
-      'ajuste a favor',
-      'reverso',
-      'reversal',
-      'chargeback',
-      'contracargo',
-    ].some((k) => s.includes(k));
-  };
-
-  // Determine account type based on selected account
-  const getAccountType = (): 'bank' | 'credit_card' => {
-    const account = accounts.find(a => a.id === selectedAccount);
-    if (account && isCreditCardAccount(account.tipo)) {
-      return 'credit_card';
-    }
-    return 'bank';
-  };
-
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    if (!selectedAccount) {
-      toast({
-        title: 'Selecciona la cuenta',
-        description: 'Antes de importar, selecciona la cuenta destino.',
-        variant: 'destructive',
-      });
-      setImportStatus({ type: 'error', message: 'Seleccione la cuenta destino antes de importar.' });
-      event.target.value = '';
-      return;
-    }
 
     setIsProcessing(true);
     setImportStatus({ type: 'info', message: '🤖 Analizando archivo con IA...' });
@@ -124,7 +79,6 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
       const formData = new FormData();
       formData.append('file', file);
       formData.append('categories', JSON.stringify(categories));
-      formData.append('accountType', getAccountType());
 
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -254,7 +208,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
 
   const handleClose = () => {
     setIsOpen(false);
-    setStep('select_account');
+    setStep('upload');
     setParsedTransactions([]);
     setNewCategorySuggestions([]);
     setSelectedCurrency('');
@@ -279,19 +233,6 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
     return matchesSearch && matchesConfidence;
   });
 
-  const previewStats = useMemo(() => {
-    return parsedTransactions.reduce(
-      (acc, t) => {
-        const isRefund = t.isRefund === true || (t.gasto > 0 && t.ingreso === 0 && isRefundLike(t.comentario));
-        if (t.ingreso > 0) acc.ingresos += 1;
-        if (t.gasto > 0 && !isRefund) acc.gastos += 1;
-        if (t.gasto > 0 && isRefund) acc.reembolsos += 1;
-        return acc;
-      },
-      { ingresos: 0, gastos: 0, reembolsos: 0 }
-    );
-  }, [parsedTransactions]);
-
   const selectedCount = parsedTransactions.filter(t => t.selected).length;
   const filteredSelectedCount = filteredTransactions.filter(t => t.selected).length;
 
@@ -307,79 +248,11 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            {step === 'select_account' && 'Seleccionar Cuenta'}
             {step === 'upload' && 'Importar Transacciones con IA'}
             {step === 'preview' && `Vista Previa - ${fileName}`}
+            {step === 'configure' && 'Configurar Importación'}
           </DialogTitle>
         </DialogHeader>
-
-        {step === 'select_account' && (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Selecciona la cuenta donde se importarán las transacciones:
-            </p>
-            
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Cuenta de destino</Label>
-                <Select 
-                  value={selectedAccount} 
-                  onValueChange={(value) => {
-                    setSelectedAccount(value);
-                    const account = accounts.find(a => a.id === value);
-                    if (account) {
-                      setSelectedCurrency(account.divisa as 'MXN' | 'USD' | 'EUR');
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.nombre} ({account.tipo} - {account.divisa})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Divisa de las transacciones</Label>
-                <Select value={selectedCurrency} onValueChange={(value: string) => setSelectedCurrency(value as 'MXN' | 'USD' | 'EUR')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una divisa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.value} value={currency.value}>
-                        {currency.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  La divisa se auto-selecciona según la cuenta, pero puedes cambiarla si las transacciones están en otra moneda.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button variant="outline" onClick={handleClose}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={() => setStep('upload')} 
-                className="flex-1 gap-2" 
-                disabled={!selectedAccount || !selectedCurrency}
-              >
-                <ArrowRight className="h-4 w-4" />
-                Continuar
-              </Button>
-            </div>
-          </div>
-        )}
         
         {step === 'upload' && (
           <div className="space-y-4">
@@ -432,13 +305,9 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
               </Alert>
             )}
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex justify-end">
               <Button variant="outline" onClick={handleClose}>
                 Cancelar
-              </Button>
-              <Button variant="outline" onClick={() => setStep('select_account')} className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Volver
               </Button>
             </div>
           </div>
@@ -501,23 +370,12 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
                   <Button variant="outline" size="sm" onClick={selectAll}>Seleccionar todo</Button>
                   <Button variant="outline" size="sm" onClick={deselectAll}>Deseleccionar todo</Button>
                 </div>
-                <div className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted-foreground">
-                  <Badge variant="outline" className="text-xs">
-                    Ingresos: {previewStats.ingresos}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    Gastos: {previewStats.gastos}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    Reembolsos: {previewStats.reembolsos}
-                  </Badge>
-                  <span>
-                    {filteredTransactions.length !== parsedTransactions.length && (
-                      <span className="mr-2">Mostrando {filteredTransactions.length} de {parsedTransactions.length} •</span>
-                    )}
-                    {selectedCount} seleccionadas
-                  </span>
-                </div>
+                <span className="text-sm text-muted-foreground">
+                  {filteredTransactions.length !== parsedTransactions.length && (
+                    <span className="mr-2">Mostrando {filteredTransactions.length} de {parsedTransactions.length} •</span>
+                  )}
+                  {selectedCount} seleccionadas
+                </span>
               </div>
             </div>
 
@@ -559,14 +417,9 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
                           <TableCell className="text-right text-green-600">
                             {transaction.ingreso > 0 ? `+${formatCurrency(transaction.ingreso)}` : '-'}
                           </TableCell>
-                          {(() => {
-                            const isRefund = transaction.isRefund === true || (transaction.gasto > 0 && transaction.ingreso === 0 && isRefundLike(transaction.comentario));
-                            return (
-                              <TableCell className={`text-right ${isRefund ? 'text-green-600' : 'text-red-600'}`}>
-                                {transaction.gasto > 0 ? `${isRefund ? '+' : '-'}${formatCurrency(transaction.gasto)}` : '-'}
-                              </TableCell>
-                            );
-                          })()}
+                          <TableCell className="text-right text-red-600">
+                            {transaction.gasto > 0 ? `-${formatCurrency(transaction.gasto)}` : '-'}
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
                               {transaction.isNewCategory && (
@@ -608,7 +461,89 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
                 <ArrowLeft className="h-4 w-4" />
                 Volver
               </Button>
-              <Button onClick={handleImport} className="gap-2 flex-1" disabled={selectedCount === 0}>
+              <Button onClick={() => setStep('configure')} className="gap-2 flex-1" disabled={selectedCount === 0}>
+                <ArrowRight className="h-4 w-4" />
+                Continuar ({selectedCount} transacciones)
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 'configure' && (
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Configurar {selectedCount} transacciones para importar:
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>Cuenta de destino</Label>
+                <Select 
+                  value={selectedAccount} 
+                  onValueChange={(value) => {
+                    setSelectedAccount(value);
+                    const account = accounts.find(a => a.id === value);
+                    if (account) {
+                      setSelectedCurrency(account.divisa as 'MXN' | 'USD' | 'EUR');
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una cuenta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.nombre} ({account.divisa})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Divisa de las transacciones</Label>
+                <Select value={selectedCurrency} onValueChange={(value: string) => setSelectedCurrency(value as 'MXN' | 'USD' | 'EUR')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una divisa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.value} value={currency.value}>
+                        {currency.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  La divisa se auto-selecciona según la cuenta, pero puedes cambiarla si las transacciones están en otra moneda.
+                </p>
+              </div>
+
+              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-600" />
+                <div>
+                  <p className="font-medium">Categorías pre-asignadas</p>
+                  <p className="text-xs">Las transacciones ya tienen categorías asignadas por la IA. Puedes modificarlas en el paso anterior.</p>
+                </div>
+              </div>
+            </div>
+
+            {importStatus && importStatus.type === 'error' && (
+              <Alert className="border-destructive">
+                <AlertDescription>{importStatus.message}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleClose}>
+                Cancelar
+              </Button>
+              <Button variant="outline" onClick={() => setStep('preview')} className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Volver
+              </Button>
+              <Button onClick={handleImport} className="gap-2 flex-1">
                 <Upload className="h-4 w-4" />
                 Importar {selectedCount} Transacciones
               </Button>
