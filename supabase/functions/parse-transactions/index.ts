@@ -208,6 +208,33 @@ serve(async (req) => {
     
     console.log(`Processing file: ${file.name}, size: ${file.size} bytes, isPDF: ${isPDF}, isImage: ${isImage}, accountType: ${accountType}`);
 
+    // Fetch user's historical transactions for learning
+    const { data: historicalData } = await supabaseClient
+      .from('transacciones')
+      .select(`
+        comentario,
+        categorias:subcategoria_id (
+          categoria,
+          subcategoria
+        )
+      `)
+      .eq('user_id', user.id)
+      .limit(500);
+
+    const historicalTransactions: HistoricalTransaction[] = (historicalData || [])
+      .filter((t: any) => t.categorias && t.categorias.subcategoria !== 'SIN ASIGNAR')
+      .map((t: any) => ({
+        comentario: t.comentario,
+        categoria: t.categorias.categoria,
+        subcategoria: t.categorias.subcategoria,
+      }));
+
+    // Build categories info
+    const categoriesInfo = categories.map(c => `- ${c.categoria} > ${c.subcategoria}`).join('\n');
+    const historicalExamples = historicalTransactions.slice(0, 30).map(t => 
+      `"${t.comentario}" → ${t.categoria} > ${t.subcategoria}`
+    ).join('\n');
+
     const systemPrompt = `Eres un asistente financiero experto en extraer y clasificar transacciones de estados de cuenta.
 
 Tu tarea es:

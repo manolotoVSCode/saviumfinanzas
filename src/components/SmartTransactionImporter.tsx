@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, FileText, ArrowRight, ArrowLeft, Sparkles, AlertCircle, CheckCircle2, Loader2, Search, Filter } from 'lucide-react';
+import { Upload, FileText, ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2, Search, Filter } from 'lucide-react';
 import { Account, Category, Transaction } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -46,17 +46,13 @@ const CURRENCIES: Array<{ value: 'MXN' | 'USD' | 'EUR'; label: string }> = [
   { value: 'EUR', label: 'Euro (EUR)' }
 ];
 
-type AccountType = 'bank' | 'credit_card';
-
-const ACCOUNT_TYPES: Array<{ value: AccountType; label: string; description: string }> = [
-  { value: 'bank', label: 'Cuenta Bancaria', description: 'Negativo = gasto, Positivo = ingreso' },
-  { value: 'credit_card', label: 'Tarjeta de Crédito', description: 'Negativo = ingreso/abono, Positivo = gasto/cargo' }
-];
+// Account types that are considered "credit cards" for sign interpretation
+const CREDIT_CARD_TYPES = ['Tarjeta de Crédito'];
 
 const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }: SmartTransactionImporterProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<'select_type' | 'upload' | 'preview' | 'configure'>('select_type');
+  const [step, setStep] = useState<'select_account' | 'upload' | 'preview'>('select_account');
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; message: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [parsedTransactions, setParsedTransactions] = useState<ParsedTransaction[]>([]);
@@ -66,7 +62,6 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
   const [fileName, setFileName] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [confidenceFilter, setConfidenceFilter] = useState<'all' | 'high' | 'medium' | 'low' | 'new'>('all');
-  const [accountType, setAccountType] = useState<AccountType | ''>('');
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
       style: 'decimal',
@@ -75,17 +70,26 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
     }).format(amount);
   };
 
+  // Determine account type based on selected account
+  const getAccountType = (): 'bank' | 'credit_card' => {
+    const account = accounts.find(a => a.id === selectedAccount);
+    if (account && CREDIT_CARD_TYPES.includes(account.tipo)) {
+      return 'credit_card';
+    }
+    return 'bank';
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!accountType) {
+    if (!selectedAccount) {
       toast({
-        title: 'Selecciona el tipo de cuenta',
-        description: 'Antes de importar, elige si es cuenta bancaria o tarjeta de crédito.',
+        title: 'Selecciona la cuenta',
+        description: 'Antes de importar, selecciona la cuenta destino.',
         variant: 'destructive',
       });
-      setImportStatus({ type: 'error', message: 'Seleccione el tipo de cuenta (banco o tarjeta) antes de importar.' });
+      setImportStatus({ type: 'error', message: 'Seleccione la cuenta destino antes de importar.' });
       event.target.value = '';
       return;
     }
@@ -98,7 +102,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
       const formData = new FormData();
       formData.append('file', file);
       formData.append('categories', JSON.stringify(categories));
-      formData.append('accountType', accountType);
+      formData.append('accountType', getAccountType());
 
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -228,7 +232,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
 
   const handleClose = () => {
     setIsOpen(false);
-    setStep('select_type');
+    setStep('select_account');
     setParsedTransactions([]);
     setNewCategorySuggestions([]);
     setSelectedCurrency('');
@@ -237,7 +241,6 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
     setFileName('');
     setSearchTerm('');
     setConfidenceFilter('all');
-    setAccountType('');
   };
 
   const filteredTransactions = parsedTransactions.filter(t => {
@@ -269,34 +272,62 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            {step === 'select_type' && '¿Qué tipo de cuenta estás importando?'}
+            {step === 'select_account' && 'Seleccionar Cuenta'}
             {step === 'upload' && 'Importar Transacciones con IA'}
             {step === 'preview' && `Vista Previa - ${fileName}`}
-            {step === 'configure' && 'Configurar Importación'}
           </DialogTitle>
         </DialogHeader>
 
-        {step === 'select_type' && (
+        {step === 'select_account' && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Esto determina cómo interpretar los signos (+/-) de los montos:
+              Selecciona la cuenta donde se importarán las transacciones:
             </p>
             
-            <div className="grid gap-3">
-              {ACCOUNT_TYPES.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => setAccountType(type.value)}
-                  className={`flex flex-col items-start gap-1 p-4 rounded-lg border-2 text-left transition-all ${
-                    accountType === type.value 
-                      ? 'border-primary bg-primary/5' 
-                      : 'border-border hover:border-primary/50'
-                  }`}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>Cuenta de destino</Label>
+                <Select 
+                  value={selectedAccount} 
+                  onValueChange={(value) => {
+                    setSelectedAccount(value);
+                    const account = accounts.find(a => a.id === value);
+                    if (account) {
+                      setSelectedCurrency(account.divisa as 'MXN' | 'USD' | 'EUR');
+                    }
+                  }}
                 >
-                  <span className="font-medium">{type.label}</span>
-                  <span className="text-xs text-muted-foreground">{type.description}</span>
-                </button>
-              ))}
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una cuenta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.nombre} ({account.tipo} - {account.divisa})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Divisa de las transacciones</Label>
+                <Select value={selectedCurrency} onValueChange={(value: string) => setSelectedCurrency(value as 'MXN' | 'USD' | 'EUR')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una divisa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.value} value={currency.value}>
+                        {currency.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  La divisa se auto-selecciona según la cuenta, pero puedes cambiarla si las transacciones están en otra moneda.
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-2 pt-2">
@@ -306,7 +337,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
               <Button 
                 onClick={() => setStep('upload')} 
                 className="flex-1 gap-2" 
-                disabled={!accountType}
+                disabled={!selectedAccount || !selectedCurrency}
               >
                 <ArrowRight className="h-4 w-4" />
                 Continuar
@@ -370,7 +401,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
               <Button variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
-              <Button variant="outline" onClick={() => setStep('select_type')} className="gap-2">
+              <Button variant="outline" onClick={() => setStep('select_account')} className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Volver
               </Button>
@@ -526,89 +557,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
                 <ArrowLeft className="h-4 w-4" />
                 Volver
               </Button>
-              <Button onClick={() => setStep('configure')} className="gap-2 flex-1" disabled={selectedCount === 0}>
-                <ArrowRight className="h-4 w-4" />
-                Continuar ({selectedCount} transacciones)
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 'configure' && (
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Configurar {selectedCount} transacciones para importar:
-            </div>
-
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Cuenta de destino</Label>
-                <Select 
-                  value={selectedAccount} 
-                  onValueChange={(value) => {
-                    setSelectedAccount(value);
-                    const account = accounts.find(a => a.id === value);
-                    if (account) {
-                      setSelectedCurrency(account.divisa as 'MXN' | 'USD' | 'EUR');
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.nombre} ({account.divisa})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Divisa de las transacciones</Label>
-                <Select value={selectedCurrency} onValueChange={(value: string) => setSelectedCurrency(value as 'MXN' | 'USD' | 'EUR')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una divisa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.value} value={currency.value}>
-                        {currency.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  La divisa se auto-selecciona según la cuenta, pero puedes cambiarla si las transacciones están en otra moneda.
-                </p>
-              </div>
-
-              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-600" />
-                <div>
-                  <p className="font-medium">Categorías pre-asignadas</p>
-                  <p className="text-xs">Las transacciones ya tienen categorías asignadas por la IA. Puedes modificarlas en el paso anterior.</p>
-                </div>
-              </div>
-            </div>
-
-            {importStatus && importStatus.type === 'error' && (
-              <Alert className="border-destructive">
-                <AlertDescription>{importStatus.message}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleClose}>
-                Cancelar
-              </Button>
-              <Button variant="outline" onClick={() => setStep('preview')} className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Volver
-              </Button>
-              <Button onClick={handleImport} className="gap-2 flex-1">
+              <Button onClick={handleImport} className="gap-2 flex-1" disabled={selectedCount === 0}>
                 <Upload className="h-4 w-4" />
                 Importar {selectedCount} Transacciones
               </Button>
