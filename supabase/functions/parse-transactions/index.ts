@@ -127,11 +127,16 @@ ${historicalExamples || 'Sin historial previo'}
 REGLAS DE EXTRACCIÓN:
 - Busca patrones de fecha (DD/MM/AAAA, DD-MM-AAAA, MM/DD/AAAA, etc.)
 - Identifica montos con símbolos de moneda ($, €, MXN, USD) o sin ellos
-- Los cargos/compras son GASTOS (gasto > 0)
-- Los abonos/depósitos/pagos recibidos son INGRESOS (ingreso > 0)
 - IMPORTANTE: Ignora líneas de saldo, totales, o información que no sea una transacción individual
 
-REGLAS DE CLASIFICACIÓN:
+REGLAS CRÍTICAS DE CLASIFICACIÓN INGRESO/GASTO:
+1. Los CARGOS/COMPRAS/CONSUMOS son GASTOS (gasto > 0, ingreso = 0)
+2. Los ABONOS/REEMBOLSOS/DEVOLUCIONES/BONIFICACIONES son INGRESOS (ingreso > 0, gasto = 0)
+   - Si ves palabras como: DEVOLUCION, REEMBOLSO, BONIFICACION, AJUSTE A FAVOR, CASHBACK, PUNTOS → es INGRESO
+   - Un monto negativo en un cargo o un crédito a favor → es INGRESO
+3. Los PAGOS realizados a la tarjeta (ej: PAGO RECIBIDO, PAGO GRACIAS, TU PAGO, PAGO EN LINEA) son APORTACIONES → usar "SIN ASIGNAR > SIN ASIGNAR"
+
+REGLAS DE CLASIFICACIÓN DE CATEGORÍAS:
 - Si hay categoría existente que encaje EXACTAMENTE, úsala (confidence: "high")
 - Si hay categoría similar pero no exacta, úsala (confidence: "medium")  
 - Si NO hay categoría apropiada en la lista del usuario:
@@ -140,8 +145,11 @@ REGLAS DE CLASIFICACIÓN:
   * confidence: "low"
   * IMPORTANTE: Agrega la sugerencia al array "newCategorySuggestions"
 - Prioriza las categorías del historial cuando el comentario sea similar
+- IMPORTANTE: "SIN ASIGNAR" NO es una categoría nueva, es la categoría por defecto del sistema. 
+  Si no sabes cómo clasificar algo, usa "SIN ASIGNAR > SIN ASIGNAR" con isNewCategory: false
 
 REGLAS PARA NUEVAS CATEGORÍAS:
+- NUNCA sugieras "SIN ASIGNAR" como categoría nueva - ya existe en el sistema
 - Si una transacción NO encaja en ninguna categoría existente, DEBES agregarla a "newCategorySuggestions"
 - Agrupa transacciones similares en la misma sugerencia de categoría
 - Las sugerencias deben ser específicas pero reutilizables (ej: "Salud > Farmacia" no "Salud > Farmacia San Pablo")
@@ -162,13 +170,23 @@ FORMATO DE RESPUESTA (SOLO JSON, sin explicaciones):
     },
     {
       "fecha": "2025-01-16",
-      "comentario": "FARMACIA GUADALAJARA",
-      "ingreso": 0,
-      "gasto": 250.00,
-      "suggestedCategory": "Salud",
-      "suggestedSubcategory": "Farmacia",
-      "confidence": "low",
-      "isNewCategory": true
+      "comentario": "DEVOLUCION AMAZON",
+      "ingreso": 150.00,
+      "gasto": 0,
+      "suggestedCategory": "Compras personales",
+      "suggestedSubcategory": "Compras en linea",
+      "confidence": "high",
+      "isNewCategory": false
+    },
+    {
+      "fecha": "2025-01-17",
+      "comentario": "PAGO RECIBIDO GRACIAS",
+      "ingreso": 5000.00,
+      "gasto": 0,
+      "suggestedCategory": "SIN ASIGNAR",
+      "suggestedSubcategory": "SIN ASIGNAR",
+      "confidence": "high",
+      "isNewCategory": false
     }
   ],
   "newCategorySuggestions": [
@@ -186,8 +204,9 @@ IMPORTANTE:
 - Si es gasto, ingreso = 0 y viceversa
 - Limpia los comentarios de caracteres especiales
 - NO incluyas saldos, solo transacciones individuales
-- SIEMPRE incluye newCategorySuggestions cuando hay transacciones con isNewCategory: true
-- Cada categoría nueva debe aparecer UNA sola vez en newCategorySuggestions aunque haya múltiples transacciones`;
+- SIEMPRE incluye newCategorySuggestions cuando hay transacciones con isNewCategory: true (excepto SIN ASIGNAR)
+- Cada categoría nueva debe aparecer UNA sola vez en newCategorySuggestions aunque haya múltiples transacciones
+- NUNCA agregues "SIN ASIGNAR" a newCategorySuggestions - es una categoría del sistema que ya existe`;
 
     let messages: any[];
 
@@ -330,13 +349,18 @@ IMPORTANTE:
       };
     });
 
+    // Filter out "SIN ASIGNAR" from new category suggestions (it's a system category)
+    const filteredNewCategorySuggestions = (parsedResult.newCategorySuggestions || []).filter(
+      (s: any) => s.subcategoria?.toUpperCase() !== 'SIN ASIGNAR' && s.categoria?.toUpperCase() !== 'SIN ASIGNAR'
+    );
+
     console.log(`Successfully parsed ${transactions.length} transactions`);
 
     return new Response(
       JSON.stringify({
         success: true,
         transactions,
-        newCategorySuggestions: parsedResult.newCategorySuggestions || [],
+        newCategorySuggestions: filteredNewCategorySuggestions,
         totalProcessed: transactions.length,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
