@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,8 +47,11 @@ const CURRENCIES: Array<{ value: 'MXN' | 'USD' | 'EUR'; label: string }> = [
   { value: 'EUR', label: 'Euro (EUR)' }
 ];
 
-// Account types that are considered "credit cards" for sign interpretation
-const CREDIT_CARD_TYPES = ['Tarjeta de Crédito'];
+const isCreditCardAccount = (accountTypeLabel?: string | null) => {
+  const s = (accountTypeLabel || '').toLowerCase();
+  return s.includes('tarjeta') || s.includes('credit') || s.includes('crédito') || s.includes('credito');
+};
+
 
 const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }: SmartTransactionImporterProps) => {
   const { toast } = useToast();
@@ -92,7 +95,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
   // Determine account type based on selected account
   const getAccountType = (): 'bank' | 'credit_card' => {
     const account = accounts.find(a => a.id === selectedAccount);
-    if (account && CREDIT_CARD_TYPES.includes(account.tipo)) {
+    if (account && isCreditCardAccount(account.tipo)) {
       return 'credit_card';
     }
     return 'bank';
@@ -275,6 +278,19 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
     
     return matchesSearch && matchesConfidence;
   });
+
+  const previewStats = useMemo(() => {
+    return parsedTransactions.reduce(
+      (acc, t) => {
+        const isRefund = t.isRefund === true || (t.gasto > 0 && t.ingreso === 0 && isRefundLike(t.comentario));
+        if (t.ingreso > 0) acc.ingresos += 1;
+        if (t.gasto > 0 && !isRefund) acc.gastos += 1;
+        if (t.gasto > 0 && isRefund) acc.reembolsos += 1;
+        return acc;
+      },
+      { ingresos: 0, gastos: 0, reembolsos: 0 }
+    );
+  }, [parsedTransactions]);
 
   const selectedCount = parsedTransactions.filter(t => t.selected).length;
   const filteredSelectedCount = filteredTransactions.filter(t => t.selected).length;
@@ -485,12 +501,23 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
                   <Button variant="outline" size="sm" onClick={selectAll}>Seleccionar todo</Button>
                   <Button variant="outline" size="sm" onClick={deselectAll}>Deseleccionar todo</Button>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {filteredTransactions.length !== parsedTransactions.length && (
-                    <span className="mr-2">Mostrando {filteredTransactions.length} de {parsedTransactions.length} •</span>
-                  )}
-                  {selectedCount} seleccionadas
-                </span>
+                <div className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted-foreground">
+                  <Badge variant="outline" className="text-xs">
+                    Ingresos: {previewStats.ingresos}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    Gastos: {previewStats.gastos}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    Reembolsos: {previewStats.reembolsos}
+                  </Badge>
+                  <span>
+                    {filteredTransactions.length !== parsedTransactions.length && (
+                      <span className="mr-2">Mostrando {filteredTransactions.length} de {parsedTransactions.length} •</span>
+                    )}
+                    {selectedCount} seleccionadas
+                  </span>
+                </div>
               </div>
             </div>
 
