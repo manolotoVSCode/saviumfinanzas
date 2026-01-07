@@ -263,9 +263,9 @@ Analiza el CONCEPTO/DESCRIPCIÓN de la transacción, NO el signo del monto:
    - Suscripciones y membresías
    - Pagos de cuotas anuales, seguros
    - Cualquier consumo o cargo
+   - REEMBOLSOS/DEVOLUCIONES/REVERSOS/CHARGEBACKS (se registran como gasto POSITIVO en esta app)
 
 2. Son INGRESOS (ingreso > 0, gasto = 0):
-   - REEMBOLSOS/DEVOLUCIONES/REVERSOS/CHARGEBACKS (reembolsos de gastos: se registran como INGRESO pero con categoría tipo "Gastos")
    - PAGOS A TARJETA: "PAGO RECIBIDO", "GRACIAS POR SU PAGO", "TU PAGO", "PAGO EN LINEA" → categoría "SIN ASIGNAR > SIN ASIGNAR"
 
 3. Si NO puedes determinar con certeza si es gasto o ingreso:
@@ -308,8 +308,8 @@ FORMATO DE RESPUESTA (SOLO JSON, sin explicaciones):
     {
       "fecha": "2025-01-16",
       "comentario": "AMAZON MX MARKETPLACE - monto negativo en CSV significa devolución",
-      "ingreso": 150.00,
-      "gasto": 0,
+      "ingreso": 0,
+      "gasto": 150.00,
       "suggestedCategory": "Compras personales",
       "suggestedSubcategory": "Compras en linea",
       "confidence": "high",
@@ -378,6 +378,16 @@ IMPORTANTE:
       // For CSV/Excel/text files, read as text
       const fileContent = await file.text();
       console.log(`Processing text file, content length: ${fileContent.length} chars`);
+
+      // If this looks like an AMEX CSV with signed "Importe", parse it to help detect refunds reliably
+      const signedEntries = tryParseAmexSignedEntries(fileContent);
+      const signedEntryMap = new Map<string, number>();
+      if (signedEntries?.length) {
+        for (const e of signedEntries) {
+          signedEntryMap.set(`${e.fechaIso}|${normalizeText(e.descripcion)}`, e.importe);
+        }
+        console.log(`Detected ${signedEntries.length} signed CSV entries (AMEX)`);
+      }
       
       messages = [
         { role: 'system', content: systemPrompt },
@@ -507,29 +517,47 @@ IMPORTANTE:
       const finalCategory = matchedCategory || partialMatch || categoryMatch;
       const sinAsignar = categories.find((c) => c.subcategoria.toUpperCase() === 'SIN ASIGNAR');
 
-      // Use AI's interpretation directly - it analyzes the concept, not the sign
       const rawIngreso = Number(t.ingreso) || 0;
       const rawGasto = Number(t.gasto) || 0;
 
-      // Safety net: if AI marked both or neither, check for refund/payment keywords
+      // Detect refunds more reliably using the signed CSV amount when available (AMEX)
+      const signedAmount = (typeof signedEntryMap !== 'undefined' && signedEntryMap.size)
+        ? signedEntryMap.get(`${t.fecha}|${normalizeText(t.comentario || '')}`)
+        : undefined;
+
       let ingreso = rawIngreso;
       let gasto = rawGasto;
+      let isRefund = false;
 
-      const baseAmount = Math.max(Math.abs(rawIngreso), Math.abs(rawGasto));
+      // If we have the signed original amount and it's negative, treat as refund
+      if (accountType === 'credit_card' && typeof signedAmount === 'number' && signedAmount < 0) {
+        isRefund = true;
+        ingreso = 0;
+        gasto = Math.abs(signedAmount);
+      }
 
-      if ((rawIngreso === 0 && rawGasto === 0) || (rawIngreso > 0 && rawGasto > 0)) {
-        // AI didn't provide clear direction, use keyword heuristics
+      const baseAmount = Math.max(Math.abs(ingreso), Math.abs(gasto));
+
+      // Safety net: if AI marked both or neither, check for refund/payment keywords
+      if (!isRefund && ((ingreso === 0 && gasto === 0) || (ingreso > 0 && gasto > 0))) {
         if (isPaymentToCard(t.comentario)) {
           ingreso = baseAmount;
           gasto = 0;
         } else if (isRefundLike(t.comentario)) {
-          // Refunds: record as ingreso (positive) but keep expense-category classification
-          ingreso = baseAmount;
-          gasto = 0;
+          isRefund = true;
+          ingreso = 0;
+          gasto = baseAmount;
         } else {
           ingreso = 0;
           gasto = baseAmount;
         }
+      }
+
+      // If AI marked it as a normal expense but the original signed amount is negative, override to refund
+      if (!isRefund && accountType === 'credit_card' && typeof signedAmount === 'number' && signedAmount < 0) {
+        isRefund = true;
+        ingreso = 0;
+        gasto = Math.abs(signedAmount);
       }
 
       // Ensure positive amounts
@@ -546,7 +574,9 @@ IMPORTANTE:
         suggestedSubcategory: finalCategory?.subcategoria || t.suggestedSubcategory || 'SIN ASIGNAR',
         confidence: matchedCategory ? 'high' : partialMatch || categoryMatch ? 'medium' : 'low',
         isNewCategory: !finalCategory && t.isNewCategory,
-      };
+        // extra flag for UI display
+        isRefund,
+      } as any;
     });
 
     // Filter out "SIN ASIGNAR" and anything that already exists in user's categories

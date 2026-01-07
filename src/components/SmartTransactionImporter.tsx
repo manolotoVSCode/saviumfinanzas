@@ -32,6 +32,7 @@ interface ParsedTransaction {
   isNewCategory: boolean;
   selected: boolean;
   editedCategoryId?: string;
+  isRefund?: boolean;
 }
 
 interface NewCategorySuggestion {
@@ -532,7 +533,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
                             {transaction.ingreso > 0 ? `+${formatCurrency(transaction.ingreso)}` : '-'}
                           </TableCell>
                           {(() => {
-                            const isRefund = transaction.gasto > 0 && transaction.ingreso === 0 && isRefundLike(transaction.comentario);
+                            const isRefund = transaction.isRefund === true || (transaction.gasto > 0 && transaction.ingreso === 0 && isRefundLike(transaction.comentario));
                             return (
                               <TableCell className={`text-right ${isRefund ? 'text-green-600' : 'text-red-600'}`}>
                                 {transaction.gasto > 0 ? `${isRefund ? '+' : '-'}${formatCurrency(transaction.gasto)}` : '-'}
