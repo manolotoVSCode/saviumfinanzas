@@ -263,9 +263,9 @@ Analiza el CONCEPTO/DESCRIPCIÓN de la transacción, NO el signo del monto:
    - Suscripciones y membresías
    - Pagos de cuotas anuales, seguros
    - Cualquier consumo o cargo
-   - REEMBOLSOS/DEVOLUCIONES/REVERSOS/CHARGEBACKS (se registran como gasto POSITIVO en esta app)
 
 2. Son INGRESOS (ingreso > 0, gasto = 0):
+   - REEMBOLSOS/DEVOLUCIONES/REVERSOS/CHARGEBACKS (reembolsos de gastos: se registran como INGRESO pero con categoría tipo "Gastos")
    - PAGOS A TARJETA: "PAGO RECIBIDO", "GRACIAS POR SU PAGO", "TU PAGO", "PAGO EN LINEA" → categoría "SIN ASIGNAR > SIN ASIGNAR"
 
 3. Si NO puedes determinar con certeza si es gasto o ingreso:
@@ -308,8 +308,8 @@ FORMATO DE RESPUESTA (SOLO JSON, sin explicaciones):
     {
       "fecha": "2025-01-16",
       "comentario": "AMAZON MX MARKETPLACE - monto negativo en CSV significa devolución",
-      "ingreso": 0,
-      "gasto": 150.00,
+      "ingreso": 150.00,
+      "gasto": 0,
       "suggestedCategory": "Compras personales",
       "suggestedSubcategory": "Compras en linea",
       "confidence": "high",
@@ -523,9 +523,9 @@ IMPORTANTE:
           ingreso = baseAmount;
           gasto = 0;
         } else if (isRefundLike(t.comentario)) {
-          // In this app refunds are stored as "gasto positivo"
-          ingreso = 0;
-          gasto = baseAmount;
+          // Refunds: record as ingreso (positive) but keep expense-category classification
+          ingreso = baseAmount;
+          gasto = 0;
         } else {
           ingreso = 0;
           gasto = baseAmount;

@@ -70,6 +70,24 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
     }).format(amount);
   };
 
+  const isRefundLike = (comment: string) => {
+    const s = (comment || '').toLowerCase();
+    return [
+      'reembolso',
+      'devolucion',
+      'devolución',
+      'refund',
+      'bonificacion',
+      'bonificación',
+      'cashback',
+      'ajuste a favor',
+      'reverso',
+      'reversal',
+      'chargeback',
+      'contracargo',
+    ].some((k) => s.includes(k));
+  };
+
   // Determine account type based on selected account
   const getAccountType = (): 'bank' | 'credit_card' => {
     const account = accounts.find(a => a.id === selectedAccount);
@@ -513,9 +531,14 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
                           <TableCell className="text-right text-green-600">
                             {transaction.ingreso > 0 ? `+${formatCurrency(transaction.ingreso)}` : '-'}
                           </TableCell>
-                          <TableCell className="text-right text-red-600">
-                            {transaction.gasto > 0 ? `-${formatCurrency(transaction.gasto)}` : '-'}
-                          </TableCell>
+                          {(() => {
+                            const isRefund = transaction.gasto > 0 && transaction.ingreso === 0 && isRefundLike(transaction.comentario);
+                            return (
+                              <TableCell className={`text-right ${isRefund ? 'text-green-600' : 'text-red-600'}`}>
+                                {transaction.gasto > 0 ? `${isRefund ? '+' : '-'}${formatCurrency(transaction.gasto)}` : '-'}
+                              </TableCell>
+                            );
+                          })()}
                           <TableCell>
                             <div className="flex items-center gap-1">
                               {transaction.isNewCategory && (
