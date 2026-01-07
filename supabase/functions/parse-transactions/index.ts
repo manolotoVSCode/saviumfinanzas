@@ -263,14 +263,14 @@ Analiza el CONCEPTO/DESCRIPCIÓN de la transacción, NO el signo del monto:
    - Suscripciones y membresías
    - Pagos de cuotas anuales, seguros
    - Cualquier consumo o cargo
+   - REEMBOLSOS/DEVOLUCIONES/REVERSOS/CHARGEBACKS (se registran como gasto POSITIVO en esta app)
 
 2. Son INGRESOS (ingreso > 0, gasto = 0):
-   - REEMBOLSOS/DEVOLUCIONES: "DEVOLUCION", "REEMBOLSO", "REFUND", "BONIFICACION", "CASHBACK", "AJUSTE A FAVOR"
    - PAGOS A TARJETA: "PAGO RECIBIDO", "GRACIAS POR SU PAGO", "TU PAGO", "PAGO EN LINEA" → categoría "SIN ASIGNAR > SIN ASIGNAR"
-   
+
 3. Si NO puedes determinar con certeza si es gasto o ingreso:
    - Usa "SIN ASIGNAR > SIN ASIGNAR" como categoría
-   - Coloca el monto donde creas más probable
+   - Deja ingreso = 0 y gasto = 0
    - El usuario lo corregirá manualmente
 
 REGLAS DE CLASIFICACIÓN DE CATEGORÍAS:
@@ -308,8 +308,8 @@ FORMATO DE RESPUESTA (SOLO JSON, sin explicaciones):
     {
       "fecha": "2025-01-16",
       "comentario": "AMAZON MX MARKETPLACE - monto negativo en CSV significa devolución",
-      "ingreso": 150.00,
-      "gasto": 0,
+      "ingreso": 0,
+      "gasto": 150.00,
       "suggestedCategory": "Compras personales",
       "suggestedSubcategory": "Compras en linea",
       "confidence": "high",
@@ -514,18 +514,27 @@ IMPORTANTE:
       // Safety net: if AI marked both or neither, check for refund/payment keywords
       let ingreso = rawIngreso;
       let gasto = rawGasto;
-      
+
+      const baseAmount = Math.max(Math.abs(rawIngreso), Math.abs(rawGasto));
+
       if ((rawIngreso === 0 && rawGasto === 0) || (rawIngreso > 0 && rawGasto > 0)) {
         // AI didn't provide clear direction, use keyword heuristics
-        const baseAmount = Math.max(rawIngreso, rawGasto) || 0;
-        if (isRefundLike(t.comentario) || isPaymentToCard(t.comentario)) {
+        if (isPaymentToCard(t.comentario)) {
           ingreso = baseAmount;
           gasto = 0;
-        } else if (baseAmount > 0) {
+        } else if (isRefundLike(t.comentario)) {
+          // In this app refunds are stored as "gasto positivo"
+          ingreso = 0;
+          gasto = baseAmount;
+        } else {
           ingreso = 0;
           gasto = baseAmount;
         }
       }
+
+      // Ensure positive amounts
+      ingreso = Math.abs(ingreso);
+      gasto = Math.abs(gasto);
 
       return {
         fecha: t.fecha,
@@ -540,10 +549,14 @@ IMPORTANTE:
       };
     });
 
-    // Filter out "SIN ASIGNAR" from new category suggestions (it's a system category)
-    const filteredNewCategorySuggestions = (parsedResult.newCategorySuggestions || []).filter(
-      (s: any) => s.subcategoria?.toUpperCase() !== 'SIN ASIGNAR' && s.categoria?.toUpperCase() !== 'SIN ASIGNAR'
-    );
+    // Filter out "SIN ASIGNAR" and anything that already exists in user's categories
+    const filteredNewCategorySuggestions = (parsedResult.newCategorySuggestions || [])
+      .filter((s: any) => s?.categoria && s?.subcategoria)
+      .filter((s: any) => s.subcategoria?.toUpperCase() !== 'SIN ASIGNAR' && s.categoria?.toUpperCase() !== 'SIN ASIGNAR')
+      .filter((s: any) => !categories.some((c) =>
+        c.categoria.toLowerCase() === String(s.categoria).toLowerCase() &&
+        c.subcategoria.toLowerCase() === String(s.subcategoria).toLowerCase()
+      ));
 
     console.log(`Successfully parsed ${transactions.length} transactions`);
 
