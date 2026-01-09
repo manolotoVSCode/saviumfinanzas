@@ -13,24 +13,14 @@ export interface ParsedTransaction {
 export interface BankFormat {
   id: string;
   name: string;
+  description: string;
   fileTypes: string[];
-  // Column indices or names
-  dateColumn: number | string;
-  descriptionColumn: number | string;
-  amountColumn?: number | string; // Single amount column (+ or -)
-  incomeColumn?: number | string; // Separate income column
-  expenseColumn?: number | string; // Separate expense column
-  // Format specifics
-  dateFormat: 'DD/MM/YYYY' | 'DD/MM/YY' | 'YYYY-MM-DD' | 'DD-MM-YYYY';
+  dateFormat: 'DD/MM/YYYY' | 'DD/MM/YY' | 'DD MMM YYYY' | 'YYYY-MM-DD';
   decimalSeparator: '.' | ',';
   thousandsSeparator: '.' | ',' | ' ' | '';
   hasHeader: boolean;
   headerRows?: number;
-  encoding?: string;
   delimiter?: string;
-  // Credit card specifics
-  creditIndicator?: string; // e.g., "CR" for credits
-  negativeAsIncome?: boolean; // For credit cards where negative = payment/income
 }
 
 // Definición de formatos bancarios conocidos
@@ -38,39 +28,42 @@ export const BANK_FORMATS: BankFormat[] = [
   {
     id: 'hsbc',
     name: 'HSBC',
+    description: 'CSV con formato: Fecha, Descripción, Monto',
     fileTypes: ['csv'],
-    dateColumn: 0,
-    descriptionColumn: 1,
-    amountColumn: 2,
     dateFormat: 'DD/MM/YYYY',
     decimalSeparator: ',',
     thousandsSeparator: '.',
-    hasHeader: true,
-    headerRows: 1,
+    hasHeader: false,
     delimiter: ','
   },
   {
     id: 'amex',
     name: 'American Express',
+    description: 'CSV con cabecera: Fecha, Descripción, Importe',
     fileTypes: ['csv'],
-    dateColumn: 0, // "Fecha"
-    descriptionColumn: 1, // "Descripción"
-    amountColumn: 4, // "Importe" (negative = expense)
-    dateFormat: 'DD/MM/YYYY',
-    decimalSeparator: ',',
-    thousandsSeparator: '.',
+    dateFormat: 'DD MMM YYYY',
+    decimalSeparator: '.',
+    thousandsSeparator: ',',
     hasHeader: true,
     headerRows: 1,
     delimiter: ','
   },
   {
+    id: 'mastercard_tc',
+    name: 'MasterCard/Visa TC',
+    description: 'CSV sin cabecera: Fecha, Concepto, Monto',
+    fileTypes: ['csv'],
+    dateFormat: 'DD/MM/YYYY',
+    decimalSeparator: ',',
+    thousandsSeparator: '.',
+    hasHeader: false,
+    delimiter: ','
+  },
+  {
     id: 'ing',
     name: 'ING Direct',
+    description: 'Excel/CSV con F.valor, Categoría, Subcategoría, Movimiento, Importe',
     fileTypes: ['xls', 'xlsx', 'csv'],
-    dateColumn: 'F. valor', // or index 0
-    descriptionColumn: 'Movimiento',
-    incomeColumn: 'Importe',
-    expenseColumn: 'Importe',
     dateFormat: 'DD/MM/YYYY',
     decimalSeparator: ',',
     thousandsSeparator: '.',
@@ -79,28 +72,10 @@ export const BANK_FORMATS: BankFormat[] = [
     delimiter: ';'
   },
   {
-    id: 'mastercard_tc',
-    name: 'MasterCard/Visa TC',
-    fileTypes: ['csv'],
-    dateColumn: 0,
-    descriptionColumn: 1,
-    amountColumn: 2, // or columns 2 and 3 for income/expense
-    incomeColumn: 2,
-    expenseColumn: 3,
-    dateFormat: 'DD/MM/YY',
-    decimalSeparator: ',',
-    thousandsSeparator: '.',
-    hasHeader: false,
-    delimiter: ','
-  },
-  {
     id: 'generic',
     name: 'Formato Genérico',
+    description: 'CSV: Fecha, Descripción, Ingreso, Gasto',
     fileTypes: ['csv'],
-    dateColumn: 0,
-    descriptionColumn: 1,
-    incomeColumn: 2,
-    expenseColumn: 3,
     dateFormat: 'DD/MM/YYYY',
     decimalSeparator: ',',
     thousandsSeparator: '.',
@@ -109,136 +84,49 @@ export const BANK_FORMATS: BankFormat[] = [
   }
 ];
 
-// Keywords para clasificación automática - mapeo a subcategorías
+// Keywords para clasificación automática
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
   // Alimentación
-  'supermercado': ['mercadona', 'carrefour', 'lidl', 'aldi', 'eroski', 'dia', 'alcampo', 'hipercor', 'el corte ingles', 'walmart', 'soriana', 'chedraui', 'superama', 'costco', 'sams club', 'heb', 'oxxo'],
-  'restaurantes': ['uber eats', 'rappi', 'didi food', 'just eat', 'glovo', 'deliveroo', 'mcdonalds', 'burger king', 'kfc', 'dominos', 'pizza hut', 'starbucks', 'vips', 'sanborns', 'restaurant', 'cafe', 'bar', 'comida'],
+  'supermercado': ['mercadona', 'carrefour', 'lidl', 'aldi', 'eroski', 'dia', 'alcampo', 'hipercor', 'el corte ingles', 'walmart', 'soriana', 'chedraui', 'superama', 'costco', 'sams club', 'heb', 'oxxo', 'canasta', 'abarrey', 'kowi', 'city market'],
+  'restaurantes': ['uber eats', 'rappi', 'didi food', 'just eat', 'glovo', 'deliveroo', 'mcdonalds', 'burger king', 'kfc', 'dominos', 'pizza hut', 'starbucks', 'vips', 'sanborns', 'restaurant', 'rest ', 'cafe', 'bar', 'comida', 'bronco', 'dogos', 'melo cafe', 'panarra', 'copines', 'niddo', 'estiatorio', 'azul centro'],
   
   // Transporte
   'gasolina': ['gasolinera', 'pemex', 'bp', 'shell', 'repsol', 'cepsa', 'total', 'fuel', 'petromax', 'gasolina', 'gasoline'],
-  'transporte publico': ['metro', 'autobus', 'bus', 'tren', 'renfe', 'cercanias', 'transporte', 'cabify', 'uber', 'didi', 'beat', 'taxi'],
-  'peajes': ['peaje', 'autopista', 'toll', 'via t', 'telepeaje', 'tag', 'iave'],
+  'transporte publico': ['metro', 'autobus', 'bus', 'tren', 'renfe', 'cercanias', 'transporte', 'cabify', 'uber trip', 'didi', 'beat', 'taxi'],
+  'peajes': ['peaje', 'autopista', 'toll', 'via t', 'telepeaje', 'tag', 'iave', 'pase ', 'pase d isra', 'pase tlalpan', 'pase tepoztlan', 'pase ejerc'],
   
   // Hogar
   'alquiler': ['alquiler', 'renta', 'rent', 'arrendamiento'],
   'hipoteca': ['hipoteca', 'mortgage', 'credito vivienda'],
-  'servicios': ['luz', 'agua', 'gas natural', 'electricidad', 'enel', 'endesa', 'iberdrola', 'naturgy', 'cfe', 'telmex', 'izzi', 'totalplay', 'megacable'],
+  'servicios': ['luz', 'agua', 'gas natural', 'electricidad', 'enel', 'endesa', 'iberdrola', 'naturgy', 'cfe', 'telmex', 'izzi', 'totalplay', 'megacable', 'at&t', 'rotoplas'],
   
   // Salud
-  'farmacia': ['farmacia', 'pharmacy', 'farmacias del ahorro', 'san pablo', 'guadalajara', 'benavides', 'similares'],
+  'farmacia': ['farmacia', 'pharmacy', 'farmacias del ahorro', 'san pablo', 'guadalajara', 'benavides', 'similares', 'fbenavides', 'far guad'],
   'medico': ['doctor', 'medico', 'hospital', 'clinica', 'dentista', 'odontologo', 'laboratorio'],
-  'seguro medico': ['seguro medico', 'sanitas', 'adeslas', 'mapfre salud', 'axa salud', 'gnp salud'],
+  'deporte': ['natacion', 'padel', 'playtomic', 'gym', 'gimnasio', 'decathlon', 'duo padel'],
   
   // Entretenimiento
-  'streaming': ['netflix', 'spotify', 'hbo', 'disney', 'amazon prime', 'apple tv', 'youtube premium', 'deezer', 'crunchyroll'],
+  'streaming': ['netflix', 'spotify', 'hbo', 'disney', 'amazon prime', 'apple tv', 'youtube premium', 'deezer', 'crunchyroll', 'apple.com/bill'],
   'cine': ['cine', 'cinepolis', 'cinemex', 'cinemark', 'movie'],
-  'videojuegos': ['steam', 'playstation', 'xbox', 'nintendo', 'epic games'],
   
-  // Suscripciones
-  'suscripciones': ['suscripcion', 'subscription', 'membership', 'mensualidad', 'cuota'],
-  
-  // Tecnología
-  'electronica': ['apple', 'amazon', 'mercado libre', 'liverpool', 'best buy', 'office depot', 'palacio de hierro'],
-  'software': ['microsoft', 'adobe', 'google', 'dropbox', 'icloud', 'notion', 'slack'],
+  // Compras
+  'amazon': ['amazon'],
+  'mercado libre': ['mercadopago', 'mercado libre'],
+  'tiendas': ['liverpool', 'palacio de hierro', 'steren', 'hexclad', 'barrabes'],
   
   // Finanzas
-  'comisiones': ['comision', 'commission', 'fee', 'cargo', 'mantenimiento cuenta'],
-  'seguros': ['seguro', 'insurance', 'poliza', 'axa', 'mapfre', 'allianz', 'zurich', 'gnp', 'qualitas', 'chubb'],
-  'inversiones': ['inversion', 'investment', 'fondo', 'acciones', 'etf', 'gbm', 'kuspit', 'cetesdirecto', 'bursanet'],
+  'comisiones': ['comision', 'commission', 'fee', 'cargo', 'mantenimiento', 'cuota anual', 'iva aplicable'],
+  'pago tarjeta': ['pago', 'gracias por su pago', 'su pago gracias', 'pago de credito'],
   
   // Ingresos
   'salario': ['nomina', 'salario', 'sueldo', 'payroll', 'salary', 'wage'],
-  'transferencia recibida': ['transferencia recibida', 'abono', 'deposito', 'ingreso'],
-  'rendimientos': ['rendimiento', 'interes', 'dividendo', 'dividend', 'yield', 'interest'],
-  
-  // Reembolsos (para tarjetas de crédito)
-  'reembolso': ['devolucion', 'reembolso', 'refund', 'return', 'abono', 'cr'],
+  'rendimientos': ['rendimiento', 'mt rendimiento', 'interes', 'dividendo'],
+  'transferencia': ['transferencia', 'deposito', 'abono', 'reemb saldo'],
+  'descuento': ['descuento', 'bono', 'reembolso'],
 };
 
 // Keywords que indican reembolso en tarjeta de crédito
-const REFUND_KEYWORDS = ['devolucion', 'reembolso', 'refund', 'return', 'abono', 'cancelacion', 'amazon', 'mercado libre', 'paypal'];
-
-export function parseDate(dateStr: string, format: BankFormat['dateFormat']): string {
-  if (!dateStr || dateStr.trim() === '') return new Date().toISOString().split('T')[0];
-  
-  const cleaned = dateStr.trim().replace(/['"]/g, '');
-  
-  try {
-    let day: string, month: string, year: string;
-    
-    if (format === 'DD/MM/YYYY' || format === 'DD/MM/YY') {
-      const parts = cleaned.split(/[\/\-]/);
-      if (parts.length < 3) return new Date().toISOString().split('T')[0];
-      
-      day = parts[0].padStart(2, '0');
-      month = parts[1].padStart(2, '0');
-      year = parts[2];
-      
-      if (year.length === 2) {
-        const yearNum = parseInt(year);
-        year = yearNum < 50 ? `20${year}` : `19${year}`;
-      }
-    } else if (format === 'DD-MM-YYYY') {
-      const parts = cleaned.split('-');
-      if (parts.length < 3) return new Date().toISOString().split('T')[0];
-      
-      day = parts[0].padStart(2, '0');
-      month = parts[1].padStart(2, '0');
-      year = parts[2];
-    } else if (format === 'YYYY-MM-DD') {
-      const parts = cleaned.split('-');
-      if (parts.length < 3) return new Date().toISOString().split('T')[0];
-      
-      year = parts[0];
-      month = parts[1].padStart(2, '0');
-      day = parts[2].padStart(2, '0');
-    } else {
-      return new Date().toISOString().split('T')[0];
-    }
-    
-    return `${year}-${month}-${day}`;
-  } catch {
-    return new Date().toISOString().split('T')[0];
-  }
-}
-
-export function parseAmount(amountStr: string, format: BankFormat): { value: number; isNegative: boolean } {
-  if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '0') {
-    return { value: 0, isNegative: false };
-  }
-  
-  let cleaned = amountStr
-    .replace(/['"]/g, '')
-    .replace(/\s/g, '')
-    .replace(/[€$MXN]/gi, '')
-    .trim();
-  
-  // Check for negative sign or parentheses
-  const isNegative = cleaned.startsWith('-') || cleaned.startsWith('(') || cleaned.endsWith('-');
-  cleaned = cleaned.replace(/[()]/g, '').replace(/-/g, '');
-  
-  // Handle separators based on format
-  if (format.thousandsSeparator === '.' && format.decimalSeparator === ',') {
-    // European format: 1.234,56
-    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
-  } else if (format.thousandsSeparator === ',' && format.decimalSeparator === '.') {
-    // US format: 1,234.56
-    cleaned = cleaned.replace(/,/g, '');
-  } else if (format.thousandsSeparator === ' ') {
-    // Space as thousands: 1 234,56
-    cleaned = cleaned.replace(/\s/g, '').replace(',', '.');
-  } else {
-    // Default handling
-    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
-  }
-  
-  const value = parseFloat(cleaned);
-  return { 
-    value: isNaN(value) ? 0 : Math.abs(value), 
-    isNegative 
-  };
-}
+const REFUND_KEYWORDS = ['devolucion', 'reembolso', 'refund', 'return', 'reversion', 'cancelacion'];
 
 export function parseCSVLine(line: string, delimiter: string = ','): string[] {
   const result: string[] = [];
@@ -251,28 +139,132 @@ export function parseCSVLine(line: string, delimiter: string = ','): string[] {
     if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === delimiter && !inQuotes) {
-      result.push(current.trim());
+      result.push(current.trim().replace(/^"|"$/g, ''));
       current = '';
     } else {
       current += char;
     }
   }
   
-  result.push(current.trim());
+  result.push(current.trim().replace(/^"|"$/g, ''));
   return result;
+}
+
+const MONTH_NAMES: Record<string, string> = {
+  'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+  'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
+  'ene': '01', 'abr': '04', 'ago': '08', 'dic': '12'
+};
+
+export function parseDate(dateStr: string, format: BankFormat['dateFormat']): string {
+  if (!dateStr || dateStr.trim() === '') return new Date().toISOString().split('T')[0];
+  
+  const cleaned = dateStr.trim().replace(/['"]/g, '');
+  
+  try {
+    if (format === 'DD MMM YYYY') {
+      // Format: "06 Jan 2026"
+      const parts = cleaned.split(' ');
+      if (parts.length < 3) return new Date().toISOString().split('T')[0];
+      
+      const day = parts[0].padStart(2, '0');
+      const monthName = parts[1].toLowerCase().substring(0, 3);
+      const month = MONTH_NAMES[monthName] || '01';
+      const year = parts[2];
+      
+      return `${year}-${month}-${day}`;
+    }
+    
+    if (format === 'DD/MM/YYYY' || format === 'DD/MM/YY') {
+      const parts = cleaned.split(/[\/\-]/);
+      if (parts.length < 3) return new Date().toISOString().split('T')[0];
+      
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      let year = parts[2];
+      
+      if (year.length === 2) {
+        const yearNum = parseInt(year);
+        year = yearNum < 50 ? `20${year}` : `19${year}`;
+      }
+      
+      return `${year}-${month}-${day}`;
+    }
+    
+    if (format === 'YYYY-MM-DD') {
+      const parts = cleaned.split('-');
+      if (parts.length < 3) return new Date().toISOString().split('T')[0];
+      
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    }
+    
+    return new Date().toISOString().split('T')[0];
+  } catch {
+    return new Date().toISOString().split('T')[0];
+  }
+}
+
+export function parseAmount(amountStr: string, format: BankFormat): { value: number; isNegative: boolean } {
+  if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '0') {
+    return { value: 0, isNegative: false };
+  }
+  
+  let cleaned = amountStr
+    .replace(/['"]/g, '')
+    .replace(/[€$MXN]/gi, '')
+    .trim();
+  
+  // Check for negative sign
+  const isNegative = cleaned.startsWith('-') || cleaned.startsWith('(') || cleaned.endsWith('-');
+  cleaned = cleaned.replace(/[()]/g, '').replace(/-/g, '').trim();
+  
+  // Handle separators
+  if (format.decimalSeparator === ',' && format.thousandsSeparator === '.') {
+    // European: 1.234,56 -> 1234.56
+    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+  } else if (format.decimalSeparator === '.' && format.thousandsSeparator === ',') {
+    // US: 1,234.56 -> 1234.56
+    cleaned = cleaned.replace(/,/g, '');
+  } else {
+    // Default: try to detect
+    if (cleaned.includes(',') && cleaned.includes('.')) {
+      // If both, the last one is decimal
+      const lastComma = cleaned.lastIndexOf(',');
+      const lastDot = cleaned.lastIndexOf('.');
+      if (lastComma > lastDot) {
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+      } else {
+        cleaned = cleaned.replace(/,/g, '');
+      }
+    } else if (cleaned.includes(',')) {
+      // Only comma - check if it's decimal (has digits after)
+      const afterComma = cleaned.split(',')[1];
+      if (afterComma && afterComma.length <= 2) {
+        cleaned = cleaned.replace(',', '.');
+      } else {
+        cleaned = cleaned.replace(/,/g, '');
+      }
+    }
+  }
+  
+  const value = parseFloat(cleaned);
+  return { 
+    value: isNaN(value) ? 0 : Math.abs(value), 
+    isNegative 
+  };
 }
 
 export function classifyTransaction(
   comentario: string, 
   categories: Category[],
-  isCredit: boolean = false,
+  isIncome: boolean = false,
   isCreditCardAccount: boolean = false
 ): { categoryId?: string; confidence: 'high' | 'medium' | 'low'; isReembolso: boolean } {
   const lowerComentario = comentario.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   
   // Check if it's a refund on credit card
   let isReembolso = false;
-  if (isCreditCardAccount && isCredit) {
+  if (isCreditCardAccount && isIncome) {
     isReembolso = REFUND_KEYWORDS.some(keyword => lowerComentario.includes(keyword));
   }
   
@@ -297,7 +289,7 @@ export function classifyTransaction(
         });
         
         if (matchingCategory) {
-          const score = pattern.length; // Longer matches are more specific
+          const score = pattern.length;
           const confidence = pattern.length > 5 ? 'high' : 'medium';
           
           if (!bestMatch || score > bestMatch.score) {
@@ -319,43 +311,40 @@ export function classifyTransaction(
   return { confidence: 'low', isReembolso };
 }
 
+// HSBC Parser: Fecha, Descripción, Monto (sin header)
 export function parseHSBC(lines: string[], format: BankFormat, categories: Category[], isCreditCard: boolean): ParsedTransaction[] {
   const transactions: ParsedTransaction[] = [];
-  const startLine = format.hasHeader ? (format.headerRows || 1) : 0;
   
-  for (let i = startLine; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
     
-    const columns = parseCSVLine(line, format.delimiter || ',');
+    const columns = parseCSVLine(trimmedLine, format.delimiter || ',');
     if (columns.length < 3) continue;
     
     const fecha = parseDate(columns[0], format.dateFormat);
-    const comentario = columns[1].replace(/['"]/g, '').trim();
+    const comentario = columns[1].trim();
     const { value, isNegative } = parseAmount(columns[2], format);
     
-    if (value === 0) continue;
+    if (value === 0 || !comentario) continue;
     
-    // For HSBC: negative = expense, positive = income
-    const isCredit = !isNegative;
-    const classification = classifyTransaction(comentario, categories, isCredit, isCreditCard);
+    // HSBC: negative = expense, positive = income
+    const isIncome = !isNegative;
+    const classification = classifyTransaction(comentario, categories, isIncome, isCreditCard);
     
     let ingreso = 0;
     let gasto = 0;
     
     if (isCreditCard) {
-      if (isCredit && classification.isReembolso) {
-        // Reembolso en tarjeta de crédito: poner como gasto positivo
-        gasto = value;
-      } else if (isCredit) {
-        // Pago a tarjeta de crédito
+      if (isIncome && classification.isReembolso) {
+        gasto = value; // Reembolso como gasto positivo
+      } else if (isIncome) {
         ingreso = value;
       } else {
-        // Gasto normal
         gasto = value;
       }
     } else {
-      ingreso = isCredit ? value : 0;
+      ingreso = isIncome ? value : 0;
       gasto = isNegative ? value : 0;
     }
     
@@ -373,35 +362,38 @@ export function parseHSBC(lines: string[], format: BankFormat, categories: Categ
   return transactions;
 }
 
+// AMEX Parser: Fecha,Fecha Compra,Descripción,Titular,Cuenta,Importe,... (con header)
 export function parseAMEX(lines: string[], format: BankFormat, categories: Category[], isCreditCard: boolean): ParsedTransaction[] {
   const transactions: ParsedTransaction[] = [];
-  const startLine = format.hasHeader ? (format.headerRows || 1) : 0;
+  const startLine = 1; // Skip header
   
   for (let i = startLine; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
     
     const columns = parseCSVLine(line, format.delimiter || ',');
-    if (columns.length < 5) continue;
+    if (columns.length < 6) continue;
     
     const fecha = parseDate(columns[0], format.dateFormat);
-    const comentario = columns[1].replace(/['"]/g, '').trim();
-    const { value, isNegative } = parseAmount(columns[4], format);
+    const comentario = columns[2].trim(); // Descripción está en columna 2
+    const { value, isNegative } = parseAmount(columns[5], format); // Importe en columna 5
     
-    if (value === 0) continue;
+    if (value === 0 || !comentario) continue;
     
-    // For AMEX: negative = expense, positive = credit/refund
-    const isCredit = !isNegative;
-    const classification = classifyTransaction(comentario, categories, isCredit, isCreditCard);
+    // AMEX: positive = expense, negative = credit/payment
+    const isCredit = isNegative;
+    const classification = classifyTransaction(comentario, categories, isCredit, true);
     
     let ingreso = 0;
     let gasto = 0;
     
-    // AMEX es siempre tarjeta de crédito
-    if (isCredit && classification.isReembolso) {
-      gasto = value; // Reembolso como gasto positivo
-    } else if (isCredit) {
-      ingreso = value;
+    if (isCredit) {
+      // Negativo en AMEX = crédito/pago
+      if (classification.isReembolso) {
+        gasto = value; // Reembolso como gasto positivo
+      } else {
+        ingreso = value;
+      }
     } else {
       gasto = value;
     }
@@ -420,40 +412,88 @@ export function parseAMEX(lines: string[], format: BankFormat, categories: Categ
   return transactions;
 }
 
+// MasterCard TC Parser: Fecha, Concepto, Monto (sin header, negativo = pago/crédito)
+export function parseMasterCard(lines: string[], format: BankFormat, categories: Category[], isCreditCard: boolean): ParsedTransaction[] {
+  const transactions: ParsedTransaction[] = [];
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
+    
+    const columns = parseCSVLine(trimmedLine, format.delimiter || ',');
+    if (columns.length < 3) continue;
+    
+    const fecha = parseDate(columns[0], format.dateFormat);
+    const comentario = columns[1].trim();
+    const { value, isNegative } = parseAmount(columns[2], format);
+    
+    if (value === 0 || !comentario) continue;
+    
+    // MasterCard TC: positive = expense, negative = payment/credit
+    const isCredit = isNegative;
+    const classification = classifyTransaction(comentario, categories, isCredit, true);
+    
+    let ingreso = 0;
+    let gasto = 0;
+    
+    if (isCredit) {
+      if (classification.isReembolso) {
+        gasto = value;
+      } else {
+        ingreso = value;
+      }
+    } else {
+      gasto = value;
+    }
+    
+    transactions.push({
+      fecha,
+      comentario,
+      ingreso,
+      gasto,
+      suggestedCategoryId: classification.categoryId,
+      confidence: classification.confidence,
+      isReembolso: classification.isReembolso
+    });
+  }
+  
+  return transactions;
+}
+
+// ING Parser: F.valor;Categoría;Subcategoría;Movimiento;Importe;Saldo (con header)
 export function parseING(lines: string[], format: BankFormat, categories: Category[], isCreditCard: boolean): ParsedTransaction[] {
   const transactions: ParsedTransaction[] = [];
-  const startLine = format.hasHeader ? (format.headerRows || 1) : 0;
+  const startLine = 1; // Skip header
   
   for (let i = startLine; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
     
     const columns = parseCSVLine(line, format.delimiter || ';');
-    if (columns.length < 4) continue;
+    if (columns.length < 5) continue;
     
-    // ING format: F. valor | Categoría | Subcategoría | Movimiento | Importe | Saldo
     const fecha = parseDate(columns[0], format.dateFormat);
-    const comentario = columns[3].replace(/['"]/g, '').trim();
+    const comentario = columns[3].trim(); // Movimiento
     const { value, isNegative } = parseAmount(columns[4], format);
     
-    if (value === 0) continue;
+    if (value === 0 || !comentario) continue;
     
-    const isCredit = !isNegative;
-    const classification = classifyTransaction(comentario, categories, isCredit, isCreditCard);
+    const isIncome = !isNegative;
+    const classification = classifyTransaction(comentario, categories, isIncome, isCreditCard);
     
     let ingreso = 0;
     let gasto = 0;
     
     if (isCreditCard) {
-      if (isCredit && classification.isReembolso) {
+      if (isIncome && classification.isReembolso) {
         gasto = value;
-      } else if (isCredit) {
+      } else if (isIncome) {
         ingreso = value;
       } else {
         gasto = value;
       }
     } else {
-      ingreso = isCredit ? value : 0;
+      ingreso = isIncome ? value : 0;
       gasto = isNegative ? value : 0;
     }
     
@@ -471,75 +511,31 @@ export function parseING(lines: string[], format: BankFormat, categories: Catego
   return transactions;
 }
 
-export function parseMasterCard(lines: string[], format: BankFormat, categories: Category[], isCreditCard: boolean): ParsedTransaction[] {
-  const transactions: ParsedTransaction[] = [];
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    
-    const columns = parseCSVLine(line, format.delimiter || ',');
-    if (columns.length < 4) continue;
-    
-    // MasterCard TC format: Fecha | Concepto | Ingreso | Gasto
-    const fecha = parseDate(columns[0], format.dateFormat);
-    const comentario = columns[1].replace(/['"]/g, '').trim();
-    const { value: ingresoValue } = parseAmount(columns[2], format);
-    const { value: gastoValue } = parseAmount(columns[3], format);
-    
-    if (ingresoValue === 0 && gastoValue === 0) continue;
-    
-    const isCredit = ingresoValue > 0;
-    const classification = classifyTransaction(comentario, categories, isCredit, true);
-    
-    let ingreso = ingresoValue;
-    let gasto = gastoValue;
-    
-    // Para tarjeta de crédito: si es ingreso y parece reembolso, convertir a gasto
-    if (isCredit && classification.isReembolso) {
-      gasto = ingresoValue;
-      ingreso = 0;
-    }
-    
-    transactions.push({
-      fecha,
-      comentario,
-      ingreso,
-      gasto,
-      suggestedCategoryId: classification.categoryId,
-      confidence: classification.confidence,
-      isReembolso: classification.isReembolso
-    });
-  }
-  
-  return transactions;
-}
-
+// Generic Parser: Fecha, Descripción, Ingreso, Gasto
 export function parseGeneric(lines: string[], format: BankFormat, categories: Category[], isCreditCard: boolean): ParsedTransaction[] {
   const transactions: ParsedTransaction[] = [];
-  const startLine = format.hasHeader ? (format.headerRows || 1) : 0;
   
-  for (let i = startLine; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
     
-    const columns = parseCSVLine(line, format.delimiter || ',');
+    const columns = parseCSVLine(trimmedLine, format.delimiter || ',');
     if (columns.length < 4) continue;
     
     const fecha = parseDate(columns[0], format.dateFormat);
-    const comentario = columns[1].replace(/['"]/g, '').trim();
+    const comentario = columns[1].trim();
     const { value: ingresoValue } = parseAmount(columns[2], format);
     const { value: gastoValue } = parseAmount(columns[3], format);
     
-    if (ingresoValue === 0 && gastoValue === 0) continue;
+    if ((ingresoValue === 0 && gastoValue === 0) || !comentario) continue;
     
-    const isCredit = ingresoValue > 0;
-    const classification = classifyTransaction(comentario, categories, isCredit, isCreditCard);
+    const isIncome = ingresoValue > 0;
+    const classification = classifyTransaction(comentario, categories, isIncome, isCreditCard);
     
     let ingreso = ingresoValue;
     let gasto = gastoValue;
     
-    if (isCreditCard && isCredit && classification.isReembolso) {
+    if (isCreditCard && isIncome && classification.isReembolso) {
       gasto = ingresoValue;
       ingreso = 0;
     }
@@ -569,17 +565,18 @@ export function parseBankFile(
     throw new Error(`Formato de banco no reconocido: ${bankFormatId}`);
   }
   
-  const lines = content.split('\n').filter(line => line.trim());
+  // Split by lines, handling different line endings
+  const lines = content.split(/\r?\n/).filter(line => line.trim());
   
   switch (bankFormatId) {
     case 'hsbc':
       return parseHSBC(lines, format, categories, isCreditCard);
     case 'amex':
       return parseAMEX(lines, format, categories, isCreditCard);
-    case 'ing':
-      return parseING(lines, format, categories, isCreditCard);
     case 'mastercard_tc':
       return parseMasterCard(lines, format, categories, isCreditCard);
+    case 'ing':
+      return parseING(lines, format, categories, isCreditCard);
     case 'generic':
     default:
       return parseGeneric(lines, format, categories, isCreditCard);
