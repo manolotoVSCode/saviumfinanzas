@@ -5,7 +5,10 @@ export interface ParsedTransaction {
   comentario: string;
   ingreso: number;
   gasto: number;
+  /** Tipo de movimiento (según columna/monto), independiente del tipo de categoría */
+  movementType: 'Ingreso' | 'Gasto' | 'Reembolso';
   suggestedCategoryId?: string;
+  /** Tipo de categoría sugerida */
   suggestedCategoryType?: 'Ingreso' | 'Gasto';
   confidence: 'high' | 'medium' | 'low';
   isReembolso?: boolean;
@@ -134,7 +137,7 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
 };
 
 // Keywords que indican reembolso en tarjeta de crédito
-const REFUND_KEYWORDS = ['devolucion', 'reembolso', 'refund', 'return', 'reversion', 'cancelacion', 'amazon', 'liverpool', 'mercadolibre', 'mercado libre', 'mercadopago', 'wish', 'aliexpress', 'shein', 'servicio de facturacion'];
+const REFUND_KEYWORDS = ['devolucion', 'reembolso', 'refund', 'return', 'reversion', 'cancelacion', 'amazon', 'liverpool', 'mercadolibre', 'mercado libre', 'mercadopago', 'wish', 'aliexpress', 'shein', 'servicio de facturacion', 'barrabes'];
 
 // Buscar en historial de transacciones para clasificación
 function findInHistory(
@@ -415,11 +418,18 @@ export function parseHSBC(lines: string[], format: BankFormat, categories: Categ
       gasto = isNegative ? value : 0;
     }
     
+    const movementType: ParsedTransaction['movementType'] = classification.isReembolso
+      ? 'Reembolso'
+      : gasto > 0
+        ? 'Gasto'
+        : 'Ingreso';
+
     transactions.push({
       fecha,
       comentario,
-      ingreso,
-      gasto,
+      ingreso: Math.abs(ingreso),
+      gasto: Math.abs(gasto),
+      movementType,
       suggestedCategoryId: classification.categoryId,
       suggestedCategoryType: classification.categoryType,
       confidence: classification.confidence,
@@ -466,11 +476,18 @@ export function parseAMEX(lines: string[], format: BankFormat, categories: Categ
       gasto = value;
     }
     
+    const movementType: ParsedTransaction['movementType'] = classification.isReembolso
+      ? 'Reembolso'
+      : gasto > 0
+        ? 'Gasto'
+        : 'Ingreso';
+
     transactions.push({
       fecha,
       comentario,
-      ingreso,
-      gasto,
+      ingreso: Math.abs(ingreso),
+      gasto: Math.abs(gasto),
+      movementType,
       suggestedCategoryId: classification.categoryId,
       suggestedCategoryType: classification.categoryType,
       confidence: classification.confidence,
@@ -515,11 +532,18 @@ export function parseMasterCard(lines: string[], format: BankFormat, categories:
       gasto = value;
     }
     
+    const movementType: ParsedTransaction['movementType'] = classification.isReembolso
+      ? 'Reembolso'
+      : gasto > 0
+        ? 'Gasto'
+        : 'Ingreso';
+
     transactions.push({
       fecha,
       comentario,
-      ingreso,
-      gasto,
+      ingreso: Math.abs(ingreso),
+      gasto: Math.abs(gasto),
+      movementType,
       suggestedCategoryId: classification.categoryId,
       suggestedCategoryType: classification.categoryType,
       confidence: classification.confidence,
@@ -567,11 +591,18 @@ export function parseING(lines: string[], format: BankFormat, categories: Catego
       gasto = isNegative ? value : 0;
     }
     
+    const movementType: ParsedTransaction['movementType'] = classification.isReembolso
+      ? 'Reembolso'
+      : gasto > 0
+        ? 'Gasto'
+        : 'Ingreso';
+
     transactions.push({
       fecha,
       comentario,
-      ingreso,
-      gasto,
+      ingreso: Math.abs(ingreso),
+      gasto: Math.abs(gasto),
+      movementType,
       suggestedCategoryId: classification.categoryId,
       suggestedCategoryType: classification.categoryType,
       confidence: classification.confidence,
@@ -611,11 +642,18 @@ export function parseGeneric(lines: string[], format: BankFormat, categories: Ca
       ingreso = 0;
     }
     
+    const movementType: ParsedTransaction['movementType'] = classification.isReembolso
+      ? 'Reembolso'
+      : gasto > 0
+        ? 'Gasto'
+        : 'Ingreso';
+
     transactions.push({
       fecha,
       comentario,
-      ingreso,
-      gasto,
+      ingreso: Math.abs(ingreso),
+      gasto: Math.abs(gasto),
+      movementType,
       suggestedCategoryId: classification.categoryId,
       suggestedCategoryType: classification.categoryType,
       confidence: classification.confidence,

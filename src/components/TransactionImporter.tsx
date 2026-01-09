@@ -129,20 +129,33 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
     const transactions: Omit<Transaction, 'id' | 'monto'>[] = selectedTxs.map((transaction, index) => {
       const [year, month, day] = transaction.fecha.split('-');
       const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-      
+
       // Add REEMBOLSO prefix if it's a refund
       let comentario = transaction.comentario;
       if (transaction.isReembolso && !comentario.toUpperCase().includes('REEMBOLSO')) {
         comentario = `REEMBOLSO (gasto): ${comentario}`;
       }
-      
+
+      // Normalizar montos: nunca guardar negativos y nunca guardar en la columna incorrecta
+      const rawIngreso = Math.abs(transaction.ingreso || 0);
+      const rawGasto = Math.abs(transaction.gasto || 0);
+
+      let ingreso = 0;
+      let gasto = 0;
+      if (transaction.movementType === 'Ingreso') {
+        ingreso = rawIngreso || rawGasto;
+      } else {
+        // Gasto o Reembolso siempre se guarda como gasto positivo
+        gasto = rawGasto || rawIngreso;
+      }
+
       return {
         csvId: `import_${Date.now()}_${index}`,
         cuentaId: selectedAccount,
         fecha,
         comentario,
-        ingreso: transaction.ingreso,
-        gasto: transaction.gasto,
+        ingreso,
+        gasto,
         subcategoriaId: transaction.suggestedCategoryId || defaultCategory.id,
         divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
       };
@@ -203,6 +216,16 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
       return <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">Ingreso</Badge>;
     }
     return <Badge variant="outline" className="bg-muted text-muted-foreground">-</Badge>;
+  };
+
+  const getMovementBadge = (movement: ParsedTransaction['movementType']) => {
+    if (movement === 'Reembolso') {
+      return <Badge variant="outline" className="bg-muted text-muted-foreground">Reembolso</Badge>;
+    }
+    if (movement === 'Gasto') {
+      return <Badge variant="outline" className="bg-muted text-muted-foreground">Gasto</Badge>;
+    }
+    return <Badge variant="outline" className="bg-muted text-muted-foreground">Ingreso</Badge>;
   };
 
   const selectedCount = parsedTransactions.filter(t => t.selected).length;
@@ -368,23 +391,24 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
 
             <ScrollArea className="h-[400px] border rounded-md">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox 
-                        checked={selectedCount === parsedTransactions.length}
-                        onCheckedChange={(checked) => checked ? selectAll() : deselectAll()}
-                      />
-                    </TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead className="text-right">Ingreso</TableHead>
-                    <TableHead className="text-right">Gasto</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Categoría</TableHead>
-                    <TableHead>Confianza</TableHead>
-                  </TableRow>
-                </TableHeader>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox 
+                          checked={selectedCount === parsedTransactions.length}
+                          onCheckedChange={(checked) => checked ? selectAll() : deselectAll()}
+                        />
+                      </TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Descripción</TableHead>
+                      <TableHead className="text-right">Ingreso</TableHead>
+                      <TableHead className="text-right">Gasto</TableHead>
+                      <TableHead>Movimiento</TableHead>
+                      <TableHead>Tipo cat.</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead>Confianza</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {parsedTransactions.map((transaction, index) => (
                     <TableRow key={index} className={!transaction.selected ? 'opacity-50' : ''}>
@@ -409,6 +433,9 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
                       </TableCell>
                       <TableCell className="text-right text-red-600">
                         {transaction.gasto > 0 ? `$${transaction.gasto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {getMovementBadge(transaction.movementType)}
                       </TableCell>
                       <TableCell>
                         {getTypeBadge(getCategoryType(transaction.suggestedCategoryId, transaction.suggestedCategoryType))}
