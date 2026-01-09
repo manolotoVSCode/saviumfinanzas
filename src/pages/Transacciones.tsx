@@ -36,6 +36,7 @@ const Transacciones = () => {
             <TransactionImporter
               accounts={financeData.accounts}
               categories={financeData.categories}
+              transactions={financeData.transactions}
               onImportTransactions={financeData.addTransactionsBatch}
             />
             <SmartTransactionImporter

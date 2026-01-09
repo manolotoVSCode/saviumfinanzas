@@ -11,11 +11,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, FileText, ArrowRight, ArrowLeft, Check, X, RefreshCcw } from 'lucide-react';
 import { Account, Category, Transaction } from '@/types/finance';
-import { parseBankFile, ParsedTransaction, BANK_FORMATS } from '@/hooks/useBankParser';
+import { parseBankFile, ParsedTransaction, BANK_FORMATS, TransactionHistory } from '@/hooks/useBankParser';
 
 interface TransactionImporterProps {
   accounts: Account[];
   categories: Category[];
+  transactions: Transaction[];
   onImportTransactions: (transactions: Omit<Transaction, 'id' | 'monto'>[]) => void;
 }
 
@@ -27,7 +28,7 @@ const CURRENCIES: Array<{ value: 'MXN' | 'USD' | 'EUR'; label: string }> = [
 
 type Step = 'select-account' | 'upload' | 'preview' | 'importing';
 
-const TransactionImporter = ({ accounts, categories, onImportTransactions }: TransactionImporterProps) => {
+const TransactionImporter = ({ accounts, categories, transactions: existingTransactions, onImportTransactions }: TransactionImporterProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<Step>('select-account');
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
@@ -50,7 +51,19 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
     try {
       const text = await file.text();
       
-      const transactions = parseBankFile(text, selectedBankFormat, categories, isCreditCard);
+      // Crear historial de transacciones existentes para clasificación
+      const history: TransactionHistory[] = existingTransactions
+        .filter(tx => tx.subcategoriaId)
+        .map(tx => {
+          const cat = categories.find(c => c.id === tx.subcategoriaId);
+          return {
+            comentario: tx.comentario,
+            subcategoriaId: tx.subcategoriaId,
+            tipo: (cat?.tipo || (tx.gasto > 0 ? 'Gasto' : 'Ingreso')) as 'Ingreso' | 'Gasto'
+          };
+        });
+      
+      const transactions = parseBankFile(text, selectedBankFormat, categories, isCreditCard, history);
       
       if (transactions.length === 0) {
         setImportStatus({ type: 'error', message: 'No se encontraron transacciones en el archivo' });
@@ -173,6 +186,23 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
     if (!categoryId) return 'Sin asignar';
     const cat = categories.find(c => c.id === categoryId);
     return cat ? `${cat.categoria} > ${cat.subcategoria}` : 'Sin asignar';
+  };
+
+  const getCategoryType = (categoryId?: string, suggestedType?: 'Ingreso' | 'Gasto') => {
+    if (categoryId) {
+      const cat = categories.find(c => c.id === categoryId);
+      return cat?.tipo || suggestedType || '-';
+    }
+    return suggestedType || '-';
+  };
+
+  const getTypeBadge = (type: string | undefined) => {
+    if (type === 'Gasto') {
+      return <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300">Gasto</Badge>;
+    } else if (type === 'Ingreso') {
+      return <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">Ingreso</Badge>;
+    }
+    return <Badge variant="outline" className="bg-muted text-muted-foreground">-</Badge>;
   };
 
   const selectedCount = parsedTransactions.filter(t => t.selected).length;
@@ -350,6 +380,7 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
                     <TableHead>Descripción</TableHead>
                     <TableHead className="text-right">Ingreso</TableHead>
                     <TableHead className="text-right">Gasto</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Categoría</TableHead>
                     <TableHead>Confianza</TableHead>
                   </TableRow>
@@ -378,6 +409,9 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
                       </TableCell>
                       <TableCell className="text-right text-red-600">
                         {transaction.gasto > 0 ? `$${transaction.gasto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {getTypeBadge(getCategoryType(transaction.suggestedCategoryId, transaction.suggestedCategoryType))}
                       </TableCell>
                       <TableCell>
                         <Select 
