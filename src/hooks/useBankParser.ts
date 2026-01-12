@@ -461,27 +461,31 @@ export function parseAMEX(lines: string[], format: BankFormat, categories: Categ
     
     if (value === 0 || !comentario) continue;
     
-    // AMEX tiene signos invertidos respecto a otros bancos:
-    // - Negativo = Gasto (cargo)
-    // - Positivo = Reembolso/Crédito
-    const isRefundOrCredit = !isNegative; // Positivo en AMEX = crédito/reembolso
-    
-    // Clasificar pasando si es reembolso potencial
-    const classification = classifyTransaction(comentario, categories, isRefundOrCredit, true, history);
-    
-    // Determinar tipo de movimiento
+    // AMEX:
+    // - Negativo = cargo (normalmente gasto)
+    // - Positivo = crédito (puede ser reembolso o pago/abono)
+    const isCredit = !isNegative;
+
+    // Para detectar reembolsos en TDC, pasamos isCredit=true cuando es positivo.
+    // OJO: también puede haber reembolsos que vengan negativos (p.ej. "REVERSION...").
+    const classification = classifyTransaction(comentario, categories, isCredit, true, history);
+
     let movementType: ParsedTransaction['movementType'];
     let gasto = 0;
     let ingreso = 0;
-    
-    if (isNegative) {
-      // Importe negativo = GASTO normal
+
+    if (classification.isReembolso) {
+      // Reembolso siempre se registra como gasto positivo (para que reste)
+      gasto = value;
+      movementType = 'Reembolso';
+    } else if (isNegative) {
+      // Cargo normal
       gasto = value;
       movementType = 'Gasto';
     } else {
-      // Importe positivo = REEMBOLSO (siempre es reembolso en TDC cuando viene positivo)
-      gasto = value; // Los reembolsos se registran en gasto para que resten del total
-      movementType = 'Reembolso';
+      // Crédito que NO es reembolso (pago/abono/ajuste)
+      ingreso = value;
+      movementType = 'Ingreso';
     }
 
     transactions.push({
