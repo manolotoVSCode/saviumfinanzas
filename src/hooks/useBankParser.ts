@@ -441,6 +441,9 @@ export function parseHSBC(lines: string[], format: BankFormat, categories: Categ
 }
 
 // AMEX Parser: Fecha,Fecha Compra,Descripción,Titular,Cuenta,Importe,... (con header)
+// AMEX formato especial: 
+// - Importe NEGATIVO = Gasto (cargo a la tarjeta)
+// - Importe POSITIVO = Reembolso/Crédito (devolución)
 export function parseAMEX(lines: string[], format: BankFormat, categories: Category[], isCreditCard: boolean, history: TransactionHistory[] = []): ParsedTransaction[] {
   const transactions: ParsedTransaction[] = [];
   const startLine = 1; // Skip header
@@ -458,40 +461,39 @@ export function parseAMEX(lines: string[], format: BankFormat, categories: Categ
     
     if (value === 0 || !comentario) continue;
     
-    // AMEX: positive = expense, negative = credit/payment
-    const isCredit = isNegative;
-    const classification = classifyTransaction(comentario, categories, isCredit, true, history);
+    // AMEX tiene signos invertidos respecto a otros bancos:
+    // - Negativo = Gasto (cargo)
+    // - Positivo = Reembolso/Crédito
+    const isRefundOrCredit = !isNegative; // Positivo en AMEX = crédito/reembolso
     
-    let ingreso = 0;
+    // Clasificar pasando si es reembolso potencial
+    const classification = classifyTransaction(comentario, categories, isRefundOrCredit, true, history);
+    
+    // Determinar tipo de movimiento
+    let movementType: ParsedTransaction['movementType'];
     let gasto = 0;
+    let ingreso = 0;
     
-    if (isCredit) {
-      // Negativo en AMEX = crédito/pago
-      if (classification.isReembolso) {
-        gasto = value; // Reembolso como gasto positivo
-      } else {
-        ingreso = value;
-      }
-    } else {
+    if (isNegative) {
+      // Importe negativo = GASTO normal
       gasto = value;
+      movementType = 'Gasto';
+    } else {
+      // Importe positivo = REEMBOLSO (siempre es reembolso en TDC cuando viene positivo)
+      gasto = value; // Los reembolsos se registran en gasto para que resten del total
+      movementType = 'Reembolso';
     }
-    
-    const movementType: ParsedTransaction['movementType'] = classification.isReembolso
-      ? 'Reembolso'
-      : gasto > 0
-        ? 'Gasto'
-        : 'Ingreso';
 
     transactions.push({
       fecha,
       comentario,
-      ingreso: Math.abs(ingreso),
-      gasto: Math.abs(gasto),
+      ingreso,
+      gasto,
       movementType,
       suggestedCategoryId: classification.categoryId,
       suggestedCategoryType: classification.categoryType,
       confidence: classification.confidence,
-      isReembolso: classification.isReembolso
+      isReembolso: movementType === 'Reembolso'
     });
   }
   
