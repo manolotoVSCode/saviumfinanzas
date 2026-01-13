@@ -5,19 +5,20 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Upload, FileText, ArrowRight, ArrowLeft, Check, X, RefreshCcw } from 'lucide-react';
+import { Upload, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Account, Category, Transaction } from '@/types/finance';
-import { parseBankFile, ParsedTransaction, BANK_FORMATS, TransactionHistory } from '@/hooks/useBankParser';
 
 interface TransactionImporterProps {
   accounts: Account[];
   categories: Category[];
-  transactions: Transaction[];
   onImportTransactions: (transactions: Omit<Transaction, 'id' | 'monto'>[]) => void;
+}
+
+interface ParsedCSVTransaction {
+  fecha: string;
+  comentario: string;
+  ingreso: number;
+  gasto: number;
 }
 
 const CURRENCIES: Array<{ value: 'MXN' | 'USD' | 'EUR'; label: string }> = [
@@ -26,20 +27,70 @@ const CURRENCIES: Array<{ value: 'MXN' | 'USD' | 'EUR'; label: string }> = [
   { value: 'EUR', label: 'Euro (EUR)' }
 ];
 
-type Step = 'select-account' | 'upload' | 'preview' | 'importing';
-
-const TransactionImporter = ({ accounts, categories, transactions: existingTransactions, onImportTransactions }: TransactionImporterProps) => {
+const TransactionImporter = ({ accounts, categories, onImportTransactions }: TransactionImporterProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<Step>('select-account');
+  const [step, setStep] = useState<'upload' | 'configure'>('upload');
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [parsedTransactions, setParsedTransactions] = useState<(ParsedTransaction & { selected: boolean })[]>([]);
+  const [parsedTransactions, setParsedTransactions] = useState<ParsedCSVTransaction[]>([]);
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR' | ''>('');
   const [selectedAccount, setSelectedAccount] = useState<string>('');
-  const [selectedBankFormat, setSelectedBankFormat] = useState<string>('');
   
-  const selectedAccountData = accounts.find(a => a.id === selectedAccount);
-  const isCreditCard = selectedAccountData?.tipo === 'Tarjeta de Crédito';
+
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current.trim());
+    return result;
+  };
+
+  const parseAmount = (amountStr: string): number => {
+    if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '0') return 0;
+    // Remove quotes, spaces, and handle thousands separator (.) and decimal separator (,)
+    let cleanAmount = amountStr
+      .replace(/"/g, '')           // Remove quotes
+      .replace(/\s/g, '')          // Remove spaces
+      .replace(/\./g, '')          // Remove thousands separator (.)
+      .replace(',', '.');          // Replace decimal separator (,) with (.)
+    const parsed = parseFloat(cleanAmount);
+    return isNaN(parsed) ? 0 : Math.abs(parsed); // Use absolute value to handle negative signs
+  };
+
+  const parseDateDDMMYY = (dateStr: string): string => {
+    try {
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return new Date().toISOString().split('T')[0];
+      
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      let year = parts[2];
+      
+      // Convert YY to YYYY (assuming 20YY for years < 50, 19YY for years >= 50)
+      if (year.length === 2) {
+        const yearNum = parseInt(year);
+        year = yearNum < 50 ? `20${year}` : `19${year}`;
+      }
+      
+      return `${year}-${month}-${day}`;
+    } catch {
+      return new Date().toISOString().split('T')[0];
+    }
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -50,32 +101,56 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
 
     try {
       const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
       
-      // Crear historial de transacciones existentes para clasificación
-      const history: TransactionHistory[] = existingTransactions
-        .filter(tx => tx.subcategoriaId)
-        .map(tx => {
-          const cat = categories.find(c => c.id === tx.subcategoriaId);
-          return {
-            comentario: tx.comentario,
-            subcategoriaId: tx.subcategoriaId,
-            tipo: (cat?.tipo || (tx.gasto > 0 ? 'Gasto' : 'Ingreso')) as 'Ingreso' | 'Gasto'
-          };
-        });
-      
-      const transactions = parseBankFile(text, selectedBankFormat, categories, isCreditCard, history);
-      
-      if (transactions.length === 0) {
-        setImportStatus({ type: 'error', message: 'No se encontraron transacciones en el archivo' });
+      if (lines.length === 0) {
+        setImportStatus({ type: 'error', message: 'El archivo está vacío' });
         return;
       }
 
-      setParsedTransactions(transactions.map(t => ({ ...t, selected: true })));
-      setImportStatus({ 
-        type: 'success', 
-        message: `Se procesaron ${transactions.length} transacciones` 
+      const transactions: ParsedCSVTransaction[] = [];
+      const errors: string[] = [];
+
+      lines.forEach((line, index) => {
+        try {
+          const columns = parseCSVLine(line);
+          if (columns.length < 4) {
+            errors.push(`Línea ${index + 1}: Formato incorrecto (se esperan 4 columnas)`);
+            return;
+          }
+
+          const [fecha, comentario, ingreso, gasto] = columns;
+          
+          const ingresoAmount = parseAmount(ingreso);
+          const gastoAmount = parseAmount(gasto);
+          
+          transactions.push({
+            fecha: parseDateDDMMYY(fecha),
+            comentario: comentario.trim(),
+            ingreso: ingresoAmount,
+            gasto: gastoAmount
+          });
+        } catch (error) {
+          errors.push(`Línea ${index + 1}: Error al procesar - ${error}`);
+        }
       });
-      setStep('preview');
+
+      if (errors.length > 0) {
+        setImportStatus({ 
+          type: 'warning', 
+          message: `Se procesaron ${transactions.length} transacciones con ${errors.length} errores. Primeros errores: ${errors.slice(0, 3).join(', ')}` 
+        });
+      } else {
+        setImportStatus({ 
+          type: 'success', 
+          message: `Se procesaron exitosamente ${transactions.length} transacciones` 
+        });
+      }
+
+      if (transactions.length > 0) {
+        setParsedTransactions(transactions);
+        setStep('configure');
+      }
 
     } catch (error) {
       setImportStatus({ 
@@ -84,28 +159,9 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
       });
     } finally {
       setIsProcessing(false);
+      // Reset file input
       event.target.value = '';
     }
-  };
-
-  const toggleTransaction = (index: number) => {
-    setParsedTransactions(prev => 
-      prev.map((t, i) => i === index ? { ...t, selected: !t.selected } : t)
-    );
-  };
-
-  const selectAll = () => {
-    setParsedTransactions(prev => prev.map(t => ({ ...t, selected: true })));
-  };
-
-  const deselectAll = () => {
-    setParsedTransactions(prev => prev.map(t => ({ ...t, selected: false })));
-  };
-
-  const updateCategory = (index: number, categoryId: string) => {
-    setParsedTransactions(prev => 
-      prev.map((t, i) => i === index ? { ...t, suggestedCategoryId: categoryId, confidence: 'high' as const } : t)
-    );
   };
 
   const handleImport = () => {
@@ -114,49 +170,30 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
       return;
     }
 
+    // Buscar categoría "SIN ASIGNAR" (debe existir automáticamente)
     const defaultCategory = categories.find(cat => 
       cat.subcategoria.toUpperCase() === 'SIN ASIGNAR' && 
       cat.categoria.toUpperCase() === 'SIN ASIGNAR'
     );
 
     if (!defaultCategory) {
-      setImportStatus({ type: 'error', message: 'Error: No se encontró la categoría "SIN ASIGNAR".' });
+      setImportStatus({ type: 'error', message: 'Error: No se encontró la categoría "SIN ASIGNAR". Contacte al administrador.' });
       return;
     }
 
-    const selectedTxs = parsedTransactions.filter(t => t.selected);
-
-    const transactions: Omit<Transaction, 'id' | 'monto'>[] = selectedTxs.map((transaction, index) => {
+    const transactions: Omit<Transaction, 'id' | 'monto'>[] = parsedTransactions.map((transaction, index) => {
+      // Crear fecha local sin problemas de zona horaria
       const [year, month, day] = transaction.fecha.split('-');
       const fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-
-      // Add REEMBOLSO prefix if it's a refund
-      let comentario = transaction.comentario;
-      if (transaction.isReembolso && !comentario.toUpperCase().includes('REEMBOLSO')) {
-        comentario = `REEMBOLSO (gasto): ${comentario}`;
-      }
-
-      // Normalizar montos: nunca guardar negativos y nunca guardar en la columna incorrecta
-      const rawIngreso = Math.abs(transaction.ingreso || 0);
-      const rawGasto = Math.abs(transaction.gasto || 0);
-
-      let ingreso = 0;
-      let gasto = 0;
-      if (transaction.movementType === 'Ingreso') {
-        ingreso = rawIngreso || rawGasto;
-      } else {
-        // Gasto o Reembolso siempre se guarda como gasto positivo
-        gasto = rawGasto || rawIngreso;
-      }
-
+      
       return {
         csvId: `import_${Date.now()}_${index}`,
         cuentaId: selectedAccount,
         fecha,
-        comentario,
-        ingreso,
-        gasto,
-        subcategoriaId: transaction.suggestedCategoryId || defaultCategory.id,
+        comentario: transaction.comentario,
+        ingreso: transaction.ingreso,
+        gasto: transaction.gasto,
+        subcategoriaId: defaultCategory.id,
         divisa: selectedCurrency as 'MXN' | 'USD' | 'EUR'
       };
     });
@@ -165,174 +202,52 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
     
     setImportStatus({ 
       type: 'success', 
-      message: `Se importaron ${transactions.length} transacciones` 
+      message: `Se importaron exitosamente ${transactions.length} transacciones` 
     });
 
+    // Reset form
     setTimeout(() => {
-      handleClose();
+      setIsOpen(false);
+      setStep('upload');
+      setParsedTransactions([]);
+      setSelectedCurrency('');
+      setSelectedAccount('');
+      setImportStatus(null);
     }, 2000);
   };
 
   const handleClose = () => {
     setIsOpen(false);
-    setStep('select-account');
+    setStep('upload');
     setParsedTransactions([]);
     setSelectedCurrency('');
     setSelectedAccount('');
-    setSelectedBankFormat('');
     setImportStatus(null);
   };
-
-  const canProceedToUpload = selectedCurrency && selectedAccount && selectedBankFormat;
-
-  const getConfidenceBadge = (confidence: 'high' | 'medium' | 'low') => {
-    const colors = {
-      high: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      low: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-    };
-    const labels = { high: 'Alta', medium: 'Media', low: 'Baja' };
-    return <Badge className={colors[confidence]} variant="outline">{labels[confidence]}</Badge>;
-  };
-
-  const getCategoryName = (categoryId?: string) => {
-    if (!categoryId) return 'Sin asignar';
-    const cat = categories.find(c => c.id === categoryId);
-    return cat ? `${cat.categoria} > ${cat.subcategoria}` : 'Sin asignar';
-  };
-
-  const getCategoryType = (categoryId?: string, suggestedType?: 'Ingreso' | 'Gasto') => {
-    if (categoryId) {
-      const cat = categories.find(c => c.id === categoryId);
-      return cat?.tipo || suggestedType || '-';
-    }
-    return suggestedType || '-';
-  };
-
-  const getTypeBadge = (type: string | undefined) => {
-    if (type === 'Gasto') {
-      return <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300">Gasto</Badge>;
-    } else if (type === 'Ingreso') {
-      return <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">Ingreso</Badge>;
-    }
-    return <Badge variant="outline" className="bg-muted text-muted-foreground">-</Badge>;
-  };
-
-  const getMovementBadge = (movement: ParsedTransaction['movementType']) => {
-    if (movement === 'Reembolso') {
-      return <Badge variant="outline" className="bg-muted text-muted-foreground">Reembolso</Badge>;
-    }
-    if (movement === 'Gasto') {
-      return <Badge variant="outline" className="bg-muted text-muted-foreground">Gasto</Badge>;
-    }
-    return <Badge variant="outline" className="bg-muted text-muted-foreground">Ingreso</Badge>;
-  };
-
-  const selectedCount = parsedTransactions.filter(t => t.selected).length;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Upload className="h-4 w-4" />
-          Importar CSV/Excel
+          Importar Transacciones
         </Button>
       </DialogTrigger>
-      <DialogContent className={step === 'preview' ? 'max-w-5xl max-h-[90vh]' : 'max-w-md'}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {step === 'select-account' && 'Paso 1: Seleccionar Cuenta y Formato'}
-            {step === 'upload' && 'Paso 2: Subir Archivo'}
-            {step === 'preview' && 'Paso 3: Revisar y Confirmar'}
+            {step === 'upload' ? 'Importar Transacciones desde CSV' : 'Configurar Importación'}
           </DialogTitle>
         </DialogHeader>
         
-        {step === 'select-account' && (
+        {step === 'upload' ? (
           <div className="space-y-4">
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>¿A qué cuenta pertenecen las transacciones?</Label>
-                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.nombre} ({account.tipo})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>¿En qué divisa están las transacciones?</Label>
-                <Select value={selectedCurrency} onValueChange={(value: string) => setSelectedCurrency(value as 'MXN' | 'USD' | 'EUR')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione una divisa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.value} value={currency.value}>
-                        {currency.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>¿De qué banco/formato es el archivo?</Label>
-                <Select value={selectedBankFormat} onValueChange={setSelectedBankFormat}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione el formato del banco" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BANK_FORMATS.map((format) => (
-                      <SelectItem key={format.id} value={format.id}>
-                        {format.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {isCreditCard && (
-                <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
-                  <AlertDescription className="text-blue-800 dark:text-blue-200">
-                    <strong>Tarjeta de Crédito detectada:</strong> Los abonos/créditos que parezcan reembolsos se marcarán automáticamente con la etiqueta "REEMBOLSO".
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={handleClose}>
-                Cancelar
-              </Button>
-              <Button onClick={() => setStep('upload')} disabled={!canProceedToUpload} className="gap-2">
-                Siguiente
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 'upload' && (
-          <div className="space-y-4">
-            <div className="bg-muted p-3 rounded-md text-sm">
-              <p><strong>Cuenta:</strong> {selectedAccountData?.nombre}</p>
-              <p><strong>Divisa:</strong> {selectedCurrency}</p>
-              <p><strong>Formato:</strong> {BANK_FORMATS.find(f => f.id === selectedBankFormat)?.name}</p>
-            </div>
-
             <div className="space-y-2">
-              <Label htmlFor="csv-file">Seleccionar archivo</Label>
+              <Label htmlFor="csv-file">Seleccionar archivo CSV</Label>
               <Input
                 id="csv-file"
                 type="file"
-                accept=".csv,.xls,.xlsx"
+                accept=".csv"
                 onChange={handleFileUpload}
                 disabled={isProcessing}
               />
@@ -342,8 +257,14 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
               <div className="flex items-start gap-2">
                 <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Archivos soportados:</p>
-                  <p className="text-xs">CSV, XLS, XLSX exportados desde tu banco</p>
+                  <p className="font-medium">Formato esperado:</p>
+                  <p>Fecha,Comentario,Ingreso,Gasto</p>
+                  <p className="text-xs mt-1">
+                    • Separador: coma (,)<br/>
+                    • Fecha: DD/MM/AAAA o D/M/AAAA<br/>
+                    • Montos: usar coma como decimal y punto como separador de miles<br/>
+                    • Ejemplo: 3/11/2025,BONO POR PROGRAMA DE REFERIDOS,"-40.000,00","0,00"
+                  </p>
                 </div>
               </div>
             </div>
@@ -361,112 +282,53 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
                 Procesando archivo...
               </div>
             )}
-
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep('select-account')} className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Volver
-              </Button>
-            </div>
           </div>
-        )}
-
-        {step === 'preview' && (
+        ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="text-sm text-muted-foreground">
-                {selectedCount} de {parsedTransactions.length} transacciones seleccionadas
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={selectAll}>
-                  <Check className="h-4 w-4 mr-1" />
-                  Todas
-                </Button>
-                <Button variant="outline" size="sm" onClick={deselectAll}>
-                  <X className="h-4 w-4 mr-1" />
-                  Ninguna
-                </Button>
-              </div>
+            <div className="text-sm text-muted-foreground">
+              Se procesaron {parsedTransactions.length} transacciones. Configure los siguientes parámetros:
             </div>
 
-            <ScrollArea className="h-[400px] border rounded-md">
-              <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox 
-                          checked={selectedCount === parsedTransactions.length}
-                          onCheckedChange={(checked) => checked ? selectAll() : deselectAll()}
-                        />
-                      </TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead className="text-right">Ingreso</TableHead>
-                      <TableHead className="text-right">Gasto</TableHead>
-                      <TableHead>Movimiento</TableHead>
-                      <TableHead>Tipo cat.</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead>Confianza</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                <TableBody>
-                  {parsedTransactions.map((transaction, index) => (
-                    <TableRow key={index} className={!transaction.selected ? 'opacity-50' : ''}>
-                      <TableCell>
-                        <Checkbox 
-                          checked={transaction.selected}
-                          onCheckedChange={() => toggleTransaction(index)}
-                        />
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">{transaction.fecha}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {transaction.isReembolso && (
-                          <Badge variant="outline" className="mr-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                            <RefreshCcw className="h-3 w-3 mr-1" />
-                            Reembolso
-                          </Badge>
-                        )}
-                        {transaction.comentario}
-                      </TableCell>
-                      <TableCell className="text-right text-green-600">
-                        {transaction.ingreso > 0 ? `$${transaction.ingreso.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '-'}
-                      </TableCell>
-                      <TableCell className="text-right text-red-600">
-                        {transaction.gasto > 0 ? `$${transaction.gasto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {getMovementBadge(transaction.movementType)}
-                      </TableCell>
-                      <TableCell>
-                        {getTypeBadge(getCategoryType(transaction.suggestedCategoryId, transaction.suggestedCategoryType))}
-                      </TableCell>
-                      <TableCell>
-                        <Select 
-                          value={transaction.suggestedCategoryId || ''} 
-                          onValueChange={(value) => updateCategory(index, value)}
-                        >
-                          <SelectTrigger className="w-[180px] h-8 text-xs">
-                            <SelectValue placeholder="Sin asignar">
-                              {getCategoryName(transaction.suggestedCategoryId)}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                {cat.categoria} &gt; {cat.subcategoria}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        {getConfidenceBadge(transaction.confidence)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>Divisa de las transacciones</Label>
+                <Select value={selectedCurrency} onValueChange={(value: string) => setSelectedCurrency(value as 'MXN' | 'USD' | 'EUR')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una divisa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.value} value={currency.value}>
+                        {currency.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Cuenta de destino</Label>
+                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una cuenta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts
+                      .filter(account => !selectedCurrency || account.divisa === selectedCurrency)
+                      .map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.nombre} ({account.divisa})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                <p className="font-medium mb-1">Categoría automática</p>
+                <p>Las transacciones se asignarán automáticamente a "SIN ASIGNAR" y podrán ser categorizadas manualmente después.</p>
+              </div>
+            </div>
 
             {importStatus && (
               <Alert className={importStatus.type === 'error' ? 'border-destructive' : 'border-green-500'}>
@@ -476,16 +338,24 @@ const TransactionImporter = ({ accounts, categories, transactions: existingTrans
               </Alert>
             )}
 
-            <div className="flex gap-2 justify-between">
+            <div className="flex gap-2">
               <Button variant="outline" onClick={() => setStep('upload')} className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Volver
               </Button>
-              <Button onClick={handleImport} disabled={selectedCount === 0} className="gap-2">
+              <Button onClick={handleImport} className="gap-2 flex-1">
                 <ArrowRight className="h-4 w-4" />
-                Importar {selectedCount} transacciones
+                Importar Transacciones
               </Button>
             </div>
+          </div>
+        )}
+
+        {step === 'upload' && (
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={handleClose}>
+              Cancelar
+            </Button>
           </div>
         )}
       </DialogContent>
