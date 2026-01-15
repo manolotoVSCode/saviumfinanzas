@@ -12,6 +12,7 @@ import { Upload, FileSpreadsheet, AlertCircle, Check, X, ArrowUpDown, ArrowUp, A
 import { Account, Category, Transaction, TransactionType } from '@/types/finance';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
 interface BankStatementImporterProps {
@@ -307,52 +308,24 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   }
 
   function parseCSVContent(content: string): ParsedRow[] {
-    // Handle multi-line fields in CSV
-    const rows: string[][] = [];
-    let currentRow: string[] = [];
-    let currentCell = '';
-    let inQuotes = false;
-    
-    for (let i = 0; i < content.length; i++) {
-      const char = content[i];
-      
-      if (char === '"') {
-        if (inQuotes && content[i + 1] === '"') {
-          currentCell += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        currentRow.push(currentCell.trim());
-        currentCell = '';
-      } else if ((char === '\n' || char === '\r') && !inQuotes) {
-        if (char === '\r' && content[i + 1] === '\n') {
-          i++;
-        }
-        if (currentCell || currentRow.length > 0) {
-          currentRow.push(currentCell.trim());
-          if (currentRow.some(c => c.length > 0)) {
-            rows.push(currentRow);
-          }
-          currentRow = [];
-          currentCell = '';
-        }
-      } else {
-        currentCell += char;
-      }
+    // Use a robust CSV parser (supports multi-line quoted fields like AMEX addresses)
+    const parsedCsv = Papa.parse<string[]>(content, {
+      delimiter: ',',
+      quoteChar: '"',
+      escapeChar: '"',
+      skipEmptyLines: 'greedy',
+    });
+
+    if (parsedCsv.errors?.length) {
+      console.warn('CSV parse errors (showing first 3):', parsedCsv.errors.slice(0, 3));
     }
-    
-    // Don't forget last row
-    if (currentCell || currentRow.length > 0) {
-      currentRow.push(currentCell.trim());
-      if (currentRow.some(c => c.length > 0)) {
-        rows.push(currentRow);
-      }
-    }
-    
+
+    const rows: string[][] = (parsedCsv.data || [])
+      .map((row) => (row || []).map((cell) => (cell ?? '').toString().trim()))
+      .filter((row) => row.some((c) => c.length > 0));
+
     if (rows.length === 0) return [];
-    
+
     const { dateCol, descCol, amountCol, hasHeader } = detectFormat(rows);
     const headerRow = hasHeader ? rows[0] : [];
     const headerLower = headerRow.map(h => (h || '').toLowerCase().trim());
@@ -361,15 +334,15 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
 
     const dataRows = hasHeader ? rows.slice(1) : rows;
-    
+
     const parsed: ParsedRow[] = [];
-    
+
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
-      
+
       const fecha = parseDate(row[dateCol]);
       if (!fecha) continue; // Skip rows without valid date
-      
+
       const descripcion = row[descCol] || '';
 
       // Some statements provide separate columns for Cargo (debit) and Abono (credit)
@@ -381,20 +354,24 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
           // Credit card: cargo is expense (+). Bank: cargo is expense (-)
           montoOriginal = isCreditCard ? Math.abs(cargo) : -Math.abs(cargo);
         } else if (abono !== 0) {
-          // Credit card: abono is payment/refund (-). Bank: abono is income (+)
+          // Credit card: abono is income (-). Bank: abono is income (+)
           montoOriginal = isCreditCard ? -Math.abs(abono) : Math.abs(abono);
         }
       } else {
+        // Single amount column.
+        // Your rule:
+        // - Credit cards: positive = expense, negative = income
+        // - Banks: negative = expense, positive = income
         montoOriginal = parseAmount(row[amountCol]);
       }
-      
+
       if (montoOriginal === 0) continue; // Skip zero amount rows
-      
+
       // Find matching category from history first to determine tipo
       const matchedCategoryId = findMatchingCategory(descripcion);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
       const matchedCategory = categories.find(c => c.id === matchedCategoryId);
-      
+
       // Determine tipo from matched category, or infer from account type and amount
       let tipo: TransactionType;
       if (matchedCategory?.tipo) {
@@ -404,10 +381,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       } else {
         tipo = montoOriginal < 0 ? 'Gastos' : 'Ingreso';
       }
-      
+
       // Determine if it's an expense based on tipo
       const esGasto = tipo === 'Gastos' || tipo === 'Retiro';
-      
+
       parsed.push({
         id: `import-${i}-${Date.now()}`,
         fecha,
@@ -421,7 +398,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         tipo
       });
     }
-    
+
     return parsed;
   }
 
