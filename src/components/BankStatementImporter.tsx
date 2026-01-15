@@ -716,6 +716,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                     </TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead>Descripción</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead className="text-right">Ingreso</TableHead>
                     <TableHead className="text-right">Gasto</TableHead>
                     <TableHead className="w-20 text-center">Reembolso</TableHead>
@@ -726,6 +727,19 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                   {parsedRows.map(row => {
                     const category = categories.find(c => c.id === row.categoriaId);
                     const isSinAsignar = !category || category.subcategoria === 'Sin Asignar';
+                    
+                    // Determine display type
+                    const getTipo = () => {
+                      if (row.esReembolso) return 'Reembolso';
+                      if (row.esGasto) return 'Gasto';
+                      return 'Ingreso';
+                    };
+                    
+                    const getTipoColor = () => {
+                      if (row.esReembolso) return 'text-orange-600';
+                      if (row.esGasto) return 'text-destructive';
+                      return 'text-green-600';
+                    };
                     
                     return (
                       <TableRow key={row.id} className={!row.incluir ? 'opacity-50' : ''}>
@@ -739,21 +753,21 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                         <TableCell className="max-w-xs truncate" title={row.descripcion}>
                           {row.descripcion}
                         </TableCell>
-                        <TableCell className="text-right text-green-600">
-                          {!row.esGasto ? formatMoney(row.monto) : '-'}
+                        <TableCell className={`font-medium ${getTipoColor()}`}>
+                          {getTipo()}
                         </TableCell>
-                        <TableCell className="text-right text-red-600">
-                          {row.esGasto ? formatMoney(row.monto) : '-'}
+                        <TableCell className="text-right text-green-600">
+                          {!row.esGasto && !row.esReembolso ? formatMoney(row.monto) : '-'}
+                        </TableCell>
+                        <TableCell className={`text-right ${row.esReembolso ? 'text-orange-600' : 'text-destructive'}`}>
+                          {row.esGasto || row.esReembolso ? formatMoney(row.monto) : '-'}
                         </TableCell>
                         <TableCell className="text-center">
-                          {!row.esGasto && !row.esReembolso ? (
+                          {/* Show reembolso checkbox only for income rows (can convert to reembolso) 
+                              or rows that are already marked as reembolso */}
+                          {(!row.esGasto || row.esReembolso) ? (
                             <Checkbox
                               checked={row.esReembolso}
-                              onCheckedChange={() => handleToggleReembolso(row.id)}
-                            />
-                          ) : row.esReembolso ? (
-                            <Checkbox
-                              checked={true}
                               onCheckedChange={() => handleToggleReembolso(row.id)}
                             />
                           ) : null}
