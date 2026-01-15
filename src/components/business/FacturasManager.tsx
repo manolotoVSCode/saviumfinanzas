@@ -163,7 +163,7 @@ export const FacturasManager = () => {
       setEditingFactura(factura);
       setFormData({
         numero_factura: factura.numero_factura,
-        tipo: factura.tipo,
+        tipo: factura.tipo as 'emitida' | 'recibida',
         concepto: factura.concepto || '',
         fecha_emision: factura.fecha_emision,
         fecha_vencimiento: factura.fecha_vencimiento,
