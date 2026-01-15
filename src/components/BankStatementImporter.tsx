@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Upload, FileSpreadsheet, AlertCircle, Check, X, ArrowUpDown, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react';
 import { Account, Category, Transaction, TransactionType } from '@/types/finance';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Papa from 'papaparse';
@@ -606,37 +607,67 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
   const handleImport = async () => {
     const rowsToImport = parsedRows.filter(row => row.incluir);
-    
+
     if (rowsToImport.length === 0) {
       toast({ title: 'Error', description: 'No hay transacciones seleccionadas para importar', variant: 'destructive' });
       return;
     }
-    
+
     setImporting(true);
-    
+
     try {
+      // Ensure we have a valid "Sin Asignar" category id (required by DB FK)
+      let fallbackCategoryId = sinAsignarCategory?.id || '';
+
+      if (!fallbackCategoryId) {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError || !userData.user) {
+          throw new Error('Usuario no autenticado');
+        }
+
+        const { data, error } = await supabase.rpc('ensure_sin_asignar_category', {
+          user_uuid: userData.user.id,
+        });
+        if (error) throw error;
+        fallbackCategoryId = (data as string) || '';
+      }
+
+      if (!fallbackCategoryId) {
+        toast({
+          title: 'Error',
+          description: 'No se pudo determinar la categoría "Sin Asignar". Reintenta y revisa tus categorías.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const missingCategoryCount = rowsToImport.filter(r => !r.categoriaId).length;
+      if (missingCategoryCount > 0) {
+        // Fill missing categories automatically with Sin Asignar
+        setParsedRows(prev => prev.map(r => (!r.categoriaId ? { ...r, categoriaId: fallbackCategoryId } : r)));
+      }
+
       const transactionsToImport = rowsToImport.map(row => {
-        // Determine the transaction type based on category
-        const category = categories.find(c => c.id === row.categoriaId);
-        
+        const subcategoriaId = row.categoriaId || fallbackCategoryId;
+
         return {
           cuentaId: selectedAccountId,
           fecha: row.fecha,
           comentario: row.descripcion,
           ingreso: row.esGasto ? 0 : row.monto,
           gasto: row.esGasto ? row.monto : 0,
-          subcategoriaId: row.categoriaId,
+          subcategoriaId,
           divisa: selectedAccount?.divisa || 'MXN',
         };
       });
-      
+
       await onImportTransactions(transactionsToImport);
-      
+
       toast({ 
         title: 'Importación exitosa', 
         description: `Se importaron ${transactionsToImport.length} transacciones` 
       });
-      
+
       handleClose();
     } catch (error) {
       console.error('Error importing:', error);
