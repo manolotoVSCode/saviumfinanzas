@@ -354,6 +354,12 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     if (rows.length === 0) return [];
     
     const { dateCol, descCol, amountCol, hasHeader } = detectFormat(rows);
+    const headerRow = hasHeader ? rows[0] : [];
+    const headerLower = headerRow.map(h => (h || '').toLowerCase().trim());
+
+    const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'importe cargo'].includes(h));
+    const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
+
     const dataRows = hasHeader ? rows.slice(1) : rows;
     
     const parsed: ParsedRow[] = [];
@@ -365,7 +371,22 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       if (!fecha) continue; // Skip rows without valid date
       
       const descripcion = row[descCol] || '';
-      const montoOriginal = parseAmount(row[amountCol]);
+
+      // Some statements provide separate columns for Cargo (debit) and Abono (credit)
+      let montoOriginal = 0;
+      if (hasHeader && (cargoCol >= 0 || abonoCol >= 0)) {
+        const cargo = cargoCol >= 0 ? parseAmount(row[cargoCol]) : 0;
+        const abono = abonoCol >= 0 ? parseAmount(row[abonoCol]) : 0;
+        if (cargo !== 0) {
+          // Credit card: cargo is expense (+). Bank: cargo is expense (-)
+          montoOriginal = isCreditCard ? Math.abs(cargo) : -Math.abs(cargo);
+        } else if (abono !== 0) {
+          // Credit card: abono is payment/refund (-). Bank: abono is income (+)
+          montoOriginal = isCreditCard ? -Math.abs(abono) : Math.abs(abono);
+        }
+      } else {
+        montoOriginal = parseAmount(row[amountCol]);
+      }
       
       if (montoOriginal === 0) continue; // Skip zero amount rows
       
@@ -434,6 +455,11 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
     const { dateCol, descCol, amountCol, hasHeader } = detectFormat(sampleForDetect.length > 0 ? sampleForDetect : rows);
 
+    const headerRow = hasHeader ? rows[0] : [];
+    const headerLower = headerRow.map(h => (h || '').toLowerCase().trim());
+    const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'importe cargo'].includes(h));
+    const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
+
     // Get data rows (skip header if detected)
     const rowsToProcess = hasHeader ? rows.slice(1) : rows;
 
@@ -460,15 +486,28 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         descripcion = row[3];
       }
       
-      // Find amount column - look for IMPORTE column in ING
-      let montoOriginal = parseAmount(row[amountCol]);
-      for (let j = row.length - 1; j >= 0; j--) {
-        const possibleAmount = parseAmount(row[j]);
-        if (possibleAmount !== 0 && !isNaN(possibleAmount)) {
-          // Check if this looks like an amount (not a balance)
-          if (j < row.length - 1 || amountCol === -1) {
-            montoOriginal = possibleAmount;
-            break;
+      // Determine signed amount.
+      // Some statements provide separate columns for Cargo (debit) and Abono (credit)
+      let montoOriginal = 0;
+      if (hasHeader && (cargoCol >= 0 || abonoCol >= 0)) {
+        const cargo = cargoCol >= 0 ? parseAmount(row[cargoCol]) : 0;
+        const abono = abonoCol >= 0 ? parseAmount(row[abonoCol]) : 0;
+        if (cargo !== 0) {
+          montoOriginal = isCreditCard ? Math.abs(cargo) : -Math.abs(cargo);
+        } else if (abono !== 0) {
+          montoOriginal = isCreditCard ? -Math.abs(abono) : Math.abs(abono);
+        }
+      } else {
+        // Fallback: single amount column, or ING-like where last numeric column is amount
+        montoOriginal = parseAmount(row[amountCol]);
+        for (let j = row.length - 1; j >= 0; j--) {
+          const possibleAmount = parseAmount(row[j]);
+          if (possibleAmount !== 0 && !isNaN(possibleAmount)) {
+            // Check if this looks like an amount (not a balance)
+            if (j < row.length - 1 || amountCol === -1) {
+              montoOriginal = possibleAmount;
+              break;
+            }
           }
         }
       }
