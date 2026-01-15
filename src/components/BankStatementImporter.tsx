@@ -924,10 +924,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-64 p-0 bg-background" align="start">
+                            <PopoverContent className="w-64 p-0 bg-background pointer-events-auto" align="start">
                               <Command>
                                 <CommandInput placeholder="Buscar categoría..." />
-                                <CommandList>
+                                <CommandList className="max-h-60 overflow-auto">
                                   <CommandEmpty>No se encontraron categorías.</CommandEmpty>
                                   {getGroupedCategoriesForRow(row).map(group => (
                                     <CommandGroup key={group.tipo} heading={group.tipo}>
