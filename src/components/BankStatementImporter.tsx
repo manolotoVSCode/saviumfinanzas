@@ -386,23 +386,45 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         }
       } else {
         montoOriginal = parseAmount(row[amountCol]);
-      }
-
-      // Heuristic: some banks label reversals/refunds as positive amounts even on credit cards.
-      // If the description indicates a refund/payment, treat it as income (negative signed amount for CC).
-      if (isCreditCard && montoOriginal > 0) {
-        const d = normalizeDescription(descripcion);
-        const looksLikeRefundOrPayment =
-          d.includes('reversion') ||
-          d.includes('revers') ||
-          d.includes('reembolso') ||
-          d.includes('devolucion') ||
-          d.includes('devolución') ||
-          d.includes('refund') ||
-          d.includes('chargeback') ||
-          d.includes('pago');
-        if (looksLikeRefundOrPayment) {
-          montoOriginal = -Math.abs(montoOriginal);
+        
+        // For credit cards with single amount column (like AMEX format):
+        // - Negative values = purchases OR payments (need to distinguish by description)
+        // - Positive values = fees/charges (stay as expenses)
+        if (isCreditCard) {
+          const d = normalizeDescription(descripcion);
+          const looksLikePayment =
+            d.includes('pago') ||
+            d.includes('payment') ||
+            d.includes('gracias por su pago') ||
+            d.includes('abono') ||
+            d.includes('deposito') ||
+            d.includes('transferencia recibida');
+          
+          if (montoOriginal < 0) {
+            // Negative amount: usually a purchase (invert to positive expense)
+            // But if it's a payment, keep it negative (income/credit)
+            if (looksLikePayment) {
+              montoOriginal = montoOriginal; // Keep negative (income)
+            } else {
+              montoOriginal = Math.abs(montoOriginal); // Invert to positive (expense)
+            }
+          }
+          // Positive amounts stay positive (fees/charges are expenses)
+          // Check for reversals that might be positive but should be income
+          else if (montoOriginal > 0) {
+            const looksLikeRefund =
+              d.includes('reversion') ||
+              d.includes('revers') ||
+              d.includes('reembolso') ||
+              d.includes('devolucion') ||
+              d.includes('devolución') ||
+              d.includes('refund') ||
+              d.includes('chargeback');
+            if (looksLikeRefund) {
+              montoOriginal = -Math.abs(montoOriginal); // Convert to income
+            }
+            // Otherwise keep positive (expense)
+          }
         }
       }
       
@@ -528,22 +550,45 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
             }
           }
         }
-      }
-
-      // Heuristic: some banks label reversals/refunds as positive amounts even on credit cards.
-      if (isCreditCard && montoOriginal > 0) {
-        const d = normalizeDescription(descripcion);
-        const looksLikeRefundOrPayment =
-          d.includes('reversion') ||
-          d.includes('revers') ||
-          d.includes('reembolso') ||
-          d.includes('devolucion') ||
-          d.includes('devolución') ||
-          d.includes('refund') ||
-          d.includes('chargeback') ||
-          d.includes('pago');
-        if (looksLikeRefundOrPayment) {
-          montoOriginal = -Math.abs(montoOriginal);
+        
+        // For credit cards with single amount column (like AMEX format):
+        // - Negative values = purchases OR payments (need to distinguish by description)
+        // - Positive values = fees/charges (stay as expenses)
+        if (isCreditCard) {
+          const d = normalizeDescription(descripcion);
+          const looksLikePayment =
+            d.includes('pago') ||
+            d.includes('payment') ||
+            d.includes('gracias por su pago') ||
+            d.includes('abono') ||
+            d.includes('deposito') ||
+            d.includes('transferencia recibida');
+          
+          if (montoOriginal < 0) {
+            // Negative amount: usually a purchase (invert to positive expense)
+            // But if it's a payment, keep it negative (income/credit)
+            if (looksLikePayment) {
+              montoOriginal = montoOriginal; // Keep negative (income)
+            } else {
+              montoOriginal = Math.abs(montoOriginal); // Invert to positive (expense)
+            }
+          }
+          // Positive amounts stay positive (fees/charges are expenses)
+          // Check for reversals that might be positive but should be income
+          else if (montoOriginal > 0) {
+            const looksLikeRefund =
+              d.includes('reversion') ||
+              d.includes('revers') ||
+              d.includes('reembolso') ||
+              d.includes('devolucion') ||
+              d.includes('devolución') ||
+              d.includes('refund') ||
+              d.includes('chargeback');
+            if (looksLikeRefund) {
+              montoOriginal = -Math.abs(montoOriginal); // Convert to income
+            }
+            // Otherwise keep positive (expense)
+          }
         }
       }
       
