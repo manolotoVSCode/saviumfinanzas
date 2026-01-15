@@ -418,19 +418,20 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       })
     );
     
-    // Filter out empty rows and metadata rows (like ING header)
-    const dataRows = rows.filter(row => {
+    // Detect format first with all rows to find headers
+    const { dateCol, descCol, amountCol, hasHeader } = detectFormat(rows);
+    
+    // Get data rows (skip header if detected)
+    const rowsToProcess = hasHeader ? rows.slice(1) : rows;
+    
+    // Filter out empty rows - only require a valid date
+    const dataRows = rowsToProcess.filter(row => {
+      if (row.every(cell => !cell || cell.trim() === '')) return false;
       const hasDate = row.some(cell => parseDate(cell));
-      const hasAmount = row.some(cell => {
-        const amt = parseAmount(cell);
-        return amt !== 0 && !isNaN(amt);
-      });
-      return hasDate && hasAmount;
+      return hasDate;
     });
     
     if (dataRows.length === 0) return [];
-    
-    const { dateCol, descCol, amountCol, hasHeader } = detectFormat(dataRows);
     
     const parsed: ParsedRow[] = [];
     
