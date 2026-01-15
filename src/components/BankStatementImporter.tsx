@@ -6,9 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, FileSpreadsheet, AlertCircle, Check, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { Account, Category, Transaction } from '@/types/finance';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Upload, FileSpreadsheet, AlertCircle, Check, X, ArrowUpDown, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react';
+import { Account, Category, Transaction, TransactionType } from '@/types/finance';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 
 interface BankStatementImporterProps {
@@ -28,6 +31,7 @@ interface ParsedRow {
   categoriaId: string;
   incluir: boolean;
   montoOriginal: number;
+  tipo: TransactionType;
 }
 
 type Step = 'select-account' | 'upload' | 'preview';
@@ -365,19 +369,23 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       
       if (montoOriginal === 0) continue; // Skip zero amount rows
       
-      // Determine if it's an expense based on account type
-      let esGasto: boolean;
-      if (isCreditCard) {
-        // Credit cards: positive = expense, negative = income/payment
-        esGasto = montoOriginal > 0;
-      } else {
-        // Bank accounts: negative = expense, positive = income
-        esGasto = montoOriginal < 0;
-      }
-      
-      // Find matching category from history
+      // Find matching category from history first to determine tipo
       const matchedCategoryId = findMatchingCategory(descripcion);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
+      const matchedCategory = categories.find(c => c.id === matchedCategoryId);
+      
+      // Determine tipo from matched category, or infer from account type and amount
+      let tipo: TransactionType;
+      if (matchedCategory?.tipo) {
+        tipo = matchedCategory.tipo;
+      } else if (isCreditCard) {
+        tipo = montoOriginal > 0 ? 'Gastos' : 'Ingreso';
+      } else {
+        tipo = montoOriginal < 0 ? 'Gastos' : 'Ingreso';
+      }
+      
+      // Determine if it's an expense based on tipo
+      const esGasto = tipo === 'Gastos' || tipo === 'Retiro';
       
       parsed.push({
         id: `import-${i}-${Date.now()}`,
@@ -388,7 +396,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         esReembolso: false,
         categoriaId,
         incluir: true,
-        montoOriginal
+        montoOriginal,
+        tipo
       });
     }
     
@@ -453,15 +462,23 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       
       if (montoOriginal === 0) continue;
       
-      let esGasto: boolean;
-      if (isCreditCard) {
-        esGasto = montoOriginal > 0;
-      } else {
-        esGasto = montoOriginal < 0;
-      }
-      
+      // Find matching category from history first to determine tipo
       const matchedCategoryId = findMatchingCategory(descripcion);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
+      const matchedCategory = categories.find(c => c.id === matchedCategoryId);
+      
+      // Determine tipo from matched category, or infer from account type and amount
+      let tipo: TransactionType;
+      if (matchedCategory?.tipo) {
+        tipo = matchedCategory.tipo;
+      } else if (isCreditCard) {
+        tipo = montoOriginal > 0 ? 'Gastos' : 'Ingreso';
+      } else {
+        tipo = montoOriginal < 0 ? 'Gastos' : 'Ingreso';
+      }
+      
+      // Determine if it's an expense based on tipo
+      const esGasto = tipo === 'Gastos' || tipo === 'Retiro';
       
       parsed.push({
         id: `import-${i}-${Date.now()}`,
@@ -472,7 +489,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         esReembolso: false,
         categoriaId,
         incluir: true,
-        montoOriginal
+        montoOriginal,
+        tipo
       });
     }
     
@@ -592,17 +610,32 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     const gastoCategories = categories.filter(c => c.tipo === 'Gastos');
     const ingresoCategories = categories.filter(c => c.tipo === 'Ingreso');
     const reembolsoCategories = categories.filter(c => c.tipo === 'Reembolso');
-    return { gastoCategories, ingresoCategories, reembolsoCategories };
+    const aportacionCategories = categories.filter(c => c.tipo === 'Aportación');
+    const retiroCategories = categories.filter(c => c.tipo === 'Retiro');
+    return { gastoCategories, ingresoCategories, reembolsoCategories, aportacionCategories, retiroCategories };
   }, [categories]);
 
   const getCategoriesForRow = (row: ParsedRow) => {
+    // Return all categories for the dropdown, grouped by type
+    return categories;
+  };
+
+  const getGroupedCategoriesForRow = (row: ParsedRow) => {
+    // Group categories by tipo for the dropdown
+    const groups: { tipo: TransactionType; categories: Category[] }[] = [];
+    
     if (row.esReembolso) {
-      return [...categoriesByType.gastoCategories, ...categoriesByType.reembolsoCategories];
+      if (categoriesByType.gastoCategories.length > 0) groups.push({ tipo: 'Gastos', categories: categoriesByType.gastoCategories });
+      if (categoriesByType.reembolsoCategories.length > 0) groups.push({ tipo: 'Reembolso', categories: categoriesByType.reembolsoCategories });
+    } else if (row.esGasto || row.tipo === 'Gastos' || row.tipo === 'Retiro') {
+      if (categoriesByType.gastoCategories.length > 0) groups.push({ tipo: 'Gastos', categories: categoriesByType.gastoCategories });
+      if (categoriesByType.retiroCategories.length > 0) groups.push({ tipo: 'Retiro', categories: categoriesByType.retiroCategories });
+    } else {
+      if (categoriesByType.ingresoCategories.length > 0) groups.push({ tipo: 'Ingreso', categories: categoriesByType.ingresoCategories });
+      if (categoriesByType.aportacionCategories.length > 0) groups.push({ tipo: 'Aportación', categories: categoriesByType.aportacionCategories });
     }
-    if (row.esGasto) {
-      return categoriesByType.gastoCategories;
-    }
-    return categoriesByType.ingresoCategories;
+    
+    return groups;
   };
 
   const formatDate = (date: Date) => {
@@ -634,9 +667,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   };
 
   const getTipoValue = (row: ParsedRow): string => {
-    // Reembolso is not a type, it's a label - tipo is only Ingreso or Gasto
-    if (row.esGasto) return 'Gasto';
-    return 'Ingreso';
+    // Use the row's tipo for sorting
+    return row.tipo;
   };
 
   const sortedRows = useMemo(() => {
@@ -822,15 +854,21 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                     const category = categories.find(c => c.id === row.categoriaId);
                     const isSinAsignar = !category || category.subcategoria === 'Sin Asignar';
                     
-                    // Determine display type - Reembolso is NOT a type, just a label
-                    const getTipo = () => {
-                      if (row.esGasto) return 'Gasto';
-                      return 'Ingreso';
+                    // Determine display type based on row.tipo
+                    const getTipoDisplay = () => {
+                      switch (row.tipo) {
+                        case 'Aportación': return 'Aportación';
+                        case 'Retiro': return 'Retiro';
+                        case 'Gastos': return 'Gasto';
+                        case 'Ingreso': return 'Ingreso';
+                        default: return row.esGasto ? 'Gasto' : 'Ingreso';
+                      }
                     };
                     
                     const getTipoColor = () => {
-                      if (row.esGasto) return 'text-destructive';
-                      return 'text-green-600';
+                      if (row.tipo === 'Aportación' || row.tipo === 'Ingreso') return 'text-green-600';
+                      if (row.tipo === 'Retiro' || row.tipo === 'Gastos') return 'text-destructive';
+                      return row.esGasto ? 'text-destructive' : 'text-green-600';
                     };
                     
                     return (
@@ -846,7 +884,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                           {row.descripcion}
                         </TableCell>
                         <TableCell className={`font-medium ${getTipoColor()}`}>
-                          {getTipo()}
+                          {getTipoDisplay()}
                           {row.esReembolso && (
                             <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
                               Reembolso
@@ -870,23 +908,50 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                           ) : null}
                         </TableCell>
                         <TableCell>
-                          <Select
-                            value={row.categoriaId}
-                            onValueChange={(value) => handleCategoryChange(row.id, value)}
-                          >
-                            <SelectTrigger className={`w-40 ${isSinAsignar ? 'border-yellow-500' : ''}`}>
-                              <SelectValue>
-                                {category ? `${category.categoria} - ${category.subcategoria}` : 'Sin Asignar'}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getCategoriesForRow(row).map(cat => (
-                                <SelectItem key={cat.id} value={cat.id}>
-                                  {cat.categoria} - {cat.subcategoria}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "w-52 justify-between text-left font-normal",
+                                  isSinAsignar && "border-yellow-500"
+                                )}
+                              >
+                                <span className="truncate">
+                                  {category ? `${category.categoria} - ${category.subcategoria}` : 'Sin Asignar'}
+                                </span>
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 p-0 bg-background" align="start">
+                              <Command>
+                                <CommandInput placeholder="Buscar categoría..." />
+                                <CommandList>
+                                  <CommandEmpty>No se encontraron categorías.</CommandEmpty>
+                                  {getGroupedCategoriesForRow(row).map(group => (
+                                    <CommandGroup key={group.tipo} heading={group.tipo}>
+                                      {group.categories.map(cat => (
+                                        <CommandItem
+                                          key={cat.id}
+                                          value={`${cat.categoria} ${cat.subcategoria}`}
+                                          onSelect={() => handleCategoryChange(row.id, cat.id)}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              row.categoriaId === cat.id ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          {cat.categoria} - {cat.subcategoria}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  ))}
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </TableCell>
                       </TableRow>
                     );
