@@ -184,57 +184,116 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   }
 
   function detectFormat(lines: string[][]): { dateCol: number; descCol: number; amountCol: number; hasHeader: boolean } {
-    // Try to detect which columns are date, description, and amount
     let dateCol = 0;
     let descCol = 1;
     let amountCol = -1;
     let hasHeader = false;
     
-    // Check first few rows to detect format
-    for (let rowIdx = 0; rowIdx < Math.min(5, lines.length); rowIdx++) {
-      const row = lines[rowIdx];
+    if (lines.length === 0) return { dateCol, descCol, amountCol, hasHeader };
+    
+    const firstRow = lines[0];
+    const firstRowText = firstRow.join(' ').toLowerCase();
+    
+    // Check if first row is a header
+    if (firstRowText.includes('fecha') || firstRowText.includes('date') || 
+        firstRowText.includes('descripción') || firstRowText.includes('description') ||
+        firstRowText.includes('importe') || firstRowText.includes('amount')) {
+      hasHeader = true;
       
-      for (let colIdx = 0; colIdx < row.length; colIdx++) {
-        const cell = row[colIdx];
+      // Use header names to find columns
+      for (let i = 0; i < firstRow.length; i++) {
+        const header = firstRow[i].toLowerCase().trim();
         
-        // Detect date column
-        if (parseDate(cell)) {
-          dateCol = colIdx;
+        // Date column - prefer "fecha" alone, or first fecha-related column
+        if (header === 'fecha' || header === 'f. valor' || header === 'date') {
+          dateCol = i;
         }
         
-        // Detect amount column (contains numbers with decimals)
-        const amount = parseAmount(cell);
-        if (amount !== 0 && !isNaN(amount)) {
-          amountCol = colIdx;
+        // Amount column - prefer "importe" over other numeric columns
+        if (header === 'importe' || header === 'importe (€)' || header === 'amount' || header === 'monto') {
+          amountCol = i;
         }
-      }
-      
-      // Check if first row looks like a header
-      if (rowIdx === 0) {
-        const firstRowText = row.join(' ').toLowerCase();
-        if (firstRowText.includes('fecha') || firstRowText.includes('date') || 
-            firstRowText.includes('descripción') || firstRowText.includes('description') ||
-            firstRowText.includes('importe') || firstRowText.includes('amount')) {
-          hasHeader = true;
+        
+        // Description column
+        if (header === 'descripción' || header === 'description' || header === 'concepto') {
+          descCol = i;
         }
       }
     }
     
-    // Find description column (longest text that's not date or amount)
-    const firstDataRow = lines[hasHeader ? 1 : 0];
-    if (firstDataRow) {
-      let maxLen = 0;
-      for (let i = 0; i < firstDataRow.length; i++) {
-        if (i !== dateCol && i !== amountCol) {
-          const len = firstDataRow[i].length;
-          if (len > maxLen) {
-            maxLen = len;
-            descCol = i;
+    // If no header or columns not found, detect from data
+    const dataRows = hasHeader ? lines.slice(1) : lines;
+    
+    if (dataRows.length > 0) {
+      // Detect date column from first data row with valid date
+      for (const row of dataRows.slice(0, 3)) {
+        for (let i = 0; i < row.length; i++) {
+          if (parseDate(row[i])) {
+            dateCol = i;
+            break;
+          }
+        }
+        if (dateCol >= 0) break;
+      }
+      
+      // Detect amount column - prefer columns with decimal values
+      if (amountCol === -1) {
+        const amountCandidates: { col: number; hasDecimal: boolean; count: number }[] = [];
+        
+        for (let colIdx = 0; colIdx < (dataRows[0]?.length || 0); colIdx++) {
+          if (colIdx === dateCol) continue;
+          
+          let validCount = 0;
+          let hasDecimal = false;
+          
+          for (const row of dataRows.slice(0, 5)) {
+            const cell = row[colIdx];
+            if (!cell) continue;
+            
+            const amount = parseAmount(cell);
+            if (amount !== 0 && !isNaN(amount)) {
+              validCount++;
+              if (cell.includes('.') || cell.includes(',')) {
+                hasDecimal = true;
+              }
+            }
+          }
+          
+          if (validCount > 0) {
+            amountCandidates.push({ col: colIdx, hasDecimal, count: validCount });
+          }
+        }
+        
+        // Prefer columns with decimals (actual amounts vs account numbers)
+        amountCandidates.sort((a, b) => {
+          if (a.hasDecimal !== b.hasDecimal) return b.hasDecimal ? 1 : -1;
+          return b.count - a.count;
+        });
+        
+        if (amountCandidates.length > 0) {
+          amountCol = amountCandidates[0].col;
+        }
+      }
+      
+      // Find description column (longest text that's not date or amount)
+      if (!hasHeader || descCol === 1) {
+        const firstDataRow = dataRows[0];
+        if (firstDataRow) {
+          let maxLen = 0;
+          for (let i = 0; i < firstDataRow.length; i++) {
+            if (i !== dateCol && i !== amountCol) {
+              const len = firstDataRow[i].length;
+              if (len > maxLen) {
+                maxLen = len;
+                descCol = i;
+              }
+            }
           }
         }
       }
     }
     
+    console.log('Detected format:', { dateCol, descCol, amountCol, hasHeader });
     return { dateCol, descCol, amountCol, hasHeader };
   }
 
