@@ -387,6 +387,24 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       } else {
         montoOriginal = parseAmount(row[amountCol]);
       }
+
+      // Heuristic: some banks label reversals/refunds as positive amounts even on credit cards.
+      // If the description indicates a refund/payment, treat it as income (negative signed amount for CC).
+      if (isCreditCard && montoOriginal > 0) {
+        const d = normalizeDescription(descripcion);
+        const looksLikeRefundOrPayment =
+          d.includes('reversion') ||
+          d.includes('revers') ||
+          d.includes('reembolso') ||
+          d.includes('devolucion') ||
+          d.includes('devolución') ||
+          d.includes('refund') ||
+          d.includes('chargeback') ||
+          d.includes('pago');
+        if (looksLikeRefundOrPayment) {
+          montoOriginal = -Math.abs(montoOriginal);
+        }
+      }
       
       if (montoOriginal === 0) continue; // Skip zero amount rows
       
@@ -509,6 +527,23 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
               break;
             }
           }
+        }
+      }
+
+      // Heuristic: some banks label reversals/refunds as positive amounts even on credit cards.
+      if (isCreditCard && montoOriginal > 0) {
+        const d = normalizeDescription(descripcion);
+        const looksLikeRefundOrPayment =
+          d.includes('reversion') ||
+          d.includes('revers') ||
+          d.includes('reembolso') ||
+          d.includes('devolucion') ||
+          d.includes('devolución') ||
+          d.includes('refund') ||
+          d.includes('chargeback') ||
+          d.includes('pago');
+        if (looksLikeRefundOrPayment) {
+          montoOriginal = -Math.abs(montoOriginal);
         }
       }
       
