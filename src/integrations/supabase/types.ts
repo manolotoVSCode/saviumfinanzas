@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      clientes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          direccion: string | null
+          email: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          rfc: string | null
+          telefono: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          rfc?: string | null
+          telefono?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          rfc?: string | null
+          telefono?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       criptomonedas: {
         Row: {
           cantidad: number
@@ -151,6 +193,90 @@ export type Database = {
           vendida?: boolean
         }
         Relationships: []
+      }
+      facturas: {
+        Row: {
+          cliente_id: string | null
+          concepto: string | null
+          created_at: string
+          divisa: string
+          estatus: string
+          fecha_emision: string
+          fecha_vencimiento: string
+          id: string
+          isr_retenido: number
+          iva: number
+          iva_retenido: number
+          monto_pagado: number
+          notas: string | null
+          numero_factura: string
+          proveedor_id: string | null
+          subtotal: number
+          tipo: string
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          concepto?: string | null
+          created_at?: string
+          divisa?: string
+          estatus?: string
+          fecha_emision: string
+          fecha_vencimiento: string
+          id?: string
+          isr_retenido?: number
+          iva?: number
+          iva_retenido?: number
+          monto_pagado?: number
+          notas?: string | null
+          numero_factura: string
+          proveedor_id?: string | null
+          subtotal?: number
+          tipo: string
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          concepto?: string | null
+          created_at?: string
+          divisa?: string
+          estatus?: string
+          fecha_emision?: string
+          fecha_vencimiento?: string
+          id?: string
+          isr_retenido?: number
+          iva?: number
+          iva_retenido?: number
+          monto_pagado?: number
+          notas?: string | null
+          numero_factura?: string
+          proveedor_id?: string | null
+          subtotal?: number
+          tipo?: string
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facturas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facturas_proveedor_id_fkey"
+            columns: ["proveedor_id"]
+            isOneToOne: false
+            referencedRelation: "proveedores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       financial_health_history: {
         Row: {
@@ -274,6 +400,7 @@ export type Database = {
           edad: number | null
           id: string
           nombre: string
+          tipo_cuenta: string
           updated_at: string
           user_id: string
         }
@@ -284,6 +411,7 @@ export type Database = {
           edad?: number | null
           id?: string
           nombre: string
+          tipo_cuenta?: string
           updated_at?: string
           user_id: string
         }
@@ -294,6 +422,49 @@ export type Database = {
           edad?: number | null
           id?: string
           nombre?: string
+          tipo_cuenta?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      proveedores: {
+        Row: {
+          activo: boolean
+          created_at: string
+          direccion: string | null
+          email: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          rfc: string | null
+          telefono: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          rfc?: string | null
+          telefono?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          rfc?: string | null
+          telefono?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -412,7 +583,40 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      cuentas_por_cobrar_aging: {
+        Row: {
+          aging_bucket: string | null
+          cliente_nombre: string | null
+          dias_vencidos: number | null
+          divisa: string | null
+          factura_id: string | null
+          fecha_emision: string | null
+          fecha_vencimiento: string | null
+          monto_pagado: number | null
+          numero_factura: string | null
+          saldo_pendiente: number | null
+          total: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      cuentas_por_pagar_aging: {
+        Row: {
+          aging_bucket: string | null
+          dias_vencidos: number | null
+          divisa: string | null
+          factura_id: string | null
+          fecha_emision: string | null
+          fecha_vencimiento: string | null
+          monto_pagado: number | null
+          numero_factura: string | null
+          proveedor_nombre: string | null
+          saldo_pendiente: number | null
+          total: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_delete_user: {
@@ -439,6 +643,10 @@ export type Database = {
           transacciones_count: number
           user_id: string
         }[]
+      }
+      get_business_dashboard_metrics: {
+        Args: { p_end_date?: string; p_start_date?: string; p_user_id: string }
+        Returns: Json
       }
       user_has_sample_data: { Args: { user_uuid: string }; Returns: boolean }
     }
