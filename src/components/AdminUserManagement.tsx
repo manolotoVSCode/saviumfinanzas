@@ -7,10 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Trash2, RefreshCw, UserPlus, User, Building2 } from 'lucide-react';
+import { Users, Trash2, RefreshCw, UserPlus } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -34,7 +33,6 @@ const createUserSchema = z.object({
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   nombre: z.string().min(1, 'Nombre requerido'),
   apellidos: z.string().min(1, 'Apellidos requeridos'),
-  tipo_cuenta: z.enum(['personal', 'empresa']),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -52,8 +50,7 @@ export const AdminUserManagement = () => {
       email: '',
       password: '',
       nombre: '',
-      apellidos: '',
-      tipo_cuenta: 'personal'
+      apellidos: ''
     }
   });
 
@@ -119,8 +116,7 @@ export const AdminUserManagement = () => {
           password: data.password,
           nombre: data.nombre,
           apellidos: data.apellidos,
-          divisa_preferida: 'MXN',
-          tipo_cuenta: data.tipo_cuenta
+          divisa_preferida: 'MXN'
         }
       });
 
@@ -248,44 +244,6 @@ export const AdminUserManagement = () => {
                         )}
                       />
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="tipo_cuenta"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormLabel>Tipo de Cuenta</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="flex gap-4"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="personal" id="personal" />
-                                <label
-                                  htmlFor="personal"
-                                  className="flex items-center gap-2 cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  <User className="h-4 w-4" />
-                                  Personal
-                                </label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="empresa" id="empresa" />
-                                <label
-                                  htmlFor="empresa"
-                                  className="flex items-center gap-2 cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  <Building2 className="h-4 w-4" />
-                                  Empresa
-                                </label>
-                              </div>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                     <div className="bg-muted/50 p-3 rounded-md">
                       <p className="text-sm text-muted-foreground">
                         <strong>Divisa:</strong> MXN (Peso Mexicano) - Por defecto para todos los usuarios

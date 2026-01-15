@@ -49,14 +49,11 @@ serve(async (req) => {
       throw new Error('Access denied: Admin only function')
     }
 
-    const { email, password, nombre, apellidos, divisa_preferida, tipo_cuenta } = await req.json()
+    const { email, password, nombre, apellidos, divisa_preferida } = await req.json()
 
     if (!email || !password || !nombre || !apellidos) {
       throw new Error('Missing required fields: email, password, nombre, apellidos')
     }
-
-    // Validate tipo_cuenta
-    const validTipoCuenta = tipo_cuenta === 'empresa' ? 'empresa' : 'personal';
 
     // Create the user
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -66,8 +63,7 @@ serve(async (req) => {
       user_metadata: {
         nombre,
         apellidos,
-        divisa_preferida: divisa_preferida || 'MXN',
-        tipo_cuenta: validTipoCuenta
+        divisa_preferida: divisa_preferida || 'MXN'
       }
     })
 
