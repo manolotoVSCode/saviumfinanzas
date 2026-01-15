@@ -367,18 +367,32 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
       if (montoOriginal === 0) continue; // Skip zero amount rows
 
-      // Assign category from history, but DO NOT override transaction type (tipo) from history.
-      // Tipo must follow the sign rules based on selected account type.
+      // Assign category from history
       const matchedCategoryId = findMatchingCategory(descripcion);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
+      const matchedCategory = categories.find(c => c.id === matchedCategoryId);
 
-      // Infer tipo ONLY from account type and sign (as per user rules)
-      const tipo: TransactionType = isCreditCard
-        ? (montoOriginal > 0 ? 'Gastos' : 'Ingreso')
-        : (montoOriginal < 0 ? 'Gastos' : 'Ingreso');
+      // Determine if this is expense-like or income-like based on sign and account type
+      const isExpenseLike = isCreditCard ? montoOriginal > 0 : montoOriginal < 0;
+
+      // Use matched category tipo ONLY if compatible with the sign-based determination
+      let tipo: TransactionType;
+      if (matchedCategory?.tipo) {
+        const catTipo = matchedCategory.tipo;
+        if (isExpenseLike && (catTipo === 'Gastos' || catTipo === 'Retiro')) {
+          tipo = catTipo;
+        } else if (!isExpenseLike && (catTipo === 'Ingreso' || catTipo === 'Aportación')) {
+          tipo = catTipo;
+        } else {
+          // Category tipo not compatible with sign, use default
+          tipo = isExpenseLike ? 'Gastos' : 'Ingreso';
+        }
+      } else {
+        tipo = isExpenseLike ? 'Gastos' : 'Ingreso';
+      }
 
       // Determine if it's an expense based on tipo
-      const esGasto = tipo !== 'Ingreso';
+      const esGasto = tipo === 'Gastos' || tipo === 'Retiro';
 
       parsed.push({
         id: `import-${i}-${Date.now()}`,
@@ -486,18 +500,32 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       
       if (montoOriginal === 0) continue;
       
-      // Assign category from history, but DO NOT override transaction type (tipo) from history.
-      // Tipo must follow the sign rules based on selected account type.
+      // Assign category from history
       const matchedCategoryId = findMatchingCategory(descripcion);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
+      const matchedCategory = categories.find(c => c.id === matchedCategoryId);
 
-      // Infer tipo ONLY from account type and sign (as per user rules)
-      const tipo: TransactionType = isCreditCard
-        ? (montoOriginal > 0 ? 'Gastos' : 'Ingreso')
-        : (montoOriginal < 0 ? 'Gastos' : 'Ingreso');
+      // Determine if this is expense-like or income-like based on sign and account type
+      const isExpenseLike = isCreditCard ? montoOriginal > 0 : montoOriginal < 0;
+
+      // Use matched category tipo ONLY if compatible with the sign-based determination
+      let tipo: TransactionType;
+      if (matchedCategory?.tipo) {
+        const catTipo = matchedCategory.tipo;
+        if (isExpenseLike && (catTipo === 'Gastos' || catTipo === 'Retiro')) {
+          tipo = catTipo;
+        } else if (!isExpenseLike && (catTipo === 'Ingreso' || catTipo === 'Aportación')) {
+          tipo = catTipo;
+        } else {
+          // Category tipo not compatible with sign, use default
+          tipo = isExpenseLike ? 'Gastos' : 'Ingreso';
+        }
+      } else {
+        tipo = isExpenseLike ? 'Gastos' : 'Ingreso';
+      }
 
       // Determine if it's an expense based on tipo
-      const esGasto = tipo !== 'Ingreso';
+      const esGasto = tipo === 'Gastos' || tipo === 'Retiro';
       
       parsed.push({
         id: `import-${i}-${Date.now()}`,
