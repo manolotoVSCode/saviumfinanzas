@@ -634,7 +634,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   };
 
   const getTipoValue = (row: ParsedRow): string => {
-    if (row.esReembolso) return 'Reembolso';
+    // Reembolso is not a type, it's a label - tipo is only Ingreso or Gasto
     if (row.esGasto) return 'Gasto';
     return 'Ingreso';
   };
@@ -822,15 +822,13 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                     const category = categories.find(c => c.id === row.categoriaId);
                     const isSinAsignar = !category || category.subcategoria === 'Sin Asignar';
                     
-                    // Determine display type
+                    // Determine display type - Reembolso is NOT a type, just a label
                     const getTipo = () => {
-                      if (row.esReembolso) return 'Reembolso';
                       if (row.esGasto) return 'Gasto';
                       return 'Ingreso';
                     };
                     
                     const getTipoColor = () => {
-                      if (row.esReembolso) return 'text-orange-600';
                       if (row.esGasto) return 'text-destructive';
                       return 'text-green-600';
                     };
@@ -849,12 +847,17 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                         </TableCell>
                         <TableCell className={`font-medium ${getTipoColor()}`}>
                           {getTipo()}
+                          {row.esReembolso && (
+                            <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                              Reembolso
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right text-green-600">
-                          {!row.esGasto && !row.esReembolso ? formatMoney(row.monto) : '-'}
+                          {!row.esGasto ? formatMoney(row.monto) : '-'}
                         </TableCell>
-                        <TableCell className={`text-right ${row.esReembolso ? 'text-orange-600' : 'text-destructive'}`}>
-                          {row.esGasto || row.esReembolso ? formatMoney(row.monto) : '-'}
+                        <TableCell className={`text-right ${row.esReembolso ? 'text-green-600' : 'text-destructive'}`}>
+                          {row.esGasto ? formatMoney(row.monto) : '-'}
                         </TableCell>
                         <TableCell className="text-center">
                           {/* Show reembolso checkbox only for income rows (can convert to reembolso) 
