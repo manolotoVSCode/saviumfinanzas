@@ -1,5 +1,6 @@
 import { TransactionsManager } from '@/components/TransactionsManager';
 import { ExcelExporter } from '@/components/ExcelExporter';
+import BankStatementImporter from '@/components/BankStatementImporter';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,11 +25,17 @@ const Transacciones = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <div className={`flex items-center ${isMobile ? 'flex-col space-y-2 items-start' : 'justify-end'}`}>
+        <div className={`flex items-center ${isMobile ? 'flex-col space-y-2 items-start' : 'justify-end gap-2'}`}>
           <ExcelExporter
             transactions={financeData.transactions}
             accounts={financeData.accounts}
             categories={financeData.categories}
+          />
+          <BankStatementImporter
+            accounts={financeData.accounts}
+            categories={financeData.categories}
+            transactions={financeData.transactions}
+            onImportTransactions={financeData.addTransactionsBatch}
           />
         </div>
         
