@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, FileSpreadsheet, AlertCircle, Check, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, Check, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Account, Category, Transaction } from '@/types/finance';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
@@ -32,12 +32,17 @@ interface ParsedRow {
 
 type Step = 'select-account' | 'upload' | 'preview';
 
+type SortColumn = 'fecha' | 'descripcion' | 'tipo' | 'monto' | 'categoria';
+type SortDirection = 'asc' | 'desc';
+
 const BankStatementImporter = ({ accounts, categories, transactions, onImportTransactions }: BankStatementImporterProps) => {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>('select-account');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [importing, setImporting] = useState(false);
+  const [sortColumn, setSortColumn] = useState<SortColumn>('fecha');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const { toast } = useToast();
 
   const selectedAccount = useMemo(() => 
@@ -610,6 +615,60 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
   const selectedCount = parsedRows.filter(r => r.incluir).length;
 
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-3 w-3 ml-1 opacity-50" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-3 w-3 ml-1" />
+      : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
+
+  const getTipoValue = (row: ParsedRow): string => {
+    if (row.esReembolso) return 'Reembolso';
+    if (row.esGasto) return 'Gasto';
+    return 'Ingreso';
+  };
+
+  const sortedRows = useMemo(() => {
+    return [...parsedRows].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortColumn) {
+        case 'fecha':
+          comparison = a.fecha.getTime() - b.fecha.getTime();
+          break;
+        case 'descripcion':
+          comparison = a.descripcion.localeCompare(b.descripcion);
+          break;
+        case 'tipo':
+          comparison = getTipoValue(a).localeCompare(getTipoValue(b));
+          break;
+        case 'monto':
+          comparison = a.monto - b.monto;
+          break;
+        case 'categoria':
+          const catA = categories.find(c => c.id === a.categoriaId);
+          const catB = categories.find(c => c.id === b.categoriaId);
+          const nameA = catA ? `${catA.categoria} - ${catA.subcategoria}` : 'Sin Asignar';
+          const nameB = catB ? `${catB.categoria} - ${catB.subcategoria}` : 'Sin Asignar';
+          comparison = nameA.localeCompare(nameB);
+          break;
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [parsedRows, sortColumn, sortDirection, categories]);
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => isOpen ? setOpen(true) : handleClose()}>
       <DialogTrigger asChild>
@@ -714,17 +773,52 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                         }}
                       />
                     </TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Ingreso</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('fecha')}
+                    >
+                      <span className="flex items-center">
+                        Fecha {getSortIcon('fecha')}
+                      </span>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('descripcion')}
+                    >
+                      <span className="flex items-center">
+                        Descripción {getSortIcon('descripcion')}
+                      </span>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('tipo')}
+                    >
+                      <span className="flex items-center">
+                        Tipo {getSortIcon('tipo')}
+                      </span>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('monto')}
+                    >
+                      <span className="flex items-center justify-end">
+                        Ingreso {getSortIcon('monto')}
+                      </span>
+                    </TableHead>
                     <TableHead className="text-right">Gasto</TableHead>
                     <TableHead className="w-20 text-center">Reembolso</TableHead>
-                    <TableHead>Categoría</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      onClick={() => handleSort('categoria')}
+                    >
+                      <span className="flex items-center">
+                        Categoría {getSortIcon('categoria')}
+                      </span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {parsedRows.map(row => {
+                  {sortedRows.map(row => {
                     const category = categories.find(c => c.id === row.categoriaId);
                     const isSinAsignar = !category || category.subcategoria === 'Sin Asignar';
                     
