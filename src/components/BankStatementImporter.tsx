@@ -367,23 +367,18 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
       if (montoOriginal === 0) continue; // Skip zero amount rows
 
-      // Find matching category from history first to determine tipo
+      // Assign category from history, but DO NOT override transaction type (tipo) from history.
+      // Tipo must follow the sign rules based on selected account type.
       const matchedCategoryId = findMatchingCategory(descripcion);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
-      const matchedCategory = categories.find(c => c.id === matchedCategoryId);
 
-      // Determine tipo from matched category, or infer from account type and amount
-      let tipo: TransactionType;
-      if (matchedCategory?.tipo) {
-        tipo = matchedCategory.tipo;
-      } else if (isCreditCard) {
-        tipo = montoOriginal > 0 ? 'Gastos' : 'Ingreso';
-      } else {
-        tipo = montoOriginal < 0 ? 'Gastos' : 'Ingreso';
-      }
+      // Infer tipo ONLY from account type and sign (as per user rules)
+      const tipo: TransactionType = isCreditCard
+        ? (montoOriginal > 0 ? 'Gastos' : 'Ingreso')
+        : (montoOriginal < 0 ? 'Gastos' : 'Ingreso');
 
       // Determine if it's an expense based on tipo
-      const esGasto = tipo === 'Gastos' || tipo === 'Retiro';
+      const esGasto = tipo !== 'Ingreso';
 
       parsed.push({
         id: `import-${i}-${Date.now()}`,
@@ -491,23 +486,18 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       
       if (montoOriginal === 0) continue;
       
-      // Find matching category from history first to determine tipo
+      // Assign category from history, but DO NOT override transaction type (tipo) from history.
+      // Tipo must follow the sign rules based on selected account type.
       const matchedCategoryId = findMatchingCategory(descripcion);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
-      const matchedCategory = categories.find(c => c.id === matchedCategoryId);
-      
-      // Determine tipo from matched category, or infer from account type and amount
-      let tipo: TransactionType;
-      if (matchedCategory?.tipo) {
-        tipo = matchedCategory.tipo;
-      } else if (isCreditCard) {
-        tipo = montoOriginal > 0 ? 'Gastos' : 'Ingreso';
-      } else {
-        tipo = montoOriginal < 0 ? 'Gastos' : 'Ingreso';
-      }
-      
+
+      // Infer tipo ONLY from account type and sign (as per user rules)
+      const tipo: TransactionType = isCreditCard
+        ? (montoOriginal > 0 ? 'Gastos' : 'Ingreso')
+        : (montoOriginal < 0 ? 'Gastos' : 'Ingreso');
+
       // Determine if it's an expense based on tipo
-      const esGasto = tipo === 'Gastos' || tipo === 'Retiro';
+      const esGasto = tipo !== 'Ingreso';
       
       parsed.push({
         id: `import-${i}-${Date.now()}`,
