@@ -650,12 +650,19 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       const transactionsToImport = rowsToImport.map(row => {
         const subcategoriaId = row.categoriaId || fallbackCategoryId;
 
+        // Reembolso in this app = ingreso > 0 + categoría tipo 'Gastos'
+        // So when esReembolso is true, we set ingreso = monto, gasto = 0
+        // Normal expense: ingreso = 0, gasto = monto
+        // Normal income: ingreso = monto, gasto = 0
+        const ingreso = row.esReembolso ? row.monto : (row.esGasto ? 0 : row.monto);
+        const gasto = row.esReembolso ? 0 : (row.esGasto ? row.monto : 0);
+
         return {
           cuentaId: selectedAccountId,
           fecha: row.fecha,
           comentario: row.descripcion,
-          ingreso: row.esGasto ? 0 : row.monto,
-          gasto: row.esGasto ? row.monto : 0,
+          ingreso,
+          gasto,
           subcategoriaId,
           divisa: selectedAccount?.divisa || 'MXN',
         };
