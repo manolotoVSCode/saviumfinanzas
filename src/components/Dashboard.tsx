@@ -913,112 +913,6 @@ const CategoryItem = ({
       </Card>
 
 
-      {/* 3. SALUD FINANCIERA */}
-      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              💪 {t('dashboard.financial_health')}
-            </CardTitle>
-            <div className="flex items-center gap-3">
-              <span className={`text-3xl font-bold ${getSaludColor(metrics.saludFinanciera.nivel)}`}>
-                {metrics.saludFinanciera.score}
-              </span>
-              <Badge variant={metrics.saludFinanciera.nivel === 'Excelente' ? 'default' : 
-                            metrics.saludFinanciera.nivel === 'Buena' ? 'secondary' : 'destructive'}>
-                {metrics.saludFinanciera.nivel}
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="financial-health-details" className="border-none">
-              <AccordionTrigger className="hover:no-underline py-2">
-                <span className="text-sm text-muted-foreground">Ver análisis detallado</span>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <p className="text-sm text-muted-foreground">{metrics.saludFinanciera.descripcion}</p>
-                
-                {/* Desglose de factores */}
-                {metrics.saludFinanciera.detalles && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <Info className="h-4 w-4" />
-                      Factores Ponderados
-                    </h4>
-                    
-                    {/* Liquidez */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">💧 Liquidez ({metrics.saludFinanciera.detalles.liquidez.mesesCobertura} meses de gastos)</span>
-                        <span className="font-medium">{metrics.saludFinanciera.detalles.liquidez.puntos}/{metrics.saludFinanciera.detalles.liquidez.maxPuntos}</span>
-                      </div>
-                      <Progress value={(metrics.saludFinanciera.detalles.liquidez.puntos / metrics.saludFinanciera.detalles.liquidez.maxPuntos) * 100} />
-                    </div>
-
-                    {/* Ahorro */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">💰 Ahorro ({metrics.saludFinanciera.detalles.ahorro.porcentaje}% del objetivo)</span>
-                        <span className="font-medium">{metrics.saludFinanciera.detalles.ahorro.puntos}/{metrics.saludFinanciera.detalles.ahorro.maxPuntos}</span>
-                      </div>
-                      <Progress value={(metrics.saludFinanciera.detalles.ahorro.puntos / metrics.saludFinanciera.detalles.ahorro.maxPuntos) * 100} className="[&>div]:bg-success" />
-                    </div>
-
-                    {/* Endeudamiento */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">📊 Endeudamiento ({metrics.saludFinanciera.detalles.endeudamiento.porcentaje}% deuda)</span>
-                        <span className="font-medium">{metrics.saludFinanciera.detalles.endeudamiento.puntos}/{metrics.saludFinanciera.detalles.endeudamiento.maxPuntos}</span>
-                      </div>
-                      <Progress value={(metrics.saludFinanciera.detalles.endeudamiento.puntos / metrics.saludFinanciera.detalles.endeudamiento.maxPuntos) * 100} className="[&>div]:bg-warning" />
-                    </div>
-
-                    {/* Rendimiento Inversiones */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">📈 Rendimiento ({metrics.saludFinanciera.detalles.rendimientoInversiones.porcentaje}% anual)</span>
-                        <span className="font-medium">{metrics.saludFinanciera.detalles.rendimientoInversiones.puntos}/{metrics.saludFinanciera.detalles.rendimientoInversiones.maxPuntos}</span>
-                      </div>
-                      <Progress value={(metrics.saludFinanciera.detalles.rendimientoInversiones.puntos / metrics.saludFinanciera.detalles.rendimientoInversiones.maxPuntos) * 100} className="[&>div]:bg-accent" />
-                    </div>
-
-                    {/* Diversificación */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">🎯 Diversificación ({metrics.saludFinanciera.detalles.diversificacion.tiposActivos.length} tipos)</span>
-                        <span className="font-medium">{metrics.saludFinanciera.detalles.diversificacion.puntos}/{metrics.saludFinanciera.detalles.diversificacion.maxPuntos}</span>
-                      </div>
-                      <Progress value={(metrics.saludFinanciera.detalles.diversificacion.puntos / metrics.saludFinanciera.detalles.diversificacion.maxPuntos) * 100} className="[&>div]:bg-secondary" />
-                    </div>
-                  </div>
-                )}
-                
-                {/* Comparativa con promedios de referencia */}
-                <div className="p-3 bg-muted/30 border border-muted rounded-lg">
-                  <h4 className="text-sm font-semibold text-foreground mb-2">📊 Referencias Recomendadas</h4>
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    <p>• <strong>Liquidez:</strong> 3-6 meses de gastos (ideal)</p>
-                    <p>• <strong>Ahorro:</strong> 20-30% de ingresos mensuales</p>
-                    <p>• <strong>Endeudamiento:</strong> Máximo 30% de activos</p>
-                    <p>• <strong>Rendimiento:</strong> 7-10% anual (largo plazo)</p>
-                    <p>• <strong>Diversificación:</strong> Mínimo 3 tipos de activos</p>
-                  </div>
-                </div>
-                
-                {/* Consejo financiero */}
-                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                  <h4 className="text-sm font-semibold text-primary mb-2">💡 {t('dashboard.advice_title')}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {getFinancialAdvice(metrics.saludFinanciera.nivel, metrics.saludFinanciera.score)}
-                  </p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </CardContent>
-      </Card>
 
       {/* 4. ACTIVOS */}
       <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
@@ -1382,6 +1276,20 @@ const CategoryItem = ({
         </CardContent>
       </Card>
 
+      {/* SALUD FINANCIERA - Módulo inhabilitado */}
+      <Card className="border-muted/40 opacity-50 pointer-events-none select-none">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-muted-foreground">
+              🏥 Salud Financiera
+            </CardTitle>
+            <Badge variant="outline" className="text-xs text-muted-foreground border-muted">
+              En mantenimiento
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">Este módulo está temporalmente inhabilitado.</p>
+        </CardHeader>
+      </Card>
 
     </div>
   );
