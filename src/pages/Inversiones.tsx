@@ -28,8 +28,8 @@ const Inversiones = (): JSX.Element => {
   const { formatCurrency } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
 
-  // Filtrar solo cuentas de inversión
-  const cuentasInversion = accounts.filter(account => account.tipo === 'Inversiones');
+  // Filtrar solo cuentas de inversión (excluir las que tienen valor 0)
+  const cuentasInversion = accounts.filter(account => account.tipo === 'Inversiones' && account.saldoActual !== 0);
   
   // Filtrar cuentas de empresas propias
   const cuentasEmpresasPropias = accounts.filter(account => account.tipo === 'Empresa Propia');
