@@ -142,8 +142,20 @@ const Configuracion = () => {
           </CardContent>
         </Card>
 
-        {/* ADMINISTRACIÓN DE USUARIOS - Solo para admin */}
-        {isAdmin && <AdminUserManagement />}
+        {/* ADMINISTRACIÓN DE USUARIOS - Deshabilitado temporalmente */}
+        {isAdmin && (
+          <Card className="border-muted/40 opacity-50 pointer-events-none select-none">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-muted-foreground">Administrar Usuarios</CardTitle>
+                <Badge variant="outline" className="text-xs text-muted-foreground border-muted">
+                  En mantenimiento
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">Este módulo está temporalmente inhabilitado.</p>
+            </CardHeader>
+          </Card>
+        )}
 
         {/* INFORMACIÓN DE LA APP */}
         <Card className="border-muted/20 hover:border-muted/40 transition-all duration-300">
