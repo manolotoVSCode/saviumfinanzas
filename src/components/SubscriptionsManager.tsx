@@ -355,6 +355,25 @@ export const SubscriptionsManager = () => {
 
     setIsLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Limpiar registros antiguos que no coinciden con los patrones actuales
+      const validPatternIds = SUBSCRIPTION_PATTERNS.map(p => p.id);
+      const { data: allSubs } = await supabase
+        .from('subscription_services')
+        .select('id, canon_key')
+        .eq('user_id', user.id);
+
+      if (allSubs) {
+        const toDelete = allSubs
+          .filter(s => s.canon_key && !validPatternIds.includes(s.canon_key))
+          .map(s => s.id);
+        if (toDelete.length > 0) {
+          await supabase.from('subscription_services').delete().in('id', toDelete);
+        }
+      }
+
       const twelveMonthsAgo = new Date();
       twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
