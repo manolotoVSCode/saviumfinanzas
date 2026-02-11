@@ -152,7 +152,9 @@ export const SubscriptionsManager = () => {
       if (lower.includes('spotify')) return 'spotify';
       if (lower.includes('netflix')) return 'netflix';
       if (lower.includes('chatgpt') || lower.includes('openai')) return 'openai-chatgpt';
-      if (lower.includes('amazon')) return 'amazon';
+      if (lower.includes('amazon') && lower.includes('retail')) return 'amazon-prime';
+      if (lower.includes('amazon') && lower.includes('marketplace')) return 'amazon-marketplace';
+      if (lower.includes('amazon')) return 'amazon-other';
       if (lower.includes('lovable')) return 'lovable';
       if (lower.includes('opus')) return 'opus-clip';
       if (lower.includes('rotoplas')) return 'rotoplas';
@@ -409,25 +411,47 @@ export const SubscriptionsManager = () => {
       return [];
     }
 
+    // 1) Categorías cuya subcategoría contenga "suscripciones"
     const subscriptionCategories = categories.filter(c => 
       c.subcategoria.toLowerCase().includes('suscripciones')
     );
+    const subscriptionIds = new Set(subscriptionCategories.map(c => c.id));
 
-    if (subscriptionCategories.length === 0) {
-      return [];
-    }
+    // 2) Recopilar los comentarios normalizados de suscripciones guardadas
+    //    para detectar pagos en cualquier categoría
+    const savedCommentPatterns: string[] = [];
+    services.forEach(s => {
+      (s.originalComments || []).forEach(comment => {
+        const lower = comment.toLowerCase();
+        // Extraer patrón clave del comentario
+        if (lower.includes('spotify')) savedCommentPatterns.push('spotify');
+        else if (lower.includes('netflix')) savedCommentPatterns.push('netflix');
+        else if (lower.includes('amazon') && lower.includes('retail') && !lower.includes('marketplace')) savedCommentPatterns.push('amazon mx*amazon retail');
+        else if (lower.includes('rotoplas')) savedCommentPatterns.push('rotoplas');
+        else if (lower.includes('google')) savedCommentPatterns.push('google');
+        else if (lower.includes('chatgpt') || lower.includes('openai')) savedCommentPatterns.push('openai');
+        else if (lower.includes('lovable')) savedCommentPatterns.push('lovable');
+        else if (lower.includes('opus')) savedCommentPatterns.push('opus');
+        else if (lower.includes('apple')) savedCommentPatterns.push('apple');
+      });
+    });
+    const uniquePatterns = Array.from(new Set(savedCommentPatterns));
 
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-    const subscriptionIds = subscriptionCategories.map(c => c.id);
+    return transactions.filter(t => {
+      if (t.gasto <= 0) return false;
+      if (new Date(t.fecha) < twelveMonthsAgo) return false;
 
-    return transactions.filter(t => 
-      subscriptionIds.includes(t.subcategoriaId!) && 
-      t.gasto > 0 &&
-      new Date(t.fecha) >= twelveMonthsAgo
-    );
-  }, [transactions, categories]);
+      // Coincide por categoría de suscripciones
+      if (subscriptionIds.has(t.subcategoriaId!)) return true;
+
+      // Coincide por patrón de comentario de suscripciones guardadas
+      const commentLower = (t.comentario || '').toLowerCase();
+      return uniquePatterns.some(pattern => commentLower.includes(pattern));
+    });
+  }, [transactions, categories, services]);
 
   // Función para determinar la frecuencia de pagos
   const determineFrecuencia = (transactions: any[]): 'Mensual' | 'Anual' | 'Irregular' => {
@@ -497,7 +521,9 @@ export const SubscriptionsManager = () => {
       if (lower.includes('spotify')) return 'spotify';
       if (lower.includes('netflix')) return 'netflix';
       if (lower.includes('chatgpt') || lower.includes('openai')) return 'openai-chatgpt';
-      if (lower.includes('amazon')) return 'amazon';
+      if (lower.includes('amazon') && lower.includes('retail')) return 'amazon-prime';
+      if (lower.includes('amazon') && lower.includes('marketplace')) return 'amazon-marketplace';
+      if (lower.includes('amazon')) return 'amazon-other';
       if (lower.includes('lovable')) return 'lovable';
       if (lower.includes('opus')) return 'opus-clip';
       if (lower.includes('rotoplas')) return 'rotoplas';
@@ -609,6 +635,8 @@ export const SubscriptionsManager = () => {
             else if (lower.includes('tv')) serviceName = 'Apple TV';
             else serviceName = 'Apple';
           }
+          else if (lower.includes('amazon') && lower.includes('retail')) serviceName = 'Amazon Prime';
+          else if (lower.includes('amazon') && lower.includes('marketplace')) serviceName = 'Amazon Marketplace';
           else if (lower.includes('amazon')) serviceName = 'Amazon';
           else if (lower.includes('google')) {
             if (lower.includes('nest')) serviceName = 'Google Nest';
