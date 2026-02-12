@@ -23,7 +23,7 @@ interface SubscriptionPattern {
   excludeKeywords?: string[];
   /** Monto esperado — si se define, solo acepta transacciones con ±10% de este valor */
   expectedAmount?: number;
-  frecuencia: 'Mensual' | 'Anual' | 'Irregular';
+  frecuenciaDefault?: 'Mensual' | 'Anual' | 'Irregular';
 }
 
 const SUBSCRIPTION_PATTERNS: SubscriptionPattern[] = [
@@ -34,14 +34,12 @@ const SUBSCRIPTION_PATTERNS: SubscriptionPattern[] = [
     keywords: ['amazon', 'retail'],
     excludeKeywords: ['marketplace'],
     expectedAmount: 99,
-    frecuencia: 'Mensual',
   },
   {
     id: 'spotify',
     serviceName: 'Spotify',
     tipoServicio: 'Streaming de música',
     keywords: ['spotify'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'rotoplas',
@@ -49,77 +47,66 @@ const SUBSCRIPTION_PATTERNS: SubscriptionPattern[] = [
     tipoServicio: 'Servicio de agua',
     keywords: ['rotoplas'],
     expectedAmount: 399,
-    frecuencia: 'Mensual',
   },
   {
     id: 'netflix',
     serviceName: 'Netflix',
     tipoServicio: 'Streaming de video',
     keywords: ['netflix'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'chatgpt',
     serviceName: 'ChatGPT',
     tipoServicio: 'Inteligencia Artificial',
     keywords: ['openai', 'chatgpt'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'apple',
     serviceName: 'Apple',
     tipoServicio: 'Servicios Apple',
     keywords: ['apple', 'com/bill'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'google-nest',
     serviceName: 'Google Nest',
     tipoServicio: 'Dispositivos inteligentes',
     keywords: ['google', 'nest'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'google-one',
     serviceName: 'Google One',
     tipoServicio: 'Almacenamiento en la nube',
     keywords: ['google', 'one'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'youtube-premium',
     serviceName: 'YouTube Premium',
     tipoServicio: 'Streaming de video',
     keywords: ['google', 'youtube'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'lovable',
     serviceName: 'Lovable',
     tipoServicio: 'Desarrollo de software',
     keywords: ['lovable'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'opus-clip',
     serviceName: 'Opus Clip',
     tipoServicio: 'Edición de video',
     keywords: ['opus'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'github',
     serviceName: 'GitHub',
     tipoServicio: 'Desarrollo de software',
     keywords: ['github'],
-    frecuencia: 'Mensual',
   },
   {
     id: 'microsoft',
     serviceName: 'Microsoft',
     tipoServicio: 'Software y servicios',
     keywords: ['msbill'],
-    frecuencia: 'Mensual',
   },
 ];
 
@@ -398,6 +385,23 @@ export const SubscriptionsManager = () => {
         const lastTransaction = sorted[0];
         const lastPaymentDate = new Date(lastTransaction.fecha);
 
+        // Detectar frecuencia real según pagos encontrados
+        let detectedFrecuencia: 'Mensual' | 'Anual' | 'Irregular' = 'Irregular';
+        if (matchingTransactions.length >= 2) {
+          // Calcular intervalo promedio entre pagos
+          const sortedDates = sorted.map(t => new Date(t.fecha).getTime());
+          let totalDaysDiff = 0;
+          for (let i = 0; i < sortedDates.length - 1; i++) {
+            totalDaysDiff += (sortedDates[i] - sortedDates[i + 1]) / (1000 * 60 * 60 * 24);
+          }
+          const avgDays = totalDaysDiff / (sortedDates.length - 1);
+          if (avgDays >= 300 && avgDays <= 400) {
+            detectedFrecuencia = 'Anual';
+          } else if (avgDays >= 20 && avgDays <= 45) {
+            detectedFrecuencia = 'Mensual';
+          }
+        }
+
         const subscription: SubscriptionService = {
           serviceName: pattern.serviceName,
           tipoServicio: pattern.tipoServicio,
@@ -406,8 +410,8 @@ export const SubscriptionsManager = () => {
             fecha: lastPaymentDate,
             mes: lastPaymentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
           },
-          frecuencia: pattern.frecuencia,
-          proximoPago: calculateNextPayment(lastPaymentDate, pattern.frecuencia),
+          frecuencia: detectedFrecuencia,
+          proximoPago: calculateNextPayment(lastPaymentDate, detectedFrecuencia),
           numeroPagos: matchingTransactions.length,
           originalComments: sorted.map(t => t.comentario),
           patternId: pattern.id,
