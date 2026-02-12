@@ -4,6 +4,7 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { SubscriptionsManager } from '@/components/SubscriptionsManager';
 import { MonthlyPaymentsControl } from '@/components/MonthlyPaymentsControl';
 import { AnnualPaymentsTracker } from '@/components/AnnualPaymentsTracker';
+import { MonthlyIncomeComparison } from '@/components/MonthlyIncomeComparison';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SampleDataBanner } from '@/components/SampleDataBanner';
 
@@ -45,6 +46,9 @@ const Informes = () => {
             <TabsTrigger value="seguros" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
               Pagos Anuales
             </TabsTrigger>
+            <TabsTrigger value="comparativo-ingresos" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
+              Comparativo Ingresos
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="suscripciones" className="space-y-4">
@@ -61,6 +65,14 @@ const Informes = () => {
 
           <TabsContent value="seguros" className="space-y-4">
             <AnnualPaymentsTracker />
+          </TabsContent>
+
+          <TabsContent value="comparativo-ingresos" className="space-y-4">
+            <MonthlyIncomeComparison
+              transactions={financeData.transactions}
+              categories={financeData.categories}
+              formatCurrency={formatCurrency}
+            />
           </TabsContent>
         </Tabs>
       </div>
