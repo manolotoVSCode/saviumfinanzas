@@ -49,7 +49,7 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
   // Obtener categorías marcadas para seguimiento de pago
   const getTrackedCategories = () => {
     return categories
-      .filter((cat: any) => cat.seguimiento_pago === true)
+      .filter((cat: any) => cat.seguimiento_pago === true && cat.tipo === 'Ingreso')
       .map((cat: any) => cat.id);
   };
 
