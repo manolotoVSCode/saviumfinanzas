@@ -40,7 +40,7 @@ const Informes = () => {
               Suscripciones
             </TabsTrigger>
             <TabsTrigger value="pagos-recurrentes" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
-              Pagos Recurrentes
+              Ingresos Recurrentes
             </TabsTrigger>
             <TabsTrigger value="seguros" className="flex-1 min-w-[140px] text-xs sm:text-sm px-3 py-2">
               Pagos Anuales
