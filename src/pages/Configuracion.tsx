@@ -14,9 +14,9 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Settings, LogOut, Trash2, Globe, Search } from 'lucide-react';
+import { Settings, LogOut, Trash2, Globe, Search, Wallet, Tag } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const Configuracion = () => {
   const financeData = useFinanceDataSupabase();
@@ -25,7 +25,8 @@ const Configuracion = () => {
 
   // Check if current user is admin
   const isAdmin = user?.email === 'manoloto@hotmail.com';
-
+  const cuentasRef = useRef<HTMLDivElement>(null);
+  const categoriasRef = useRef<HTMLDivElement>(null);
   if (financeData.loading) {
     return (
       <Layout>
@@ -42,9 +43,21 @@ const Configuracion = () => {
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center gap-2">
-          <Settings className="h-6 w-6" />
-          <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Settings className="h-6 w-6" />
+            <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => cuentasRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+              <Wallet className="h-4 w-4 mr-1" />
+              Cuentas
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => categoriasRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+              <Tag className="h-4 w-4 mr-1" />
+              Categorías
+            </Button>
+          </div>
         </div>
 
         {/* EDITOR DE PERFIL */}
@@ -91,7 +104,7 @@ const Configuracion = () => {
         </Card>
 
         {/* GESTIÓN DE CUENTAS */}
-        <Card className="border-secondary/20 hover:border-secondary/40 transition-all duration-300">
+        <Card ref={cuentasRef} className="border-secondary/20 hover:border-secondary/40 transition-all duration-300 scroll-mt-4">
           <CardHeader>
             <CardTitle>{t('settings.accounts')}</CardTitle>
           </CardHeader>
@@ -107,7 +120,7 @@ const Configuracion = () => {
         </Card>
 
         {/* GESTIÓN DE CATEGORÍAS */}
-        <Card className="border-accent/20 hover:border-accent/40 transition-all duration-300">
+        <Card ref={categoriasRef} className="border-accent/20 hover:border-accent/40 transition-all duration-300 scroll-mt-4">
           <CardHeader>
             <CardTitle>{t('settings.categories')}</CardTitle>
           </CardHeader>
