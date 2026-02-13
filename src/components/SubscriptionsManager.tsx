@@ -335,18 +335,64 @@ export const SubscriptionsManager = () => {
     return true;
   };
 
-  const processSubscriptions = async () => {
-    if (!transactions || transactions.length === 0) {
-      return;
+  // Buscar el nombre de servicio usando los patrones embebidos
+  const resolveServiceName = (comentario: string, monto: number): { serviceName: string; tipoServicio: string; patternId: string } => {
+    for (const pattern of SUBSCRIPTION_PATTERNS) {
+      if (matchTransactionToPattern(comentario, monto, pattern)) {
+        return { serviceName: pattern.serviceName, tipoServicio: pattern.tipoServicio, patternId: pattern.id };
+      }
     }
+    // Sin coincidencia: usar el comentario limpio como nombre
+    const cleanName = comentario.replace(/[*#\d]/g, '').trim().split(/\s+/).slice(0, 3).join(' ') || comentario.substring(0, 20);
+    const patternId = `custom-${comentario.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20)}`;
+    return { serviceName: cleanName, tipoServicio: 'Suscripción', patternId };
+  };
+
+  const processSubscriptions = async () => {
+    if (!transactions || transactions.length === 0) return;
 
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Limpiar registros antiguos que no coinciden con los patrones actuales
-      const validPatternIds = SUBSCRIPTION_PATTERNS.map(p => p.id);
+      const { categories } = financeData;
+
+      // Obtener IDs de subcategorías "Suscripciones"
+      const subscriptionCategoryIds = (categories || [])
+        .filter(c => c.subcategoria.toLowerCase() === 'suscripciones')
+        .map(c => c.id);
+
+      if (subscriptionCategoryIds.length === 0) {
+        // No existe la subcategoría, limpiar y salir
+        await loadSavedSubscriptions();
+        setIsLoading(false);
+        return;
+      }
+
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+      // Filtrar transacciones de subcategoría "Suscripciones" de los últimos 12 meses con gasto > 0
+      const subscriptionTransactions = transactions.filter(t =>
+        t.gasto > 0 &&
+        subscriptionCategoryIds.includes(t.subcategoriaId) &&
+        new Date(t.fecha) >= twelveMonthsAgo
+      );
+
+      // Agrupar transacciones por patternId resuelto
+      const groupedByPattern = new Map<string, { serviceName: string; tipoServicio: string; transactions: typeof subscriptionTransactions }>();
+
+      for (const t of subscriptionTransactions) {
+        const { serviceName, tipoServicio, patternId } = resolveServiceName(t.comentario, t.gasto);
+        if (!groupedByPattern.has(patternId)) {
+          groupedByPattern.set(patternId, { serviceName, tipoServicio, transactions: [] });
+        }
+        groupedByPattern.get(patternId)!.transactions.push(t);
+      }
+
+      // Limpiar registros que ya no tienen transacciones asociadas
+      const activePatternIds = Array.from(groupedByPattern.keys());
       const { data: allSubs } = await supabase
         .from('subscription_services')
         .select('id, canon_key')
@@ -354,41 +400,25 @@ export const SubscriptionsManager = () => {
 
       if (allSubs) {
         const toDelete = allSubs
-          .filter(s => s.canon_key && !validPatternIds.includes(s.canon_key))
+          .filter(s => s.canon_key && !activePatternIds.includes(s.canon_key))
           .map(s => s.id);
         if (toDelete.length > 0) {
           await supabase.from('subscription_services').delete().in('id', toDelete);
         }
       }
 
-      const twelveMonthsAgo = new Date();
-      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
-      // Filtrar transacciones de los últimos 12 meses con gasto > 0
-      const recentTransactions = transactions.filter(t =>
-        t.gasto > 0 && new Date(t.fecha) >= twelveMonthsAgo
-      );
-
-      // Para cada patrón, buscar transacciones que coincidan
-      for (const pattern of SUBSCRIPTION_PATTERNS) {
-        const matchingTransactions = recentTransactions.filter(t =>
-          matchTransactionToPattern(t.comentario, t.gasto, pattern)
-        );
-
-        if (matchingTransactions.length === 0) continue;
-
-        // Ordenar por fecha desc para obtener el último pago
-        const sorted = [...matchingTransactions].sort((a, b) =>
+      // Guardar cada grupo como suscripción
+      for (const [patternId, group] of groupedByPattern) {
+        const sorted = [...group.transactions].sort((a, b) =>
           new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
         );
 
         const lastTransaction = sorted[0];
         const lastPaymentDate = new Date(lastTransaction.fecha);
 
-        // Detectar frecuencia real según pagos encontrados
+        // Detectar frecuencia
         let detectedFrecuencia: 'Mensual' | 'Anual' | 'Irregular' = 'Irregular';
-        if (matchingTransactions.length >= 2) {
-          // Calcular intervalo promedio entre pagos
+        if (sorted.length >= 2) {
           const sortedDates = sorted.map(t => new Date(t.fecha).getTime());
           let totalDaysDiff = 0;
           for (let i = 0; i < sortedDates.length - 1; i++) {
@@ -403,8 +433,8 @@ export const SubscriptionsManager = () => {
         }
 
         const subscription: SubscriptionService = {
-          serviceName: pattern.serviceName,
-          tipoServicio: pattern.tipoServicio,
+          serviceName: group.serviceName,
+          tipoServicio: group.tipoServicio,
           ultimoPago: {
             monto: lastTransaction.gasto,
             fecha: lastPaymentDate,
@@ -412,15 +442,14 @@ export const SubscriptionsManager = () => {
           },
           frecuencia: detectedFrecuencia,
           proximoPago: calculateNextPayment(lastPaymentDate, detectedFrecuencia),
-          numeroPagos: matchingTransactions.length,
+          numeroPagos: sorted.length,
           originalComments: sorted.map(t => t.comentario),
-          patternId: pattern.id,
+          patternId,
         };
 
-        await saveSubscription(subscription, pattern.id);
+        await saveSubscription(subscription, patternId);
       }
 
-      // Recargar desde BD
       await loadSavedSubscriptions();
     } catch (error) {
       console.error('Error processing subscriptions:', error);
