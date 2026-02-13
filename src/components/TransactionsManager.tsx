@@ -164,8 +164,8 @@ export const TransactionsManager = ({
     if (filters.tipo && filters.tipo !== 'all' && transaction.tipo !== filters.tipo) return false;
     if (filters.divisa && filters.divisa !== 'all' && transaction.divisa !== filters.divisa) return false;
     if (filters.mes && filters.mes !== 'all') {
-      const adjustedDate = new Date(transaction.fecha.getTime() + transaction.fecha.getTimezoneOffset() * 60000);
-      const transactionMonth = adjustedDate.toISOString().slice(0, 7); // YYYY-MM format
+      const d = transaction.fecha;
+      const transactionMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (transactionMonth !== filters.mes) return false;
     }
     
@@ -1172,48 +1172,17 @@ export const TransactionsManager = ({
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   <SelectItem value="all">Todos los meses</SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 7)}>
-                    Este mes
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7)}>
-                    Mes anterior
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 7)}>
-                    Enero {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 1, 1).toISOString().slice(0, 7)}>
-                    Febrero {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 2, 1).toISOString().slice(0, 7)}>
-                    Marzo {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 3, 1).toISOString().slice(0, 7)}>
-                    Abril {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 4, 1).toISOString().slice(0, 7)}>
-                    Mayo {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 5, 1).toISOString().slice(0, 7)}>
-                    Junio {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 6, 1).toISOString().slice(0, 7)}>
-                    Julio {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 7, 1).toISOString().slice(0, 7)}>
-                    Agosto {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 8, 1).toISOString().slice(0, 7)}>
-                    Septiembre {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 9, 1).toISOString().slice(0, 7)}>
-                    Octubre {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 10, 1).toISOString().slice(0, 7)}>
-                    Noviembre {new Date().getFullYear()}
-                  </SelectItem>
-                  <SelectItem value={new Date(new Date().getFullYear(), 11, 1).toISOString().slice(0, 7)}>
-                    Diciembre {new Date().getFullYear()}
-                  </SelectItem>
+                  {Array.from({ length: 13 }, (_, i) => {
+                    const now = new Date();
+                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    const label = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+                    return (
+                      <SelectItem key={value} value={value}>
+                        {label.charAt(0).toUpperCase() + label.slice(1)}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
