@@ -82,6 +82,11 @@ export const CategoriesManager = ({
     setIsAddingCategory(true);
   };
 
+  // Verificar si una categoría está en uso
+  const isCategoryInUse = (categoryId: string) => {
+    return transactions.some(transaction => transaction.subcategoriaId === categoryId);
+  };
+
   // Filtrar categorías por tipo seleccionado
   const filteredCategories = categories.filter(category => {
     if (selectedType !== 'all' && category.tipo !== selectedType) return false;
@@ -94,11 +99,6 @@ export const CategoriesManager = ({
     }
     return true;
   });
-
-  // Verificar si una categoría está en uso
-  const isCategoryInUse = (categoryId: string) => {
-    return transactions.some(transaction => transaction.subcategoriaId === categoryId);
-  };
 
   // Función para togglear el seguimiento de pago
   const togglePaymentTracking = (categoryId: string, currentValue: boolean) => {
