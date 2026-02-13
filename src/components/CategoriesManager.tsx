@@ -33,7 +33,7 @@ export const CategoriesManager = ({
   const { hasSampleData, clearSampleData } = useSampleData();
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [selectedType, setSelectedType] = useState<TransactionType>('Gastos');
+  const [selectedType, setSelectedType] = useState<TransactionType | 'all'>('all');
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Category | null;
     direction: 'asc' | 'desc';
@@ -47,7 +47,7 @@ export const CategoriesManager = ({
   });
 
   const resetForm = () => {
-    setFormData({ subcategoria: '', categoria: '', tipo: selectedType });
+    setFormData({ subcategoria: '', categoria: '', tipo: selectedType === 'all' ? 'Gastos' : selectedType });
     setEditingCategory(null);
     setIsAddingCategory(false);
   };
@@ -84,7 +84,7 @@ export const CategoriesManager = ({
 
   // Filtrar categorías por tipo seleccionado
   const filteredCategories = categories.filter(category => {
-    if (category.tipo !== selectedType) return false;
+    if (selectedType !== 'all' && category.tipo !== selectedType) return false;
     if (usageFilter === 'in-use' && !isCategoryInUse(category.id)) return false;
     if (usageFilter === 'unused' && isCategoryInUse(category.id)) return false;
     if (searchQuery.trim()) {
@@ -156,7 +156,7 @@ export const CategoriesManager = ({
   };
 
   const handleNewCategory = () => {
-    setFormData({ subcategoria: '', categoria: '', tipo: selectedType });
+    setFormData({ subcategoria: '', categoria: '', tipo: selectedType === 'all' ? 'Gastos' : selectedType });
     setIsAddingCategory(true);
   };
 
@@ -164,17 +164,18 @@ export const CategoriesManager = ({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 space-y-3 sm:space-y-0">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4">
-          <Select value={selectedType} onValueChange={(value: TransactionType) => setSelectedType(value)}>
+          <Select value={selectedType} onValueChange={(value: TransactionType | 'all') => setSelectedType(value)}>
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
               {transactionTypes.map((tipo) => (
                 <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Badge variant={getTypeBadgeVariant(selectedType)} className="self-start">{selectedType}</Badge>
+          {selectedType !== 'all' && <Badge variant={getTypeBadgeVariant(selectedType)} className="self-start">{selectedType}</Badge>}
           <div className="relative w-full sm:w-[220px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -262,7 +263,7 @@ export const CategoriesManager = ({
       <Card>
         <CardHeader>
           <CardTitle>
-            <Badge variant={getTypeBadgeVariant(selectedType)}>{selectedType}</Badge>
+            {selectedType === 'all' ? 'Todas las categorías' : <Badge variant={getTypeBadgeVariant(selectedType)}>{selectedType}</Badge>}
           </CardTitle>
         </CardHeader>
         <CardContent>
