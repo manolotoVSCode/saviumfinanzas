@@ -76,7 +76,7 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
       // Group by category
       const byCategory: Record<string, number> = {};
       monthTransactions.forEach(t => {
-        const cat = categoryLookup[t.subcategoriaId]?.categoria || 'Sin categoría';
+        const cat = categoryLookup[t.subcategoriaId]?.subcategoria || 'Sin categoría';
         byCategory[cat] = (byCategory[cat] || 0) + t.ingreso;
       });
 
@@ -203,14 +203,14 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
       {/* Detail Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Desglose por Categoría</CardTitle>
+          <CardTitle className="text-base">Desglose por Subcategoría</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[150px]">Categoría</TableHead>
+                  <TableHead className="min-w-[150px]">Subcategoría</TableHead>
                   {monthlyData.map(m => (
                     <TableHead key={m.label} className="text-right min-w-[110px]">{m.shortLabel}</TableHead>
                   ))}
