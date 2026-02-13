@@ -40,6 +40,7 @@ export const CategoriesManager = ({
   }>({ key: null, direction: 'asc' });
   const [searchQuery, setSearchQuery] = useState('');
   const [usageFilter, setUsageFilter] = useState<'all' | 'in-use' | 'unused'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [formData, setFormData] = useState({
     subcategoria: '',
     categoria: '',
@@ -87,9 +88,13 @@ export const CategoriesManager = ({
     return transactions.some(transaction => transaction.subcategoriaId === categoryId);
   };
 
+  // Obtener categorías únicas (nombres de grupo)
+  const uniqueCategories = [...new Set(categories.map(c => c.categoria))].sort();
+
   // Filtrar categorías por tipo seleccionado
   const filteredCategories = categories.filter(category => {
     if (selectedType !== 'all' && category.tipo !== selectedType) return false;
+    if (selectedCategory !== 'all' && category.categoria !== selectedCategory) return false;
     if (usageFilter === 'in-use' && !isCategoryInUse(category.id)) return false;
     if (usageFilter === 'unused' && isCategoryInUse(category.id)) return false;
     if (searchQuery.trim()) {
@@ -162,102 +167,126 @@ export const CategoriesManager = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 space-y-3 sm:space-y-0">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4">
-          <Select value={selectedType} onValueChange={(value: TransactionType | 'all') => setSelectedType(value)}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              {transactionTypes.map((tipo) => (
-                <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {selectedType !== 'all' && <Badge variant={getTypeBadgeVariant(selectedType)} className="self-start">{selectedType}</Badge>}
-          <div className="relative w-full sm:w-[220px]">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar categoría..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3 flex-wrap">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Tipo</Label>
+            <Select value={selectedType} onValueChange={(value: TransactionType | 'all') => setSelectedType(value)}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {transactionTypes.map((tipo) => (
+                  <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={usageFilter} onValueChange={(value: 'all' | 'in-use' | 'unused') => setUsageFilter(value)}>
-            <SelectTrigger className="w-full sm:w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              <SelectItem value="in-use">En uso</SelectItem>
-              <SelectItem value="unused">Sin usar</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Categoría</Label>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {uniqueCategories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Estado</Label>
+            <Select value={usageFilter} onValueChange={(value: 'all' | 'in-use' | 'unused') => setUsageFilter(value)}>
+              <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="in-use">En uso</SelectItem>
+                <SelectItem value="unused">Sin usar</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Buscar</Label>
+            <div className="relative w-full sm:w-[200px]">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
         </div>
+        <div className="flex justify-end">
         
-        <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
-          <DialogTrigger asChild>
-            <Button onClick={handleNewCategory} className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Categoría
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} method="post" className="space-y-4">
-              <div>
-                <Label htmlFor="categoria">Categoría</Label>
-                <Input
-                  id="categoria"
-                  value={formData.categoria}
-                  onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                  placeholder="Ej: Alimentación, Transporte"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="subcategoria">Subcategoría</Label>
-                <Input
-                  id="subcategoria"
-                  value={formData.subcategoria}
-                  onChange={(e) => setFormData({ ...formData, subcategoria: e.target.value })}
-                  placeholder="Ej: Supermercado, Gasolina"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="tipo">Tipo</Label>
-                <Select 
-                  value={formData.tipo} 
-                  onValueChange={(value) => setFormData({ ...formData, tipo: value as TransactionType })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {transactionTypes.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  {editingCategory ? 'Actualizar' : 'Crear'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+          <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
+            <DialogTrigger asChild>
+              <Button onClick={handleNewCategory} className="w-full sm:w-auto">
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Categoría
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} method="post" className="space-y-4">
+                <div>
+                  <Label htmlFor="categoria">Categoría</Label>
+                  <Input
+                    id="categoria"
+                    value={formData.categoria}
+                    onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                    placeholder="Ej: Alimentación, Transporte"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="subcategoria">Subcategoría</Label>
+                  <Input
+                    id="subcategoria"
+                    value={formData.subcategoria}
+                    onChange={(e) => setFormData({ ...formData, subcategoria: e.target.value })}
+                    placeholder="Ej: Supermercado, Gasolina"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="tipo">Tipo</Label>
+                  <Select 
+                    value={formData.tipo} 
+                    onValueChange={(value) => setFormData({ ...formData, tipo: value as TransactionType })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {transactionTypes.map((tipo) => (
+                        <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit">
+                    {editingCategory ? 'Actualizar' : 'Crear'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card>
