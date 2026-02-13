@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Category, TransactionType, Transaction } from '@/types/finance';
-import { Plus, Edit, Trash2, Check, X, ArrowUpDown, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Check, X, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Search } from 'lucide-react';
 import { useSampleData } from '@/hooks/useSampleData';
 import { toast } from 'sonner';
 
@@ -38,6 +38,7 @@ export const CategoriesManager = ({
     key: keyof Category | null;
     direction: 'asc' | 'desc';
   }>({ key: null, direction: 'asc' });
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     subcategoria: '',
     categoria: '',
@@ -81,7 +82,15 @@ export const CategoriesManager = ({
   };
 
   // Filtrar categorías por tipo seleccionado
-  const filteredCategories = categories.filter(category => category.tipo === selectedType);
+  const filteredCategories = categories.filter(category => {
+    if (category.tipo !== selectedType) return false;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      return category.subcategoria.toLowerCase().includes(query) || 
+             category.categoria.toLowerCase().includes(query);
+    }
+    return true;
+  });
 
   // Verificar si una categoría está en uso
   const isCategoryInUse = (categoryId: string) => {
@@ -163,6 +172,15 @@ export const CategoriesManager = ({
             </SelectContent>
           </Select>
           <Badge variant={getTypeBadgeVariant(selectedType)} className="self-start">{selectedType}</Badge>
+          <div className="relative w-full sm:w-[220px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar categoría..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
         
         <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
