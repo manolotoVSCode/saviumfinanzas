@@ -400,7 +400,7 @@ export const SubscriptionsManager = () => {
 
       if (allSubs) {
         const toDelete = allSubs
-          .filter(s => s.canon_key && !activePatternIds.includes(s.canon_key))
+          .filter(s => !s.canon_key || !activePatternIds.includes(s.canon_key))
           .map(s => s.id);
         if (toDelete.length > 0) {
           await supabase.from('subscription_services').delete().in('id', toDelete);
