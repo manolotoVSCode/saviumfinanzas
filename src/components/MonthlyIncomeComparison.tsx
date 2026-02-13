@@ -49,7 +49,7 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
     const count = parseInt(monthsToShow);
     const months: { year: number; month: number; label: string; shortLabel: string }[] = [];
 
-    for (let i = count - 1; i >= 0; i--) {
+    for (let i = count; i >= 1; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push({
         year: d.getFullYear(),
