@@ -917,7 +917,7 @@ const CategoryItem = ({
       {/* 4. ACTIVOS */}
       <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
             <CardTitle className="text-success">
               {t('dashboard.assets')}
             </CardTitle>
@@ -1139,7 +1139,7 @@ const CategoryItem = ({
       {/* 5. PASIVOS */}
       <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
             <CardTitle className="text-destructive">
               {t('dashboard.liabilities')}
             </CardTitle>
