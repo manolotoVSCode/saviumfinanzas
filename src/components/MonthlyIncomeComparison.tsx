@@ -26,7 +26,7 @@ const MONTH_SHORT = [
 
 export const MonthlyIncomeComparison = ({ transactions, categories, formatCurrency }: MonthlyIncomeComparisonProps) => {
   const [monthsToShow, setMonthsToShow] = useState<string>('6');
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('all');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('MXN');
 
   // Get unique currencies from income transactions
   const availableCurrencies = useMemo(() => {
@@ -74,7 +74,7 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
     // Filter income transactions (with currency filter)
     const incomeTransactions = transactions.filter(t =>
       t.ingreso > 0 && incomeCategoryIds.includes(t.subcategoriaId) &&
-      (selectedCurrency === 'all' || t.divisa === selectedCurrency)
+      t.divisa === selectedCurrency
     );
 
     // Group by month
@@ -149,7 +149,7 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
               <SelectValue placeholder="Divisa" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
+              
               {availableCurrencies.map(cur => (
                 <SelectItem key={cur} value={cur}>{cur}</SelectItem>
               ))}
