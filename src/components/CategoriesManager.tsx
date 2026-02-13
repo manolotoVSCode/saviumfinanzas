@@ -39,6 +39,7 @@ export const CategoriesManager = ({
     direction: 'asc' | 'desc';
   }>({ key: null, direction: 'asc' });
   const [searchQuery, setSearchQuery] = useState('');
+  const [usageFilter, setUsageFilter] = useState<'all' | 'in-use' | 'unused'>('all');
   const [formData, setFormData] = useState({
     subcategoria: '',
     categoria: '',
@@ -84,6 +85,8 @@ export const CategoriesManager = ({
   // Filtrar categorías por tipo seleccionado
   const filteredCategories = categories.filter(category => {
     if (category.tipo !== selectedType) return false;
+    if (usageFilter === 'in-use' && !isCategoryInUse(category.id)) return false;
+    if (usageFilter === 'unused' && isCategoryInUse(category.id)) return false;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       return category.subcategoria.toLowerCase().includes(query) || 
@@ -181,6 +184,16 @@ export const CategoriesManager = ({
               className="pl-9"
             />
           </div>
+          <Select value={usageFilter} onValueChange={(value: 'all' | 'in-use' | 'unused') => setUsageFilter(value)}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="in-use">En uso</SelectItem>
+              <SelectItem value="unused">Sin usar</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
