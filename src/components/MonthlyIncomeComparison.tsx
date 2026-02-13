@@ -26,6 +26,18 @@ const MONTH_SHORT = [
 
 export const MonthlyIncomeComparison = ({ transactions, categories, formatCurrency }: MonthlyIncomeComparisonProps) => {
   const [monthsToShow, setMonthsToShow] = useState<string>('6');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('all');
+
+  // Get unique currencies from income transactions
+  const availableCurrencies = useMemo(() => {
+    const currencies = new Set<string>();
+    transactions.forEach(t => {
+      if (t.ingreso > 0 && t.divisa) {
+        currencies.add(t.divisa);
+      }
+    });
+    return Array.from(currencies).sort();
+  }, [transactions]);
 
   // Get income category IDs (excluding "Compra Venta Inmuebles")
   const incomeCategoryIds = useMemo(() => {
@@ -59,9 +71,10 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
       });
     }
 
-    // Filter income transactions
+    // Filter income transactions (with currency filter)
     const incomeTransactions = transactions.filter(t =>
-      t.ingreso > 0 && incomeCategoryIds.includes(t.subcategoriaId)
+      t.ingreso > 0 && incomeCategoryIds.includes(t.subcategoriaId) &&
+      (selectedCurrency === 'all' || t.divisa === selectedCurrency)
     );
 
     // Group by month
@@ -89,7 +102,7 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
     });
 
     return byMonth;
-  }, [transactions, incomeCategoryIds, categoryLookup, monthsToShow]);
+  }, [transactions, incomeCategoryIds, categoryLookup, monthsToShow, selectedCurrency]);
 
   // Get all unique categories across months
   const allCategories = useMemo(() => {
@@ -128,18 +141,31 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-lg font-semibold">Comparativo de Ingresos Mensuales</h2>
-        <Select value={monthsToShow} onValueChange={setMonthsToShow}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="3">Últimos 3 meses</SelectItem>
-            <SelectItem value="6">Últimos 6 meses</SelectItem>
-            <SelectItem value="12">Últimos 12 meses</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Divisa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {availableCurrencies.map(cur => (
+                <SelectItem key={cur} value={cur}>{cur}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={monthsToShow} onValueChange={setMonthsToShow}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="3">Últimos 3 meses</SelectItem>
+              <SelectItem value="6">Últimos 6 meses</SelectItem>
+              <SelectItem value="12">Últimos 12 meses</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Summary Cards */}
