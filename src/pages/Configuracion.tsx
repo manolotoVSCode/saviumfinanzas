@@ -106,7 +106,7 @@ const Configuracion = () => {
         {/* GESTIÓN DE CUENTAS */}
         <Card ref={cuentasRef} className="border-secondary/20 hover:border-secondary/40 transition-all duration-300 scroll-mt-4">
           <CardHeader>
-            <CardTitle>{t('settings.accounts')}</CardTitle>
+            <CardTitle>Gestión de Cuentas</CardTitle>
           </CardHeader>
           <CardContent>
             <AccountsManager
