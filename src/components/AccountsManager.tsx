@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Account, AccountType } from '@/types/finance';
-import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, Search } from 'lucide-react';
 import { useSampleData } from '@/hooks/useSampleData';
 import { toast } from 'sonner';
 
@@ -30,6 +31,10 @@ export const AccountsManager = ({
   const { hasSampleData, clearSampleData } = useSampleData();
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterCurrency, setFilterCurrency] = useState<string>('all');
+  const [filterPositiveBalance, setFilterPositiveBalance] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Account | null;
     direction: 'asc' | 'desc';
@@ -192,7 +197,15 @@ export const AccountsManager = ({
       <ArrowDown className="h-4 w-4" />;
   };
 
-  const sortedAccounts = [...accounts].sort((a, b) => {
+  const filteredAccounts = accounts.filter((account) => {
+    if (filterType !== 'all' && account.tipo !== filterType) return false;
+    if (filterCurrency !== 'all' && (account.divisa || 'MXN') !== filterCurrency) return false;
+    if (filterPositiveBalance && account.saldoActual <= 0) return false;
+    if (searchQuery.length >= 3 && !account.nombre.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
+
+  const sortedAccounts = [...filteredAccounts].sort((a, b) => {
     if (!sortConfig.key) return 0;
     
     const aValue = a[sortConfig.key];
@@ -214,8 +227,63 @@ export const AccountsManager = ({
     return 0;
   });
 
+  const uniqueTypes = [...new Set(accounts.map(a => a.tipo))].sort();
+  const uniqueCurrencies = [...new Set(accounts.map(a => a.divisa || 'MXN'))].sort();
+
   return (
     <div className="space-y-6">
+      {/* Filtros */}
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Tipo</Label>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-[150px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {uniqueTypes.map(t => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Divisa</Label>
+          <Select value={filterCurrency} onValueChange={setFilterCurrency}>
+            <SelectTrigger className="w-[120px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {uniqueCurrencies.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2 h-9">
+          <Checkbox
+            id="positive-balance"
+            checked={filterPositiveBalance}
+            onCheckedChange={(checked) => setFilterPositiveBalance(checked === true)}
+          />
+          <Label htmlFor="positive-balance" className="text-sm cursor-pointer">Saldo &gt; 0</Label>
+        </div>
+        <div className="space-y-1 flex-1 min-w-[180px]">
+          <Label className="text-xs text-muted-foreground">Buscar</Label>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Nombre (mín. 3 letras)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center">
         <Dialog open={isAddingAccount} onOpenChange={setIsAddingAccount}>
           <DialogTrigger asChild>
@@ -420,7 +488,7 @@ export const AccountsManager = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Cuentas</CardTitle>
+          <CardTitle>Cuentas ({sortedAccounts.length} de {accounts.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
