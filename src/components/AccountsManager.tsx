@@ -200,7 +200,7 @@ export const AccountsManager = ({
   const filteredAccounts = accounts.filter((account) => {
     if (filterType !== 'all' && account.tipo !== filterType) return false;
     if (filterCurrency !== 'all' && (account.divisa || 'MXN') !== filterCurrency) return false;
-    if (filterPositiveBalance && account.saldoActual > 0) return false;
+    if (filterPositiveBalance && account.saldoActual !== 0) return false;
     if (searchQuery.length >= 3 && !account.nombre.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
@@ -234,6 +234,14 @@ export const AccountsManager = ({
     <div className="space-y-6">
       {/* Filtros */}
       <div className="flex flex-wrap items-end gap-3">
+        <div className="flex items-center gap-2 h-9">
+          <Checkbox
+            id="positive-balance"
+            checked={filterPositiveBalance}
+            onCheckedChange={(checked) => setFilterPositiveBalance(checked === true)}
+          />
+          <Label htmlFor="positive-balance" className="text-sm cursor-pointer">Sin Saldo</Label>
+        </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Tipo</Label>
           <Select value={filterType} onValueChange={setFilterType}>
@@ -262,20 +270,12 @@ export const AccountsManager = ({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-2 h-9">
-          <Checkbox
-            id="positive-balance"
-            checked={filterPositiveBalance}
-            onCheckedChange={(checked) => setFilterPositiveBalance(checked === true)}
-          />
-          <Label htmlFor="positive-balance" className="text-sm cursor-pointer">Sin Saldo</Label>
-        </div>
-        <div className="space-y-1 flex-1 min-w-[180px]">
+        <div className="space-y-1 w-[180px]">
           <Label className="text-xs text-muted-foreground">Buscar</Label>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Nombre (mín. 3 letras)"
+              placeholder="Mín. 3 letras"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9"
