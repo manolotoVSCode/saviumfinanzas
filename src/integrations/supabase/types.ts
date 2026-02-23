@@ -266,6 +266,21 @@ export type Database = {
         }
         Relationships: []
       }
+      keepalive_pings: {
+        Row: {
+          id: string
+          pinged_at: string
+        }
+        Insert: {
+          id?: string
+          pinged_at?: string
+        }
+        Update: {
+          id?: string
+          pinged_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           apellidos: string
