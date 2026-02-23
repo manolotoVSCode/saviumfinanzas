@@ -200,7 +200,7 @@ export const AccountsManager = ({
   const filteredAccounts = accounts.filter((account) => {
     if (filterType !== 'all' && account.tipo !== filterType) return false;
     if (filterCurrency !== 'all' && (account.divisa || 'MXN') !== filterCurrency) return false;
-    if (filterPositiveBalance && account.saldoActual <= 0) return false;
+    if (filterPositiveBalance && account.saldoActual > 0) return false;
     if (searchQuery.length >= 3 && !account.nombre.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
@@ -268,7 +268,7 @@ export const AccountsManager = ({
             checked={filterPositiveBalance}
             onCheckedChange={(checked) => setFilterPositiveBalance(checked === true)}
           />
-          <Label htmlFor="positive-balance" className="text-sm cursor-pointer">Saldo &gt; 0</Label>
+          <Label htmlFor="positive-balance" className="text-sm cursor-pointer">Sin Saldo</Label>
         </div>
         <div className="space-y-1 flex-1 min-w-[180px]">
           <Label className="text-xs text-muted-foreground">Buscar</Label>
