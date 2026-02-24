@@ -23,8 +23,22 @@ const Configuracion = () => {
   const { signOut, user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
 
-  // UI-only admin check — actual access control is enforced server-side in edge functions and SECURITY DEFINER RPCs
-  const showAdminUI = user?.email === 'manoloto@hotmail.com';
+  // UI-only admin check — actual access control is enforced server-side via user_roles table
+  const [showAdminUI, setShowAdminUI] = useState(false);
+
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) return;
+      const { data } = await (await import('@/integrations/supabase/client')).supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      setShowAdminUI(!!data);
+    };
+    checkAdminRole();
+  }, [user]);
   const cuentasRef = useRef<HTMLDivElement>(null);
   const categoriasRef = useRef<HTMLDivElement>(null);
   if (financeData.loading) {

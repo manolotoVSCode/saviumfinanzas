@@ -14,11 +14,45 @@ serve(async (req) => {
   }
 
   try {
-    const { email, password, nombre, apellidos } = await req.json()
-
-    if (!email || !password || !nombre || !apellidos) {
-      throw new Error('Missing required fields: email, password, nombre, apellidos')
+    // Restrict to service role calls only (from admin-create-user edge function)
+    const authHeader = req.headers.get('Authorization')
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!authHeader || !authHeader.includes(serviceKey || '')) {
+      throw new Error('Unauthorized: Service role required')
     }
+
+    const { email, setupLink, nombre, apellidos } = await req.json()
+
+    if (!email || !nombre || !apellidos) {
+      throw new Error('Missing required fields: email, nombre, apellidos')
+    }
+
+    // Validate email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('Invalid email format')
+    }
+
+    // Validate input lengths
+    if (nombre.length > 100 || apellidos.length > 100) {
+      throw new Error('Name fields too long')
+    }
+
+    const setupSection = setupLink 
+      ? `
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${setupLink}" style="background-color: #333; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px;">
+            Configurar mi cuenta
+          </a>
+        </div>
+        <p style="color: #666; font-size: 14px; text-align: center;">
+          Este enlace expirará en 24 horas.
+        </p>
+      `
+      : `
+        <p style="color: #666; font-size: 16px;">
+          Inicia sesión con tu email para acceder al sistema.
+        </p>
+      `
 
     const { error } = await resend.emails.send({
       from: 'Sistema Financiero <onboarding@resend.dev>',
@@ -33,16 +67,11 @@ serve(async (req) => {
           </p>
           
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #333; margin-top: 0;">Datos de acceso:</h3>
+            <h3 style="color: #333; margin-top: 0;">Tu email de acceso:</h3>
             <p style="margin: 10px 0;"><strong>Email:</strong> ${email}</p>
-            <p style="margin: 10px 0;"><strong>Contraseña temporal:</strong> ${password}</p>
           </div>
-          
-          <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 0; color: #856404;">
-              <strong>⚠️ Importante:</strong> Por tu seguridad, te recomendamos cambiar tu contraseña la primera vez que inicies sesión.
-            </p>
-          </div>
+
+          ${setupSection}
           
           <p style="color: #666; font-size: 16px;">
             Ya puedes acceder al sistema y comenzar a gestionar tus finanzas personales:
@@ -55,10 +84,6 @@ serve(async (req) => {
             <li>Controla tus inversiones y criptomonedas</li>
             <li>Genera informes financieros detallados</li>
           </ul>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <p style="color: #666;">¡Comienza a tomar control de tus finanzas hoy mismo!</p>
-          </div>
           
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
           
