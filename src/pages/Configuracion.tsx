@@ -23,8 +23,8 @@ const Configuracion = () => {
   const { signOut, user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
 
-  // Check if current user is admin
-  const isAdmin = user?.email === 'manoloto@hotmail.com';
+  // UI-only admin check — actual access control is enforced server-side in edge functions and SECURITY DEFINER RPCs
+  const showAdminUI = user?.email === 'manoloto@hotmail.com';
   const cuentasRef = useRef<HTMLDivElement>(null);
   const categoriasRef = useRef<HTMLDivElement>(null);
   if (financeData.loading) {
@@ -156,7 +156,7 @@ const Configuracion = () => {
         </Card>
 
         {/* ADMINISTRACIÓN DE USUARIOS - Deshabilitado temporalmente */}
-        {isAdmin && (
+        {showAdminUI && (
           <Card className="border-muted/40 opacity-50 pointer-events-none select-none">
             <CardHeader>
               <div className="flex items-center justify-between">
