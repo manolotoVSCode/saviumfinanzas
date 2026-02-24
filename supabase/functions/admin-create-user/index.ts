@@ -36,7 +36,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     )
 
-    // Set the session from the auth header
+    // Verify JWT and get user
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
     
@@ -44,8 +44,15 @@ serve(async (req) => {
       throw new Error('Invalid or expired token')
     }
 
-    // Check if user is admin (only manoloto@hotmail.com can create users)
-    if (user.email !== 'manoloto@hotmail.com') {
+    // Check if user is admin via the user_roles table (not hardcoded email)
+    const { data: roleData, error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle()
+
+    if (roleError || !roleData) {
       throw new Error('Access denied: Admin only function')
     }
 
@@ -71,12 +78,18 @@ serve(async (req) => {
       throw createError
     }
 
-    // Send welcome email
+    // Generate a magic link for the new user to set up their account
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+    })
+
+    // Send welcome email with setup link (no password)
     try {
       const { error: emailError } = await supabaseAdmin.functions.invoke('send-welcome-email', {
         body: {
           email,
-          password,
+          setupLink: linkData?.properties?.action_link || '',
           nombre,
           apellidos
         }
@@ -84,11 +97,9 @@ serve(async (req) => {
 
       if (emailError) {
         console.error('Error sending welcome email:', emailError);
-        // Don't throw error here - user was created successfully, just email failed
       }
     } catch (emailError) {
       console.error('Error calling send-welcome-email function:', emailError);
-      // Don't throw error here - user was created successfully, just email failed
     }
 
     return new Response(
