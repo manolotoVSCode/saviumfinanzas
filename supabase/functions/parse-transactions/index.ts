@@ -77,8 +77,39 @@ serve(async (req) => {
       throw new Error('No file provided');
     }
 
+    // Validate file size (max 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return new Response(
+        JSON.stringify({ success: false, error: `File size exceeds maximum allowed (${MAX_FILE_SIZE / 1024 / 1024}MB)` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate file type by extension and MIME type
+    const allowedExtensions = ['.pdf', '.png', '.jpg', '.jpeg', '.csv', '.xls', '.xlsx', '.txt'];
+    const allowedMimeTypes = [
+      'application/pdf', 'image/png', 'image/jpeg',
+      'text/csv', 'text/plain',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+
     const categories: Category[] = JSON.parse(categoriesJson || '[]');
     const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+
+    if (!allowedExtensions.includes(fileExtension)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid file type. Allowed: PDF, PNG, JPG, CSV, Excel, TXT' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (file.type && !allowedMimeTypes.includes(file.type)) {
+      console.warn(`Unexpected MIME type: ${file.type} for file: ${fileName}`);
+    }
+
     const isPDF = fileName.endsWith('.pdf');
     const isImage = fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg');
     
@@ -329,6 +360,15 @@ IMPORTANTE:
         isNewCategory: !finalCategory && t.isNewCategory,
       };
     });
+
+    // Limit number of transactions
+    const MAX_TRANSACTIONS = 1000;
+    if (transactions.length > MAX_TRANSACTIONS) {
+      return new Response(
+        JSON.stringify({ success: false, error: `Too many transactions detected (${transactions.length}). Maximum allowed: ${MAX_TRANSACTIONS}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log(`Successfully parsed ${transactions.length} transactions`);
 

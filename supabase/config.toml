@@ -8,6 +8,7 @@ verify_jwt = true
 
 [functions.crypto-prices]
 verify_jwt = false
+# Auth is validated in code via getClaims()
 
 [functions.send-welcome-email]
 verify_jwt = false

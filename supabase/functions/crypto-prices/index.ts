@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 interface CryptoPriceResponse {
@@ -19,6 +20,30 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !data?.claims) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { symbols } = await req.json();
     
     if (!symbols || !Array.isArray(symbols) || symbols.length === 0) {
@@ -38,7 +63,7 @@ serve(async (req) => {
       'SHIB': 'shiba-inu'
     };
 
-    const coinIds = symbols.map(symbol => symbolToId[symbol.toUpperCase()]).filter(Boolean);
+    const coinIds = symbols.map((symbol: string) => symbolToId[symbol.toUpperCase()]).filter(Boolean);
     
     if (coinIds.length === 0) {
       return new Response(
@@ -73,17 +98,17 @@ serve(async (req) => {
       );
     }
 
-    const data: CryptoPriceResponse = await response.json();
-    console.log('CoinGecko response:', data);
+    const priceData: CryptoPriceResponse = await response.json();
+    console.log('CoinGecko response:', priceData);
 
     // Transformar respuesta para usar símbolos como claves
     const result: Record<string, { price: number; change24h: number }> = {};
     
     Object.entries(symbolToId).forEach(([symbol, coinId]) => {
-      if (data[coinId]) {
+      if (priceData[coinId]) {
         result[symbol] = {
-          price: data[coinId].usd,
-          change24h: data[coinId].usd_24h_change || 0
+          price: priceData[coinId].usd,
+          change24h: priceData[coinId].usd_24h_change || 0
         };
       }
     });
