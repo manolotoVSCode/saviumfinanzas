@@ -423,14 +423,25 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   }
 
   function parseExcelContent(data: ArrayBuffer): ParsedRow[] {
-    const workbook = XLSX.read(data, { type: 'array', cellDates: false });
+    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: true }) as unknown[][];
+    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, dateNF: 'dd/mm/yyyy' }) as unknown[][];
     
-    // Convert to string arrays, handling Excel serial dates
+    console.log('=== EXCEL IMPORT DEBUG ===');
+    console.log('Sheet names:', workbook.SheetNames);
+    console.log('Total rows from Excel:', jsonData.length);
+    console.log('First 5 rows:', JSON.stringify(jsonData.slice(0, 5)));
+    
+    // Convert to string arrays
     const rows: string[][] = jsonData.map(row => 
-      row.map(cell => {
+      (row || []).map(cell => {
         if (cell === null || cell === undefined) return '';
+        if (cell instanceof Date) {
+          const dd = String(cell.getDate()).padStart(2, '0');
+          const mm = String(cell.getMonth() + 1).padStart(2, '0');
+          const yyyy = cell.getFullYear();
+          return `${dd}/${mm}/${yyyy}`;
+        }
         if (typeof cell === 'number') {
           // Check if it looks like an Excel serial date (between ~1990 and ~2040)
           if (cell > 32874 && cell < 51500 && Number.isInteger(cell)) {
@@ -448,6 +459,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       })
     );
     
+    console.log('Converted rows (first 5):', JSON.stringify(rows.slice(0, 5)));
+    
     // Detect format using a cleaned sample (avoid metadata rows that can confuse column detection)
     const candidateDataRows = rows.filter(row => {
       const hasDate = row.some(cell => parseDate(cell));
@@ -458,11 +471,17 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       return hasDate && hasAmount;
     });
 
+    console.log('Candidate data rows found:', candidateDataRows.length);
+    if (candidateDataRows.length > 0) {
+      console.log('First candidate row:', JSON.stringify(candidateDataRows[0]));
+    }
+
     const sampleForDetect = rows.length > 0
       ? [rows[0], ...candidateDataRows.slice(0, 25)]
       : rows;
 
     const { dateCol, descCol, amountCol, hasHeader } = detectFormat(sampleForDetect.length > 0 ? sampleForDetect : rows);
+    console.log('Detected format:', { dateCol, descCol, amountCol, hasHeader });
 
     const headerRow = hasHeader ? rows[0] : [];
     const headerLower = headerRow.map(h => (h || '').toLowerCase().trim());
