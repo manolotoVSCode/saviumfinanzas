@@ -163,35 +163,51 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
   function parseDate(dateStr: string): Date | null {
     if (!dateStr) return null;
-    
+
     const cleaned = dateStr.trim();
-    
-    // DD/MM/YYYY or DD-MM-YYYY
-    const ddmmyyyy = cleaned.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+
+    // DD/MM/YYYY, DD-MM-YYYY or DD.MM.YYYY
+    const ddmmyyyy = cleaned.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
     if (ddmmyyyy) {
       return new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
     }
-    
-    // DD Mon YYYY (e.g., "06 Jan 2026")
-    const ddMonYYYY = cleaned.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+
+    // DD Mon YYYY (English/Spanish short month, e.g., "06 Jan 2026" or "06 Ene 2026")
+    const ddMonYYYY = cleaned.match(/^(\d{1,2})\s+([A-Za-zÁÉÍÓÚáéíóú]{3})\s+(\d{4})$/);
     if (ddMonYYYY) {
+      const monthKey = ddMonYYYY[2].toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
       const months: Record<string, number> = {
-        jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
-        jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+        jan: 0, ene: 0,
+        feb: 1,
+        mar: 2,
+        apr: 3, abr: 3,
+        may: 4,
+        jun: 5,
+        jul: 6,
+        aug: 7, ago: 7,
+        sep: 8,
+        oct: 9,
+        nov: 10,
+        dec: 11, dic: 11,
       };
-      const month = months[ddMonYYYY[2].toLowerCase()];
+      const month = months[monthKey];
       if (month !== undefined) {
         return new Date(parseInt(ddMonYYYY[3]), month, parseInt(ddMonYYYY[1]));
       }
     }
-    
-    // YYYY-MM-DD
+
+    // YYYY-MM-DD or YYYY/MM/DD
     const yyyymmdd = cleaned.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
     if (yyyymmdd) {
       return new Date(parseInt(yyyymmdd[1]), parseInt(yyyymmdd[2]) - 1, parseInt(yyyymmdd[3]));
     }
-    
-    return null;
+
+    // Let JS try as a final fallback
+    const fallback = new Date(cleaned);
+    return isNaN(fallback.getTime()) ? null : fallback;
   }
 
   function detectFormat(lines: string[][]): { dateCol: number; descCol: number; amountCol: number; hasHeader: boolean } {
@@ -214,19 +230,38 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       // Use header names to find columns
       for (let i = 0; i < firstRow.length; i++) {
         const header = firstRow[i].toLowerCase().trim();
+        const normalizedHeader = header
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
         
-        // Date column - prefer "fecha" alone, or first fecha-related column
-        if (header === 'fecha' || header === 'f. valor' || header === 'date') {
+        // Date column - support common banking headers (fecha, fecha valor, f. valor)
+        if (
+          normalizedHeader === 'fecha' ||
+          normalizedHeader === 'f. valor' ||
+          normalizedHeader === 'date' ||
+          normalizedHeader.includes('fecha valor')
+        ) {
           dateCol = i;
         }
         
-        // Amount column - prefer "importe" over other numeric columns
-        if (header === 'importe' || header === 'importe (€)' || header === 'amount' || header === 'monto') {
+        // Amount column - prefer importe/monto variants
+        if (
+          normalizedHeader === 'importe' ||
+          normalizedHeader === 'importe (€)' ||
+          normalizedHeader === 'amount' ||
+          normalizedHeader === 'monto' ||
+          normalizedHeader.includes('importe')
+        ) {
           amountCol = i;
         }
         
         // Description column
-        if (header === 'descripción' || header === 'description' || header === 'concepto') {
+        if (
+          normalizedHeader === 'descripcion' ||
+          normalizedHeader === 'description' ||
+          normalizedHeader === 'concepto' ||
+          normalizedHeader.includes('descripcion')
+        ) {
           descCol = i;
         }
       }
@@ -591,13 +626,14 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     if (!file) return;
     
     try {
-      const isExcel = file.name.endsWith('.xls') || file.name.endsWith('.xlsx');
+      const lowerFileName = file.name.toLowerCase();
+      const isExcel = lowerFileName.endsWith('.xls') || lowerFileName.endsWith('.xlsx');
       
       if (isExcel) {
         const buffer = await file.arrayBuffer();
         const rows = parseExcelContent(buffer);
         if (rows.length === 0) {
-          toast({ title: 'Error', description: 'No se encontraron transacciones válidas en el archivo', variant: 'destructive' });
+          toast({ title: 'Error', description: 'No se encontraron transacciones válidas en el archivo Excel. Revisa que tenga columnas de fecha e importe.', variant: 'destructive' });
           return;
         }
         setParsedRows(rows);
@@ -614,7 +650,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       }
     } catch (error) {
       console.error('Error parsing file:', error);
-      toast({ title: 'Error', description: 'Error al procesar el archivo', variant: 'destructive' });
+      const description = error instanceof Error ? error.message : 'Error al procesar el archivo';
+      toast({ title: 'Error', description, variant: 'destructive' });
     }
   };
 
