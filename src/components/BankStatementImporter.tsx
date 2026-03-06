@@ -412,16 +412,38 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return parsed;
   }
 
+  function excelSerialToDate(serial: number): Date | null {
+    // Excel serial date: days since 1900-01-01 (with the 1900 leap year bug)
+    if (serial < 1 || serial > 2958465) return null; // valid range ~1900-9999
+    const utcDays = serial - 25569; // difference between Excel epoch and Unix epoch
+    const ms = utcDays * 86400 * 1000;
+    const d = new Date(ms);
+    if (isNaN(d.getTime())) return null;
+    return d;
+  }
+
   function parseExcelContent(data: ArrayBuffer): ParsedRow[] {
-    const workbook = XLSX.read(data, { type: 'array' });
+    const workbook = XLSX.read(data, { type: 'array', cellDates: false });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as unknown[][];
+    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: true }) as unknown[][];
     
-    // Convert to string arrays
+    // Convert to string arrays, handling Excel serial dates
     const rows: string[][] = jsonData.map(row => 
       row.map(cell => {
         if (cell === null || cell === undefined) return '';
-        if (typeof cell === 'number') return cell.toString();
+        if (typeof cell === 'number') {
+          // Check if it looks like an Excel serial date (between ~1990 and ~2040)
+          if (cell > 32874 && cell < 51500 && Number.isInteger(cell)) {
+            const d = excelSerialToDate(cell);
+            if (d) {
+              const dd = String(d.getUTCDate()).padStart(2, '0');
+              const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+              const yyyy = d.getUTCFullYear();
+              return `${dd}/${mm}/${yyyy}`;
+            }
+          }
+          return cell.toString();
+        }
         return String(cell);
       })
     );
