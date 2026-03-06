@@ -467,32 +467,34 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     console.log('Total rows from Excel:', jsonData.length);
     console.log('First 5 rows:', JSON.stringify(jsonData.slice(0, 5)));
     
-    // Convert to string arrays
-    const rows: string[][] = jsonData.map(row => 
-      (row || []).map(cell => {
-        if (cell === null || cell === undefined) return '';
-        if (cell instanceof Date) {
-          const dd = String(cell.getDate()).padStart(2, '0');
-          const mm = String(cell.getMonth() + 1).padStart(2, '0');
-          const yyyy = cell.getFullYear();
-          return `${dd}/${mm}/${yyyy}`;
-        }
-        if (typeof cell === 'number') {
-          // Check if it looks like an Excel serial date (between ~1990 and ~2040)
-          if (cell > 32874 && cell < 51500 && Number.isInteger(cell)) {
-            const d = excelSerialToDate(cell);
-            if (d) {
-              const dd = String(d.getUTCDate()).padStart(2, '0');
-              const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-              const yyyy = d.getUTCFullYear();
-              return `${dd}/${mm}/${yyyy}`;
-            }
+    // Convert to string arrays, filtering out completely empty/undefined rows
+    const rows: string[][] = jsonData
+      .filter(row => row != null && Array.isArray(row) && row.length > 0)
+      .map(row => 
+        Array.from({ length: row.length }, (_, i) => {
+          const cell = row[i];
+          if (cell === null || cell === undefined) return '';
+          if (cell instanceof Date) {
+            const dd = String(cell.getDate()).padStart(2, '0');
+            const mm = String(cell.getMonth() + 1).padStart(2, '0');
+            const yyyy = cell.getFullYear();
+            return `${dd}/${mm}/${yyyy}`;
           }
-          return cell.toString();
-        }
-        return String(cell);
-      })
-    );
+          if (typeof cell === 'number') {
+            if (cell > 32874 && cell < 51500 && Number.isInteger(cell)) {
+              const d = excelSerialToDate(cell);
+              if (d) {
+                const dd = String(d.getUTCDate()).padStart(2, '0');
+                const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+                const yyyy = d.getUTCFullYear();
+                return `${dd}/${mm}/${yyyy}`;
+              }
+            }
+            return cell.toString();
+          }
+          return String(cell);
+        })
+      );
     
     console.log('Converted rows (first 5):', JSON.stringify(rows.slice(0, 5)));
     
@@ -528,8 +530,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
     // Filter out empty rows - only require a valid date
     const dataRows = rowsToProcess.filter(row => {
-      if (row.every(cell => !cell || cell.trim() === '')) return false;
-      return row.some(cell => parseDate(cell));
+      if (!row || row.length === 0) return false;
+      if (row.every(cell => !cell || (typeof cell === 'string' && cell.trim() === ''))) return false;
+      return row.some(cell => cell && parseDate(cell));
     });
     
     if (dataRows.length === 0) return [];
@@ -539,30 +542,32 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
       
-      const fecha = parseDate(row[dateCol]);
+      const fecha = parseDate(row[dateCol] || '');
       if (!fecha) continue;
       
+      // Safe column access helper
+      const safeCol = (idx: number) => (idx >= 0 && idx < row.length) ? (row[idx] || '') : '';
+      
       // For ING format, description might be in column 3 (DESCRIPCIÓN)
-      let descripcion = row[descCol] || '';
+      let descripcion = safeCol(descCol);
       // If we have more columns, check for a better description column
-      if (row.length > 4 && row[3] && row[3].length > descripcion.length) {
-        descripcion = row[3];
+      if (row.length > 4 && safeCol(3).length > descripcion.length) {
+        descripcion = safeCol(3);
       }
       
       // Determine signed amount.
       // Some statements provide separate columns for Cargo (debit) and Abono (credit)
       let montoOriginal = 0;
       if (hasHeader && (cargoCol >= 0 || abonoCol >= 0)) {
-        const cargo = cargoCol >= 0 ? parseAmount(row[cargoCol]) : 0;
-        const abono = abonoCol >= 0 ? parseAmount(row[abonoCol]) : 0;
+        const cargo = cargoCol >= 0 ? parseAmount(safeCol(cargoCol)) : 0;
+        const abono = abonoCol >= 0 ? parseAmount(safeCol(abonoCol)) : 0;
         if (cargo !== 0) {
           montoOriginal = isCreditCard ? Math.abs(cargo) : -Math.abs(cargo);
         } else if (abono !== 0) {
           montoOriginal = isCreditCard ? -Math.abs(abono) : Math.abs(abono);
         }
       } else {
-        // Fallback: single amount column, or ING-like where last numeric column is amount
-        montoOriginal = parseAmount(row[amountCol]);
+        montoOriginal = parseAmount(safeCol(amountCol));
         for (let j = row.length - 1; j >= 0; j--) {
           const possibleAmount = parseAmount(row[j]);
           if (possibleAmount !== 0 && !isNaN(possibleAmount)) {
