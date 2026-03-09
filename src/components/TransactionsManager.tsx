@@ -1146,6 +1146,91 @@ export const TransactionsManager = ({
             </div>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isDuplicating} onOpenChange={(open) => {
+          setIsDuplicating(open);
+          if (!open) {
+            setDuplicateDate('');
+            setDuplicateComment('');
+            setDuplicateChangeDate(false);
+            setDuplicateChangeComment(false);
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              disabled={selectedTransactions.size === 0}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicar {selectedTransactions.size > 0 && `(${selectedTransactions.size})`}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Duplicar {selectedTransactions.size} Transacciones</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Se crearán copias de las transacciones seleccionadas. Opcionalmente puedes cambiar la fecha y/o el comentario.
+              </p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="duplicate-change-date"
+                    checked={duplicateChangeDate}
+                    onCheckedChange={(checked) => setDuplicateChangeDate(checked as boolean)}
+                  />
+                  <Label htmlFor="duplicate-change-date" className="cursor-pointer">Cambiar fecha</Label>
+                </div>
+                {duplicateChangeDate && (
+                  <div>
+                    <Input
+                      id="duplicate-date"
+                      type="date"
+                      value={duplicateDate}
+                      onChange={(e) => setDuplicateDate(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="duplicate-change-comment"
+                    checked={duplicateChangeComment}
+                    onCheckedChange={(checked) => setDuplicateChangeComment(checked as boolean)}
+                  />
+                  <Label htmlFor="duplicate-change-comment" className="cursor-pointer">Cambiar comentario</Label>
+                </div>
+                {duplicateChangeComment && (
+                  <div>
+                    <Input
+                      id="duplicate-comment"
+                      value={duplicateComment}
+                      onChange={(e) => setDuplicateComment(e.target.value)}
+                      placeholder="Nuevo comentario para las copias"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsDuplicating(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleBulkDuplicate} 
+                  disabled={(duplicateChangeDate && !duplicateDate) || (duplicateChangeComment && !duplicateComment)}
+                >
+                  Duplicar Transacciones
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filtros */}
