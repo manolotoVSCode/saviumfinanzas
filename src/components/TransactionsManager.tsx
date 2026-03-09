@@ -59,6 +59,13 @@ export const TransactionsManager = ({
   const [isEditingBulkDate, setIsEditingBulkDate] = useState(false);
   const [bulkDate, setBulkDate] = useState('');
   
+  // Estados para duplicar transacciones
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  const [duplicateDate, setDuplicateDate] = useState('');
+  const [duplicateComment, setDuplicateComment] = useState('');
+  const [duplicateChangeDate, setDuplicateChangeDate] = useState(false);
+  const [duplicateChangeComment, setDuplicateChangeComment] = useState(false);
+  
   // Estado para el filtro de categorías con búsqueda
   const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
   
