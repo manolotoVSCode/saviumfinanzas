@@ -1078,7 +1078,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                           ) : null}
                         </TableCell>
                         <TableCell>
-                          <Popover modal={true}>
+                          <Popover modal={true} open={openCatRowId === row.id} onOpenChange={(isOpen) => setOpenCatRowId(isOpen ? row.id : null)}>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
