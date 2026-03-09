@@ -49,6 +49,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const [importing, setImporting] = useState(false);
   const [sortColumn, setSortColumn] = useState<SortColumn>('fecha');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [openCatRowId, setOpenCatRowId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const selectedAccount = useMemo(() => 
@@ -683,6 +684,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   };
 
   const handleCategoryChange = (id: string, categoriaId: string) => {
+    setOpenCatRowId(null);
     setParsedRows(prev => prev.map(row =>
       row.id === id ? { ...row, categoriaId } : row
     ));
@@ -1076,7 +1078,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                           ) : null}
                         </TableCell>
                         <TableCell>
-                          <Popover modal={true}>
+                          <Popover modal={true} open={openCatRowId === row.id} onOpenChange={(isOpen) => setOpenCatRowId(isOpen ? row.id : null)}>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
