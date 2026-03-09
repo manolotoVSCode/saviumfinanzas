@@ -479,14 +479,11 @@ export const TransactionsManager = ({
 
       const newTransaction: Omit<Transaction, 'id' | 'monto'> = {
         cuentaId: original.cuentaId,
-        cuenta: original.cuenta,
         fecha: duplicateChangeDate && duplicateDate ? new Date(duplicateDate + 'T12:00:00') : original.fecha,
         comentario: duplicateChangeComment && duplicateComment ? duplicateComment : original.comentario,
         ingreso: original.ingreso,
         gasto: original.gasto,
         tipo: original.tipo,
-        categoria: original.categoria,
-        subcategoria: original.subcategoria,
         subcategoriaId: original.subcategoriaId,
         divisa: original.divisa,
       };
