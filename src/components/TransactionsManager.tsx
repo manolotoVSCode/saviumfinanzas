@@ -1390,6 +1390,55 @@ export const TransactionsManager = ({
         </CardContent>
       </Card>
 
+      {/* Resumen financiero de transacciones filtradas */}
+      {filteredTransactions.length > 0 && filteredTransactions.length !== transactions.length && (
+        (() => {
+          const totalIngresos = filteredTransactions
+            .filter(t => t.ingreso > 0 && t.tipo !== 'Gastos')
+            .reduce((sum, t) => sum + t.ingreso, 0);
+          const totalGastos = filteredTransactions
+            .filter(t => t.gasto > 0)
+            .reduce((sum, t) => sum + t.gasto, 0);
+          const reembolsos = filteredTransactions
+            .filter(t => {
+              const cat = categories.find(c => c.id === t.subcategoriaId);
+              return t.ingreso > 0 && cat?.tipo === 'Gastos';
+            })
+            .reduce((sum, t) => sum + t.ingreso, 0);
+          const gastoNeto = totalGastos - reembolsos;
+          const balance = totalIngresos - gastoNeto;
+
+          return (
+            <Card className="border-dashed">
+              <CardContent className="pt-4 pb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
+                  <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950 text-center">
+                    <p className="text-muted-foreground text-xs">Ingresos</p>
+                    <p className="font-bold text-green-600">${formatCurrency(totalIngresos)}</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950 text-center">
+                    <p className="text-muted-foreground text-xs">Gastos</p>
+                    <p className="font-bold text-red-600">${formatCurrency(totalGastos)}</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950 text-center">
+                    <p className="text-muted-foreground text-xs">Reembolsos</p>
+                    <p className="font-bold text-amber-600">${formatCurrency(reembolsos)}</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-950 text-center">
+                    <p className="text-muted-foreground text-xs">Gasto Neto</p>
+                    <p className="font-bold text-orange-600">${formatCurrency(gastoNeto)}</p>
+                  </div>
+                  <div className={`p-2 rounded-lg text-center ${balance >= 0 ? 'bg-blue-50 dark:bg-blue-950' : 'bg-red-50 dark:bg-red-950'}`}>
+                    <p className="text-muted-foreground text-xs">Balance</p>
+                    <p className={`font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>${formatCurrency(balance)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>
