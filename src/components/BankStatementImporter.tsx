@@ -878,7 +878,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         </Button>
       </DialogTrigger>
       
-      <DialogContent className={`${step === 'preview' ? 'max-w-6xl max-h-[90vh]' : 'max-w-md'}`}>
+      <DialogContent className={`${step === 'preview' ? 'max-w-6xl max-h-[90vh]' : 'max-w-md'}`} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5" />
@@ -1076,13 +1076,13 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                           ) : null}
                         </TableCell>
                         <TableCell>
-                          <Popover>
+                          <Popover modal={true}>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
                                 role="combobox"
                                 className={cn(
-                                  "w-52 justify-between text-left font-normal",
+                                  "w-60 justify-between text-left font-normal",
                                   isSinAsignar && "border-yellow-500"
                                 )}
                               >
@@ -1093,33 +1093,60 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent 
-                              className="w-64 p-0 bg-background pointer-events-auto z-50" 
+                              className="w-80 p-0 bg-background pointer-events-auto z-[100]" 
                               align="start"
+                              side="bottom"
+                              sideOffset={4}
                               onWheel={(e) => e.stopPropagation()}
+                              onInteractOutside={(e) => e.stopPropagation()}
                             >
                               <Command className="overflow-visible">
                                 <CommandInput placeholder="Buscar categoría..." />
-                                <CommandList className="max-h-48 overflow-y-auto overscroll-contain">
+                                <CommandList className="max-h-60 overflow-y-auto overscroll-contain">
                                   <CommandEmpty>No se encontraron categorías.</CommandEmpty>
-                                  {getGroupedCategoriesForRow(row).map(group => (
-                                    <CommandGroup key={group.tipo} heading={group.tipo}>
-                                      {group.categories.map(cat => (
-                                        <CommandItem
-                                          key={cat.id}
-                                          value={`${cat.categoria} ${cat.subcategoria}`}
-                                          onSelect={() => handleCategoryChange(row.id, cat.id)}
-                                        >
-                                          <Check
-                                            className={cn(
-                                              "mr-2 h-4 w-4",
-                                              row.categoriaId === cat.id ? "opacity-100" : "opacity-0"
-                                            )}
-                                          />
-                                          {cat.categoria} - {cat.subcategoria}
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  ))}
+                                  {(() => {
+                                    const groups = getGroupedCategoriesForRow(row);
+                                    // Reorder groups so the selected category's group comes first
+                                    const selectedCat = categories.find(c => c.id === row.categoriaId);
+                                    if (selectedCat) {
+                                      const selectedGroupIdx = groups.findIndex(g => 
+                                        g.categories.some(c => c.id === row.categoriaId)
+                                      );
+                                      if (selectedGroupIdx > 0) {
+                                        const [selectedGroup] = groups.splice(selectedGroupIdx, 1);
+                                        groups.unshift(selectedGroup);
+                                      }
+                                      // Within the group, put selected category first
+                                      const group = groups[0];
+                                      if (group) {
+                                        const idx = group.categories.findIndex(c => c.id === row.categoriaId);
+                                        if (idx > 0) {
+                                          const [cat] = group.categories.splice(idx, 1);
+                                          group.categories.unshift(cat);
+                                        }
+                                      }
+                                    }
+                                    return groups.map(group => (
+                                      <CommandGroup key={group.tipo} heading={group.tipo}>
+                                        {group.categories.map(cat => (
+                                          <CommandItem
+                                            key={cat.id}
+                                            value={`${cat.categoria} ${cat.subcategoria}`}
+                                            onSelect={() => handleCategoryChange(row.id, cat.id)}
+                                            className="whitespace-normal"
+                                          >
+                                            <Check
+                                              className={cn(
+                                                "mr-2 h-4 w-4 shrink-0",
+                                                row.categoriaId === cat.id ? "opacity-100" : "opacity-0"
+                                              )}
+                                            />
+                                            <span className="break-words">{cat.categoria} - {cat.subcategoria}</span>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    ));
+                                  })()}
                                 </CommandList>
                               </Command>
                             </PopoverContent>
