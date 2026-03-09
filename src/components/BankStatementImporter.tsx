@@ -684,6 +684,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   };
 
   const handleCategoryChange = (id: string, categoriaId: string) => {
+    setOpenCatRowId(null);
     setParsedRows(prev => prev.map(row =>
       row.id === id ? { ...row, categoriaId } : row
     ));
