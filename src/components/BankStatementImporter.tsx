@@ -49,6 +49,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const [importing, setImporting] = useState(false);
   const [sortColumn, setSortColumn] = useState<SortColumn>('fecha');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [openCatRowId, setOpenCatRowId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const selectedAccount = useMemo(() => 
