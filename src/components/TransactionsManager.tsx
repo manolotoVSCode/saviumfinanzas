@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Transaction, Account, Category } from '@/types/finance';
-import { Plus, Edit, Trash2, Calendar, ArrowUpDown, ArrowUp, ArrowDown, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, ArrowUpDown, ArrowUp, ArrowDown, Check, ChevronsUpDown, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TransactionsManagerProps {
