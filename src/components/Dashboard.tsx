@@ -621,9 +621,14 @@ const CategoryItem = ({
       });
     }
     
-    // Filtrar transacciones por divisa y tipo Gastos
+    // Filtrar transacciones por divisa y tipo Gastos (incluyendo reembolsos)
     let filteredTrans = transactions.filter(t => 
       t.divisa === currency && t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles'
+    );
+
+    // También obtener reembolsos (ingreso > 0 en categoría tipo 'Gastos')
+    let reembolsoTrans = transactions.filter(t => 
+      t.divisa === currency && t.ingreso > 0 && t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles'
     );
     
     // Si hay mes seleccionado, filtrar por ese mes específico
@@ -633,9 +638,17 @@ const CategoryItem = ({
         const tDate = new Date(t.fecha);
         return tDate.getMonth() === targetMonthData.month && tDate.getFullYear() === targetMonthData.year;
       });
+      reembolsoTrans = reembolsoTrans.filter(t => {
+        const tDate = new Date(t.fecha);
+        return tDate.getMonth() === targetMonthData.month && tDate.getFullYear() === targetMonthData.year;
+      });
     } else {
       // Filtrar por últimos 12 meses
       filteredTrans = filteredTrans.filter(t => {
+        const tDate = new Date(t.fecha);
+        return last12Months.some(m => m.month === tDate.getMonth() && m.year === tDate.getFullYear());
+      });
+      reembolsoTrans = reembolsoTrans.filter(t => {
         const tDate = new Date(t.fecha);
         return last12Months.some(m => m.month === tDate.getMonth() && m.year === tDate.getFullYear());
       });
@@ -664,6 +677,20 @@ const CategoryItem = ({
       }
       categoryData[categoria].subcategories[subcategoria].total += amount;
       categoryData[categoria].subcategories[subcategoria].transactions.push(t);
+    });
+
+    // Descontar reembolsos de las categorías correspondientes
+    reembolsoTrans.forEach(t => {
+      const categoria = t.categoria || 'Sin categoría';
+      const subcategoria = t.subcategoria || 'Sin subcategoría';
+      const reembolsoAmount = Math.abs(t.ingreso);
+      
+      if (categoryData[categoria]) {
+        categoryData[categoria].total -= reembolsoAmount;
+        if (categoryData[categoria].subcategories[subcategoria]) {
+          categoryData[categoria].subcategories[subcategoria].total -= reembolsoAmount;
+        }
+      }
     });
     
     // Convertir a array, ordenar y tomar top 10
