@@ -123,15 +123,16 @@ const Inversiones = (): JSX.Element => {
     };
   }, { valorActual: 0, montoInvertido: 0 });
 
-  // Datos para el gráfico de pie - por cuenta individual y monto invertido
+  // Datos para el gráfico de pie - por cuenta individual y saldo actual
   const pieData = cuentasCompletas.map((cuenta) => {
-    const montoEnMXN = cuenta.divisa === 'MXN' 
-      ? cuenta.saldoInicial
-      : convertCurrency(cuenta.saldoInicial, cuenta.divisa, 'MXN');
+    const valorActual = calcularValorActualReinversion(cuenta);
+    const valorEnMXN = cuenta.divisa === 'MXN' 
+      ? valorActual
+      : convertCurrency(valorActual, cuenta.divisa, 'MXN');
     
     return {
       name: cuenta.nombre,
-      value: montoEnMXN,
+      value: Math.abs(valorEnMXN),
     };
   });
 
@@ -197,7 +198,7 @@ const Inversiones = (): JSX.Element => {
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Monto Invertido']} />
+                          <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Saldo Actual']} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
