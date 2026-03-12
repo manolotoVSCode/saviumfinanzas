@@ -198,7 +198,7 @@ const Inversiones = (): JSX.Element => {
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Monto Invertido']} />
+                          <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Saldo Actual']} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
