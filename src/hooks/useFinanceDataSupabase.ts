@@ -1033,13 +1033,7 @@ export const useFinanceDataSupabase = () => {
         )
       );
       
-      // Solo mostrar toast para cambios importantes (no para seguimiento_pago)
-      if (!('seguimiento_pago' in category)) {
-        toast({
-          title: "Éxito",
-          description: "Categoría actualizada correctamente"
-        });
-      }
+      // Success - no toast needed
     } catch (error) {
       console.error('Error updating category:', error);
       toast({
