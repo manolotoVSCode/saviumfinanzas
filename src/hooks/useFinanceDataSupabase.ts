@@ -873,11 +873,6 @@ export const useFinanceDataSupabase = () => {
 
       console.log('Cuenta creada exitosamente:', data);
 
-      toast({
-        title: "¡Cuenta creada!",
-        description: `La cuenta ${account.nombre} ha sido creada exitosamente.`,
-      });
-
       // Recargar datos
       loadData();
     } catch (error) {
