@@ -1341,11 +1341,6 @@ export const useFinanceDataSupabase = () => {
 
       // Recargar datos
       await loadData();
-
-      toast({
-        title: "Éxito",
-        description: "Todas las transacciones han sido eliminadas"
-      });
     } catch (error) {
       console.error('Error clearing all transactions:', error);
       toast({
