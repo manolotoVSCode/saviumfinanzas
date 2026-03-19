@@ -1192,11 +1192,6 @@ export const useFinanceDataSupabase = () => {
 
       // Recargar datos
       await loadData();
-
-      toast({
-        title: "Éxito",
-        description: `${newTransactions.length} transacciones importadas correctamente`
-      });
     } catch (error) {
       console.error('Error adding transactions batch:', error);
       toast({
