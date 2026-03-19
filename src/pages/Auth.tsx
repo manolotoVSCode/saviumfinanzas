@@ -48,11 +48,6 @@ const Auth = () => {
         description: error.message,
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Bienvenido',
-        description: 'Has iniciado sesión correctamente',
-      });
     }
     
     setLoading(false);
