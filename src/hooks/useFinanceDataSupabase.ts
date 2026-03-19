@@ -937,11 +937,6 @@ export const useFinanceDataSupabase = () => {
 
       console.log('Cuenta actualizada exitosamente:', data[0]);
 
-      toast({
-        title: "¡Cuenta actualizada!",
-        description: "Los cambios se han guardado exitosamente.",
-      });
-
       // Recargar datos
       loadData();
     } catch (error) {
