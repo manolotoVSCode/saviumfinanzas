@@ -70,11 +70,6 @@ export const useInversiones = () => {
 
       if (error) throw error;
       
-      toast({
-        title: "Inversión actualizada",
-        description: "La inversión se ha actualizado exitosamente",
-      });
-      
       await fetchInversiones();
       return true;
     } catch (error) {
