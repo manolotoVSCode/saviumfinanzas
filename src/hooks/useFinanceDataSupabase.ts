@@ -873,11 +873,6 @@ export const useFinanceDataSupabase = () => {
 
       console.log('Cuenta creada exitosamente:', data);
 
-      toast({
-        title: "¡Cuenta creada!",
-        description: `La cuenta ${account.nombre} ha sido creada exitosamente.`,
-      });
-
       // Recargar datos
       loadData();
     } catch (error) {
@@ -942,11 +937,6 @@ export const useFinanceDataSupabase = () => {
 
       console.log('Cuenta actualizada exitosamente:', data[0]);
 
-      toast({
-        title: "¡Cuenta actualizada!",
-        description: "Los cambios se han guardado exitosamente.",
-      });
-
       // Recargar datos
       loadData();
     } catch (error) {
@@ -979,11 +969,6 @@ export const useFinanceDataSupabase = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Cuenta eliminada",
-        description: "La cuenta ha sido eliminada exitosamente.",
-      });
-
       // Recargar datos
       loadData();
     } catch (error) {
@@ -1014,11 +999,6 @@ export const useFinanceDataSupabase = () => {
       
       // Recargar datos
       await loadData();
-      
-      toast({
-        title: "Éxito",
-        description: "Categoría creada correctamente"
-      });
     } catch (error) {
       console.error('Error adding category:', error);
       toast({
@@ -1053,13 +1033,7 @@ export const useFinanceDataSupabase = () => {
         )
       );
       
-      // Solo mostrar toast para cambios importantes (no para seguimiento_pago)
-      if (!('seguimiento_pago' in category)) {
-        toast({
-          title: "Éxito",
-          description: "Categoría actualizada correctamente"
-        });
-      }
+      // Success - no toast needed
     } catch (error) {
       console.error('Error updating category:', error);
       toast({
@@ -1081,11 +1055,6 @@ export const useFinanceDataSupabase = () => {
       
       // Recargar datos
       await loadData();
-      
-      toast({
-        title: "Éxito",
-        description: "Categoría eliminada correctamente"
-      });
     } catch (error) {
       console.error('Error deleting category:', error);
       toast({
@@ -1185,11 +1154,6 @@ export const useFinanceDataSupabase = () => {
 
       // Recargar datos
       await loadData();
-
-      toast({
-        title: "Éxito",
-        description: "Transacción guardada correctamente"
-      });
     } catch (error) {
       console.error('Error adding transaction:', error);
       toast({
@@ -1228,11 +1192,6 @@ export const useFinanceDataSupabase = () => {
 
       // Recargar datos
       await loadData();
-
-      toast({
-        title: "Éxito",
-        description: `${newTransactions.length} transacciones importadas correctamente`
-      });
     } catch (error) {
       console.error('Error adding transactions batch:', error);
       toast({
@@ -1334,11 +1293,6 @@ export const useFinanceDataSupabase = () => {
       
       // Recargar datos
       await loadData();
-      
-      toast({
-        title: "Éxito",
-        description: autoContribution ? "Transacción actualizada con aportación automática" : "Transacción actualizada correctamente"
-      });
     } catch (error) {
       console.error('Error updating transaction:', error);
       toast({
@@ -1360,11 +1314,6 @@ export const useFinanceDataSupabase = () => {
 
       // Recargar datos
       await loadData();
-
-      toast({
-        title: "Éxito",
-        description: "Transacción eliminada correctamente"
-      });
     } catch (error) {
       console.error('Error deleting transaction:', error);
       toast({
@@ -1392,11 +1341,6 @@ export const useFinanceDataSupabase = () => {
 
       // Recargar datos
       await loadData();
-
-      toast({
-        title: "Éxito",
-        description: "Todas las transacciones han sido eliminadas"
-      });
     } catch (error) {
       console.error('Error clearing all transactions:', error);
       toast({

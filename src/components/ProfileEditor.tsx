@@ -100,11 +100,6 @@ export const ProfileEditor = () => {
       if (error) throw error;
 
       await refetch();
-      
-      toast({
-        title: "Perfil actualizado",
-        description: "Tus datos han sido guardados exitosamente",
-      });
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
@@ -145,11 +140,6 @@ export const ProfileEditor = () => {
 
       passwordForm.reset();
       setShowPasswordForm(false);
-      
-      toast({
-        title: "Contraseña actualizada",
-        description: "Tu contraseña ha sido cambiada exitosamente",
-      });
     } catch (error) {
       console.error('Error updating password:', error);
       toast({
@@ -282,7 +272,7 @@ export const ProfileEditor = () => {
               />
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-wrap gap-3 pt-4">
               <Button type="submit" disabled={updating} className="flex-1">
                 {updating ? 'Guardando...' : 'Guardar Cambios'}
               </Button>

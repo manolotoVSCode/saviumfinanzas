@@ -72,10 +72,6 @@ export const useCriptomonedas = () => {
       if (error) throw error;
 
       await fetchCriptomonedas();
-      toast({
-        title: "Éxito",
-        description: "Criptomoneda agregada correctamente",
-      });
       
       return data;
     } catch (error) {
@@ -99,10 +95,6 @@ export const useCriptomonedas = () => {
       if (error) throw error;
 
       await fetchCriptomonedas();
-      toast({
-        title: "Éxito",
-        description: "Criptomoneda actualizada correctamente",
-      });
     } catch (error) {
       console.error('Error updating criptomoneda:', error);
       toast({
@@ -124,10 +116,6 @@ export const useCriptomonedas = () => {
       if (error) throw error;
 
       await fetchCriptomonedas();
-      toast({
-        title: "Éxito",
-        description: "Criptomoneda eliminada correctamente",
-      });
     } catch (error) {
       console.error('Error deleting criptomoneda:', error);
       toast({

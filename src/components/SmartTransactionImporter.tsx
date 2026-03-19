@@ -198,10 +198,7 @@ const SmartTransactionImporter = ({ accounts, categories, onImportTransactions }
 
     onImportTransactions(transactions);
     
-    toast({
-      title: "Importación exitosa",
-      description: `Se importaron ${transactions.length} transacciones`,
-    });
+    // Success - no toast needed
 
     handleClose();
   };

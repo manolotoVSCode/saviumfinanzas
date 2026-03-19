@@ -48,11 +48,6 @@ export const useInversiones = () => {
 
       if (error) throw error;
       
-      toast({
-        title: "Inversión creada",
-        description: "La inversión se ha creado exitosamente",
-      });
-      
       await fetchInversiones();
       return true;
     } catch (error) {
@@ -75,11 +70,6 @@ export const useInversiones = () => {
 
       if (error) throw error;
       
-      toast({
-        title: "Inversión actualizada",
-        description: "La inversión se ha actualizado exitosamente",
-      });
-      
       await fetchInversiones();
       return true;
     } catch (error) {
@@ -101,11 +91,6 @@ export const useInversiones = () => {
         .eq('id', id);
 
       if (error) throw error;
-      
-      toast({
-        title: "Inversión eliminada",
-        description: "La inversión se ha eliminado exitosamente",
-      });
       
       await fetchInversiones();
       return true;
