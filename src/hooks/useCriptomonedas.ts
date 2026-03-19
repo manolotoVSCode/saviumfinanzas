@@ -95,10 +95,6 @@ export const useCriptomonedas = () => {
       if (error) throw error;
 
       await fetchCriptomonedas();
-      toast({
-        title: "Éxito",
-        description: "Criptomoneda actualizada correctamente",
-      });
     } catch (error) {
       console.error('Error updating criptomoneda:', error);
       toast({
