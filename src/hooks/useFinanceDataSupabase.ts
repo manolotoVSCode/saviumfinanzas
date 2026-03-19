@@ -1293,11 +1293,6 @@ export const useFinanceDataSupabase = () => {
       
       // Recargar datos
       await loadData();
-      
-      toast({
-        title: "Éxito",
-        description: autoContribution ? "Transacción actualizada con aportación automática" : "Transacción actualizada correctamente"
-      });
     } catch (error) {
       console.error('Error updating transaction:', error);
       toast({
