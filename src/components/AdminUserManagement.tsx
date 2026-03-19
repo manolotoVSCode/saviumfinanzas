@@ -127,10 +127,7 @@ export const AdminUserManagement = () => {
       setCreateDialogOpen(false);
       form.reset();
       
-      toast({
-        title: "Usuario creado",
-        description: `Usuario ${data.nombre} ${data.apellidos} creado exitosamente. Se ha enviado un email con las credenciales de acceso.`,
-      });
+      // Success - no toast needed
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
