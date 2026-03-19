@@ -137,10 +137,7 @@ export const InvestmentMigrationForm: React.FC<InvestmentMigrationFormProps> = (
 
       console.log('Actualización exitosa:', updatedData[0]);
 
-      toast({
-        title: "¡Inversión actualizada!",
-        description: `La información de ${account.nombre} ha sido completada exitosamente.`,
-      });
+      // Success - no toast needed
 
       // Refrescar los datos sin recargar la página
       window.dispatchEvent(new Event('storage')); // Trigger data refresh

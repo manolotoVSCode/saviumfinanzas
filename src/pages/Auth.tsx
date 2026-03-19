@@ -95,10 +95,6 @@ const Auth = () => {
         variant: 'destructive',
       });
     } else {
-      toast({
-        title: 'Email enviado',
-        description: 'Revisa tu email para restablecer tu contraseña',
-      });
       setShowForgotPassword(false);
     }
     

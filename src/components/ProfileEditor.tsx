@@ -140,11 +140,6 @@ export const ProfileEditor = () => {
 
       passwordForm.reset();
       setShowPasswordForm(false);
-      
-      toast({
-        title: "Contraseña actualizada",
-        description: "Tu contraseña ha sido cambiada exitosamente",
-      });
     } catch (error) {
       console.error('Error updating password:', error);
       toast({

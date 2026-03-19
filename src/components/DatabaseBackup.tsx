@@ -105,10 +105,7 @@ export const DatabaseBackup = () => {
       link.click();
       document.body.removeChild(link);
 
-      toast({
-        title: "Éxito",
-        description: `Copia de seguridad exportada como savium_backup_${timestamp}.csv`,
-      });
+      // Success - no toast needed
 
     } catch (error) {
       console.error('Error creating backup:', error);

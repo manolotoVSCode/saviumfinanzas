@@ -151,10 +151,7 @@ export const AdminUserManagement = () => {
 
       await loadUsersWithStats();
       
-      toast({
-        title: "Usuario eliminado",
-        description: `El usuario ${userDisplayName} y todos sus datos han sido eliminados completamente`,
-      });
+      // Success - no toast needed
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({

@@ -29,13 +29,9 @@ const Configuracion = () => {
   useEffect(() => {
     const checkAdminRole = async () => {
       if (!user) return;
-      const { data } = await (await import('@/integrations/supabase/client')).supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-      setShowAdminUI(!!data);
+      const { data, error } = await (await import('@/integrations/supabase/client')).supabase
+        .rpc('is_admin');
+      if (!error) setShowAdminUI(!!data);
     };
     checkAdminRole();
   }, [user]);
