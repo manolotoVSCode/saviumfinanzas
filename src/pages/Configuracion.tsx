@@ -169,18 +169,15 @@ const Configuracion = () => {
           </CardContent>
         </Card>
 
-        {/* ADMINISTRACIÓN DE USUARIOS - Deshabilitado temporalmente */}
+        {/* ADMINISTRACIÓN DE USUARIOS */}
         {showAdminUI && (
-          <Card className="border-muted/40 opacity-50 pointer-events-none select-none">
+          <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-muted-foreground">Administrar Usuarios</CardTitle>
-                <Badge variant="outline" className="text-xs text-muted-foreground border-muted">
-                  En mantenimiento
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">Este módulo está temporalmente inhabilitado.</p>
+              <CardTitle>Administrar Usuarios</CardTitle>
             </CardHeader>
+            <CardContent>
+              <AdminUserManagement />
+            </CardContent>
           </Card>
         )}
 
