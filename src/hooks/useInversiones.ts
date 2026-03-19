@@ -48,11 +48,6 @@ export const useInversiones = () => {
 
       if (error) throw error;
       
-      toast({
-        title: "Inversión creada",
-        description: "La inversión se ha creado exitosamente",
-      });
-      
       await fetchInversiones();
       return true;
     } catch (error) {
