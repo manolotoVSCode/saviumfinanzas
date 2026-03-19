@@ -999,11 +999,6 @@ export const useFinanceDataSupabase = () => {
       
       // Recargar datos
       await loadData();
-      
-      toast({
-        title: "Éxito",
-        description: "Categoría creada correctamente"
-      });
     } catch (error) {
       console.error('Error adding category:', error);
       toast({
