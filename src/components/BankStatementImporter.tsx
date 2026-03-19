@@ -755,10 +755,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
       await onImportTransactions(transactionsToImport);
 
-      toast({ 
-        title: 'Importación exitosa', 
-        description: `Se importaron ${transactionsToImport.length} transacciones` 
-      });
+      // Success - no toast needed
 
       handleClose();
     } catch (error) {
