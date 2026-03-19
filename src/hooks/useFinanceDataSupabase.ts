@@ -1314,11 +1314,6 @@ export const useFinanceDataSupabase = () => {
 
       // Recargar datos
       await loadData();
-
-      toast({
-        title: "Éxito",
-        description: "Transacción eliminada correctamente"
-      });
     } catch (error) {
       console.error('Error deleting transaction:', error);
       toast({
