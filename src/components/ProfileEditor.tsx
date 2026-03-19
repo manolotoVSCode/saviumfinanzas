@@ -100,11 +100,6 @@ export const ProfileEditor = () => {
       if (error) throw error;
 
       await refetch();
-      
-      toast({
-        title: "Perfil actualizado",
-        description: "Tus datos han sido guardados exitosamente",
-      });
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
