@@ -969,11 +969,6 @@ export const useFinanceDataSupabase = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Cuenta eliminada",
-        description: "La cuenta ha sido eliminada exitosamente.",
-      });
-
       // Recargar datos
       loadData();
     } catch (error) {
