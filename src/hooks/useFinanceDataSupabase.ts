@@ -1055,11 +1055,6 @@ export const useFinanceDataSupabase = () => {
       
       // Recargar datos
       await loadData();
-      
-      toast({
-        title: "Éxito",
-        description: "Categoría eliminada correctamente"
-      });
     } catch (error) {
       console.error('Error deleting category:', error);
       toast({
