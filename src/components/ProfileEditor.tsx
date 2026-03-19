@@ -272,7 +272,7 @@ export const ProfileEditor = () => {
               />
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-wrap gap-3 pt-4">
               <Button type="submit" disabled={updating} className="flex-1">
                 {updating ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
