@@ -72,10 +72,6 @@ export const useCriptomonedas = () => {
       if (error) throw error;
 
       await fetchCriptomonedas();
-      toast({
-        title: "Éxito",
-        description: "Criptomoneda agregada correctamente",
-      });
       
       return data;
     } catch (error) {
