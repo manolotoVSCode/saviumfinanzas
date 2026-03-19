@@ -1154,11 +1154,6 @@ export const useFinanceDataSupabase = () => {
 
       // Recargar datos
       await loadData();
-
-      toast({
-        title: "Éxito",
-        description: "Transacción guardada correctamente"
-      });
     } catch (error) {
       console.error('Error adding transaction:', error);
       toast({
