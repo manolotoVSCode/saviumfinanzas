@@ -12,6 +12,7 @@ import { Upload, FileSpreadsheet, AlertCircle, Check, X, ArrowUpDown, ArrowUp, A
 import { Account, Category, Transaction, TransactionType } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useClassificationRules } from '@/hooks/useClassificationRules';
 import { cn } from '@/lib/utils';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -51,6 +52,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [openCatRowId, setOpenCatRowId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { findMatchingRule } = useClassificationRules();
 
   const selectedAccount = useMemo(() => 
     accounts.find(a => a.id === selectedAccountId),
@@ -91,6 +93,11 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   }
 
   function findMatchingCategory(description: string): string | null {
+    // 1. First check user-defined classification rules
+    const ruleMatch = findMatchingRule(description);
+    if (ruleMatch) return ruleMatch;
+
+    // 2. Fall back to history-based matching
     const normalized = normalizeDescription(description);
     
     // Direct match
@@ -98,13 +105,12 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       return descriptionToCategoryMap.get(normalized)!;
     }
     
-    // Partial match - find if any existing description is contained in this one or vice versa
+    // Partial match
     for (const [existingDesc, categoryId] of descriptionToCategoryMap) {
       if (normalized.includes(existingDesc) || existingDesc.includes(normalized)) {
         return categoryId;
       }
       
-      // Check first 3 words match
       const words1 = normalized.split(' ').slice(0, 3).join(' ');
       const words2 = existingDesc.split(' ').slice(0, 3).join(' ');
       if (words1.length >= 5 && words1 === words2) {
