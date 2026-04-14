@@ -15,6 +15,8 @@ import Informes from "./pages/Informes";
 import Configuracion from "./pages/Configuracion";
 import TransaccionesCategoria from "./pages/TransaccionesCategoria";
 import ReglasClasificacion from "./pages/ReglasClasificacion";
+import Cuentas from "./pages/Cuentas";
+import Categorias from "./pages/Categorias";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
