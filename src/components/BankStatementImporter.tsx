@@ -92,9 +92,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       .trim();
   }
 
-  function findMatchingCategory(description: string, amount?: number): string | null {
+  function findMatchingCategory(description: string, amount?: number, accountId?: string): string | null {
     // 1. First check user-defined classification rules
-    const ruleMatch = findMatchingRule(description, amount);
+    const ruleMatch = findMatchingRule(description, amount, accountId);
     if (ruleMatch) return ruleMatch;
 
     // 2. Fall back to history-based matching
