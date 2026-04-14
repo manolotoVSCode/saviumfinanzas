@@ -52,13 +52,23 @@ const ReglasClasificacion = () => {
   // Helper to check if a transaction matches a rule
   function transactionMatchesRule(t: Transaction, rule: ClassificationRule): boolean {
     const comment = (t.comentario || '').toLowerCase();
-    const kw = rule.keyword.toLowerCase().trim();
-    switch (rule.match_type) {
-      case 'exact': return comment === kw;
-      case 'contains': return comment.includes(kw);
-      case 'starts_with': return comment.startsWith(kw);
-      default: return false;
+    const keywords = rule.keyword.split(',').map(k => k.toLowerCase().trim()).filter(Boolean);
+    const amount = t.ingreso > 0 ? t.ingreso : t.gasto;
+    
+    for (const kw of keywords) {
+      let textMatch = false;
+      switch (rule.match_type) {
+        case 'exact': textMatch = comment === kw; break;
+        case 'contains': textMatch = comment.includes(kw); break;
+        case 'starts_with': textMatch = comment.startsWith(kw); break;
+      }
+      if (textMatch) {
+        if (rule.amount_min != null && amount < rule.amount_min) continue;
+        if (rule.amount_max != null && amount > rule.amount_max) continue;
+        return true;
+      }
     }
+    return false;
   }
 
   // Count matching transactions per rule
