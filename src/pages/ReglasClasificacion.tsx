@@ -38,6 +38,8 @@ const ReglasClasificacion = () => {
   const [categoryId, setCategoryId] = useState('');
   const [priority, setPriority] = useState('0');
   const [active, setActive] = useState(true);
+  const [amountMin, setAmountMin] = useState('');
+  const [amountMax, setAmountMax] = useState('');
 
   // Group categories by parent for the select
   const groupedCategories = useMemo(() => {
@@ -53,12 +55,19 @@ const ReglasClasificacion = () => {
   function transactionMatchesRule(t: Transaction, rule: ClassificationRule): boolean {
     const comment = (t.comentario || '').toLowerCase();
     const kw = rule.keyword.toLowerCase().trim();
+    let textMatch = false;
     switch (rule.match_type) {
-      case 'exact': return comment === kw;
-      case 'contains': return comment.includes(kw);
-      case 'starts_with': return comment.startsWith(kw);
+      case 'exact': textMatch = comment === kw; break;
+      case 'contains': textMatch = comment.includes(kw); break;
+      case 'starts_with': textMatch = comment.startsWith(kw); break;
       default: return false;
     }
+    if (!textMatch) return false;
+    // Check amount filters
+    const absAmount = Math.abs(t.ingreso > 0 ? t.ingreso : t.gasto);
+    if (rule.amount_min != null && absAmount < rule.amount_min) return false;
+    if (rule.amount_max != null && absAmount > rule.amount_max) return false;
+    return true;
   }
 
   // Count matching transactions per rule
@@ -104,6 +113,8 @@ const ReglasClasificacion = () => {
     setCategoryId('');
     setPriority('0');
     setActive(true);
+    setAmountMin('');
+    setAmountMax('');
     setDialogOpen(true);
   }
 
@@ -114,18 +125,22 @@ const ReglasClasificacion = () => {
     setCategoryId(rule.category_id);
     setPriority(String(rule.priority));
     setActive(rule.active);
+    setAmountMin(rule.amount_min != null ? String(rule.amount_min) : '');
+    setAmountMax(rule.amount_max != null ? String(rule.amount_max) : '');
     setDialogOpen(true);
   }
 
   async function handleSave() {
     if (!keyword.trim() || !categoryId) return;
 
-    const data = {
+    const data: any = {
       keyword: keyword.trim(),
       match_type: matchType as 'exact' | 'contains' | 'starts_with',
       category_id: categoryId,
       priority: parseInt(priority) || 0,
       active,
+      amount_min: amountMin ? parseFloat(amountMin) : null,
+      amount_max: amountMax ? parseFloat(amountMax) : null,
     };
 
     if (editingRule) {

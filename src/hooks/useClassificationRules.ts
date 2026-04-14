@@ -44,7 +44,7 @@ export function useClassificationRules() {
 
   useEffect(() => { loadRules(); }, [loadRules]);
 
-  const addRule = async (rule: Omit<ClassificationRule, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const addRule = async (rule: Partial<Omit<ClassificationRule, 'id' | 'user_id' | 'created_at' | 'updated_at'>> & Pick<ClassificationRule, 'keyword' | 'category_id'>) => {
     if (!user) return;
     const { error } = await supabase
       .from('classification_rules' as any)
