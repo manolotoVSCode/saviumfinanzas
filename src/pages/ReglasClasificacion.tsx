@@ -39,6 +39,8 @@ const ReglasClasificacion = () => {
   const [categoryId, setCategoryId] = useState('');
   const [priority, setPriority] = useState('0');
   const [active, setActive] = useState(true);
+  const [amountMin, setAmountMin] = useState('');
+  const [amountMax, setAmountMax] = useState('');
 
   // Group categories by parent for the select
   const groupedCategories = useMemo(() => {
