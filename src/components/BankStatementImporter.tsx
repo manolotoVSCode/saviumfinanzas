@@ -411,7 +411,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       if (montoOriginal === 0) continue; // Skip zero amount rows
 
       // Assign category from history
-      const matchedCategoryId = findMatchingCategory(descripcion);
+      const matchedCategoryId = findMatchingCategory(descripcion, montoOriginal);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
       const matchedCategory = categories.find(c => c.id === matchedCategoryId);
 
@@ -590,7 +590,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       if (montoOriginal === 0) continue;
       
       // Assign category from history
-      const matchedCategoryId = findMatchingCategory(descripcion);
+      const matchedCategoryId = findMatchingCategory(descripcion, montoOriginal);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
       const matchedCategory = categories.find(c => c.id === matchedCategoryId);
 
