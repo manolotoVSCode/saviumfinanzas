@@ -71,6 +71,16 @@ const App = () => (
                   <ReglasClasificacion />
                 </ProtectedRoute>
               } />
+              <Route path="/cuentas" element={
+                <ProtectedRoute>
+                  <Cuentas />
+                </ProtectedRoute>
+              } />
+              <Route path="/categorias" element={
+                <ProtectedRoute>
+                  <Categorias />
+                </ProtectedRoute>
+              } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
