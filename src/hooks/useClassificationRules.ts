@@ -10,6 +10,8 @@ export interface ClassificationRule {
   category_id: string;
   priority: number;
   active: boolean;
+  amount_min: number | null;
+  amount_max: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -71,7 +73,7 @@ export function useClassificationRules() {
     return error;
   };
 
-  const findMatchingRule = (description: string): string | null => {
+  const findMatchingRule = (description: string, amount?: number): string | null => {
     const normalized = description.toLowerCase().trim();
     
     // Rules are already sorted by priority desc
@@ -79,17 +81,28 @@ export function useClassificationRules() {
       if (!rule.active) continue;
       const keyword = rule.keyword.toLowerCase().trim();
       
+      let textMatch = false;
       switch (rule.match_type) {
         case 'exact':
-          if (normalized === keyword) return rule.category_id;
+          textMatch = normalized === keyword;
           break;
         case 'contains':
-          if (normalized.includes(keyword)) return rule.category_id;
+          textMatch = normalized.includes(keyword);
           break;
         case 'starts_with':
-          if (normalized.startsWith(keyword)) return rule.category_id;
+          textMatch = normalized.startsWith(keyword);
           break;
       }
+      if (!textMatch) continue;
+
+      // Check amount filters if set
+      if (amount !== undefined) {
+        const absAmount = Math.abs(amount);
+        if (rule.amount_min != null && absAmount < rule.amount_min) continue;
+        if (rule.amount_max != null && absAmount > rule.amount_max) continue;
+      }
+
+      return rule.category_id;
     }
     return null;
   };
