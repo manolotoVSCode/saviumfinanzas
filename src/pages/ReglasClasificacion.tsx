@@ -38,6 +38,7 @@ const ReglasClasificacion = () => {
   const [keyword, setKeyword] = useState('');
   const [matchType, setMatchType] = useState<string>('contains');
   const [categoryId, setCategoryId] = useState('');
+  const [cuentaId, setCuentaId] = useState('');
   const [priority, setPriority] = useState('0');
   const [active, setActive] = useState(true);
   const [amountMin, setAmountMin] = useState('');
@@ -57,6 +58,7 @@ const ReglasClasificacion = () => {
   function transactionMatchesRule(t: Transaction, rule: ClassificationRule): boolean {
     if (!matchesClassificationRule(t.comentario || '', rule.keyword, rule.match_type)) return false;
     const amount = (t.gasto || 0) + (t.ingreso || 0);
+    if (rule.cuenta_id !== null && t.cuentaId !== rule.cuenta_id) return false;
     if (rule.amount_min !== null && amount < rule.amount_min) return false;
     if (rule.amount_max !== null && amount > rule.amount_max) return false;
     return true;
@@ -105,6 +107,7 @@ const ReglasClasificacion = () => {
     setKeyword('');
     setMatchType('contains');
     setCategoryId('');
+    setCuentaId('');
     setPriority('0');
     setActive(true);
     setAmountMin('');
@@ -118,6 +121,7 @@ const ReglasClasificacion = () => {
     setKeyword(rule.keyword);
     setMatchType(rule.match_type);
     setCategoryId(rule.category_id);
+    setCuentaId(rule.cuenta_id || '');
     setPriority(String(rule.priority));
     setActive(rule.active);
     setAmountMin(rule.amount_min != null ? String(rule.amount_min) : '');
@@ -133,6 +137,7 @@ const ReglasClasificacion = () => {
       keyword: keyword.trim(),
       match_type: matchType as 'exact' | 'contains' | 'starts_with',
       category_id: categoryId,
+      cuenta_id: cuentaId || null,
       priority: parseInt(priority) || 0,
       active,
       amount_min: amountMin.trim() ? parseFloat(amountMin) : null,
@@ -218,9 +223,10 @@ const ReglasClasificacion = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nombre</TableHead>
+                       <TableHead>Nombre</TableHead>
                       <TableHead>Palabra clave</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Cuenta</TableHead>
                       <TableHead>Categoría</TableHead>
                       <TableHead className="text-center">Coincidencias</TableHead>
                       <TableHead className="text-center">Prioridad</TableHead>
@@ -236,6 +242,7 @@ const ReglasClasificacion = () => {
                         <TableCell>
                           <Badge variant="outline">{MATCH_TYPE_LABELS[rule.match_type]}</Badge>
                         </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{rule.cuenta_id ? getAccountName(rule.cuenta_id) : 'Todas'}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{getCategoryLabel(rule.category_id)}</TableCell>
                         <TableCell className="text-center">
                           <Badge 
@@ -324,6 +331,20 @@ const ReglasClasificacion = () => {
                   <SelectItem value="contains">Contiene — la descripción incluye esta palabra</SelectItem>
                   <SelectItem value="starts_with">Empieza con — la descripción comienza con esta palabra</SelectItem>
                   <SelectItem value="exact">Exacta — la descripción es exactamente esta palabra</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Cuenta (opcional)</Label>
+              <Select value={cuentaId} onValueChange={setCuentaId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas las cuentas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las cuentas</SelectItem>
+                  {accounts.map(acc => (
+                    <SelectItem key={acc.id} value={acc.id}>{acc.nombre}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

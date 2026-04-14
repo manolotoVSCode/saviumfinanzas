@@ -10,6 +10,7 @@ export interface ClassificationRule {
   keyword: string;
   match_type: ClassificationMatchType;
   category_id: string;
+  cuenta_id: string | null;
   priority: number;
   active: boolean;
   amount_min: number | null;
@@ -75,12 +76,16 @@ export function useClassificationRules() {
     return error;
   };
 
-  const findMatchingRule = (description: string, amount?: number): string | null => {
+  const findMatchingRule = (description: string, amount?: number, accountId?: string): string | null => {
     // Rules are already sorted by priority desc
     for (const rule of rules) {
       if (!rule.active) continue;
 
       if (!matchesClassificationRule(description, rule.keyword, rule.match_type)) continue;
+
+      // Account filter — if rule specifies an account, it must match
+      if (rule.cuenta_id !== null && accountId !== undefined && rule.cuenta_id !== accountId) continue;
+      if (rule.cuenta_id !== null && accountId === undefined) continue;
 
       // Amount filters are AND conditions — both keyword AND amount must match
       if (rule.amount_min !== null && amount !== undefined && amount < rule.amount_min) continue;
