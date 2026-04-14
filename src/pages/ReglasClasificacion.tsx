@@ -84,6 +84,7 @@ const ReglasClasificacion = () => {
     const q = searchQuery.toLowerCase();
     return rules.filter(r => 
       r.keyword.toLowerCase().includes(q) ||
+      (r.name && r.name.toLowerCase().includes(q)) ||
       getCategoryLabel(r.category_id).toLowerCase().includes(q)
     );
   }, [rules, searchQuery, categories]);
