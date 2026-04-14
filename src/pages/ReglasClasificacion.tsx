@@ -62,11 +62,7 @@ const ReglasClasificacion = () => {
         case 'contains': textMatch = comment.includes(kw); break;
         case 'starts_with': textMatch = comment.startsWith(kw); break;
       }
-      if (textMatch) {
-        if (rule.amount_min != null && amount < rule.amount_min) continue;
-        if (rule.amount_max != null && amount > rule.amount_max) continue;
-        return true;
-      }
+      if (textMatch) return true;
     }
     return false;
   }
