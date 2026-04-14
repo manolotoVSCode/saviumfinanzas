@@ -54,7 +54,11 @@ const ReglasClasificacion = () => {
 
   // Helper to check if a transaction matches a rule
   function transactionMatchesRule(t: Transaction, rule: ClassificationRule): boolean {
-    return matchesClassificationRule(t.comentario || '', rule.keyword, rule.match_type);
+    if (!matchesClassificationRule(t.comentario || '', rule.keyword, rule.match_type)) return false;
+    const amount = (t.gasto || 0) + (t.ingreso || 0);
+    if (rule.amount_min !== null && amount < rule.amount_min) return false;
+    if (rule.amount_max !== null && amount > rule.amount_max) return false;
+    return true;
   }
 
   // Count matching transactions per rule
