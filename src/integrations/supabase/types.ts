@@ -53,6 +53,50 @@ export type Database = {
         }
         Relationships: []
       }
+      classification_rules: {
+        Row: {
+          active: boolean
+          category_id: string
+          created_at: string
+          id: string
+          keyword: string
+          match_type: string
+          priority: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          category_id: string
+          created_at?: string
+          id?: string
+          keyword: string
+          match_type?: string
+          priority?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          category_id?: string
+          created_at?: string
+          id?: string
+          keyword?: string
+          match_type?: string
+          priority?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classification_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       criptomonedas: {
         Row: {
           cantidad: number
