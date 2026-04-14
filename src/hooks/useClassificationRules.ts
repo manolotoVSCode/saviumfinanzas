@@ -20,7 +20,10 @@ export function useClassificationRules() {
   const [loading, setLoading] = useState(true);
 
   const loadRules = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data, error } = await supabase
       .from('classification_rules' as any)
@@ -28,7 +31,10 @@ export function useClassificationRules() {
       .eq('user_id', user.id)
       .order('priority', { ascending: false });
     
-    if (!error && data) {
+    if (error) {
+      console.error('[ClassificationRules] Error:', error);
+    }
+    if (data) {
       setRules(data as any as ClassificationRule[]);
     }
     setLoading(false);
