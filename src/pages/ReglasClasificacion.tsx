@@ -333,6 +333,30 @@ const ReglasClasificacion = () => {
                 onChange={e => setPriority(e.target.value)}
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Monto mínimo (opcional)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={amountMin}
+                  onChange={e => setAmountMin(e.target.value)}
+                  placeholder="Sin límite"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Monto máximo (opcional)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={amountMax}
+                  onChange={e => setAmountMax(e.target.value)}
+                  placeholder="Sin límite"
+                />
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <Switch checked={active} onCheckedChange={setActive} />
               <Label>Regla activa</Label>
