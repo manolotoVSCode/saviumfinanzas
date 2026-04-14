@@ -91,6 +91,64 @@ const ReglasClasificacion = () => {
       .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
   }, [matchesDialogRule, transactions]);
 
+  // Sorting logic
+  const sortedRules = useMemo(() => {
+    if (!sortColumn) return filteredRules;
+    
+    return [...filteredRules].sort((a, b) => {
+      let valA: any, valB: any;
+      
+      switch (sortColumn) {
+        case 'keyword':
+          valA = a.keyword.toLowerCase();
+          valB = b.keyword.toLowerCase();
+          break;
+        case 'match_type':
+          valA = a.match_type;
+          valB = b.match_type;
+          break;
+        case 'category':
+          valA = getCategoryLabel(a.category_id).toLowerCase();
+          valB = getCategoryLabel(b.category_id).toLowerCase();
+          break;
+        case 'matches':
+          valA = matchCounts[a.id] || 0;
+          valB = matchCounts[b.id] || 0;
+          break;
+        case 'priority':
+          valA = a.priority;
+          valB = b.priority;
+          break;
+        case 'active':
+          valA = a.active ? 1 : 0;
+          valB = b.active ? 1 : 0;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredRules, sortColumn, sortDirection, matchCounts, categories]);
+  
+  const handleSort = (column: typeof sortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+  
+  const SortIcon = ({ column }: { column: typeof sortColumn }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="h-3 w-3 ml-1 inline text-muted-foreground" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-3 w-3 ml-1 inline" />
+      : <ArrowDown className="h-3 w-3 ml-1 inline" />;
+  };
+
   const filteredRules = useMemo(() => {
     if (!searchQuery) return rules;
     const q = searchQuery.toLowerCase();
