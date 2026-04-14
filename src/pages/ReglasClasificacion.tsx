@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
-import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
