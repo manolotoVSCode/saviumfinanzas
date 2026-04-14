@@ -348,7 +348,7 @@ const ReglasClasificacion = () => {
 
       {/* Dialog de transacciones coincidentes */}
       <Dialog open={!!matchesDialogRule} onOpenChange={(open) => !open && setMatchesDialogRule(null)}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col" onPointerDownOutside={e => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>
               Transacciones con "{matchesDialogRule?.keyword}"
@@ -357,7 +357,7 @@ const ReglasClasificacion = () => {
               {matchingTransactions.length} transacciones coinciden con esta regla. Puedes cambiar la categoría de cualquiera.
             </p>
           </DialogHeader>
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-auto max-h-[60vh]">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -400,7 +400,7 @@ const ReglasClasificacion = () => {
                 ))}
               </TableBody>
             </Table>
-          </ScrollArea>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMatchesDialogRule(null)}>Cerrar</Button>
           </DialogFooter>
