@@ -284,17 +284,29 @@ const ReglasClasificacion = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Palabra clave</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead className="text-center">Coincidencias</TableHead>
-                      <TableHead className="text-center">Prioridad</TableHead>
-                      <TableHead className="text-center">Activa</TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('keyword')}>
+                        Palabra clave <SortIcon column="keyword" />
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('match_type')}>
+                        Tipo <SortIcon column="match_type" />
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('category')}>
+                        Categoría <SortIcon column="category" />
+                      </TableHead>
+                      <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('matches')}>
+                        Coincidencias <SortIcon column="matches" />
+                      </TableHead>
+                      <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('priority')}>
+                        Prioridad <SortIcon column="priority" />
+                      </TableHead>
+                      <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('active')}>
+                        Activa <SortIcon column="active" />
+                      </TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRules.map(rule => (
+                    {sortedRules.map(rule => (
                       <TableRow key={rule.id}>
                         <TableCell className="font-medium">
                           {rule.keyword}
