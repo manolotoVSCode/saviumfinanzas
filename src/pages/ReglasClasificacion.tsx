@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
@@ -31,6 +31,10 @@ const ReglasClasificacion = () => {
   const [editingRule, setEditingRule] = useState<ClassificationRule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [matchesDialogRule, setMatchesDialogRule] = useState<ClassificationRule | null>(null);
+  
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<'keyword' | 'match_type' | 'category' | 'matches' | 'priority' | 'active' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Form state
   const [keyword, setKeyword] = useState('');
