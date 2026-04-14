@@ -10,8 +10,6 @@ export interface ClassificationRule {
   category_id: string;
   priority: number;
   active: boolean;
-  amount_min: number | null;
-  amount_max: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -44,7 +42,7 @@ export function useClassificationRules() {
 
   useEffect(() => { loadRules(); }, [loadRules]);
 
-  const addRule = async (rule: Partial<Omit<ClassificationRule, 'id' | 'user_id' | 'created_at' | 'updated_at'>> & Pick<ClassificationRule, 'keyword' | 'category_id'>) => {
+  const addRule = async (rule: Omit<ClassificationRule, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
     const { error } = await supabase
       .from('classification_rules' as any)
@@ -73,39 +71,25 @@ export function useClassificationRules() {
     return error;
   };
 
-  const findMatchingRule = (description: string, amount?: number): string | null => {
+  const findMatchingRule = (description: string): string | null => {
     const normalized = description.toLowerCase().trim();
     
     // Rules are already sorted by priority desc
     for (const rule of rules) {
       if (!rule.active) continue;
-      const keywords = rule.keyword.split(',').map(k => k.toLowerCase().trim()).filter(Boolean);
+      const keyword = rule.keyword.toLowerCase().trim();
       
-      let textMatch = false;
-      for (const keyword of keywords) {
-        switch (rule.match_type) {
-          case 'exact':
-            textMatch = normalized === keyword;
-            break;
-          case 'contains':
-            textMatch = normalized.includes(keyword);
-            break;
-          case 'starts_with':
-            textMatch = normalized.startsWith(keyword);
-            break;
-        }
-        if (textMatch) break;
+      switch (rule.match_type) {
+        case 'exact':
+          if (normalized === keyword) return rule.category_id;
+          break;
+        case 'contains':
+          if (normalized.includes(keyword)) return rule.category_id;
+          break;
+        case 'starts_with':
+          if (normalized.startsWith(keyword)) return rule.category_id;
+          break;
       }
-      if (!textMatch) continue;
-
-      // Check amount filters if set
-      if (amount !== undefined) {
-        const absAmount = Math.abs(amount);
-        if (rule.amount_min != null && absAmount < rule.amount_min) continue;
-        if (rule.amount_max != null && absAmount > rule.amount_max) continue;
-      }
-
-      return rule.category_id;
     }
     return null;
   };

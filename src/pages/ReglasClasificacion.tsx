@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
@@ -31,10 +31,6 @@ const ReglasClasificacion = () => {
   const [editingRule, setEditingRule] = useState<ClassificationRule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [matchesDialogRule, setMatchesDialogRule] = useState<ClassificationRule | null>(null);
-  
-  // Sorting state
-  const [sortColumn, setSortColumn] = useState<'keyword' | 'match_type' | 'category' | 'matches' | 'priority' | 'active' | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Form state
   const [keyword, setKeyword] = useState('');
@@ -42,8 +38,6 @@ const ReglasClasificacion = () => {
   const [categoryId, setCategoryId] = useState('');
   const [priority, setPriority] = useState('0');
   const [active, setActive] = useState(true);
-  const [amountMin, setAmountMin] = useState('');
-  const [amountMax, setAmountMax] = useState('');
 
   // Group categories by parent for the select
   const groupedCategories = useMemo(() => {
@@ -55,27 +49,22 @@ const ReglasClasificacion = () => {
     return groups;
   }, [categories]);
 
-  // Helper to check if a transaction matches a rule (supports comma-separated keywords)
+  // Helper to check if a transaction matches a rule
   function transactionMatchesRule(t: Transaction, rule: ClassificationRule): boolean {
     const comment = (t.comentario || '').toLowerCase();
     const keywords = rule.keyword.split(',').map(k => k.toLowerCase().trim()).filter(Boolean);
+    const amount = t.ingreso > 0 ? t.ingreso : t.gasto;
     
-    let textMatch = false;
     for (const kw of keywords) {
+      let textMatch = false;
       switch (rule.match_type) {
         case 'exact': textMatch = comment === kw; break;
         case 'contains': textMatch = comment.includes(kw); break;
         case 'starts_with': textMatch = comment.startsWith(kw); break;
-        default: break;
       }
-      if (textMatch) break;
+      if (textMatch) return true;
     }
-    if (!textMatch) return false;
-    // Check amount filters
-    const absAmount = Math.abs(t.ingreso > 0 ? t.ingreso : t.gasto);
-    if (rule.amount_min != null && absAmount < rule.amount_min) return false;
-    if (rule.amount_max != null && absAmount > rule.amount_max) return false;
-    return true;
+    return false;
   }
 
   // Count matching transactions per rule
@@ -104,64 +93,6 @@ const ReglasClasificacion = () => {
     );
   }, [rules, searchQuery, categories]);
 
-  // Sorting logic
-  const sortedRules = useMemo(() => {
-    if (!sortColumn) return filteredRules;
-    
-    return [...filteredRules].sort((a, b) => {
-      let valA: any, valB: any;
-      
-      switch (sortColumn) {
-        case 'keyword':
-          valA = a.keyword.toLowerCase();
-          valB = b.keyword.toLowerCase();
-          break;
-        case 'match_type':
-          valA = a.match_type;
-          valB = b.match_type;
-          break;
-        case 'category':
-          valA = getCategoryLabel(a.category_id).toLowerCase();
-          valB = getCategoryLabel(b.category_id).toLowerCase();
-          break;
-        case 'matches':
-          valA = matchCounts[a.id] || 0;
-          valB = matchCounts[b.id] || 0;
-          break;
-        case 'priority':
-          valA = a.priority;
-          valB = b.priority;
-          break;
-        case 'active':
-          valA = a.active ? 1 : 0;
-          valB = b.active ? 1 : 0;
-          break;
-        default:
-          return 0;
-      }
-      
-      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [filteredRules, sortColumn, sortDirection, matchCounts, categories]);
-  
-  const handleSort = (column: typeof sortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('desc');
-    }
-  };
-  
-  const SortIcon = ({ column }: { column: typeof sortColumn }) => {
-    if (sortColumn !== column) return <ArrowUpDown className="h-3 w-3 ml-1 inline text-muted-foreground" />;
-    return sortDirection === 'asc' 
-      ? <ArrowUp className="h-3 w-3 ml-1 inline" />
-      : <ArrowDown className="h-3 w-3 ml-1 inline" />;
-  };
-
   function getCategoryLabel(catId: string) {
     const cat = categories.find(c => c.id === catId);
     return cat ? `${cat.categoria} > ${cat.subcategoria}` : 'Desconocida';
@@ -179,8 +110,6 @@ const ReglasClasificacion = () => {
     setCategoryId('');
     setPriority('0');
     setActive(true);
-    setAmountMin('');
-    setAmountMax('');
     setDialogOpen(true);
   }
 
@@ -191,22 +120,18 @@ const ReglasClasificacion = () => {
     setCategoryId(rule.category_id);
     setPriority(String(rule.priority));
     setActive(rule.active);
-    setAmountMin(rule.amount_min != null ? String(rule.amount_min) : '');
-    setAmountMax(rule.amount_max != null ? String(rule.amount_max) : '');
     setDialogOpen(true);
   }
 
   async function handleSave() {
     if (!keyword.trim() || !categoryId) return;
 
-    const data: any = {
+    const data = {
       keyword: keyword.trim(),
       match_type: matchType as 'exact' | 'contains' | 'starts_with',
       category_id: categoryId,
       priority: parseInt(priority) || 0,
       active,
-      amount_min: amountMin ? parseFloat(amountMin) : null,
-      amount_max: amountMax ? parseFloat(amountMax) : null,
     };
 
     if (editingRule) {
@@ -288,38 +213,19 @@ const ReglasClasificacion = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('keyword')}>
-                        Palabra clave <SortIcon column="keyword" />
-                      </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('match_type')}>
-                        Tipo <SortIcon column="match_type" />
-                      </TableHead>
-                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('category')}>
-                        Categoría <SortIcon column="category" />
-                      </TableHead>
-                      <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('matches')}>
-                        Coincidencias <SortIcon column="matches" />
-                      </TableHead>
-                      <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('priority')}>
-                        Prioridad <SortIcon column="priority" />
-                      </TableHead>
-                      <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('active')}>
-                        Activa <SortIcon column="active" />
-                      </TableHead>
+                      <TableHead>Palabra clave</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead className="text-center">Coincidencias</TableHead>
+                      <TableHead className="text-center">Prioridad</TableHead>
+                      <TableHead className="text-center">Activa</TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedRules.map(rule => (
+                    {filteredRules.map(rule => (
                       <TableRow key={rule.id}>
-                        <TableCell className="font-medium">
-                          {rule.keyword}
-                          {(rule.amount_min != null || rule.amount_max != null) && (
-                            <span className="block text-xs text-muted-foreground">
-                              Monto: {rule.amount_min != null ? `≥${rule.amount_min}` : ''}{rule.amount_min != null && rule.amount_max != null ? ' y ' : ''}{rule.amount_max != null ? `≤${rule.amount_max}` : ''}
-                            </span>
-                          )}
-                        </TableCell>
+                        <TableCell className="font-medium">{rule.keyword}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{MATCH_TYPE_LABELS[rule.match_type]}</Badge>
                         </TableCell>
@@ -386,13 +292,12 @@ const ReglasClasificacion = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Palabras clave</Label>
+              <Label>Palabra clave</Label>
               <Input
                 value={keyword}
                 onChange={e => setKeyword(e.target.value)}
-                placeholder="ej: AMAZON, UBER, NETFLIX (separadas por coma)"
+                placeholder="ej: AMAZON, UBER, NETFLIX..."
               />
-              <p className="text-xs text-muted-foreground">Puedes poner varias palabras separadas por coma. Si cualquiera coincide, se aplica la regla.</p>
             </div>
             <div className="space-y-2">
               <Label>Tipo de coincidencia</Label>
@@ -423,34 +328,6 @@ const ReglasClasificacion = () => {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Filtro de monto (opcional)</Label>
-              <p className="text-xs text-muted-foreground">Solo aplica la regla si el monto de la transacción está en este rango.</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs">Mínimo</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={amountMin}
-                    onChange={e => setAmountMin(e.target.value)}
-                    placeholder="Sin mínimo"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Máximo</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={amountMax}
-                    onChange={e => setAmountMax(e.target.value)}
-                    placeholder="Sin máximo"
-                  />
-                </div>
-              </div>
             </div>
             <div className="space-y-2">
               <Label>Prioridad (mayor = se evalúa primero)</Label>

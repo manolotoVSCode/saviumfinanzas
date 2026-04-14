@@ -92,9 +92,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       .trim();
   }
 
-  function findMatchingCategory(description: string, amount?: number): string | null {
-    // 1. First check user-defined classification rules (with optional amount)
-    const ruleMatch = findMatchingRule(description, amount);
+  function findMatchingCategory(description: string): string | null {
+    // 1. First check user-defined classification rules
+    const ruleMatch = findMatchingRule(description);
     if (ruleMatch) return ruleMatch;
 
     // 2. Fall back to history-based matching
@@ -411,7 +411,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       if (montoOriginal === 0) continue; // Skip zero amount rows
 
       // Assign category from history
-      const matchedCategoryId = findMatchingCategory(descripcion, montoOriginal);
+      const matchedCategoryId = findMatchingCategory(descripcion);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
       const matchedCategory = categories.find(c => c.id === matchedCategoryId);
 
@@ -590,7 +590,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       if (montoOriginal === 0) continue;
       
       // Assign category from history
-      const matchedCategoryId = findMatchingCategory(descripcion, montoOriginal);
+      const matchedCategoryId = findMatchingCategory(descripcion);
       const categoriaId = matchedCategoryId || sinAsignarCategory?.id || '';
       const matchedCategory = categories.find(c => c.id === matchedCategoryId);
 
