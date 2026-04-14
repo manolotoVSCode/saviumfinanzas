@@ -24,7 +24,7 @@ const MATCH_TYPE_LABELS: Record<string, string> = {
 const ReglasClasificacion = () => {
   const navigate = useNavigate();
   const { rules, loading, addRule, updateRule, deleteRule } = useClassificationRules();
-  const { categories, loading: loadingFinance } = useFinanceDataSupabase();
+  const { categories, transactions, loading: loadingFinance } = useFinanceDataSupabase();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<ClassificationRule | null>(null);
@@ -46,6 +46,31 @@ const ReglasClasificacion = () => {
     });
     return groups;
   }, [categories]);
+
+  // Count matching transactions per rule
+  const matchCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    rules.forEach(rule => {
+      const kw = rule.keyword.toLowerCase().trim();
+      let count = 0;
+      transactions.forEach(t => {
+        const comment = (t.comentario || '').toLowerCase();
+        switch (rule.match_type) {
+          case 'exact':
+            if (comment === kw) count++;
+            break;
+          case 'contains':
+            if (comment.includes(kw)) count++;
+            break;
+          case 'starts_with':
+            if (comment.startsWith(kw)) count++;
+            break;
+        }
+      });
+      counts[rule.id] = count;
+    });
+    return counts;
+  }, [rules, transactions]);
 
   const filteredRules = useMemo(() => {
     if (!searchQuery) return rules;
@@ -160,6 +185,7 @@ const ReglasClasificacion = () => {
                       <TableHead>Palabra clave</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Categoría</TableHead>
+                      <TableHead className="text-center">Coincidencias</TableHead>
                       <TableHead className="text-center">Prioridad</TableHead>
                       <TableHead className="text-center">Activa</TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
@@ -173,6 +199,11 @@ const ReglasClasificacion = () => {
                           <Badge variant="outline">{MATCH_TYPE_LABELS[rule.match_type]}</Badge>
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">{getCategoryLabel(rule.category_id)}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={matchCounts[rule.id] > 0 ? 'default' : 'secondary'}>
+                            {matchCounts[rule.id] || 0}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-center">{rule.priority}</TableCell>
                         <TableCell className="text-center">
                           <Switch
