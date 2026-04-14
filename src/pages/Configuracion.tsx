@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import Layout from '@/components/Layout';
-import { AccountsManager } from '@/components/AccountsManager';
-import { CategoriesManager } from '@/components/CategoriesManager';
 import { ProfileEditor } from '@/components/ProfileEditor';
 import { AdminUserManagement } from '@/components/AdminUserManagement';
 import { DataAudit } from '@/components/DataAudit';
@@ -16,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Settings, LogOut, Trash2, Globe, Search, Wallet, Tag, Filter } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Configuracion = () => {
@@ -37,8 +35,6 @@ const Configuracion = () => {
     };
     checkAdminRole();
   }, [user]);
-  const cuentasRef = useRef<HTMLDivElement>(null);
-  const categoriasRef = useRef<HTMLDivElement>(null);
   if (financeData.loading) {
     return (
       <Layout>
@@ -61,11 +57,11 @@ const Configuracion = () => {
             <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => cuentasRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/cuentas')}>
               <Wallet className="h-4 w-4 mr-1" />
               Cuentas
             </Button>
-            <Button variant="outline" size="sm" onClick={() => categoriasRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/categorias')}>
               <Tag className="h-4 w-4 mr-1" />
               Categorías
             </Button>
@@ -119,37 +115,6 @@ const Configuracion = () => {
           </CardContent>
         </Card>
 
-        {/* GESTIÓN DE CUENTAS */}
-        <Card ref={cuentasRef} className="border-secondary/20 hover:border-secondary/40 transition-all duration-300 scroll-mt-4">
-          <CardHeader>
-            <CardTitle>Gestión de Cuentas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AccountsManager
-              accounts={financeData.accounts}
-              accountTypes={financeData.accountTypes}
-              onAddAccount={financeData.addAccount}
-              onUpdateAccount={financeData.updateAccount}
-              onDeleteAccount={financeData.deleteAccount}
-            />
-          </CardContent>
-        </Card>
-
-        {/* GESTIÓN DE CATEGORÍAS */}
-        <Card ref={categoriasRef} className="border-accent/20 hover:border-accent/40 transition-all duration-300 scroll-mt-4">
-          <CardHeader>
-            <CardTitle>{t('settings.categories')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CategoriesManager
-              categories={financeData.categories}
-              transactions={financeData.transactions}
-              onAddCategory={financeData.addCategory}
-              onUpdateCategory={financeData.updateCategory}
-              onDeleteCategory={financeData.deleteCategory}
-            />
-          </CardContent>
-        </Card>
 
         {/* AUDITORÍA DE DATOS */}
         <Card className="border-blue-200 hover:border-blue-400 transition-all duration-300">

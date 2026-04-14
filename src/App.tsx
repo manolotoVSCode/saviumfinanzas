@@ -15,6 +15,8 @@ import Informes from "./pages/Informes";
 import Configuracion from "./pages/Configuracion";
 import TransaccionesCategoria from "./pages/TransaccionesCategoria";
 import ReglasClasificacion from "./pages/ReglasClasificacion";
+import Cuentas from "./pages/Cuentas";
+import Categorias from "./pages/Categorias";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +69,16 @@ const App = () => (
               <Route path="/reglas-clasificacion" element={
                 <ProtectedRoute>
                   <ReglasClasificacion />
+                </ProtectedRoute>
+              } />
+              <Route path="/cuentas" element={
+                <ProtectedRoute>
+                  <Cuentas />
+                </ProtectedRoute>
+              } />
+              <Route path="/categorias" element={
+                <ProtectedRoute>
+                  <Categorias />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
