@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
@@ -31,6 +31,10 @@ const ReglasClasificacion = () => {
   const [editingRule, setEditingRule] = useState<ClassificationRule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [matchesDialogRule, setMatchesDialogRule] = useState<ClassificationRule | null>(null);
+  
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<'keyword' | 'match_type' | 'category' | 'matches' | 'priority' | 'active' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Form state
   const [keyword, setKeyword] = useState('');
@@ -95,6 +99,64 @@ const ReglasClasificacion = () => {
       getCategoryLabel(r.category_id).toLowerCase().includes(q)
     );
   }, [rules, searchQuery, categories]);
+
+  // Sorting logic
+  const sortedRules = useMemo(() => {
+    if (!sortColumn) return filteredRules;
+    
+    return [...filteredRules].sort((a, b) => {
+      let valA: any, valB: any;
+      
+      switch (sortColumn) {
+        case 'keyword':
+          valA = a.keyword.toLowerCase();
+          valB = b.keyword.toLowerCase();
+          break;
+        case 'match_type':
+          valA = a.match_type;
+          valB = b.match_type;
+          break;
+        case 'category':
+          valA = getCategoryLabel(a.category_id).toLowerCase();
+          valB = getCategoryLabel(b.category_id).toLowerCase();
+          break;
+        case 'matches':
+          valA = matchCounts[a.id] || 0;
+          valB = matchCounts[b.id] || 0;
+          break;
+        case 'priority':
+          valA = a.priority;
+          valB = b.priority;
+          break;
+        case 'active':
+          valA = a.active ? 1 : 0;
+          valB = b.active ? 1 : 0;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredRules, sortColumn, sortDirection, matchCounts, categories]);
+  
+  const handleSort = (column: typeof sortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+  
+  const SortIcon = ({ column }: { column: typeof sortColumn }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="h-3 w-3 ml-1 inline text-muted-foreground" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-3 w-3 ml-1 inline" />
+      : <ArrowDown className="h-3 w-3 ml-1 inline" />;
+  };
 
   function getCategoryLabel(catId: string) {
     const cat = categories.find(c => c.id === catId);
@@ -222,17 +284,29 @@ const ReglasClasificacion = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Palabra clave</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead className="text-center">Coincidencias</TableHead>
-                      <TableHead className="text-center">Prioridad</TableHead>
-                      <TableHead className="text-center">Activa</TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('keyword')}>
+                        Palabra clave <SortIcon column="keyword" />
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('match_type')}>
+                        Tipo <SortIcon column="match_type" />
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('category')}>
+                        Categoría <SortIcon column="category" />
+                      </TableHead>
+                      <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('matches')}>
+                        Coincidencias <SortIcon column="matches" />
+                      </TableHead>
+                      <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('priority')}>
+                        Prioridad <SortIcon column="priority" />
+                      </TableHead>
+                      <TableHead className="text-center cursor-pointer hover:bg-muted/50" onClick={() => handleSort('active')}>
+                        Activa <SortIcon column="active" />
+                      </TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRules.map(rule => (
+                    {sortedRules.map(rule => (
                       <TableRow key={rule.id}>
                         <TableCell className="font-medium">
                           {rule.keyword}
