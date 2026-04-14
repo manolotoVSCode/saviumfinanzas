@@ -63,6 +63,7 @@ export type Database = {
           id: string
           keyword: string
           match_type: string
+          name: string | null
           priority: number
           updated_at: string
           user_id: string
@@ -76,6 +77,7 @@ export type Database = {
           id?: string
           keyword: string
           match_type?: string
+          name?: string | null
           priority?: number
           updated_at?: string
           user_id: string
@@ -89,6 +91,7 @@ export type Database = {
           id?: string
           keyword?: string
           match_type?: string
+          name?: string | null
           priority?: number
           updated_at?: string
           user_id?: string
