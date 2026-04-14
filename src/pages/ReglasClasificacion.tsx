@@ -299,6 +299,14 @@ const ReglasClasificacion = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label>Nombre de la regla</Label>
+              <Input
+                value={ruleName}
+                onChange={e => setRuleName(e.target.value)}
+                placeholder="ej: Apple Suscripción, Uber Eats..."
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Palabra clave</Label>
               <Input
                 value={keyword}
