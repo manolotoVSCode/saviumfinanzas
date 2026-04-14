@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { ClassificationMatchType, matchesClassificationRule } from '@/lib/classificationRules';
 
 export interface ClassificationRule {
   id: string;
   user_id: string;
   keyword: string;
-  match_type: 'exact' | 'contains' | 'starts_with';
+  match_type: ClassificationMatchType;
   category_id: string;
   priority: number;
   active: boolean;
@@ -72,23 +73,12 @@ export function useClassificationRules() {
   };
 
   const findMatchingRule = (description: string): string | null => {
-    const normalized = description.toLowerCase().trim();
-    
     // Rules are already sorted by priority desc
     for (const rule of rules) {
       if (!rule.active) continue;
-      const keyword = rule.keyword.toLowerCase().trim();
-      
-      switch (rule.match_type) {
-        case 'exact':
-          if (normalized === keyword) return rule.category_id;
-          break;
-        case 'contains':
-          if (normalized.includes(keyword)) return rule.category_id;
-          break;
-        case 'starts_with':
-          if (normalized.startsWith(keyword)) return rule.category_id;
-          break;
+
+      if (matchesClassificationRule(description, rule.keyword, rule.match_type)) {
+        return rule.category_id;
       }
     }
     return null;

@@ -14,6 +14,7 @@ import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
+import { matchesClassificationRule } from '@/lib/classificationRules';
 import { Transaction } from '@/types/finance';
 
 const MATCH_TYPE_LABELS: Record<string, string> = {
@@ -51,20 +52,7 @@ const ReglasClasificacion = () => {
 
   // Helper to check if a transaction matches a rule
   function transactionMatchesRule(t: Transaction, rule: ClassificationRule): boolean {
-    const comment = (t.comentario || '').toLowerCase();
-    const keywords = rule.keyword.split(',').map(k => k.toLowerCase().trim()).filter(Boolean);
-    const amount = t.ingreso > 0 ? t.ingreso : t.gasto;
-    
-    for (const kw of keywords) {
-      let textMatch = false;
-      switch (rule.match_type) {
-        case 'exact': textMatch = comment === kw; break;
-        case 'contains': textMatch = comment.includes(kw); break;
-        case 'starts_with': textMatch = comment.startsWith(kw); break;
-      }
-      if (textMatch) return true;
-    }
-    return false;
+    return matchesClassificationRule(t.comentario || '', rule.keyword, rule.match_type);
   }
 
   // Count matching transactions per rule
