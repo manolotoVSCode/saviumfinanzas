@@ -34,6 +34,7 @@ const ReglasClasificacion = () => {
   const [matchesDialogRule, setMatchesDialogRule] = useState<ClassificationRule | null>(null);
 
   // Form state
+  const [ruleName, setRuleName] = useState('');
   const [keyword, setKeyword] = useState('');
   const [matchType, setMatchType] = useState<string>('contains');
   const [categoryId, setCategoryId] = useState('');
