@@ -10,10 +10,12 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
+import { Transaction } from '@/types/finance';
 
 const MATCH_TYPE_LABELS: Record<string, string> = {
   exact: 'Exacta',
@@ -24,11 +26,12 @@ const MATCH_TYPE_LABELS: Record<string, string> = {
 const ReglasClasificacion = () => {
   const navigate = useNavigate();
   const { rules, loading, addRule, updateRule, deleteRule } = useClassificationRules();
-  const { categories, transactions, loading: loadingFinance } = useFinanceDataSupabase();
+  const { categories, transactions, accounts, loading: loadingFinance, updateTransaction } = useFinanceDataSupabase();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<ClassificationRule | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [matchesDialogRule, setMatchesDialogRule] = useState<ClassificationRule | null>(null);
 
   // Form state
   const [keyword, setKeyword] = useState('');
@@ -47,30 +50,34 @@ const ReglasClasificacion = () => {
     return groups;
   }, [categories]);
 
+  // Helper to check if a transaction matches a rule
+  function transactionMatchesRule(t: Transaction, rule: ClassificationRule): boolean {
+    const comment = (t.comentario || '').toLowerCase();
+    const kw = rule.keyword.toLowerCase().trim();
+    switch (rule.match_type) {
+      case 'exact': return comment === kw;
+      case 'contains': return comment.includes(kw);
+      case 'starts_with': return comment.startsWith(kw);
+      default: return false;
+    }
+  }
+
   // Count matching transactions per rule
   const matchCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     rules.forEach(rule => {
-      const kw = rule.keyword.toLowerCase().trim();
-      let count = 0;
-      transactions.forEach(t => {
-        const comment = (t.comentario || '').toLowerCase();
-        switch (rule.match_type) {
-          case 'exact':
-            if (comment === kw) count++;
-            break;
-          case 'contains':
-            if (comment.includes(kw)) count++;
-            break;
-          case 'starts_with':
-            if (comment.startsWith(kw)) count++;
-            break;
-        }
-      });
-      counts[rule.id] = count;
+      counts[rule.id] = transactions.filter(t => transactionMatchesRule(t, rule)).length;
     });
     return counts;
   }, [rules, transactions]);
+
+  // Matching transactions for the selected rule
+  const matchingTransactions = useMemo(() => {
+    if (!matchesDialogRule) return [];
+    return transactions
+      .filter(t => transactionMatchesRule(t, matchesDialogRule))
+      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+  }, [matchesDialogRule, transactions]);
 
   const filteredRules = useMemo(() => {
     if (!searchQuery) return rules;
@@ -84,6 +91,11 @@ const ReglasClasificacion = () => {
   function getCategoryLabel(catId: string) {
     const cat = categories.find(c => c.id === catId);
     return cat ? `${cat.categoria} > ${cat.subcategoria}` : 'Desconocida';
+  }
+
+  function getAccountName(accountId: string) {
+    const acc = accounts.find(a => a.id === accountId);
+    return acc?.nombre || 'Desconocida';
   }
 
   function openNew() {
@@ -123,6 +135,20 @@ const ReglasClasificacion = () => {
       await addRule(data);
     }
     setDialogOpen(false);
+  }
+
+  async function handleChangeTransactionCategory(transactionId: string, newCategoryId: string) {
+    await updateTransaction(transactionId, { subcategoriaId: newCategoryId });
+  }
+
+  function formatDate(fecha: string | Date) {
+    const d = typeof fecha === 'string' ? new Date(fecha) : fecha;
+    return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function formatAmount(t: Transaction) {
+    const amount = t.ingreso > 0 ? t.ingreso : -t.gasto;
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: t.divisa || 'MXN' }).format(amount);
   }
 
   if (loading || loadingFinance) {
@@ -200,7 +226,11 @@ const ReglasClasificacion = () => {
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">{getCategoryLabel(rule.category_id)}</TableCell>
                         <TableCell className="text-center">
-                          <Badge variant={matchCounts[rule.id] > 0 ? 'default' : 'secondary'}>
+                          <Badge 
+                            variant={matchCounts[rule.id] > 0 ? 'default' : 'secondary'}
+                            className={matchCounts[rule.id] > 0 ? 'cursor-pointer hover:opacity-80' : ''}
+                            onClick={() => matchCounts[rule.id] > 0 && setMatchesDialogRule(rule)}
+                          >
                             {matchCounts[rule.id] || 0}
                           </Badge>
                         </TableCell>
@@ -312,6 +342,67 @@ const ReglasClasificacion = () => {
             <Button onClick={handleSave} disabled={!keyword.trim() || !categoryId}>
               {editingRule ? 'Guardar cambios' : 'Crear regla'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de transacciones coincidentes */}
+      <Dialog open={!!matchesDialogRule} onOpenChange={(open) => !open && setMatchesDialogRule(null)}>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Transacciones con "{matchesDialogRule?.keyword}"
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              {matchingTransactions.length} transacciones coinciden con esta regla. Puedes cambiar la categoría de cualquiera.
+            </p>
+          </DialogHeader>
+          <ScrollArea className="flex-1 min-h-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead>Cuenta</TableHead>
+                  <TableHead className="text-right">Monto</TableHead>
+                  <TableHead>Categoría</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {matchingTransactions.map(t => (
+                  <TableRow key={t.id}>
+                    <TableCell className="whitespace-nowrap text-sm">{formatDate(t.fecha)}</TableCell>
+                    <TableCell className="max-w-[250px] truncate text-sm" title={t.comentario}>{t.comentario}</TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">{getAccountName(t.cuentaId)}</TableCell>
+                    <TableCell className={`text-right whitespace-nowrap text-sm font-medium ${t.ingreso > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatAmount(t)}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={t.subcategoriaId}
+                        onValueChange={(newCatId) => handleChangeTransactionCategory(t.id, newCatId)}
+                      >
+                        <SelectTrigger className="h-8 text-xs w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(groupedCategories).map(([group, cats]) => (
+                            cats.map(c => (
+                              <SelectItem key={c.id} value={c.id} className="text-xs">
+                                {group} {'>'} {c.subcategoria}
+                              </SelectItem>
+                            ))
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMatchesDialogRule(null)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
