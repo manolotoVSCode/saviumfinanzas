@@ -11,6 +11,8 @@ export interface ClassificationRule {
   category_id: string;
   priority: number;
   active: boolean;
+  amount_min: number | null;
+  amount_max: number | null;
   created_at: string;
   updated_at: string;
 }
