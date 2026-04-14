@@ -10,7 +10,6 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
@@ -348,7 +347,7 @@ const ReglasClasificacion = () => {
 
       {/* Dialog de transacciones coincidentes */}
       <Dialog open={!!matchesDialogRule} onOpenChange={(open) => !open && setMatchesDialogRule(null)}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col" onPointerDownOutside={e => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>
               Transacciones con "{matchesDialogRule?.keyword}"
@@ -357,7 +356,7 @@ const ReglasClasificacion = () => {
               {matchingTransactions.length} transacciones coinciden con esta regla. Puedes cambiar la categoría de cualquiera.
             </p>
           </DialogHeader>
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-auto max-h-[60vh]">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -400,7 +399,7 @@ const ReglasClasificacion = () => {
                 ))}
               </TableBody>
             </Table>
-          </ScrollArea>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMatchesDialogRule(null)}>Cerrar</Button>
           </DialogFooter>
