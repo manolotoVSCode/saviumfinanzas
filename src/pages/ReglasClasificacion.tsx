@@ -55,16 +55,20 @@ const ReglasClasificacion = () => {
     return groups;
   }, [categories]);
 
-  // Helper to check if a transaction matches a rule
+  // Helper to check if a transaction matches a rule (supports comma-separated keywords)
   function transactionMatchesRule(t: Transaction, rule: ClassificationRule): boolean {
     const comment = (t.comentario || '').toLowerCase();
-    const kw = rule.keyword.toLowerCase().trim();
+    const keywords = rule.keyword.split(',').map(k => k.toLowerCase().trim()).filter(Boolean);
+    
     let textMatch = false;
-    switch (rule.match_type) {
-      case 'exact': textMatch = comment === kw; break;
-      case 'contains': textMatch = comment.includes(kw); break;
-      case 'starts_with': textMatch = comment.startsWith(kw); break;
-      default: return false;
+    for (const kw of keywords) {
+      switch (rule.match_type) {
+        case 'exact': textMatch = comment === kw; break;
+        case 'contains': textMatch = comment.includes(kw); break;
+        case 'starts_with': textMatch = comment.startsWith(kw); break;
+        default: break;
+      }
+      if (textMatch) break;
     }
     if (!textMatch) return false;
     // Check amount filters
@@ -382,12 +386,13 @@ const ReglasClasificacion = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Palabra clave</Label>
+              <Label>Palabras clave</Label>
               <Input
                 value={keyword}
                 onChange={e => setKeyword(e.target.value)}
-                placeholder="ej: AMAZON, UBER, NETFLIX..."
+                placeholder="ej: AMAZON, UBER, NETFLIX (separadas por coma)"
               />
+              <p className="text-xs text-muted-foreground">Puedes poner varias palabras separadas por coma. Si cualquiera coincide, se aplica la regla.</p>
             </div>
             <div className="space-y-2">
               <Label>Tipo de coincidencia</Label>

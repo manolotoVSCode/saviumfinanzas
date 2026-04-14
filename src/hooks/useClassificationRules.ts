@@ -79,19 +79,22 @@ export function useClassificationRules() {
     // Rules are already sorted by priority desc
     for (const rule of rules) {
       if (!rule.active) continue;
-      const keyword = rule.keyword.toLowerCase().trim();
+      const keywords = rule.keyword.split(',').map(k => k.toLowerCase().trim()).filter(Boolean);
       
       let textMatch = false;
-      switch (rule.match_type) {
-        case 'exact':
-          textMatch = normalized === keyword;
-          break;
-        case 'contains':
-          textMatch = normalized.includes(keyword);
-          break;
-        case 'starts_with':
-          textMatch = normalized.startsWith(keyword);
-          break;
+      for (const keyword of keywords) {
+        switch (rule.match_type) {
+          case 'exact':
+            textMatch = normalized === keyword;
+            break;
+          case 'contains':
+            textMatch = normalized.includes(keyword);
+            break;
+          case 'starts_with':
+            textMatch = normalized.startsWith(keyword);
+            break;
+        }
+        if (textMatch) break;
       }
       if (!textMatch) continue;
 
