@@ -336,7 +336,7 @@ const ReglasClasificacion = () => {
             </div>
             <div className="space-y-2">
               <Label>Cuenta (opcional)</Label>
-              <Select value={cuentaId} onValueChange={setCuentaId}>
+              <Select value={cuentaId || 'all'} onValueChange={v => setCuentaId(v === 'all' ? '' : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las cuentas" />
                 </SelectTrigger>
