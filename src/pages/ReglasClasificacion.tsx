@@ -101,6 +101,7 @@ const ReglasClasificacion = () => {
 
   function openNew() {
     setEditingRule(null);
+    setRuleName('');
     setKeyword('');
     setMatchType('contains');
     setCategoryId('');
@@ -113,6 +114,7 @@ const ReglasClasificacion = () => {
 
   function openEdit(rule: ClassificationRule) {
     setEditingRule(rule);
+    setRuleName(rule.name || '');
     setKeyword(rule.keyword);
     setMatchType(rule.match_type);
     setCategoryId(rule.category_id);
