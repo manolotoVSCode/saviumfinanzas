@@ -91,6 +91,15 @@ const ReglasClasificacion = () => {
       .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
   }, [matchesDialogRule, transactions]);
 
+  const filteredRules = useMemo(() => {
+    if (!searchQuery) return rules;
+    const q = searchQuery.toLowerCase();
+    return rules.filter(r => 
+      r.keyword.toLowerCase().includes(q) ||
+      getCategoryLabel(r.category_id).toLowerCase().includes(q)
+    );
+  }, [rules, searchQuery, categories]);
+
   // Sorting logic
   const sortedRules = useMemo(() => {
     if (!sortColumn) return filteredRules;
@@ -148,15 +157,6 @@ const ReglasClasificacion = () => {
       ? <ArrowUp className="h-3 w-3 ml-1 inline" />
       : <ArrowDown className="h-3 w-3 ml-1 inline" />;
   };
-
-  const filteredRules = useMemo(() => {
-    if (!searchQuery) return rules;
-    const q = searchQuery.toLowerCase();
-    return rules.filter(r => 
-      r.keyword.toLowerCase().includes(q) ||
-      getCategoryLabel(r.category_id).toLowerCase().includes(q)
-    );
-  }, [rules, searchQuery, categories]);
 
   function getCategoryLabel(catId: string) {
     const cat = categories.find(c => c.id === catId);
