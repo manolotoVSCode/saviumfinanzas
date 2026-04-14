@@ -100,6 +100,8 @@ const ReglasClasificacion = () => {
     setCategoryId('');
     setPriority('0');
     setActive(true);
+    setAmountMin('');
+    setAmountMax('');
     setDialogOpen(true);
   }
 
@@ -110,6 +112,8 @@ const ReglasClasificacion = () => {
     setCategoryId(rule.category_id);
     setPriority(String(rule.priority));
     setActive(rule.active);
+    setAmountMin(rule.amount_min != null ? String(rule.amount_min) : '');
+    setAmountMax(rule.amount_max != null ? String(rule.amount_max) : '');
     setDialogOpen(true);
   }
 
@@ -122,6 +126,8 @@ const ReglasClasificacion = () => {
       category_id: categoryId,
       priority: parseInt(priority) || 0,
       active,
+      amount_min: amountMin.trim() ? parseFloat(amountMin) : null,
+      amount_max: amountMax.trim() ? parseFloat(amountMax) : null,
     };
 
     if (editingRule) {
