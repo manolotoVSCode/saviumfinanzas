@@ -34,6 +34,7 @@ const ReglasClasificacion = () => {
   const [matchesDialogRule, setMatchesDialogRule] = useState<ClassificationRule | null>(null);
 
   // Form state
+  const [ruleName, setRuleName] = useState('');
   const [keyword, setKeyword] = useState('');
   const [matchType, setMatchType] = useState<string>('contains');
   const [categoryId, setCategoryId] = useState('');
@@ -83,6 +84,7 @@ const ReglasClasificacion = () => {
     const q = searchQuery.toLowerCase();
     return rules.filter(r => 
       r.keyword.toLowerCase().includes(q) ||
+      (r.name && r.name.toLowerCase().includes(q)) ||
       getCategoryLabel(r.category_id).toLowerCase().includes(q)
     );
   }, [rules, searchQuery, categories]);
@@ -99,6 +101,7 @@ const ReglasClasificacion = () => {
 
   function openNew() {
     setEditingRule(null);
+    setRuleName('');
     setKeyword('');
     setMatchType('contains');
     setCategoryId('');
@@ -111,6 +114,7 @@ const ReglasClasificacion = () => {
 
   function openEdit(rule: ClassificationRule) {
     setEditingRule(rule);
+    setRuleName(rule.name || '');
     setKeyword(rule.keyword);
     setMatchType(rule.match_type);
     setCategoryId(rule.category_id);
@@ -125,6 +129,7 @@ const ReglasClasificacion = () => {
     if (!keyword.trim() || !categoryId) return;
 
     const data = {
+      name: ruleName.trim() || null,
       keyword: keyword.trim(),
       match_type: matchType as 'exact' | 'contains' | 'starts_with',
       category_id: categoryId,
@@ -213,6 +218,7 @@ const ReglasClasificacion = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Nombre</TableHead>
                       <TableHead>Palabra clave</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Categoría</TableHead>
@@ -225,7 +231,8 @@ const ReglasClasificacion = () => {
                   <TableBody>
                     {filteredRules.map(rule => (
                       <TableRow key={rule.id}>
-                        <TableCell className="font-medium">{rule.keyword}</TableCell>
+                        <TableCell className="font-medium">{rule.name || '—'}</TableCell>
+                        <TableCell className="max-w-[150px] truncate text-sm text-muted-foreground" title={rule.keyword}>{rule.keyword}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{MATCH_TYPE_LABELS[rule.match_type]}</Badge>
                         </TableCell>
@@ -291,6 +298,14 @@ const ReglasClasificacion = () => {
             <DialogTitle>{editingRule ? 'Editar Regla' : 'Nueva Regla de Clasificación'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nombre de la regla</Label>
+              <Input
+                value={ruleName}
+                onChange={e => setRuleName(e.target.value)}
+                placeholder="ej: Apple Suscripción, Uber Eats..."
+              />
+            </div>
             <div className="space-y-2">
               <Label>Palabra clave</Label>
               <Input

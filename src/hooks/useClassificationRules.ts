@@ -6,6 +6,7 @@ import { ClassificationMatchType, matchesClassificationRule } from '@/lib/classi
 export interface ClassificationRule {
   id: string;
   user_id: string;
+  name: string | null;
   keyword: string;
   match_type: ClassificationMatchType;
   category_id: string;
