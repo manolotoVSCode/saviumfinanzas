@@ -129,6 +129,7 @@ const ReglasClasificacion = () => {
     if (!keyword.trim() || !categoryId) return;
 
     const data = {
+      name: ruleName.trim() || null,
       keyword: keyword.trim(),
       match_type: matchType as 'exact' | 'contains' | 'starts_with',
       category_id: categoryId,
