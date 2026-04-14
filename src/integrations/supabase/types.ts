@@ -60,6 +60,7 @@ export type Database = {
           amount_min: number | null
           category_id: string
           created_at: string
+          cuenta_id: string | null
           id: string
           keyword: string
           match_type: string
@@ -74,6 +75,7 @@ export type Database = {
           amount_min?: number | null
           category_id: string
           created_at?: string
+          cuenta_id?: string | null
           id?: string
           keyword: string
           match_type?: string
@@ -88,6 +90,7 @@ export type Database = {
           amount_min?: number | null
           category_id?: string
           created_at?: string
+          cuenta_id?: string | null
           id?: string
           keyword?: string
           match_type?: string
@@ -102,6 +105,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classification_rules_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
             referencedColumns: ["id"]
           },
         ]
