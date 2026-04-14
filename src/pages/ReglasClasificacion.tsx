@@ -218,6 +218,7 @@ const ReglasClasificacion = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Nombre</TableHead>
                       <TableHead>Palabra clave</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Categoría</TableHead>
@@ -230,7 +231,8 @@ const ReglasClasificacion = () => {
                   <TableBody>
                     {filteredRules.map(rule => (
                       <TableRow key={rule.id}>
-                        <TableCell className="font-medium">{rule.keyword}</TableCell>
+                        <TableCell className="font-medium">{rule.name || '—'}</TableCell>
+                        <TableCell className="max-w-[150px] truncate text-sm text-muted-foreground" title={rule.keyword}>{rule.keyword}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{MATCH_TYPE_LABELS[rule.match_type]}</Badge>
                         </TableCell>
