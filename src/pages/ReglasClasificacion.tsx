@@ -234,7 +234,14 @@ const ReglasClasificacion = () => {
                   <TableBody>
                     {filteredRules.map(rule => (
                       <TableRow key={rule.id}>
-                        <TableCell className="font-medium">{rule.keyword}</TableCell>
+                        <TableCell className="font-medium">
+                          {rule.keyword}
+                          {(rule.amount_min != null || rule.amount_max != null) && (
+                            <span className="block text-xs text-muted-foreground">
+                              Monto: {rule.amount_min != null ? `≥${rule.amount_min}` : ''}{rule.amount_min != null && rule.amount_max != null ? ' y ' : ''}{rule.amount_max != null ? `≤${rule.amount_max}` : ''}
+                            </span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{MATCH_TYPE_LABELS[rule.match_type]}</Badge>
                         </TableCell>
@@ -337,6 +344,34 @@ const ReglasClasificacion = () => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Filtro de monto (opcional)</Label>
+              <p className="text-xs text-muted-foreground">Solo aplica la regla si el monto de la transacción está en este rango.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Mínimo</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amountMin}
+                    onChange={e => setAmountMin(e.target.value)}
+                    placeholder="Sin mínimo"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Máximo</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amountMax}
+                    onChange={e => setAmountMax(e.target.value)}
+                    placeholder="Sin máximo"
+                  />
+                </div>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Prioridad (mayor = se evalúa primero)</Label>
