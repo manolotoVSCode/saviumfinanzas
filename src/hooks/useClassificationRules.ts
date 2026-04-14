@@ -74,14 +74,20 @@ export function useClassificationRules() {
     return error;
   };
 
-  const findMatchingRule = (description: string): string | null => {
+  const findMatchingRule = (description: string, amount?: number): string | null => {
     // Rules are already sorted by priority desc
     for (const rule of rules) {
       if (!rule.active) continue;
 
-      if (matchesClassificationRule(description, rule.keyword, rule.match_type)) {
-        return rule.category_id;
-      }
+      if (!matchesClassificationRule(description, rule.keyword, rule.match_type)) continue;
+
+      // Amount filters are AND conditions — both keyword AND amount must match
+      if (rule.amount_min !== null && amount !== undefined && amount < rule.amount_min) continue;
+      if (rule.amount_max !== null && amount !== undefined && amount > rule.amount_max) continue;
+      // If rule has amount filters but no amount provided, skip this rule
+      if ((rule.amount_min !== null || rule.amount_max !== null) && amount === undefined) continue;
+
+      return rule.category_id;
     }
     return null;
   };
