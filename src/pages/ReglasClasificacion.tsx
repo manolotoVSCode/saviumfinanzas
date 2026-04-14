@@ -38,6 +38,8 @@ const ReglasClasificacion = () => {
   const [categoryId, setCategoryId] = useState('');
   const [priority, setPriority] = useState('0');
   const [active, setActive] = useState(true);
+  const [amountMin, setAmountMin] = useState('');
+  const [amountMax, setAmountMax] = useState('');
 
   // Group categories by parent for the select
   const groupedCategories = useMemo(() => {
@@ -53,12 +55,19 @@ const ReglasClasificacion = () => {
   function transactionMatchesRule(t: Transaction, rule: ClassificationRule): boolean {
     const comment = (t.comentario || '').toLowerCase();
     const kw = rule.keyword.toLowerCase().trim();
+    let textMatch = false;
     switch (rule.match_type) {
-      case 'exact': return comment === kw;
-      case 'contains': return comment.includes(kw);
-      case 'starts_with': return comment.startsWith(kw);
+      case 'exact': textMatch = comment === kw; break;
+      case 'contains': textMatch = comment.includes(kw); break;
+      case 'starts_with': textMatch = comment.startsWith(kw); break;
       default: return false;
     }
+    if (!textMatch) return false;
+    // Check amount filters
+    const absAmount = Math.abs(t.ingreso > 0 ? t.ingreso : t.gasto);
+    if (rule.amount_min != null && absAmount < rule.amount_min) return false;
+    if (rule.amount_max != null && absAmount > rule.amount_max) return false;
+    return true;
   }
 
   // Count matching transactions per rule
@@ -104,6 +113,8 @@ const ReglasClasificacion = () => {
     setCategoryId('');
     setPriority('0');
     setActive(true);
+    setAmountMin('');
+    setAmountMax('');
     setDialogOpen(true);
   }
 
@@ -114,18 +125,22 @@ const ReglasClasificacion = () => {
     setCategoryId(rule.category_id);
     setPriority(String(rule.priority));
     setActive(rule.active);
+    setAmountMin(rule.amount_min != null ? String(rule.amount_min) : '');
+    setAmountMax(rule.amount_max != null ? String(rule.amount_max) : '');
     setDialogOpen(true);
   }
 
   async function handleSave() {
     if (!keyword.trim() || !categoryId) return;
 
-    const data = {
+    const data: any = {
       keyword: keyword.trim(),
       match_type: matchType as 'exact' | 'contains' | 'starts_with',
       category_id: categoryId,
       priority: parseInt(priority) || 0,
       active,
+      amount_min: amountMin ? parseFloat(amountMin) : null,
+      amount_max: amountMax ? parseFloat(amountMax) : null,
     };
 
     if (editingRule) {
@@ -219,7 +234,14 @@ const ReglasClasificacion = () => {
                   <TableBody>
                     {filteredRules.map(rule => (
                       <TableRow key={rule.id}>
-                        <TableCell className="font-medium">{rule.keyword}</TableCell>
+                        <TableCell className="font-medium">
+                          {rule.keyword}
+                          {(rule.amount_min != null || rule.amount_max != null) && (
+                            <span className="block text-xs text-muted-foreground">
+                              Monto: {rule.amount_min != null ? `≥${rule.amount_min}` : ''}{rule.amount_min != null && rule.amount_max != null ? ' y ' : ''}{rule.amount_max != null ? `≤${rule.amount_max}` : ''}
+                            </span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{MATCH_TYPE_LABELS[rule.match_type]}</Badge>
                         </TableCell>
@@ -322,6 +344,34 @@ const ReglasClasificacion = () => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Filtro de monto (opcional)</Label>
+              <p className="text-xs text-muted-foreground">Solo aplica la regla si el monto de la transacción está en este rango.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Mínimo</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amountMin}
+                    onChange={e => setAmountMin(e.target.value)}
+                    placeholder="Sin mínimo"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Máximo</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amountMax}
+                    onChange={e => setAmountMax(e.target.value)}
+                    placeholder="Sin máximo"
+                  />
+                </div>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Prioridad (mayor = se evalúa primero)</Label>

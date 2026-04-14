@@ -56,6 +56,8 @@ export type Database = {
       classification_rules: {
         Row: {
           active: boolean
+          amount_max: number | null
+          amount_min: number | null
           category_id: string
           created_at: string
           id: string
@@ -67,6 +69,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          amount_max?: number | null
+          amount_min?: number | null
           category_id: string
           created_at?: string
           id?: string
@@ -78,6 +82,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          amount_max?: number | null
+          amount_min?: number | null
           category_id?: string
           created_at?: string
           id?: string
