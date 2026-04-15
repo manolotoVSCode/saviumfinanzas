@@ -48,6 +48,10 @@ export const AnnualPaymentsTracker = () => {
     if (saved) {
       setInactivePayments(new Set(JSON.parse(saved)));
     }
+    const savedOrder = localStorage.getItem('annual_payments_order');
+    if (savedOrder) {
+      setCustomOrder(JSON.parse(savedOrder));
+    }
   }, []);
 
   // Get categories with annual tracking (frecuencia_seguimiento = 'anual')
