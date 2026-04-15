@@ -327,7 +327,7 @@ export const AnnualPaymentsTracker = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredPayments.map((payment) => {
+            {filteredPayments.map((payment, index) => {
               const status = getPaymentStatus(payment.nextPayment);
               const isExpanded = expandedPayments.has(payment.id);
               
