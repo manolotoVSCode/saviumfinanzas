@@ -49,7 +49,7 @@ const TransaccionesCategoria = () => {
   const filteredTransactions = useMemo(() => {
     let transactions = financeData.transactions.filter(t => 
       t.divisa === divisa && 
-      t.tipo === 'Gastos' &&
+      t.tipo === tipo &&
       t.categoria !== 'Compra Venta Inmuebles'
     );
 
@@ -109,7 +109,7 @@ const TransaccionesCategoria = () => {
 
     // Ordenar por fecha descendente
     return transactions.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-  }, [financeData.transactions, categoria, subcategoria, divisa, mesIndex]);
+  }, [financeData.transactions, categoria, subcategoria, divisa, mesIndex, tipo, monthNum, yearNum]);
 
   // Calcular totales
   const totalGastos = filteredTransactions.reduce((sum, t) => sum + Math.abs(t.gasto || 0), 0);
