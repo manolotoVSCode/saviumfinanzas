@@ -112,7 +112,10 @@ const TransaccionesCategoria = () => {
   }, [financeData.transactions, categoria, subcategoria, divisa, mesIndex, tipo, monthNum, yearNum]);
 
   // Calcular totales
-  const totalGastos = filteredTransactions.reduce((sum, t) => sum + Math.abs(t.gasto || 0), 0);
+  const totalAmount = filteredTransactions.reduce((sum, t) => {
+    return sum + Math.abs(tipo === 'Ingreso' ? (t.ingreso || 0) : (t.gasto || 0));
+  }, 0);
+  const isIncome = tipo === 'Ingreso';
 
   const formatCurrencyValue = (amount: number, currency: string) => {
     return `${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)} ${currency}`;
