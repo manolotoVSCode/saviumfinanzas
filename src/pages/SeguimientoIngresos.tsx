@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, Info } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Info, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
@@ -11,6 +14,9 @@ import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 const SeguimientoIngresos = () => {
   const navigate = useNavigate();
   const financeData = useFinanceDataSupabase();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategoria, setFilterCategoria] = useState<string>('all');
+  const [filterTracking, setFilterTracking] = useState<string>('all');
 
   if (financeData.loading) {
     return (
@@ -28,6 +34,19 @@ const SeguimientoIngresos = () => {
   const incomeCategories = financeData.categories
     .filter(c => c.tipo === 'Ingreso')
     .sort((a, b) => a.categoria.localeCompare(b.categoria) || a.subcategoria.localeCompare(b.subcategoria));
+
+  const uniqueCategories = [...new Set(incomeCategories.map(c => c.categoria))].sort();
+
+  const filteredCategories = incomeCategories.filter(cat => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      if (!cat.subcategoria.toLowerCase().includes(q) && !cat.categoria.toLowerCase().includes(q)) return false;
+    }
+    if (filterCategoria !== 'all' && cat.categoria !== filterCategoria) return false;
+    if (filterTracking === 'active' && !cat.seguimiento_pago) return false;
+    if (filterTracking === 'inactive' && cat.seguimiento_pago) return false;
+    return true;
+  });
 
   const toggleTracking = (categoryId: string, currentValue: boolean) => {
     financeData.updateCategory(categoryId, { seguimiento_pago: !currentValue });
@@ -68,7 +87,40 @@ const SeguimientoIngresos = () => {
               Activa el seguimiento para monitorear la recepción de cada fuente de ingreso.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+              <div className="relative w-full sm:w-[200px]">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={filterCategoria} onValueChange={setFilterCategoria}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
+                  {uniqueCategories.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterTracking} onValueChange={setFilterTracking}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <SelectValue placeholder="Seguimiento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Con seguimiento</SelectItem>
+                  <SelectItem value="inactive">Sin seguimiento</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <Table>
               <TableHeader>
                 <TableRow>
@@ -78,18 +130,26 @@ const SeguimientoIngresos = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {incomeCategories.map(cat => (
-                  <TableRow key={cat.id}>
-                    <TableCell className="font-medium">{cat.subcategoria}</TableCell>
-                    <TableCell className="text-muted-foreground">{cat.categoria}</TableCell>
-                    <TableCell className="text-center">
-                      <Switch
-                        checked={cat.seguimiento_pago || false}
-                        onCheckedChange={() => toggleTracking(cat.id, cat.seguimiento_pago || false)}
-                      />
+                {filteredCategories.length > 0 ? (
+                  filteredCategories.map(cat => (
+                    <TableRow key={cat.id}>
+                      <TableCell className="font-medium">{cat.subcategoria}</TableCell>
+                      <TableCell className="text-muted-foreground">{cat.categoria}</TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={cat.seguimiento_pago || false}
+                          onCheckedChange={() => toggleTracking(cat.id, cat.seguimiento_pago || false)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                      No se encontraron subcategorías con los filtros seleccionados.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </CardContent>
