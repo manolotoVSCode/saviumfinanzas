@@ -820,88 +820,109 @@ const CategoryItem = ({
       />
 
       {/* 1. GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES CON MEDIAS */}
-      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="text-center">{t('dashboard.income_vs_expenses')} - Últimos 12 Meses<br className="sm:hidden" /><strong className="block sm:inline"> {selectedCurrency}</strong></CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart 
-                data={filteredMetrics.tendenciaMensual}
-                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="mes" 
-                  tick={{ fontSize: 12 }}
-                  className="text-muted-foreground"
-                />
-                <YAxis 
-                  tick={false}
-                  className="text-muted-foreground"
-                  width={0}
-                />
-                <Tooltip 
-                  formatter={(value: any, name: string) => [
-                    formatCurrencyConsistent(Number(value), selectedCurrency), 
-                    name === 'ingresos' ? t('transactions.income') : name === 'gastos' ? t('transactions.expense') : 'Balance'
-                  ]}
-                  labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--background))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
-                  }}
-                />
-                <Bar 
-                  dataKey="ingresos" 
-                  fill="hsl(var(--success))" 
-                  radius={[2, 2, 0, 0]}
-                  name="ingresos"
-                />
-                <Bar 
-                  dataKey="gastos" 
-                  fill="hsl(var(--destructive))" 
-                  radius={[2, 2, 0, 0]}
-                  name="gastos"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="balance" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                  name="Balance"
-                />
-                {/* Líneas de media */}
-                <ReferenceLine 
-                  y={filteredMetrics.avgIngresos} 
-                  stroke="hsl(var(--success))" 
-                  strokeDasharray="5 5" 
-                  strokeWidth={2}
-                />
-                <ReferenceLine 
-                  y={filteredMetrics.avgGastos} 
-                  stroke="hsl(var(--destructive))" 
-                  strokeDasharray="5 5" 
-                  strokeWidth={2}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
-              <span>{t('transactions.income')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)})</span></span>
+      {!isMobile ? (
+        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="text-center">{t('dashboard.income_vs_expenses')} - Últimos 12 Meses<br className="sm:hidden" /><strong className="block sm:inline"> {selectedCurrency}</strong></CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart 
+                  data={filteredMetrics.tendenciaMensual}
+                  margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis 
+                    dataKey="mes" 
+                    tick={{ fontSize: 12 }}
+                    className="text-muted-foreground"
+                  />
+                  <YAxis 
+                    tick={false}
+                    className="text-muted-foreground"
+                    width={0}
+                  />
+                  <Tooltip 
+                    formatter={(value: any, name: string) => [
+                      formatCurrencyConsistent(Number(value), selectedCurrency), 
+                      name === 'ingresos' ? t('transactions.income') : name === 'gastos' ? t('transactions.expense') : 'Balance'
+                    ]}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--background))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="ingresos" 
+                    fill="hsl(var(--success))" 
+                    radius={[2, 2, 0, 0]}
+                    name="ingresos"
+                  />
+                  <Bar 
+                    dataKey="gastos" 
+                    fill="hsl(var(--destructive))" 
+                    radius={[2, 2, 0, 0]}
+                    name="gastos"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="balance" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={3}
+                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                    name="Balance"
+                  />
+                  <ReferenceLine 
+                    y={filteredMetrics.avgIngresos} 
+                    stroke="hsl(var(--success))" 
+                    strokeDasharray="5 5" 
+                    strokeWidth={2}
+                  />
+                  <ReferenceLine 
+                    y={filteredMetrics.avgGastos} 
+                    stroke="hsl(var(--destructive))" 
+                    strokeDasharray="5 5" 
+                    strokeWidth={2}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
-              <span>{t('transactions.expense')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
+                <span>{t('transactions.income')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)})</span></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
+                <span>{t('transactions.expense')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-center text-base">Media últimos 12 meses · {selectedCurrency}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-around text-sm">
+              <div className="text-center">
+                <div className="w-3 h-3 rounded mx-auto mb-1" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
+                <p className="text-muted-foreground text-xs">{t('transactions.income')}</p>
+                <p className="font-bold text-success">{formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)}</p>
+              </div>
+              <div className="text-center">
+                <div className="w-3 h-3 rounded mx-auto mb-1" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
+                <p className="text-muted-foreground text-xs">{t('transactions.expense')}</p>
+                <p className="font-bold text-destructive">{formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {!isMobile && <>
       {/* DONUT CHART + SAVINGS RATE */}
