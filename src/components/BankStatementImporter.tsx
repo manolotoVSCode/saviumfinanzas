@@ -379,8 +379,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'importe cargo'].includes(h));
     const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
     const tarjetahabienteCol = headerLower.findIndex(h => {
-      const normalized = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return ['tarjetahabiente', 'titular', 'nombre titular', 'cardholder', 'nombre tarjetahabiente', 'nombre del tarjetahabiente', 'tarjeta habiente'].includes(normalized);
+      const normalized = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      return ['tarjetahabiente', 'titular', 'nombre titular', 'cardholder', 'nombre tarjetahabiente', 'nombre del tarjetahabiente', 'tarjeta habiente', 'titular de la tarjeta', 'titular tarjeta', 'card member', 'card member name', 'member name', 'nombre del titular', 'titulartarjeta'].includes(normalized);
     });
 
     const dataRows = hasHeader ? rows.slice(1) : rows;
@@ -540,8 +540,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'importe cargo'].includes(h));
     const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
     const tarjetahabienteColExcel = headerLower.findIndex(h => {
-      const normalized = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return ['tarjetahabiente', 'titular', 'nombre titular', 'cardholder', 'nombre tarjetahabiente', 'nombre del tarjetahabiente', 'tarjeta habiente'].includes(normalized);
+      const normalized = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      return ['tarjetahabiente', 'titular', 'nombre titular', 'cardholder', 'nombre tarjetahabiente', 'nombre del tarjetahabiente', 'tarjeta habiente', 'titular de la tarjeta', 'titular tarjeta', 'card member', 'card member name', 'member name', 'nombre del titular', 'titulartarjeta'].includes(normalized);
     });
 
     // Get data rows (skip header if detected)
