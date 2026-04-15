@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import Layout from '@/components/Layout';
 import { ProfileEditor } from '@/components/ProfileEditor';
+import { Changelog } from '@/components/Changelog';
 import { AdminUserManagement } from '@/components/AdminUserManagement';
 import { DataAudit } from '@/components/DataAudit';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
