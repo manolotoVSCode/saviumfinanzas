@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '6.4',
+    date: 'Abril 2026',
+    changes: [
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Onboarding guiado: tour interactivo con spotlight para nuevos usuarios', type: 'feature' },
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Dashboard móvil: solo KPIs, medias 12 meses y activos/pasivos', type: 'improvement' },
+      { icon: <Zap className="h-4 w-4" />, text: 'Changelog y Términos accesibles desde el sidebar', type: 'improvement' },
+    ],
+  },
+  {
     version: '6.3',
     date: 'Abril 2026',
     changes: [
