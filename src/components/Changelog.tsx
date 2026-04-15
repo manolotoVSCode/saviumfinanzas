@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sparkles, Shield, BarChart3, Upload, Wallet, Tag, Globe, Users, Bug, Zap } from 'lucide-react';
 
 interface ChangelogEntry {
@@ -103,7 +102,7 @@ const typeBadge = (type: 'feature' | 'fix' | 'improvement') => {
 
 export const Changelog = () => {
   return (
-    <ScrollArea className="h-[500px] pr-4">
+    <div className="space-y-6">
       <div className="space-y-6">
         {changelog.map((entry) => (
           <div key={entry.version} className="space-y-2">
@@ -123,6 +122,6 @@ export const Changelog = () => {
           </div>
         ))}
       </div>
-    </ScrollArea>
+    </div>
   );
 };
