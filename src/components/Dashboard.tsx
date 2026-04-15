@@ -167,7 +167,7 @@ interface DashboardProps {
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const navigate = useNavigate();
-  const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+  const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>(currencyCode as 'MXN' | 'USD' | 'EUR');
   const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
   const { t } = useLanguage();
   const isMobile = useIsMobile();
