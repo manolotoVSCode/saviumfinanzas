@@ -593,22 +593,21 @@ export const TransactionsManager = ({
                     checked={isReimbursement}
                     onCheckedChange={(checked) => {
                       setIsReimbursement(checked as boolean);
-                      // Si es reembolso, forzar filtro a Gastos y convertir gasto a ingreso
                       if (checked) {
                         setCategoryTypeFilter('Gastos');
-                        // Convertir el gasto actual a ingreso si existe
                         const currentGasto = formData.gasto || 0;
                         const currentIngreso = formData.ingreso || 0;
+                        // Mantener la categoría si ya es tipo Gastos
+                        const currentCat = categories.find(c => c.id === formData.subcategoriaId);
+                        const keepCategory = currentCat?.tipo === 'Gastos';
                         setFormData({ 
                           ...formData, 
-                          subcategoriaId: '', 
+                          subcategoriaId: keepCategory ? formData.subcategoriaId : '', 
                           ingreso: currentGasto > 0 ? currentGasto : currentIngreso,
                           gasto: 0 
                         });
                       } else {
                         setCategoryTypeFilter('all');
-                        // Al desmarcar, NO borrar el ingreso, solo limpiar categoría
-                        setFormData({ ...formData, subcategoriaId: '' });
                       }
                     }}
                   />
