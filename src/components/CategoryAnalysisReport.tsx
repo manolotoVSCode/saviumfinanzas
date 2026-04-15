@@ -6,6 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { TrendingUp, TrendingDown, ArrowRightLeft, ArrowDownCircle, Calendar, Filter, Sun, LayoutGrid, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Treemap, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart as RechartsPieChart, Pie, Cell, Legend } from 'recharts';
 import { useAppConfig } from '@/hooks/useAppConfig';
 
 interface Transaction {
