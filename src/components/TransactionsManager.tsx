@@ -97,7 +97,8 @@ export const TransactionsManager = ({
       maxAmount: '',
       importadas: 'all',
       montos: 'all',
-      reembolsos: 'all' // 'all' | 'solo' | 'excluir'
+      reembolsos: 'all',
+      tarjetahabiente: 'all'
     };
   });
 
@@ -219,7 +220,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '', importadas: 'all', montos: 'all', reembolsos: 'all' });
+    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '', importadas: 'all', montos: 'all', reembolsos: 'all', tarjetahabiente: 'all' });
   };
 
   const resetForm = () => {
