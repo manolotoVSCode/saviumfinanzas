@@ -31,6 +31,7 @@ const TransaccionesCategoria = () => {
   const mesIndex = searchParams.get('mes');
   const monthNum = searchParams.get('monthNum');
   const yearNum = searchParams.get('yearNum');
+  const tipo = searchParams.get('tipo') || 'Gastos';
 
   // Obtener categorías únicas agrupadas
   const categoriesGrouped = useMemo(() => {
@@ -48,7 +49,7 @@ const TransaccionesCategoria = () => {
   const filteredTransactions = useMemo(() => {
     let transactions = financeData.transactions.filter(t => 
       t.divisa === divisa && 
-      t.tipo === 'Gastos' &&
+      t.tipo === tipo &&
       t.categoria !== 'Compra Venta Inmuebles'
     );
 
@@ -108,10 +109,13 @@ const TransaccionesCategoria = () => {
 
     // Ordenar por fecha descendente
     return transactions.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-  }, [financeData.transactions, categoria, subcategoria, divisa, mesIndex]);
+  }, [financeData.transactions, categoria, subcategoria, divisa, mesIndex, tipo, monthNum, yearNum]);
 
   // Calcular totales
-  const totalGastos = filteredTransactions.reduce((sum, t) => sum + Math.abs(t.gasto || 0), 0);
+  const totalAmount = filteredTransactions.reduce((sum, t) => {
+    return sum + Math.abs(tipo === 'Ingreso' ? (t.ingreso || 0) : (t.gasto || 0));
+  }, 0);
+  const isIncome = tipo === 'Ingreso';
 
   const formatCurrencyValue = (amount: number, currency: string) => {
     return `${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)} ${currency}`;
@@ -178,8 +182,8 @@ const TransaccionesCategoria = () => {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between">
               <span className="text-lg">Resumen</span>
-              <span className="text-destructive font-bold text-xl">
-                {formatCurrencyValue(totalGastos, divisa)}
+              <span className={`${isIncome ? 'text-success' : 'text-destructive'} font-bold text-xl`}>
+                {formatCurrencyValue(totalAmount, divisa)}
               </span>
             </CardTitle>
           </CardHeader>
@@ -261,8 +265,8 @@ const TransaccionesCategoria = () => {
                             {t.comentario || <span className="text-muted-foreground italic">Sin notas</span>}
                           </p>
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-destructive whitespace-nowrap">
-                          {formatCurrencyValue(Math.abs(t.gasto || 0), t.divisa || divisa)}
+                        <TableCell className={`text-right font-semibold whitespace-nowrap ${isIncome ? 'text-success' : 'text-destructive'}`}>
+                          {formatCurrencyValue(Math.abs(isIncome ? (t.ingreso || 0) : (t.gasto || 0)), t.divisa || divisa)}
                         </TableCell>
                         <TableCell>
                           <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -303,7 +307,7 @@ const TransaccionesCategoria = () => {
                       day: 'numeric', 
                       month: 'long',
                       year: 'numeric'
-                    })} • {formatCurrencyValue(Math.abs(editingTransaction.gasto || 0), editingTransaction.divisa || 'MXN')}
+                    })} • {formatCurrencyValue(Math.abs(isIncome ? (editingTransaction.ingreso || 0) : (editingTransaction.gasto || 0)), editingTransaction.divisa || 'MXN')}
                   </p>
                 </div>
                 

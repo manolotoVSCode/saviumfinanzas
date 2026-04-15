@@ -42,6 +42,7 @@ export const DashboardDonutChart = ({
       periodo: `${MONTHS[selectedMonth]} ${selectedMonthYear}`,
       monthNum: selectedMonth.toString(),
       yearNum: selectedMonthYear.toString(),
+      tipo: viewType,
     });
     navigate(`/transacciones-categoria?${params.toString()}`);
   };
