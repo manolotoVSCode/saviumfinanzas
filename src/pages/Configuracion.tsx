@@ -23,6 +23,7 @@ const Configuracion = () => {
   const { signOut, user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
+  const { reset: resetTour } = useOnboardingTour();
 
   // UI-only admin check — actual access control is enforced server-side via user_roles table
   const [showAdminUI, setShowAdminUI] = useState(false);
@@ -71,11 +72,9 @@ const Configuracion = () => {
               Reglas de Clasificación
             </Button>
             <StartTourButton onClick={() => {
-              const { reset } = useOnboardingTour();
-              reset();
+              resetTour();
               navigate('/dashboard');
             }} />
-            </Button>
           </div>
         </div>
 
