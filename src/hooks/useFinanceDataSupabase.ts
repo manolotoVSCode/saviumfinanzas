@@ -165,7 +165,7 @@ export const useFinanceDataSupabase = () => {
     });
   }, [transactions, categoryMap]);
 
-  // Funciones auxiliares para el cálculo de score financiero (definidas antes del useMemo)
+  // Funciones auxiliares para el cálculo de score financiero
   const calcularScoreFinanciero = (
     activos: any, 
     pasivos: any, 
@@ -178,66 +178,37 @@ export const useFinanceDataSupabase = () => {
     let score = 0;
     let detalles: any = {};
     
-    console.log('=== CÁLCULO SCORE FINANCIERO ===');
-    console.log('Activos:', activos);
-    console.log('Pasivos:', pasivos);
-    console.log('Balance mes:', balanceMes);
-    console.log('Ahorro target:', ahorroTarget);
-    console.log('Gastos promedio mensual:', gastosPromedioMensual);
-    
-    // 1. Liquidez (20 puntos) - Efectivo/Bancos vs Gastos Mensuales
+    // 1. Liquidez (20 puntos)
     const ratioLiquidez = gastosPromedioMensual > 0 ? activos.efectivoBancos / gastosPromedioMensual : 0;
-    console.log('Ratio liquidez (meses de gastos):', ratioLiquidez);
     let puntosLiquidez = 0;
-    if (ratioLiquidez >= 6) puntosLiquidez = 20; // 6+ meses de gastos
-    else if (ratioLiquidez >= 3) puntosLiquidez = 15; // 3-6 meses
-    else if (ratioLiquidez >= 1) puntosLiquidez = 10; // 1-3 meses
-    else puntosLiquidez = 5; // Menos de 1 mes
+    if (ratioLiquidez >= 6) puntosLiquidez = 20;
+    else if (ratioLiquidez >= 3) puntosLiquidez = 15;
+    else if (ratioLiquidez >= 1) puntosLiquidez = 10;
+    else puntosLiquidez = 5;
     score += puntosLiquidez;
-    detalles.liquidez = {
-      puntos: puntosLiquidez,
-      maxPuntos: 20,
-      ratio: ratioLiquidez,
-      mesesCobertura: ratioLiquidez.toFixed(1)
-    };
-    console.log('Puntos por liquidez:', puntosLiquidez);
+    detalles.liquidez = { puntos: puntosLiquidez, maxPuntos: 20, ratio: ratioLiquidez, mesesCobertura: ratioLiquidez.toFixed(1) };
     
-    // 2. Capacidad de Ahorro (25 puntos) - Balance mensual vs objetivo
+    // 2. Capacidad de Ahorro (25 puntos)
     const ratioAhorro = ahorroTarget > 0 ? balanceMesAnterior / ahorroTarget : 0;
-    console.log('Ratio ahorro:', ratioAhorro);
     let puntosAhorro = 0;
-    if (ratioAhorro >= 1.5) puntosAhorro = 25; // 150%+ del objetivo
-    else if (ratioAhorro >= 1) puntosAhorro = 20; // 100%+ del objetivo
-    else if (ratioAhorro >= 0.5) puntosAhorro = 15; // 50%+ del objetivo
-    else if (ratioAhorro > 0) puntosAhorro = 8; // Algo de ahorro
+    if (ratioAhorro >= 1.5) puntosAhorro = 25;
+    else if (ratioAhorro >= 1) puntosAhorro = 20;
+    else if (ratioAhorro >= 0.5) puntosAhorro = 15;
+    else if (ratioAhorro > 0) puntosAhorro = 8;
     score += puntosAhorro;
-    detalles.ahorro = {
-      puntos: puntosAhorro,
-      maxPuntos: 25,
-      ratio: ratioAhorro,
-      porcentaje: (ratioAhorro * 100).toFixed(1)
-    };
-    console.log('Puntos por ahorro:', puntosAhorro);
+    detalles.ahorro = { puntos: puntosAhorro, maxPuntos: 25, ratio: ratioAhorro, porcentaje: (ratioAhorro * 100).toFixed(1) };
     
-    // 3. Endeudamiento (25 puntos) - Ratio de deuda
+    // 3. Endeudamiento (25 puntos)
     const ratioDeuda = activos.total > 0 ? pasivos.total / activos.total : 0;
-    console.log('Ratio deuda:', ratioDeuda);
     let puntosEndeudamiento = 0;
-    if (ratioDeuda <= 0.1) puntosEndeudamiento = 25; // Deuda mínima (≤10%)
-    else if (ratioDeuda <= 0.3) puntosEndeudamiento = 20; // Deuda baja (≤30%)
-    else if (ratioDeuda <= 0.5) puntosEndeudamiento = 12; // Deuda moderada (≤50%)
-    else if (ratioDeuda <= 0.7) puntosEndeudamiento = 5; // Deuda alta (≤70%)
-    else puntosEndeudamiento = 0; // Deuda crítica (>70%)
+    if (ratioDeuda <= 0.1) puntosEndeudamiento = 25;
+    else if (ratioDeuda <= 0.3) puntosEndeudamiento = 20;
+    else if (ratioDeuda <= 0.5) puntosEndeudamiento = 12;
+    else if (ratioDeuda <= 0.7) puntosEndeudamiento = 5;
     score += puntosEndeudamiento;
-    detalles.endeudamiento = {
-      puntos: puntosEndeudamiento,
-      maxPuntos: 25,
-      ratio: ratioDeuda,
-      porcentaje: (ratioDeuda * 100).toFixed(1)
-    };
-    console.log('Puntos por endeudamiento:', puntosEndeudamiento);
+    detalles.endeudamiento = { puntos: puntosEndeudamiento, maxPuntos: 25, ratio: ratioDeuda, porcentaje: (ratioDeuda * 100).toFixed(1) };
     
-    // 4. Rendimiento de Inversiones (15 puntos) - Rendimiento anualizado
+    // 4. Rendimiento de Inversiones (15 puntos)
     let rendimientoPromedio = 0;
     let inversionesTotales = 0;
     cuentasInversiones.forEach((cuenta: any) => {
@@ -247,36 +218,19 @@ export const useFinanceDataSupabase = () => {
       }
     });
     rendimientoPromedio = inversionesTotales > 0 ? rendimientoPromedio / inversionesTotales : 0;
-    console.log('Rendimiento promedio inversiones:', rendimientoPromedio, 'de', inversionesTotales, 'cuentas');
     let puntosRendimiento = 0;
-    if (rendimientoPromedio >= 10) puntosRendimiento = 15; // ≥10% anual
-    else if (rendimientoPromedio >= 7) puntosRendimiento = 12; // ≥7% anual
-    else if (rendimientoPromedio >= 4) puntosRendimiento = 8; // ≥4% anual
-    else if (rendimientoPromedio >= 0) puntosRendimiento = 4; // Positivo pero <4%
-    else puntosRendimiento = 0; // Negativo
+    if (rendimientoPromedio >= 10) puntosRendimiento = 15;
+    else if (rendimientoPromedio >= 7) puntosRendimiento = 12;
+    else if (rendimientoPromedio >= 4) puntosRendimiento = 8;
+    else if (rendimientoPromedio >= 0) puntosRendimiento = 4;
     score += puntosRendimiento;
-    detalles.rendimientoInversiones = {
-      puntos: puntosRendimiento,
-      maxPuntos: 15,
-      rendimiento: rendimientoPromedio,
-      porcentaje: rendimientoPromedio.toFixed(1)
-    };
-    console.log('Puntos por rendimiento inversiones:', puntosRendimiento);
+    detalles.rendimientoInversiones = { puntos: puntosRendimiento, maxPuntos: 15, rendimiento: rendimientoPromedio, porcentaje: rendimientoPromedio.toFixed(1) };
     
-    // 5. Diversificación (15 puntos) - Tipos de activos
+    // 5. Diversificación (15 puntos)
     let puntosDiversificacion = 0;
-    if (activos.inversiones > 0) {
-      puntosDiversificacion += 7;
-      console.log('Tiene inversiones +7 puntos');
-    }
-    if (activos.bienRaiz > 0) {
-      puntosDiversificacion += 5;
-      console.log('Tiene bienes raíces +5 puntos');
-    }
-    if (activos.empresasPrivadas > 0) {
-      puntosDiversificacion += 3;
-      console.log('Tiene empresas privadas +3 puntos');
-    }
+    if (activos.inversiones > 0) puntosDiversificacion += 7;
+    if (activos.bienRaiz > 0) puntosDiversificacion += 5;
+    if (activos.empresasPrivadas > 0) puntosDiversificacion += 3;
     score += puntosDiversificacion;
     detalles.diversificacion = {
       puntos: puntosDiversificacion,
@@ -288,15 +242,8 @@ export const useFinanceDataSupabase = () => {
         activos.empresasPrivadas > 0 ? 'Empresas Privadas' : null
       ].filter(Boolean)
     };
-    console.log('Puntos por diversificación:', puntosDiversificacion);
     
-    const finalScore = Math.min(100, score);
-    console.log('Score final antes de límite:', score);
-    console.log('Score final:', finalScore);
-    console.log('Detalles:', detalles);
-    console.log('=== FIN CÁLCULO SCORE ===');
-    
-    return { score: finalScore, detalles };
+    return { score: Math.min(100, score), detalles };
   };
 
   const generateRecommendations = (activos: any, pasivos: any, balanceMes: number, ahorroTarget: number) => {
