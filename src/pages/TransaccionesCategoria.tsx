@@ -307,7 +307,7 @@ const TransaccionesCategoria = () => {
                       day: 'numeric', 
                       month: 'long',
                       year: 'numeric'
-                    })} • {formatCurrencyValue(Math.abs(editingTransaction.gasto || 0), editingTransaction.divisa || 'MXN')}
+                    })} • {formatCurrencyValue(Math.abs(isIncome ? (editingTransaction.ingreso || 0) : (editingTransaction.gasto || 0)), editingTransaction.divisa || 'MXN')}
                   </p>
                 </div>
                 
