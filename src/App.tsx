@@ -17,6 +17,7 @@ import TransaccionesCategoria from "./pages/TransaccionesCategoria";
 import ReglasClasificacion from "./pages/ReglasClasificacion";
 import Cuentas from "./pages/Cuentas";
 import Categorias from "./pages/Categorias";
+import ChangelogPage from "./pages/ChangelogPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,6 +80,11 @@ const App = () => (
               <Route path="/categorias" element={
                 <ProtectedRoute>
                   <Categorias />
+                </ProtectedRoute>
+              } />
+              <Route path="/changelog" element={
+                <ProtectedRoute>
+                  <ChangelogPage />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
