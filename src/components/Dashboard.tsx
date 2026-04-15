@@ -903,6 +903,7 @@ const CategoryItem = ({
         </CardContent>
       </Card>
 
+      {!isMobile && <>
       {/* DONUT CHART + SAVINGS RATE */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardDonutChart
