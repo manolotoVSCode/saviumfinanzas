@@ -12,7 +12,8 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Settings, LogOut, Trash2, Globe, Search, Wallet, Tag, Filter } from 'lucide-react';
+import { Settings, LogOut, Trash2, Globe, Search, Wallet, Tag, Filter, Sparkles } from 'lucide-react';
+import { useOnboardingTour, StartTourButton } from '@/components/OnboardingTour';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +23,7 @@ const Configuracion = () => {
   const { signOut, user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
+  const { reset: resetTour } = useOnboardingTour();
 
   // UI-only admin check — actual access control is enforced server-side via user_roles table
   const [showAdminUI, setShowAdminUI] = useState(false);
@@ -69,6 +71,10 @@ const Configuracion = () => {
               <Filter className="h-4 w-4 mr-1" />
               Reglas de Clasificación
             </Button>
+            <StartTourButton onClick={() => {
+              resetTour();
+              navigate('/dashboard');
+            }} />
           </div>
         </div>
 
