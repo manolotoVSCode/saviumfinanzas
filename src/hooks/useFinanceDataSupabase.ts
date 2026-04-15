@@ -497,47 +497,16 @@ export const useFinanceDataSupabase = () => {
       
       const monthTransactions = enrichedTransactions.filter(t => t.fecha >= monthStart && t.fecha <= monthEnd);
       
-      // Debug log para septiembre 2025
-      const monthLabel = date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
-      if (monthLabel === 'sep 25') {
-        console.log('=== DEBUG SEPTIEMBRE 2025 ===');
-        console.log('Total transacciones del mes:', monthTransactions.length);
-        const ingresosCompraVenta = monthTransactions.filter(t => 
-          t.tipo === 'Ingreso' && t.categoria === 'Compra Venta Inmuebles'
-        );
-        console.log('Ingresos de Compra Venta Inmuebles encontrados:', ingresosCompraVenta.length);
-        ingresosCompraVenta.forEach(t => {
-          console.log('- Transacción:', {
-            fecha: t.fecha,
-            categoria: t.categoria,
-            subcategoria: t.subcategoria,
-            ingreso: t.ingreso,
-            divisa: t.divisa
-          });
-        });
-      }
-      
-      // Convertir todos los ingresos y gastos a MXN para el dashboard
-      // Reembolso = ingreso > 0 asociado a categoría tipo 'Gastos'
       const reembolsosMesTendencia = monthTransactions
         .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
         .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
       
       const ingresos = monthTransactions
-        .filter(t => 
-          t.tipo === 'Ingreso' && 
-          t.categoria !== 'Compra Venta Inmuebles'
-        )
+        .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
         .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
       const gastos = monthTransactions
         .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
         .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMesTendencia;
-      
-      // Debug log para septiembre 2025 - resultado final
-      if (monthLabel === 'sep 25') {
-        console.log('Ingresos calculados (sin Compra Venta):', ingresos);
-        console.log('=== FIN DEBUG SEPTIEMBRE 2025 ===');
-      }
       
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
