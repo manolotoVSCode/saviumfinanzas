@@ -20,10 +20,6 @@ const currencies = [
   { value: 'MXN', label: 'MXN - Peso Mexicano' },
   { value: 'USD', label: 'USD - Dólar Americano' },
   { value: 'EUR', label: 'EUR - Euro' },
-  { value: 'GBP', label: 'GBP - Libra Esterlina' },
-  { value: 'CAD', label: 'CAD - Dólar Canadiense' },
-  { value: 'AUD', label: 'AUD - Dólar Australiano' },
-  { value: 'JPY', label: 'JPY - Yen Japonés' },
 ];
 
 const profileSchema = z.object({
