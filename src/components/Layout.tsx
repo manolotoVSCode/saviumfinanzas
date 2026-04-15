@@ -126,7 +126,7 @@ const Layout = ({ children }: LayoutProps) => {
                 <p className="text-sm font-medium truncate">
                   {profile.nombre} {profile.apellidos}
                 </p>
-                <p className="text-xs text-muted-foreground">v6.3 · Proyecto personal · MT</p>
+                <p className="text-xs text-muted-foreground">v6.3 · Proyecto personal de MT</p>
               </div>
             )}
             <div className="flex items-center gap-3 px-3">
