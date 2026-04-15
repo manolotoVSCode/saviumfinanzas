@@ -195,6 +195,19 @@ export const AnnualPaymentsTracker = () => {
     setExpandedPayments(newExpanded);
   };
 
+  const movePayment = (paymentId: string, direction: 'up' | 'down') => {
+    const currentList = filteredPayments;
+    const currentIndex = currentList.findIndex(p => p.id === paymentId);
+    if (currentIndex === -1) return;
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= currentList.length) return;
+    
+    const newOrder = currentList.map(p => p.id);
+    [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
+    setCustomOrder(newOrder);
+    localStorage.setItem('annual_payments_order', JSON.stringify(newOrder));
+  };
+
   const filteredPayments = useMemo(() => {
     return trackedPayments.filter(p => showInactive || p.active);
   }, [trackedPayments, showInactive]);
