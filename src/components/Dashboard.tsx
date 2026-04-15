@@ -1353,6 +1353,7 @@ const CategoryItem = ({
           <p className="text-sm text-muted-foreground">Este módulo está temporalmente inhabilitado.</p>
         </CardHeader>
       </Card>
+      </>}
 
     </div>
   );
