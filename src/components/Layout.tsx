@@ -126,8 +126,17 @@ const Layout = ({ children }: LayoutProps) => {
                 <p className="text-sm font-medium truncate">
                   {profile.nombre} {profile.apellidos}
                 </p>
+                <p className="text-xs text-muted-foreground">v6.3 · Proyecto personal</p>
               </div>
             )}
+            <div className="flex items-center justify-between px-3">
+              <button
+                onClick={() => navigate('/terminos')}
+                className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+              >
+                Términos y condiciones
+              </button>
+            </div>
             <Button
               variant="ghost"
               size="sm"

@@ -9,6 +9,17 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '6.3',
+    date: 'Abril 2026',
+    changes: [
+      { icon: <BarChart3 className="h-4 w-4" />, text: 'Gráficos interactivos en dashboard: dona clickeable con drill-down a transacciones', type: 'feature' },
+      { icon: <Zap className="h-4 w-4" />, text: 'Optimización de hooks: singleton cache en exchange rates, Map lookups O(1), limpieza de logs', type: 'improvement' },
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Dashboard móvil simplificado: solo KPIs y gráfica principal', type: 'improvement' },
+      { icon: <Shield className="h-4 w-4" />, text: 'Términos y condiciones integrados', type: 'feature' },
+      { icon: <Bug className="h-4 w-4" />, text: 'Corrección de navegación desde dona del dashboard al mes correcto', type: 'fix' },
+    ],
+  },
+  {
     version: '6.2',
     date: 'Abril 2026',
     changes: [
