@@ -340,7 +340,27 @@ export const AnnualPaymentsTracker = () => {
                   <div className={`rounded-lg border transition-colors ${payment.active ? 'bg-card hover:bg-muted/5' : 'bg-muted/20 border-muted opacity-60'}`}>
                     <div className="p-4">
                       <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3 flex-1">
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className="flex flex-col gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              disabled={index === 0}
+                              onClick={(e) => { e.stopPropagation(); movePayment(payment.id, 'up'); }}
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              disabled={index === filteredPayments.length - 1}
+                              onClick={(e) => { e.stopPropagation(); movePayment(payment.id, 'down'); }}
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                          </div>
                           <Checkbox
                             checked={payment.active}
                             onCheckedChange={() => toggleActive(payment.id)}
