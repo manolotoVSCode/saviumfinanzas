@@ -182,8 +182,8 @@ const TransaccionesCategoria = () => {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between">
               <span className="text-lg">Resumen</span>
-              <span className="text-destructive font-bold text-xl">
-                {formatCurrencyValue(totalGastos, divisa)}
+              <span className={`${isIncome ? 'text-success' : 'text-destructive'} font-bold text-xl`}>
+                {formatCurrencyValue(totalAmount, divisa)}
               </span>
             </CardTitle>
           </CardHeader>
