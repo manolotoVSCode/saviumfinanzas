@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Shield, BarChart3, Upload, Wallet, Tag, Globe, Users, Bug, Zap } from 'lucide-react';
-import { Sparkles, Shield, BarChart3, Upload, Wallet, Tag, Globe, Users, Bug, Zap } from 'lucide-react';
 
 interface ChangelogEntry {
   version: string;
