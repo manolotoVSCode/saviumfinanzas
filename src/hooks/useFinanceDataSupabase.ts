@@ -769,8 +769,6 @@ export const useFinanceDataSupabase = () => {
         if (account.valorMercado) accountData.valor_mercado = account.valorMercado;
       }
 
-      console.log('=== CREAR CUENTA ===');
-      console.log('Datos a insertar:', accountData);
 
       const { data, error } = await supabase
         .from('cuentas')
@@ -782,7 +780,6 @@ export const useFinanceDataSupabase = () => {
         throw error;
       }
 
-      console.log('Cuenta creada exitosamente:', data);
 
       // Recargar datos
       loadData();
@@ -827,9 +824,6 @@ export const useFinanceDataSupabase = () => {
       if (updates.ultimo_pago) updateData.ultimo_pago = updates.ultimo_pago;
       if (updates.valorMercado !== undefined) updateData.valor_mercado = updates.valorMercado;
 
-      console.log('=== ACTUALIZAR CUENTA ===');
-      console.log('ID:', id);
-      console.log('Datos a actualizar:', updateData);
 
       const { data, error } = await supabase
         .from('cuentas')
@@ -846,7 +840,6 @@ export const useFinanceDataSupabase = () => {
         throw new Error('No se encontró la cuenta para actualizar');
       }
 
-      console.log('Cuenta actualizada exitosamente:', data[0]);
 
       // Recargar datos
       loadData();
