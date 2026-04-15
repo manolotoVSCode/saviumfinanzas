@@ -201,9 +201,10 @@ const Layout = ({ children }: LayoutProps) => {
         {/* BOTTOM NAV */}
         <nav className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
           <div className="grid grid-cols-5 h-full">
-            {mobileNavItems.map(({ path, icon: Icon, label }) => (
+            {mobileNavItems.map(({ path, icon: Icon, label, tourId }) => (
               <button
                 key={path}
+                data-tour={tourId}
                 onClick={() => navigate(path)}
                 className={cn(
                   'flex flex-col items-center justify-center space-y-1 h-full transition-colors',
