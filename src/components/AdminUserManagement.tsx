@@ -14,9 +14,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
+const MASTER_EMAIL = 'manoloto@hotmail.com';
+
 interface UserStats {
   id: string;
   user_id: string;
+  email: string;
   nombre: string;
   apellidos: string;
   divisa_preferida: string;
@@ -73,8 +76,9 @@ export const AdminUserManagement = () => {
 
       // Transform the data to match the expected UserStats interface
       const transformedUsers: UserStats[] = (usersData || []).map((user: any) => ({
-        id: user.user_id, // Using user_id as id since we need it for the key
+        id: user.user_id,
         user_id: user.user_id,
+        email: user.email || '',
         nombre: user.nombre,
         apellidos: user.apellidos,
         divisa_preferida: user.divisa_preferida,
@@ -339,6 +343,9 @@ export const AdminUserManagement = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
+                      {user.email.toLowerCase() === MASTER_EMAIL ? (
+                        <Badge variant="outline" className="text-xs">Master</Badge>
+                      ) : (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" size="sm">
@@ -372,6 +379,7 @@ export const AdminUserManagement = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
