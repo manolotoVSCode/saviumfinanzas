@@ -9,6 +9,14 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '6.5',
+    date: 'Abril 2026',
+    changes: [
+      { icon: <Users className="h-4 w-4" />, text: 'Tarjetahabiente: detección automática en importación de tarjetas de crédito y filtro dinámico', type: 'feature' },
+      { icon: <Upload className="h-4 w-4" />, text: 'Columna de tarjetahabiente mapeable en preview de importación', type: 'feature' },
+    ],
+  },
+  {
     version: '6.4',
     date: 'Abril 2026',
     changes: [
