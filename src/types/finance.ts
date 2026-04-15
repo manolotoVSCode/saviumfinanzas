@@ -42,6 +42,7 @@ export interface Transaction {
   divisa: 'MXN' | 'USD' | 'EUR'; // Nueva propiedad
   csvId?: string; // ID original del CSV (opcional)
   created_at?: Date; // Fecha de creación en la base de datos
+  tarjetahabiente?: string; // Tarjetahabiente para cuentas de tarjeta de crédito
   // campos calculados
   categoria?: string;
   monto: number; // ingreso - gasto

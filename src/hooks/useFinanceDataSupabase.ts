@@ -110,7 +110,8 @@ export const useFinanceDataSupabase = () => {
         cuentaId: transaccion.cuenta_id,
         divisa: transaccion.divisa as 'MXN' | 'USD' | 'EUR',
         csvId: transaccion.csv_id,
-        created_at: new Date(transaccion.created_at)
+        created_at: new Date(transaccion.created_at),
+        tarjetahabiente: (transaccion as any).tarjetahabiente || undefined
       }));
 
       setAccounts(mappedAccounts);
@@ -1077,16 +1078,22 @@ export const useFinanceDataSupabase = () => {
       }
 
       // Preparar datos para inserción masiva
-      const insertData = newTransactions.map(transaction => ({
-        cuenta_id: transaction.cuentaId,
-        fecha: transaction.fecha.toISOString().split('T')[0],
-        comentario: transaction.comentario,
-        ingreso: transaction.ingreso,
-        gasto: transaction.gasto,
-        subcategoria_id: transaction.subcategoriaId,
-        divisa: transaction.divisa || 'MXN',
-        user_id: userData.user.id
-      }));
+      const insertData = newTransactions.map(transaction => {
+        const data: any = {
+          cuenta_id: transaction.cuentaId,
+          fecha: transaction.fecha.toISOString().split('T')[0],
+          comentario: transaction.comentario,
+          ingreso: transaction.ingreso,
+          gasto: transaction.gasto,
+          subcategoria_id: transaction.subcategoriaId,
+          divisa: transaction.divisa || 'MXN',
+          user_id: userData.user.id
+        };
+        if (transaction.tarjetahabiente) {
+          data.tarjetahabiente = transaction.tarjetahabiente;
+        }
+        return data;
+      });
 
       const { error } = await supabase
         .from('transacciones')
