@@ -29,6 +29,8 @@ const TransaccionesCategoria = () => {
   const divisa = searchParams.get('divisa') || 'MXN';
   const periodo = searchParams.get('periodo') || 'Últimos 12 meses';
   const mesIndex = searchParams.get('mes');
+  const monthNum = searchParams.get('monthNum');
+  const yearNum = searchParams.get('yearNum');
 
   // Obtener categorías únicas agrupadas
   const categoriesGrouped = useMemo(() => {
@@ -62,8 +64,16 @@ const TransaccionesCategoria = () => {
 
     // Filtrar por período
     const now = new Date();
-    if (mesIndex !== null && mesIndex !== undefined) {
-      // Mes específico
+    if (monthNum !== null && yearNum !== null) {
+      // Direct month/year specification (from donut chart)
+      const targetMonth = parseInt(monthNum);
+      const targetYear = parseInt(yearNum);
+      transactions = transactions.filter(t => {
+        const tDate = new Date(t.fecha);
+        return tDate.getMonth() === targetMonth && tDate.getFullYear() === targetYear;
+      });
+    } else if (mesIndex !== null && mesIndex !== undefined) {
+      // Mes específico (index into last 12 months array, from Top 10 categories)
       const monthIndex = parseInt(mesIndex);
       const last12Months: Array<{ month: number; year: number }> = [];
       for (let i = 12; i >= 1; i--) {

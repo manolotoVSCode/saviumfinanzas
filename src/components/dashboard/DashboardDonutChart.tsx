@@ -40,7 +40,8 @@ export const DashboardDonutChart = ({
       categoria: entry.name,
       divisa: selectedCurrency,
       periodo: `${MONTHS[selectedMonth]} ${selectedMonthYear}`,
-      mes: selectedMonth.toString(),
+      monthNum: selectedMonth.toString(),
+      yearNum: selectedMonthYear.toString(),
     });
     navigate(`/transacciones-categoria?${params.toString()}`);
   };
