@@ -283,6 +283,7 @@ export const ProfileEditor = () => {
                 Cambiar Contraseña
               </Button>
 
+              {user?.email?.toLowerCase() !== 'manoloto@gmail.com' && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="icon" disabled={deleting}>
@@ -308,6 +309,7 @@ export const ProfileEditor = () => {
                   </AlertDialogFooter>
                 </AlertDialogContent>
                 </AlertDialog>
+              )}
             </div>
           </form>
         </Form>
