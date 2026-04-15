@@ -155,11 +155,22 @@ export const AnnualPaymentsTracker = () => {
       });
     });
 
-    // Sort by next payment date
-    payments.sort((a, b) => a.nextPayment.getTime() - b.nextPayment.getTime());
+    // Apply custom order if available, otherwise sort by next payment date
+    if (customOrder.length > 0) {
+      payments.sort((a, b) => {
+        const indexA = customOrder.indexOf(a.id);
+        const indexB = customOrder.indexOf(b.id);
+        if (indexA === -1 && indexB === -1) return a.nextPayment.getTime() - b.nextPayment.getTime();
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+    } else {
+      payments.sort((a, b) => a.nextPayment.getTime() - b.nextPayment.getTime());
+    }
 
     setTrackedPayments(payments);
-  }, [transactions, annualCategories, inactivePayments]);
+  }, [transactions, annualCategories, inactivePayments, customOrder]);
 
   const toggleActive = (paymentId: string) => {
     const newInactive = new Set(inactivePayments);
