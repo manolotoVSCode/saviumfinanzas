@@ -350,6 +350,7 @@ export const CategoriesManager = ({
                             variant="outline" 
                             size="sm"
                             onClick={() => handleEdit(category)}
+                            disabled={category.subcategoria.toUpperCase() === 'SIN ASIGNAR'}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
