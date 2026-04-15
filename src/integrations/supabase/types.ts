@@ -446,6 +446,7 @@ export type Database = {
           id: string
           ingreso: number
           subcategoria_id: string
+          tarjetahabiente: string | null
           updated_at: string
           user_id: string
         }
@@ -460,6 +461,7 @@ export type Database = {
           id?: string
           ingreso?: number
           subcategoria_id: string
+          tarjetahabiente?: string | null
           updated_at?: string
           user_id: string
         }
@@ -474,6 +476,7 @@ export type Database = {
           id?: string
           ingreso?: number
           subcategoria_id?: string
+          tarjetahabiente?: string | null
           updated_at?: string
           user_id?: string
         }

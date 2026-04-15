@@ -1,0 +1,1 @@
+ALTER TABLE public.transacciones ADD COLUMN tarjetahabiente text DEFAULT NULL;
