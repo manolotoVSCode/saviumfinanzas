@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -22,7 +22,21 @@ const Layout = ({ children }: LayoutProps) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const navigationItems = [
+  const mainNavItems = [
+    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
+    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions') },
+    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments') },
+    { path: '/informes', icon: FileText, label: t('nav.reports') },
+  ];
+
+  const configNavItems = [
+    { path: '/cuentas', icon: Wallet, label: 'Cuentas' },
+    { path: '/categorias', icon: Tag, label: 'Categorías' },
+    { path: '/reglas-clasificacion', icon: Filter, label: 'Reglas' },
+    { path: '/configuracion', icon: Settings, label: t('nav.settings') },
+  ];
+
+  const mobileNavItems = [
     { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
     { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions') },
     { path: '/inversiones', icon: TrendingUp, label: t('nav.investments') },
@@ -45,8 +59,8 @@ const Layout = ({ children }: LayoutProps) => {
             </button>
           </div>
 
-          <nav className="flex-1 p-3 space-y-1">
-            {navigationItems.map(({ path, icon: Icon, label }) => (
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+            {mainNavItems.map(({ path, icon: Icon, label }) => (
               <button
                 key={path}
                 onClick={() => navigate(path)}
@@ -61,6 +75,27 @@ const Layout = ({ children }: LayoutProps) => {
                 <span>{label}</span>
               </button>
             ))}
+
+            <div className="pt-3 mt-3 border-t">
+              <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Configuración
+              </p>
+              {configNavItems.map(({ path, icon: Icon, label }) => (
+                <button
+                  key={path}
+                  onClick={() => navigate(path)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    isActive(path)
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )}
+                >
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
           </nav>
 
           <div className="p-3 border-t space-y-2">
@@ -119,7 +154,7 @@ const Layout = ({ children }: LayoutProps) => {
         {/* BOTTOM NAV */}
         <nav className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
           <div className="grid grid-cols-5 h-full">
-            {navigationItems.map(({ path, icon: Icon, label }) => (
+            {mobileNavItems.map(({ path, icon: Icon, label }) => (
               <button
                 key={path}
                 onClick={() => navigate(path)}

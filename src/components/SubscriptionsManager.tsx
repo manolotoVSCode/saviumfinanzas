@@ -463,7 +463,9 @@ export const SubscriptionsManager = () => {
         }
       }
 
-      // Guardar cada grupo como suscripción
+      // Guardar cada grupo como suscripción y collect results
+      const processedServices: SubscriptionService[] = [];
+
       for (const [patternId, group] of groupedByPattern) {
         const sorted = [...group.transactions].sort((a, b) =>
           new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
@@ -475,7 +477,7 @@ export const SubscriptionsManager = () => {
         // Check if user has manually set the frequency — if so, keep it
         const { data: existingSub } = await supabase
           .from('subscription_services')
-          .select('frecuencia')
+          .select('id, frecuencia, proximo_pago, service_name, active')
           .eq('user_id', user.id)
           .eq('canon_key', patternId)
           .maybeSingle();
@@ -506,7 +508,7 @@ export const SubscriptionsManager = () => {
         const previousPaymentAmount = sorted.length >= 2 ? sorted[1].gasto : null;
 
         const subscription: SubscriptionService = {
-          serviceName: group.serviceName,
+          serviceName: existingSub?.service_name || group.serviceName,
           tipoServicio: group.tipoServicio,
           ultimoPago: {
             monto: lastTransaction.gasto,
@@ -515,16 +517,33 @@ export const SubscriptionsManager = () => {
           },
           previousPaymentAmount,
           frecuencia: detectedFrecuencia,
-          proximoPago: calculateNextPayment(lastPaymentDate, detectedFrecuencia),
+          proximoPago: existingSub?.proximo_pago 
+            ? new Date(existingSub.proximo_pago) 
+            : calculateNextPayment(lastPaymentDate, detectedFrecuencia),
           numeroPagos: sorted.length,
           originalComments: sorted.map(t => t.comentario),
           patternId,
+          active: existingSub?.active ?? true,
         };
 
         await saveSubscription(subscription, patternId);
+
+        // Re-fetch the saved ID for the service
+        const { data: savedSub } = await supabase
+          .from('subscription_services')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('canon_key', patternId)
+          .maybeSingle();
+
+        processedServices.push({
+          ...subscription,
+          id: savedSub?.id || existingSub?.id,
+        });
       }
 
-      await loadSavedSubscriptions();
+      // Set services directly from processed data (preserving previousPaymentAmount)
+      setServices(processedServices);
     } catch (error) {
       console.error('Error processing subscriptions:', error);
       toast.error('Error al procesar las suscripciones');
