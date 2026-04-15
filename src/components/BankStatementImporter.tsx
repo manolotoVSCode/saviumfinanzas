@@ -957,6 +957,63 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                 <p className="text-sm text-muted-foreground mt-1">CSV o Excel (.csv, .xls, .xlsx)</p>
               </label>
             </div>
+
+            {/* INFO TOGGLE */}
+            <button
+              onClick={() => setShowInfo(!showInfo)}
+              className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors w-full"
+            >
+              <Info className="h-4 w-4" />
+              <span>{showInfo ? 'Ocultar' : 'Ver'} formatos compatibles y requisitos</span>
+            </button>
+
+            {showInfo && (
+              <div className="space-y-3 p-4 rounded-lg bg-muted/50 border text-sm animate-fade-in">
+                <div>
+                  <p className="font-semibold text-foreground mb-1">✅ Formatos aceptados</p>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+                    <li>CSV (.csv) — separado por comas o punto y coma</li>
+                    <li>Excel (.xls, .xlsx)</li>
+                    <li>Codificación UTF-8 o Latin-1</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-semibold text-foreground mb-1">📋 Columnas requeridas</p>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+                    <li><strong>Fecha</strong> — en cualquier formato: DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY, serial de Excel</li>
+                    <li><strong>Descripción / Concepto</strong> — texto del movimiento</li>
+                    <li><strong>Monto</strong> — puede ser una sola columna (positivo/negativo) o dos columnas separadas (cargo/abono, débito/crédito)</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-semibold text-foreground mb-1">🔍 Detección automática</p>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+                    <li>Las columnas se detectan automáticamente por nombre (fecha, date, descripción, concepto, monto, importe, cargo, abono, etc.)</li>
+                    <li>Los montos negativos se interpretan como gastos (o ingresos en tarjeta de crédito)</li>
+                    <li>Se aplican reglas de clasificación automática si están configuradas</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-semibold text-foreground mb-1">❌ No funcionará si...</p>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+                    <li>El archivo es un PDF (necesitas exportar a CSV/Excel desde tu banco)</li>
+                    <li>Las columnas no tienen encabezados o tienen nombres muy distintos a los esperados</li>
+                    <li>El archivo tiene múltiples tablas o datos en hojas separadas sin estructura clara</li>
+                    <li>Los montos incluyen texto mezclado (ej: "1,500 MXN" en vez de "1500")</li>
+                    <li>El archivo está protegido con contraseña</li>
+                  </ul>
+                </div>
+
+                <div className="pt-1 border-t">
+                  <p className="text-muted-foreground text-xs">
+                    💡 <strong>Tip:</strong> La mayoría de bancos permiten descargar estados de cuenta en CSV o Excel desde su banca en línea. Busca opciones como "Exportar", "Descargar movimientos" o "Estado de cuenta digital".
+                  </p>
+                </div>
+              </div>
+            )}
             
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep('select-account')}>
