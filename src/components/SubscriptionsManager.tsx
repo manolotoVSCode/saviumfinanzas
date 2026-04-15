@@ -202,14 +202,18 @@ export const SubscriptionsManager = () => {
         .eq('canon_key', patternId)
         .maybeSingle();
 
+      // Preserve manually edited fields (name, frequency, next payment, active)
+      const preservedFrequency = existing?.frecuencia || subscription.frecuencia;
+      const preservedNextPayment = existing?.proximo_pago || subscription.proximoPago.toISOString().split('T')[0];
+
       const subscriptionData = {
         user_id: user.id,
-        service_name: existing?.service_name || subscription.serviceName, // Mantener nombre editado
+        service_name: existing?.service_name || subscription.serviceName,
         tipo_servicio: subscription.tipoServicio,
         ultimo_pago_monto: subscription.ultimoPago.monto,
         ultimo_pago_fecha: subscription.ultimoPago.fecha.toISOString().split('T')[0],
-        frecuencia: subscription.frecuencia,
-        proximo_pago: subscription.proximoPago.toISOString().split('T')[0],
+        frecuencia: preservedFrequency,
+        proximo_pago: preservedNextPayment,
         numero_pagos: subscription.numeroPagos,
         original_comments: subscription.originalComments,
         active: existing?.active ?? true,

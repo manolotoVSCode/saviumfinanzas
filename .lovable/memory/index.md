@@ -7,11 +7,10 @@ No success toasts — display error notifications only.
 'Compra Venta Inmuebles' category is excluded from dashboard and financial calculations.
 Filter dates by local components (year/month), not ISO UTC, to prevent timezone bugs.
 Supabase keep-alive daily cron 'keepalive-edge-ping' via pg_net prevents project pause.
-Dark/light mode via ThemeContext; user toggles, persisted in localStorage.
+Dark mode disabled — user rejected it. Do not re-add.
 Desktop: sidebar nav. Mobile: bottom bar nav.
 
 ## Memories
-- [Theme & Layout](mem://ui/theme-and-layout) — Dark mode toggle, desktop sidebar, mobile bottom nav
 - [Sold Property Logic](mem://finance/bienes-raices-sold-property-handling) — Sets balance to 0, disables form, hides from reports
 - [Real Estate Exclusion](mem://finance/compra-venta-inmuebles-exclusion) — Explanatory notes and logic for hiding 'Compra Venta Inmuebles'
 - [Investment Balance](mem://finance/investment-balance-calculation) — saldoActual = saldoInicial + totalTransacciones for all types (ignores valorMercado)
