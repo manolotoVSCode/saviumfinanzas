@@ -40,6 +40,7 @@ export const AnnualPaymentsTracker = () => {
   const [inactivePayments, setInactivePayments] = useState<Set<string>>(new Set());
   const [showInactive, setShowInactive] = useState(false);
   const [expandedPayments, setExpandedPayments] = useState<Set<string>>(new Set());
+  const [customOrder, setCustomOrder] = useState<string[]>([]);
 
   // Load inactive status from localStorage
   useEffect(() => {
