@@ -770,9 +770,12 @@ export const SubscriptionsManager = () => {
                             ${formatCurrency(service.ultimoPago.monto)}
                           </span>
                           {service.previousPaymentAmount != null && service.previousPaymentAmount !== service.ultimoPago.monto && (
-                            service.ultimoPago.monto > service.previousPaymentAmount
-                              ? <TrendingUp className="h-4 w-4 text-red-500" title={`Anterior: $${formatCurrency(service.previousPaymentAmount)}`} />
-                              : <TrendingDown className="h-4 w-4 text-green-500" title={`Anterior: $${formatCurrency(service.previousPaymentAmount)}`} />
+                            <span title={`Anterior: $${formatCurrency(service.previousPaymentAmount)}`}>
+                              {service.ultimoPago.monto > service.previousPaymentAmount
+                                ? <TrendingUp className="h-4 w-4 text-destructive" />
+                                : <TrendingDown className="h-4 w-4 text-success" />
+                              }
+                            </span>
                           )}
                         </div>
                       </div>
