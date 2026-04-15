@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sparkles, Shield, BarChart3, Upload, Wallet, Tag, Globe, Users, Bug, Zap } from 'lucide-react';
 import { Sparkles, Shield, BarChart3, Upload, Wallet, Tag, Globe, Users, Bug, Zap } from 'lucide-react';
 
 interface ChangelogEntry {
@@ -123,6 +123,6 @@ export const Changelog = () => {
           </div>
         ))}
       </div>
-    </ScrollArea>
+    </div>
   );
 };
