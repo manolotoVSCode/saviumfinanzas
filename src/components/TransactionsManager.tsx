@@ -208,6 +208,10 @@ export const TransactionsManager = ({
       if (filters.reembolsos === 'solo' && !isReembolso) return false;
       if (filters.reembolsos === 'excluir' && isReembolso) return false;
     }
+    // Filtro por tarjetahabiente
+    if (filters.tarjetahabiente && filters.tarjetahabiente !== 'all') {
+      if ((transaction.tarjetahabiente || '') !== filters.tarjetahabiente) return false;
+    }
     
     return true;
   });
