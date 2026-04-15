@@ -1252,7 +1252,7 @@ export const TransactionsManager = ({
               <Label htmlFor="filter-cuenta">Cuenta</Label>
               <Select 
                 value={filters.cuentaId} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, cuentaId: value }))}
+                onValueChange={(value) => setFilters(prev => ({ ...prev, cuentaId: value, tarjetahabiente: 'all' }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las cuentas" />
