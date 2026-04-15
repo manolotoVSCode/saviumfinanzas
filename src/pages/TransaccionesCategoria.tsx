@@ -31,6 +31,7 @@ const TransaccionesCategoria = () => {
   const mesIndex = searchParams.get('mes');
   const monthNum = searchParams.get('monthNum');
   const yearNum = searchParams.get('yearNum');
+  const tipo = searchParams.get('tipo') || 'Gastos';
 
   // Obtener categorías únicas agrupadas
   const categoriesGrouped = useMemo(() => {
