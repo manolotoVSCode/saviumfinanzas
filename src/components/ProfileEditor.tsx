@@ -250,11 +250,11 @@ export const ProfileEditor = () => {
                 control={form.control}
                 name="divisa_preferida"
                 render={({ field }) => (
-                  <FormItem className="opacity-60">
-                    <FormLabel>Divisa Preferida (Próximamente)</FormLabel>
-                    <Select onValueChange={() => {}} value={field.value} disabled>
+                  <FormItem>
+                    <FormLabel>Divisa Preferida</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger disabled>
+                        <SelectTrigger>
                           <SelectValue placeholder="Selecciona una divisa" />
                         </SelectTrigger>
                       </FormControl>
