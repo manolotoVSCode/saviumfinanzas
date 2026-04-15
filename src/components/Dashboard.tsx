@@ -12,6 +12,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
+import { DashboardDonutChart } from '@/components/dashboard/DashboardDonutChart';
+import { DashboardSavingsRate } from '@/components/dashboard/DashboardSavingsRate';
 
 // Componente para subcategoría con hover state
 const SubcategoryItem = ({ 
@@ -800,6 +803,20 @@ const CategoryItem = ({
         </div>
       </div>
 
+      {/* KPI CARDS WITH SELECTORS */}
+      <DashboardKPIs
+        selectedMonth={selectedMonth}
+        selectedMonthYear={selectedMonthYear}
+        selectedYear={selectedYear}
+        onMonthChange={setSelectedMonth}
+        onMonthYearChange={setSelectedMonthYear}
+        onYearChange={setSelectedYear}
+        availableYears={availableYears}
+        filteredMetrics={filteredMetrics}
+        selectedCurrency={selectedCurrency}
+        formatCurrency={formatCurrencyConsistent}
+      />
+
       {/* 1. GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES CON MEDIAS */}
       <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
@@ -884,6 +901,22 @@ const CategoryItem = ({
         </CardContent>
       </Card>
 
+      {/* DONUT CHART + SAVINGS RATE */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DashboardDonutChart
+          pieDataGastosMes={pieDataGastosMesAnterior}
+          pieDataIngresosMes={pieDataIngresosMesAnterior}
+          selectedCurrency={selectedCurrency}
+          selectedMonth={selectedMonth}
+          selectedMonthYear={selectedMonthYear}
+          formatCurrency={formatCurrencyConsistent}
+        />
+        <DashboardSavingsRate
+          tendenciaMensual={filteredMetrics.tendenciaMensual}
+          selectedCurrency={selectedCurrency}
+          formatCurrency={formatCurrencyConsistent}
+        />
+      </div>
 
       {/* 2. TOP 10 CATEGORÍAS - ÚLTIMOS 12 MESES */}
       <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
