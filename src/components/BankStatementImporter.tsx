@@ -838,16 +838,6 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
   const [previewFilter, setPreviewFilter] = useState<'all' | 'sin_asignar'>('all');
 
-  const filteredPreviewRows = useMemo(() => {
-    if (previewFilter === 'sin_asignar') {
-      return sortedRows.filter(row => {
-        const cat = categories.find(c => c.id === row.categoriaId);
-        return !cat || cat.subcategoria === 'Sin Asignar' || cat.categoria === 'SIN ASIGNAR';
-      });
-    }
-    return sortedRows;
-  }, [sortedRows, previewFilter, categories]);
-
   const selectedCount = parsedRows.filter(r => r.incluir).length;
   const sinAsignarCount = useMemo(() => parsedRows.filter(row => {
     const cat = categories.find(c => c.id === row.categoriaId);
@@ -875,14 +865,12 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   };
 
   const getTipoValue = (row: ParsedRow): string => {
-    // Use the row's tipo for sorting
     return row.tipo;
   };
 
   const sortedRows = useMemo(() => {
     return [...parsedRows].sort((a, b) => {
       let comparison = 0;
-      
       switch (sortColumn) {
         case 'fecha':
           comparison = a.fecha.getTime() - b.fecha.getTime();
@@ -896,18 +884,28 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         case 'monto':
           comparison = a.monto - b.monto;
           break;
-        case 'categoria':
+        case 'categoria': {
           const catA = categories.find(c => c.id === a.categoriaId);
           const catB = categories.find(c => c.id === b.categoriaId);
           const nameA = catA ? `${catA.categoria} - ${catA.subcategoria}` : 'Sin Asignar';
           const nameB = catB ? `${catB.categoria} - ${catB.subcategoria}` : 'Sin Asignar';
           comparison = nameA.localeCompare(nameB);
           break;
+        }
       }
-      
       return sortDirection === 'asc' ? comparison : -comparison;
     });
   }, [parsedRows, sortColumn, sortDirection, categories]);
+
+  const filteredPreviewRows = useMemo(() => {
+    if (previewFilter === 'sin_asignar') {
+      return sortedRows.filter(row => {
+        const cat = categories.find(c => c.id === row.categoriaId);
+        return !cat || cat.subcategoria === 'Sin Asignar' || cat.categoria === 'SIN ASIGNAR';
+      });
+    }
+    return sortedRows;
+  }, [sortedRows, previewFilter, categories]);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => isOpen ? setOpen(true) : handleClose()}>
