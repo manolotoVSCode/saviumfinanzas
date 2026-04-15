@@ -355,10 +355,10 @@ export const CategoriesManager = ({
                           </Button>
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button 
+                          <Button 
                                 variant="destructive" 
                                 size="sm"
-                                disabled={inUse}
+                                disabled={inUse || category.subcategoria.toUpperCase() === 'SIN ASIGNAR'}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
-const MASTER_EMAIL = 'manoloto@hotmail.com';
+const MASTER_EMAIL = 'manoloto@gmail.com';
 
 interface UserStats {
   id: string;
