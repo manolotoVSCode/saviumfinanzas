@@ -45,16 +45,22 @@ const COLORS = [
 
 export const CategoryAnalysisReport = ({ transactions, categories, formatCurrency }: CategoryAnalysisReportProps) => {
   const now = new Date();
+  const { config } = useAppConfig();
   
   // Estados para filtros
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>(now.getMonth());
   const [selectedType, setSelectedType] = useState<TransactionTypeFilter>('Gastos');
-  const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>(() => {
-    // Will be overridden by useEffect when config loads
-    return 'MXN';
-  });
+  const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>(config.currency);
   const [chartType, setChartType] = useState<ChartType>('sunburst');
+  const [currencyInitialized, setCurrencyInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!currencyInitialized) {
+      setSelectedCurrency(config.currency);
+      setCurrencyInitialized(true);
+    }
+  }, [config.currency, currencyInitialized]);
 
   // Obtener años disponibles
   const availableYears = useMemo(() => {

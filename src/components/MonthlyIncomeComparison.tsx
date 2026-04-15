@@ -26,8 +26,17 @@ const MONTH_SHORT = [
 ];
 
 export const MonthlyIncomeComparison = ({ transactions, categories, formatCurrency }: MonthlyIncomeComparisonProps) => {
+  const { config } = useAppConfig();
   const [monthsToShow, setMonthsToShow] = useState<string>('6');
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('MXN');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(config.currency);
+  const [currencyInitialized, setCurrencyInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!currencyInitialized) {
+      setSelectedCurrency(config.currency);
+      setCurrencyInitialized(true);
+    }
+  }, [config.currency, currencyInitialized]);
 
   // Get unique currencies from income transactions
   const availableCurrencies = useMemo(() => {
