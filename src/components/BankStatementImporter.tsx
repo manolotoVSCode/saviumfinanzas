@@ -761,7 +761,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         const ingreso = row.esReembolso ? row.monto : (row.esGasto ? 0 : row.monto);
         const gasto = row.esReembolso ? 0 : (row.esGasto ? row.monto : 0);
 
-        return {
+        const result: any = {
           cuentaId: selectedAccountId,
           fecha: row.fecha,
           comentario: row.descripcion,
@@ -770,6 +770,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
           subcategoriaId,
           divisa: selectedAccount?.divisa || 'MXN',
         };
+        if (row.tarjetahabiente) {
+          result.tarjetahabiente = row.tarjetahabiente;
+        }
+        return result;
       });
 
       await onImportTransactions(transactionsToImport);
