@@ -9,11 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
-    version: '6.5',
+    version: '6.6',
     date: 'Abril 2026',
     changes: [
-      { icon: <Users className="h-4 w-4" />, text: 'Tarjetahabiente: detección automática en importación de tarjetas de crédito y filtro dinámico', type: 'feature' },
-      { icon: <Upload className="h-4 w-4" />, text: 'Columna de tarjetahabiente mapeable en preview de importación', type: 'feature' },
+      { icon: <Globe className="h-4 w-4" />, text: 'Divisa preferida: todos los cálculos, dashboard, reportes e inversiones se muestran en la moneda del perfil', type: 'feature' },
+      { icon: <Shield className="h-4 w-4" />, text: 'Protección de categoría SIN ASIGNAR: no se puede editar ni eliminar', type: 'improvement' },
+      { icon: <Shield className="h-4 w-4" />, text: 'Corrección de email del administrador master', type: 'fix' },
+      { icon: <Users className="h-4 w-4" />, text: 'Ampliación de detección de columna Tarjetahabiente en importación (Amex y más variantes)', type: 'improvement' },
     ],
   },
   {
