@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 export type CurrencyCode = 'MXN' | 'USD' | 'EUR';
 
 interface AppConfig {
@@ -27,19 +29,14 @@ export const formatPercent = (value: number, decimals: number = 2): string => {
   return `${formatNumber(value, decimals)}%`;
 };
 
+// Stable singleton - returned object never changes
+const stableResult = {
+  config: defaultConfig,
+  formatCurrency: (amount: number): string => formatNumber(amount, 2),
+  formatNumber,
+  formatPercent,
+};
+
 export const useAppConfig = () => {
-  // Configuración fija en MXN
-  const config: AppConfig = defaultConfig;
-
-  // Función para formatear números: coma para miles, punto para decimales, siempre 2 decimales
-  const formatCurrency = (amount: number): string => {
-    return formatNumber(amount, 2);
-  };
-
-  return {
-    config,
-    formatCurrency,
-    formatNumber,
-    formatPercent
-  };
+  return stableResult;
 };
