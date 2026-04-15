@@ -343,6 +343,9 @@ export const AdminUserManagement = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
+                      {user.email.toLowerCase() === MASTER_EMAIL ? (
+                        <Badge variant="outline" className="text-xs">Master</Badge>
+                      ) : (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" size="sm">
@@ -376,6 +379,7 @@ export const AdminUserManagement = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
