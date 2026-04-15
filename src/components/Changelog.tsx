@@ -103,7 +103,7 @@ const typeBadge = (type: 'feature' | 'fix' | 'improvement') => {
 
 export const Changelog = () => {
   return (
-    <ScrollArea className="h-[500px] pr-4">
+    <div className="space-y-6">
       <div className="space-y-6">
         {changelog.map((entry) => (
           <div key={entry.version} className="space-y-2">
