@@ -350,15 +350,16 @@ export const CategoriesManager = ({
                             variant="outline" 
                             size="sm"
                             onClick={() => handleEdit(category)}
+                            disabled={category.subcategoria.toUpperCase() === 'SIN ASIGNAR'}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button 
+                          <Button 
                                 variant="destructive" 
                                 size="sm"
-                                disabled={inUse}
+                                disabled={inUse || category.subcategoria.toUpperCase() === 'SIN ASIGNAR'}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
