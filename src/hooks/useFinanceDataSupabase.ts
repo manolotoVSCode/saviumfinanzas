@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Account, Category, Transaction, DashboardMetrics, AccountType, TransactionType } from '@/types/finance';
 import { supabase } from '@/integrations/supabase/client';
 import { useExchangeRates } from './useExchangeRates';
