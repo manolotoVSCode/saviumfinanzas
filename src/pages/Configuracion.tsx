@@ -12,7 +12,8 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Settings, LogOut, Trash2, Globe, Search, Wallet, Tag, Filter } from 'lucide-react';
+import { Settings, LogOut, Trash2, Globe, Search, Wallet, Tag, Filter, Sparkles } from 'lucide-react';
+import { useOnboardingTour, StartTourButton } from '@/components/OnboardingTour';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -68,6 +69,12 @@ const Configuracion = () => {
             <Button variant="outline" size="sm" onClick={() => navigate('/reglas-clasificacion')}>
               <Filter className="h-4 w-4 mr-1" />
               Reglas de Clasificación
+            </Button>
+            <StartTourButton onClick={() => {
+              const { reset } = useOnboardingTour();
+              reset();
+              navigate('/dashboard');
+            }} />
             </Button>
           </div>
         </div>
