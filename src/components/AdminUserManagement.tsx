@@ -76,8 +76,9 @@ export const AdminUserManagement = () => {
 
       // Transform the data to match the expected UserStats interface
       const transformedUsers: UserStats[] = (usersData || []).map((user: any) => ({
-        id: user.user_id, // Using user_id as id since we need it for the key
+        id: user.user_id,
         user_id: user.user_id,
+        email: user.email || '',
         nombre: user.nombre,
         apellidos: user.apellidos,
         divisa_preferida: user.divisa_preferida,
