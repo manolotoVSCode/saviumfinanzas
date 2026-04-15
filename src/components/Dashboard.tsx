@@ -995,8 +995,7 @@ const CategoryItem = ({
           )}
         </CardContent>
       </Card>
-
-
+      </>}
 
       {/* 4. ACTIVOS */}
       <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
@@ -1374,7 +1373,6 @@ const CategoryItem = ({
           <p className="text-sm text-muted-foreground">Este módulo está temporalmente inhabilitado.</p>
         </CardHeader>
       </Card>
-      </>}
 
     </div>
   );
