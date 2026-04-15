@@ -12,6 +12,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
 import { DashboardDonutChart } from '@/components/dashboard/DashboardDonutChart';
 import { DashboardSavingsRate } from '@/components/dashboard/DashboardSavingsRate';
@@ -169,6 +170,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
   const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
 
 // Componente para subcategoría con hover state
 const SubcategoryItem = ({ 
@@ -901,6 +903,7 @@ const CategoryItem = ({
         </CardContent>
       </Card>
 
+      {!isMobile && <>
       {/* DONUT CHART + SAVINGS RATE */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardDonutChart
@@ -1350,6 +1353,7 @@ const CategoryItem = ({
           <p className="text-sm text-muted-foreground">Este módulo está temporalmente inhabilitado.</p>
         </CardHeader>
       </Card>
+      </>}
 
     </div>
   );

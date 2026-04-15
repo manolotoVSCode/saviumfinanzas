@@ -21,6 +21,7 @@ import Categorias from "./pages/Categorias";
 import SeguimientoGastos from "./pages/SeguimientoGastos";
 import SeguimientoIngresos from "./pages/SeguimientoIngresos";
 import ChangelogPage from "./pages/ChangelogPage";
+import Terminos from "./pages/Terminos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -98,6 +99,11 @@ const App = () => (
               <Route path="/changelog" element={
                 <ProtectedRoute>
                   <ChangelogPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/terminos" element={
+                <ProtectedRoute>
+                  <Terminos />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
