@@ -836,7 +836,25 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
   };
 
+  const [previewFilter, setPreviewFilter] = useState<'all' | 'sin_asignar'>('all');
+
+  const filteredPreviewRows = useMemo(() => {
+    if (previewFilter === 'sin_asignar') {
+      return sortedRows.filter(row => {
+        const cat = categories.find(c => c.id === row.categoriaId);
+        return !cat || cat.subcategoria === 'Sin Asignar' || cat.categoria === 'SIN ASIGNAR';
+      });
+    }
+    return sortedRows;
+  }, [sortedRows, previewFilter, categories]);
+
   const selectedCount = parsedRows.filter(r => r.incluir).length;
+  const sinAsignarCount = useMemo(() => parsedRows.filter(row => {
+    const cat = categories.find(c => c.id === row.categoriaId);
+    return !cat || cat.subcategoria === 'Sin Asignar' || cat.categoria === 'SIN ASIGNAR';
+  }).length, [parsedRows, categories]);
+
+  const hasTarjetahabiente = useMemo(() => parsedRows.some(r => r.tarjetahabiente), [parsedRows]);
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
