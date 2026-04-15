@@ -782,7 +782,44 @@ export const TransactionsManager = ({
                       </>
                     );
                   })()}
+            </div>
+
+            {(() => {
+              const selectedFilterAccount = accounts.find(a => a.id === filters.cuentaId);
+              const isCreditCardSelected = selectedFilterAccount?.tipo === 'Tarjeta de Crédito';
+              if (!isCreditCardSelected) return null;
+              
+              // Get unique tarjetahabientes for the selected account
+              const tarjetahabientes = Array.from(new Set(
+                transactions
+                  .filter(t => t.cuentaId === filters.cuentaId && t.tarjetahabiente)
+                  .map(t => t.tarjetahabiente!)
+              )).sort();
+              
+              if (tarjetahabientes.length === 0) return null;
+              
+              return (
+                <div>
+                  <Label htmlFor="filter-tarjetahabiente">Tarjetahabiente</Label>
+                  <Select 
+                    value={filters.tarjetahabiente} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, tarjetahabiente: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="all">Todos</SelectItem>
+                      {tarjetahabientes.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              );
+            })()}
 
 
                 {/* Aportación automática disponible para crear y editar */}
