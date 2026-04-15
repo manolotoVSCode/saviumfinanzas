@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, Calendar, Clock, TrendingUp, ChevronDown } from 'lucide-react';
+import { Shield, Calendar, Clock, TrendingUp, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -40,12 +40,17 @@ export const AnnualPaymentsTracker = () => {
   const [inactivePayments, setInactivePayments] = useState<Set<string>>(new Set());
   const [showInactive, setShowInactive] = useState(false);
   const [expandedPayments, setExpandedPayments] = useState<Set<string>>(new Set());
+  const [customOrder, setCustomOrder] = useState<string[]>([]);
 
   // Load inactive status from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('inactive_annual_payments');
     if (saved) {
       setInactivePayments(new Set(JSON.parse(saved)));
+    }
+    const savedOrder = localStorage.getItem('annual_payments_order');
+    if (savedOrder) {
+      setCustomOrder(JSON.parse(savedOrder));
     }
   }, []);
 
@@ -150,11 +155,22 @@ export const AnnualPaymentsTracker = () => {
       });
     });
 
-    // Sort by next payment date
-    payments.sort((a, b) => a.nextPayment.getTime() - b.nextPayment.getTime());
+    // Apply custom order if available, otherwise sort by next payment date
+    if (customOrder.length > 0) {
+      payments.sort((a, b) => {
+        const indexA = customOrder.indexOf(a.id);
+        const indexB = customOrder.indexOf(b.id);
+        if (indexA === -1 && indexB === -1) return a.nextPayment.getTime() - b.nextPayment.getTime();
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+    } else {
+      payments.sort((a, b) => a.nextPayment.getTime() - b.nextPayment.getTime());
+    }
 
     setTrackedPayments(payments);
-  }, [transactions, annualCategories, inactivePayments]);
+  }, [transactions, annualCategories, inactivePayments, customOrder]);
 
   const toggleActive = (paymentId: string) => {
     const newInactive = new Set(inactivePayments);
@@ -177,6 +193,19 @@ export const AnnualPaymentsTracker = () => {
       newExpanded.add(paymentId);
     }
     setExpandedPayments(newExpanded);
+  };
+
+  const movePayment = (paymentId: string, direction: 'up' | 'down') => {
+    const currentList = filteredPayments;
+    const currentIndex = currentList.findIndex(p => p.id === paymentId);
+    if (currentIndex === -1) return;
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= currentList.length) return;
+    
+    const newOrder = currentList.map(p => p.id);
+    [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
+    setCustomOrder(newOrder);
+    localStorage.setItem('annual_payments_order', JSON.stringify(newOrder));
   };
 
   const filteredPayments = useMemo(() => {
@@ -298,7 +327,7 @@ export const AnnualPaymentsTracker = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredPayments.map((payment) => {
+            {filteredPayments.map((payment, index) => {
               const status = getPaymentStatus(payment.nextPayment);
               const isExpanded = expandedPayments.has(payment.id);
               
@@ -311,7 +340,27 @@ export const AnnualPaymentsTracker = () => {
                   <div className={`rounded-lg border transition-colors ${payment.active ? 'bg-card hover:bg-muted/5' : 'bg-muted/20 border-muted opacity-60'}`}>
                     <div className="p-4">
                       <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3 flex-1">
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className="flex flex-col gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              disabled={index === 0}
+                              onClick={(e) => { e.stopPropagation(); movePayment(payment.id, 'up'); }}
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5"
+                              disabled={index === filteredPayments.length - 1}
+                              onClick={(e) => { e.stopPropagation(); movePayment(payment.id, 'down'); }}
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                          </div>
                           <Checkbox
                             checked={payment.active}
                             onCheckedChange={() => toggleActive(payment.id)}
