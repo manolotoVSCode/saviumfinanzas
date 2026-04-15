@@ -36,6 +36,7 @@ interface ParsedRow {
   incluir: boolean;
   montoOriginal: number;
   tipo: TransactionType;
+  tarjetahabiente?: string;
 }
 
 type Step = 'select-account' | 'upload' | 'preview';
