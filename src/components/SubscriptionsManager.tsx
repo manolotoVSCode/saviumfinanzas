@@ -110,6 +110,15 @@ const SUBSCRIPTION_PATTERNS: SubscriptionPattern[] = [
   },
 ];
 
+type SubscriptionFrequency = 'Mensual' | 'Bimestral' | 'Semestral' | 'Anual' | 'Irregular';
+
+const FREQUENCY_OPTIONS: { value: SubscriptionFrequency; label: string }[] = [
+  { value: 'Mensual', label: 'Mensual' },
+  { value: 'Bimestral', label: 'Bimestral' },
+  { value: 'Semestral', label: 'Semestral' },
+  { value: 'Anual', label: 'Anual' },
+];
+
 interface SubscriptionService {
   id?: string;
   serviceName: string;
@@ -119,7 +128,7 @@ interface SubscriptionService {
     fecha: Date;
     mes: string;
   };
-  frecuencia: 'Mensual' | 'Anual' | 'Irregular';
+  frecuencia: SubscriptionFrequency;
   proximoPago: Date;
   numeroPagos: number;
   originalComments: string[];
@@ -136,6 +145,7 @@ export const SubscriptionsManager = () => {
   const [showInactive, setShowInactive] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [editingFrequencyId, setEditingFrequencyId] = useState<string | null>(null);
 
   // Load saved subscriptions from database
   const loadSavedSubscriptions = async () => {
@@ -164,7 +174,7 @@ export const SubscriptionsManager = () => {
             fecha: new Date(item.ultimo_pago_fecha),
             mes: new Date(item.ultimo_pago_fecha).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
           },
-          frecuencia: item.frecuencia as 'Mensual' | 'Anual' | 'Irregular',
+          frecuencia: item.frecuencia as SubscriptionFrequency,
           proximoPago: new Date(item.proximo_pago),
           numeroPagos: item.numero_pagos,
           originalComments: item.original_comments,
@@ -293,12 +303,53 @@ export const SubscriptionsManager = () => {
     setEditingName('');
   };
 
+  // Save edited frequency
+  const saveEditedFrequency = async (serviceId: string, newFrequency: SubscriptionFrequency) => {
+    try {
+      const service = services.find(s => s.id === serviceId);
+      if (!service) return;
+
+      const newNextPayment = calculateNextPayment(service.ultimoPago.fecha, newFrequency);
+
+      const { error } = await supabase
+        .from('subscription_services')
+        .update({ 
+          frecuencia: newFrequency,
+          proximo_pago: newNextPayment.toISOString().split('T')[0]
+        })
+        .eq('id', serviceId);
+
+      if (error) {
+        console.error('Error updating frequency:', error);
+        toast.error('Error al actualizar la frecuencia');
+        return;
+      }
+
+      setServices(prev => prev.map(s => 
+        s.id === serviceId 
+          ? { ...s, frecuencia: newFrequency, proximoPago: newNextPayment }
+          : s
+      ));
+
+      setEditingFrequencyId(null);
+    } catch (error) {
+      console.error('Error updating frequency:', error);
+      toast.error('Error al actualizar la frecuencia');
+    }
+  };
+
   // Calcular próximo pago estimado
-  const calculateNextPayment = (lastPayment: Date, frequency: 'Mensual' | 'Anual' | 'Irregular'): Date => {
+  const calculateNextPayment = (lastPayment: Date, frequency: SubscriptionFrequency): Date => {
     const nextPayment = new Date(lastPayment);
     switch (frequency) {
       case 'Mensual':
         nextPayment.setMonth(nextPayment.getMonth() + 1);
+        break;
+      case 'Bimestral':
+        nextPayment.setMonth(nextPayment.getMonth() + 2);
+        break;
+      case 'Semestral':
+        nextPayment.setMonth(nextPayment.getMonth() + 6);
         break;
       case 'Anual':
         nextPayment.setFullYear(nextPayment.getFullYear() + 1);
@@ -416,19 +467,33 @@ export const SubscriptionsManager = () => {
         const lastTransaction = sorted[0];
         const lastPaymentDate = new Date(lastTransaction.fecha);
 
-        // Detectar frecuencia
-        let detectedFrecuencia: 'Mensual' | 'Anual' | 'Irregular' = 'Irregular';
-        if (sorted.length >= 2) {
-          const sortedDates = sorted.map(t => new Date(t.fecha).getTime());
-          let totalDaysDiff = 0;
-          for (let i = 0; i < sortedDates.length - 1; i++) {
-            totalDaysDiff += (sortedDates[i] - sortedDates[i + 1]) / (1000 * 60 * 60 * 24);
-          }
-          const avgDays = totalDaysDiff / (sortedDates.length - 1);
-          if (avgDays >= 300 && avgDays <= 400) {
-            detectedFrecuencia = 'Anual';
-          } else if (avgDays >= 20 && avgDays <= 45) {
-            detectedFrecuencia = 'Mensual';
+        // Check if user has manually set the frequency — if so, keep it
+        const { data: existingSub } = await supabase
+          .from('subscription_services')
+          .select('frecuencia')
+          .eq('user_id', user.id)
+          .eq('canon_key', patternId)
+          .maybeSingle();
+
+        // Detectar frecuencia solo si no hay valor manual guardado
+        let detectedFrecuencia: SubscriptionFrequency = existingSub?.frecuencia as SubscriptionFrequency || 'Irregular';
+        if (!existingSub) {
+          if (sorted.length >= 2) {
+            const sortedDates = sorted.map(t => new Date(t.fecha).getTime());
+            let totalDaysDiff = 0;
+            for (let i = 0; i < sortedDates.length - 1; i++) {
+              totalDaysDiff += (sortedDates[i] - sortedDates[i + 1]) / (1000 * 60 * 60 * 24);
+            }
+            const avgDays = totalDaysDiff / (sortedDates.length - 1);
+            if (avgDays >= 300 && avgDays <= 400) {
+              detectedFrecuencia = 'Anual';
+            } else if (avgDays >= 150 && avgDays < 300) {
+              detectedFrecuencia = 'Semestral';
+            } else if (avgDays >= 50 && avgDays < 150) {
+              detectedFrecuencia = 'Bimestral';
+            } else if (avgDays >= 20 && avgDays <= 50) {
+              detectedFrecuencia = 'Mensual';
+            }
           }
         }
 
@@ -498,6 +563,8 @@ export const SubscriptionsManager = () => {
   const getFrequencyBadgeVariant = (frequency: string) => {
     switch (frequency) {
       case 'Mensual': return 'default';
+      case 'Bimestral': return 'default';
+      case 'Semestral': return 'secondary';
       case 'Anual': return 'secondary';
       default: return 'outline';
     }
@@ -635,9 +702,37 @@ export const SubscriptionsManager = () => {
                             )}
                           </div>
                         )}
-                        <Badge variant={getFrequencyBadgeVariant(service.frecuencia)} className="text-xs">
-                          {service.frecuencia}
-                        </Badge>
+                        {editingFrequencyId === service.id ? (
+                          <div className="flex items-center gap-1">
+                            {FREQUENCY_OPTIONS.map(opt => (
+                              <Badge
+                                key={opt.value}
+                                variant={service.frecuencia === opt.value ? 'default' : 'outline'}
+                                className="text-xs cursor-pointer hover:bg-primary/20"
+                                onClick={() => saveEditedFrequency(service.id!, opt.value)}
+                              >
+                                {opt.label}
+                              </Badge>
+                            ))}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingFrequencyId(null)}
+                              className="h-5 w-5 p-0"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Badge 
+                            variant={getFrequencyBadgeVariant(service.frecuencia)} 
+                            className="text-xs cursor-pointer hover:ring-1 hover:ring-primary/50"
+                            onClick={() => service.id && setEditingFrequencyId(service.id)}
+                            title="Clic para cambiar frecuencia"
+                          >
+                            {service.frecuencia}
+                          </Badge>
+                        )}
                         {service.active === false && (
                           <Badge variant="outline" className="text-xs text-muted-foreground">
                             Inactiva
