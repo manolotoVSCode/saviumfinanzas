@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, Calendar, Clock, TrendingUp, ChevronDown } from 'lucide-react';
+import { Shield, Calendar, Clock, TrendingUp, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
