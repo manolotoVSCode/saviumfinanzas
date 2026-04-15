@@ -169,9 +169,10 @@ const Configuracion = () => {
             </div>
 
             <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-4">
                 {t('settings.version')}
               </p>
+              <Changelog />
             </div>
           </CardContent>
         </Card>
