@@ -38,25 +38,25 @@ const Layout = ({ children }: LayoutProps) => {
   }, []);
 
   const mainNavItems = [
-    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
-    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions') },
-    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments') },
-    { path: '/informes', icon: FileText, label: t('nav.reports') },
+    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard'), tourId: 'nav-dashboard' },
+    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions'), tourId: 'nav-transacciones' },
+    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments'), tourId: 'nav-inversiones' },
+    { path: '/informes', icon: FileText, label: t('nav.reports'), tourId: 'nav-informes' },
   ];
 
   const configNavItems = [
-    { path: '/cuentas', icon: Wallet, label: 'Cuentas' },
-    { path: '/categorias', icon: Tag, label: 'Categorías' },
-    { path: '/reglas-clasificacion', icon: Filter, label: 'Reglas' },
-    { path: '/configuracion', icon: Settings, label: t('nav.settings') },
+    { path: '/cuentas', icon: Wallet, label: 'Cuentas', tourId: 'nav-cuentas' },
+    { path: '/categorias', icon: Tag, label: 'Categorías', tourId: 'nav-categorias' },
+    { path: '/reglas-clasificacion', icon: Filter, label: 'Reglas', tourId: 'nav-reglas' },
+    { path: '/configuracion', icon: Settings, label: t('nav.settings'), tourId: 'nav-configuracion' },
   ];
 
   const mobileNavItems = [
-    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
-    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions') },
-    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments') },
-    { path: '/informes', icon: FileText, label: t('nav.reports') },
-    { path: '/configuracion', icon: Settings, label: t('nav.settings') },
+    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard'), tourId: 'mobile-nav-dashboard' },
+    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions'), tourId: 'mobile-nav-transacciones' },
+    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments'), tourId: 'mobile-nav-inversiones' },
+    { path: '/informes', icon: FileText, label: t('nav.reports'), tourId: 'mobile-nav-informes' },
+    { path: '/configuracion', icon: Settings, label: t('nav.settings'), tourId: 'mobile-nav-configuracion' },
   ];
 
   // Desktop layout with sidebar
@@ -82,9 +82,10 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
 
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {mainNavItems.map(({ path, icon: Icon, label }) => (
+            {mainNavItems.map(({ path, icon: Icon, label, tourId }) => (
               <button
                 key={path}
+                data-tour={tourId}
                 onClick={() => navigate(path)}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
@@ -102,9 +103,10 @@ const Layout = ({ children }: LayoutProps) => {
               <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Configuración
               </p>
-              {configNavItems.map(({ path, icon: Icon, label }) => (
+              {configNavItems.map(({ path, icon: Icon, label, tourId }) => (
                 <button
                   key={path}
+                  data-tour={tourId}
                   onClick={() => navigate(path)}
                   className={cn(
                     'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
