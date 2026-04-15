@@ -39,6 +39,7 @@ export const TransactionsManager = ({
   onDeleteTransaction,
   onClearAllTransactions
 }: TransactionsManagerProps) => {
+  const isMobile = useIsMobile();
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   
