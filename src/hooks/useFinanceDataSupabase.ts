@@ -271,8 +271,6 @@ export const useFinanceDataSupabase = () => {
     // Filtrar transacciones por períodos
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    
-    // Mes anterior al actual
     const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
@@ -280,20 +278,10 @@ export const useFinanceDataSupabase = () => {
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
     const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
     
-    // Para el dashboard, NO filtrar por divisa sino incluir todas las transacciones convertidas
     const transactionsThisMonth = enrichedTransactions.filter(t => t.fecha >= startOfMonth && t.fecha <= endOfMonth);
     const transactionsPreviousMonth = enrichedTransactions.filter(t => t.fecha >= startOfPreviousMonth && t.fecha <= endOfPreviousMonth);
     const transactionsThisYear = enrichedTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
     const transactionsLastYear = enrichedTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
-    
-    // Debug logs para verificar fechas
-    console.log('=== DEBUG FECHAS ===');
-    console.log('Fecha actual:', now);
-    console.log('Mes actual:', now.getMonth() + 1); // +1 porque getMonth() es 0-indexado
-    console.log('startOfPreviousMonth:', startOfPreviousMonth);
-    console.log('endOfPreviousMonth:', endOfPreviousMonth);
-    console.log('Sample enriched transactions:', enrichedTransactions.slice(0, 3).map(t => ({ fecha: t.fecha, fechaString: t.fecha.toISOString(), comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
-    console.log('transactionsPreviousMonth:', transactionsPreviousMonth.map(t => ({ fecha: t.fecha, fechaString: t.fecha.toISOString(), comentario: t.comentario.substring(0, 20), ingreso: t.ingreso, tipo: t.tipo })));
     
     // INGRESOS Y GASTOS MENSUALES - CONVERTIR A MXN
     // Reembolso = ingreso > 0 asociado a categoría tipo 'Gastos' (ingreso en categoría de gasto)
