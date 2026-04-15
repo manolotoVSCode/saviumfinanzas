@@ -1,8 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Sun, Moon } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,6 @@ const Layout = ({ children }: LayoutProps) => {
   const { signOut } = useAuth();
   const { profile } = useUserProfile();
   const { t } = useLanguage();
-  const { theme, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
 
   const isActive = (path: string) => location.pathname === path;
@@ -73,26 +71,15 @@ const Layout = ({ children }: LayoutProps) => {
                 </p>
               </div>
             )}
-            <div className="flex items-center gap-2 px-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                className="h-9 w-9"
-                title={theme === 'light' ? 'Modo oscuro' : 'Modo claro'}
-              >
-                {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={signOut}
-                className="flex-1 justify-start gap-2 text-muted-foreground hover:text-destructive"
-              >
-                <LogOut className="h-4 w-4" />
-                {t('settings.logout')}
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4" />
+              {t('settings.logout')}
+            </Button>
           </div>
         </aside>
 
@@ -120,19 +107,9 @@ const Layout = ({ children }: LayoutProps) => {
           >
             <Logo size={56} className="justify-start" />
           </button>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-9 w-9"
-            >
-              {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </Button>
-            <Button variant="outline" size="sm" onClick={signOut}>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={signOut}>
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="space-y-6">
