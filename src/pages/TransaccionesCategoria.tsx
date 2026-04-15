@@ -265,8 +265,8 @@ const TransaccionesCategoria = () => {
                             {t.comentario || <span className="text-muted-foreground italic">Sin notas</span>}
                           </p>
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-destructive whitespace-nowrap">
-                          {formatCurrencyValue(Math.abs(t.gasto || 0), t.divisa || divisa)}
+                        <TableCell className={`text-right font-semibold whitespace-nowrap ${isIncome ? 'text-success' : 'text-destructive'}`}>
+                          {formatCurrencyValue(Math.abs(isIncome ? (t.ingreso || 0) : (t.gasto || 0)), t.divisa || divisa)}
                         </TableCell>
                         <TableCell>
                           <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
