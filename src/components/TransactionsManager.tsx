@@ -1279,17 +1279,16 @@ export const TransactionsManager = ({
                   .map(t => t.tarjetahabiente!)
               )).sort();
               
-              if (tarjetahabientes.length === 0) return null;
-              
               return (
                 <div>
                   <Label htmlFor="filter-tarjetahabiente">Tarjetahabiente</Label>
                   <Select 
                     value={filters.tarjetahabiente} 
                     onValueChange={(value) => setFilters(prev => ({ ...prev, tarjetahabiente: value }))}
+                    disabled={tarjetahabientes.length === 0}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Todos" />
+                      <SelectValue placeholder={tarjetahabientes.length === 0 ? "Sin datos" : "Todos"} />
                     </SelectTrigger>
                     <SelectContent className="bg-background z-50">
                       <SelectItem value="all">Todos</SelectItem>
@@ -1300,6 +1299,11 @@ export const TransactionsManager = ({
                       ))}
                     </SelectContent>
                   </Select>
+                  {tarjetahabientes.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Importa un estado de cuenta con columna de tarjetahabiente
+                    </p>
+                  )}
                 </div>
               );
             })()}
