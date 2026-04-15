@@ -454,7 +454,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         categoriaId,
         incluir: true,
         montoOriginal,
-        tipo
+        tipo,
+        tarjetahabiente: tarjetahabienteCol >= 0 ? (row[tarjetahabienteCol] || '').trim() || undefined : undefined
       });
     }
 
