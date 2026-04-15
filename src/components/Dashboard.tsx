@@ -12,6 +12,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
 import { DashboardDonutChart } from '@/components/dashboard/DashboardDonutChart';
 import { DashboardSavingsRate } from '@/components/dashboard/DashboardSavingsRate';

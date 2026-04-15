@@ -119,11 +119,6 @@ export const DashboardKPIs = ({
               <ChangeIndicator value={cambioBalanceMes} />
             </div>
           </div>
-          {filteredMetrics.reembolsosMes > 0 && (
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Reembolsos: {formatCurrency(filteredMetrics.reembolsosMes, selectedCurrency)} (ya descontados de gastos)
-            </p>
-          )}
         </CardContent>
       </Card>
 
@@ -161,11 +156,6 @@ export const DashboardKPIs = ({
               <ChangeIndicator value={cambioBalanceAnio} />
             </div>
           </div>
-          {filteredMetrics.reembolsosAnio > 0 && (
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Reembolsos: {formatCurrency(filteredMetrics.reembolsosAnio, selectedCurrency)} (ya descontados de gastos)
-            </p>
-          )}
         </CardContent>
       </Card>
     </div>
