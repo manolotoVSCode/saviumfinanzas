@@ -66,14 +66,16 @@ export const GlobalSearch = ({ open, onOpenChange }: GlobalSearchProps) => {
   };
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog open={open} onOpenChange={onOpenChange} shouldFilter={false}>
       <CommandInput
         placeholder="Buscar transacciones, cuentas, categorías..."
         value={search}
         onValueChange={setSearch}
       />
       <CommandList>
-        <CommandEmpty>No se encontraron resultados.</CommandEmpty>
+        {search.trim() && !hasResults && (
+          <CommandEmpty>No se encontraron resultados.</CommandEmpty>
+        )}
 
         {results.transactions.length > 0 && (
           <CommandGroup heading="Transacciones">
