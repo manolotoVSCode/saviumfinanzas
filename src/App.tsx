@@ -18,6 +18,8 @@ import TransaccionesCategoria from "./pages/TransaccionesCategoria";
 import ReglasClasificacion from "./pages/ReglasClasificacion";
 import Cuentas from "./pages/Cuentas";
 import Categorias from "./pages/Categorias";
+import SeguimientoGastos from "./pages/SeguimientoGastos";
+import SeguimientoIngresos from "./pages/SeguimientoIngresos";
 import ChangelogPage from "./pages/ChangelogPage";
 import NotFound from "./pages/NotFound";
 
@@ -81,6 +83,16 @@ const App = () => (
               <Route path="/categorias" element={
                 <ProtectedRoute>
                   <Categorias />
+                </ProtectedRoute>
+              } />
+              <Route path="/seguimiento-gastos" element={
+                <ProtectedRoute>
+                  <SeguimientoGastos />
+                </ProtectedRoute>
+              } />
+              <Route path="/seguimiento-ingresos" element={
+                <ProtectedRoute>
+                  <SeguimientoIngresos />
                 </ProtectedRoute>
               } />
               <Route path="/changelog" element={

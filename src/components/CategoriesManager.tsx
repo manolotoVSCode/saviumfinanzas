@@ -326,35 +326,7 @@ export const CategoriesManager = ({
                   return (
                     <TableRow key={category.id}>
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {(selectedType === 'Ingreso' || selectedType === 'Gastos') && (
-                            <Checkbox 
-                              checked={category.seguimiento_pago || false}
-                              onCheckedChange={() => togglePaymentTracking(category.id, category.seguimiento_pago || false)}
-                            />
-                          )}
-                          <span>{category.subcategoria}</span>
-                          {selectedType === 'Ingreso' && category.seguimiento_pago && (
-                            <Badge variant="outline" className="text-xs">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              Seguimiento
-                            </Badge>
-                          )}
-                          {selectedType === 'Gastos' && category.seguimiento_pago && (
-                            <Select
-                              value={(category as any).frecuencia_seguimiento || 'mensual'}
-                              onValueChange={(value) => updateTrackingFrequency(category.id, value as 'mensual' | 'anual')}
-                            >
-                              <SelectTrigger className="h-6 w-auto text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="mensual">Mensual</SelectItem>
-                                <SelectItem value="anual">Anual</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </div>
+                        <span>{category.subcategoria}</span>
                       </TableCell>
                       <TableCell>{category.categoria}</TableCell>
                       <TableCell>
