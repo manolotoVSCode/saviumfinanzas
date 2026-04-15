@@ -46,6 +46,7 @@ type SortDirection = 'asc' | 'desc';
 const BankStatementImporter = ({ accounts, categories, transactions, onImportTransactions }: BankStatementImporterProps) => {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>('select-account');
+  const [showInfo, setShowInfo] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [importing, setImporting] = useState(false);
