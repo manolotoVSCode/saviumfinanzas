@@ -1078,6 +1078,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                     const isSinAsignar = !category || category.subcategoria === 'Sin Asignar';
                     
                     const getTipoDisplay = () => {
+                      if (row.esReembolso) return 'Reemb.';
                       switch (row.tipo) {
                         case 'Aportación': return 'Aport.';
                         case 'Retiro': return 'Retiro';
