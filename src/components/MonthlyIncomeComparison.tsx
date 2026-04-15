@@ -6,6 +6,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { Transaction, Category } from '@/types/finance';
 import { formatNumber } from '@/lib/formatters';
+import { useAppConfig } from '@/hooks/useAppConfig';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface MonthlyIncomeComparisonProps {
