@@ -998,12 +998,31 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         )}
         
         {step === 'preview' && (
-          <div className="space-y-4 overflow-hidden">
-            <div className="overflow-auto max-h-[60vh]">
+          <div className="space-y-3 overflow-hidden">
+            {/* Filter bar */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <Button
+                variant={previewFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPreviewFilter('all')}
+              >
+                Todas ({parsedRows.length})
+              </Button>
+              <Button
+                variant={previewFilter === 'sin_asignar' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPreviewFilter('sin_asignar')}
+                className={sinAsignarCount > 0 ? 'border-yellow-500' : ''}
+              >
+                Sin Asignar ({sinAsignarCount})
+              </Button>
+            </div>
+
+            <div className="overflow-auto max-h-[55vh]">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">
+                    <TableHead className="w-10 px-2">
                       <Checkbox
                         checked={parsedRows.every(r => r.incluir)}
                         onCheckedChange={(checked) => {
@@ -1012,58 +1031,55 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                       />
                     </TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      className="cursor-pointer hover:bg-muted/50 select-none px-2"
                       onClick={() => handleSort('fecha')}
                     >
-                      <span className="flex items-center">
+                      <span className="flex items-center text-xs">
                         Fecha {getSortIcon('fecha')}
                       </span>
                     </TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      className="cursor-pointer hover:bg-muted/50 select-none px-2"
                       onClick={() => handleSort('descripcion')}
                     >
-                      <span className="flex items-center">
+                      <span className="flex items-center text-xs">
                         Descripción {getSortIcon('descripcion')}
                       </span>
                     </TableHead>
+                    {isCreditCard && hasTarjetahabiente && (
+                      <TableHead className="px-2">
+                        <span className="text-xs">Titular</span>
+                      </TableHead>
+                    )}
                     <TableHead 
-                      className="cursor-pointer hover:bg-muted/50 select-none"
-                      onClick={() => handleSort('tipo')}
-                    >
-                      <span className="flex items-center">
-                        Tipo {getSortIcon('tipo')}
-                      </span>
-                    </TableHead>
-                    <TableHead 
-                      className="text-right cursor-pointer hover:bg-muted/50 select-none"
+                      className="text-right cursor-pointer hover:bg-muted/50 select-none px-2"
                       onClick={() => handleSort('monto')}
                     >
-                      <span className="flex items-center justify-end">
-                        Ingreso {getSortIcon('monto')}
+                      <span className="flex items-center justify-end text-xs">
+                        Monto {getSortIcon('monto')}
                       </span>
                     </TableHead>
-                    <TableHead className="text-right">Gasto</TableHead>
-                    <TableHead className="w-20 text-center">Reembolso</TableHead>
+                    <TableHead className="w-14 text-center px-1">
+                      <span className="text-xs">Reemb.</span>
+                    </TableHead>
                     <TableHead 
-                      className="cursor-pointer hover:bg-muted/50 select-none"
+                      className="cursor-pointer hover:bg-muted/50 select-none px-2"
                       onClick={() => handleSort('categoria')}
                     >
-                      <span className="flex items-center">
+                      <span className="flex items-center text-xs">
                         Categoría {getSortIcon('categoria')}
                       </span>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedRows.map(row => {
+                  {filteredPreviewRows.map(row => {
                     const category = categories.find(c => c.id === row.categoriaId);
                     const isSinAsignar = !category || category.subcategoria === 'Sin Asignar';
                     
-                    // Determine display type based on row.tipo
                     const getTipoDisplay = () => {
                       switch (row.tipo) {
-                        case 'Aportación': return 'Aportación';
+                        case 'Aportación': return 'Aport.';
                         case 'Retiro': return 'Retiro';
                         case 'Gastos': return 'Gasto';
                         case 'Ingreso': return 'Ingreso';
@@ -1071,41 +1087,32 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                       }
                     };
                     
-                    const getTipoColor = () => {
-                      if (row.tipo === 'Aportación' || row.tipo === 'Ingreso') return 'text-green-600';
-                      if (row.tipo === 'Retiro' || row.tipo === 'Gastos') return 'text-destructive';
-                      return row.esGasto ? 'text-destructive' : 'text-green-600';
-                    };
+                    const isExpense = row.esGasto && !row.esReembolso;
                     
                     return (
                       <TableRow key={row.id} className={!row.incluir ? 'opacity-50' : ''}>
-                        <TableCell>
+                        <TableCell className="px-2">
                           <Checkbox
                             checked={row.incluir}
                             onCheckedChange={() => handleToggleInclude(row.id)}
                           />
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDate(row.fecha)}</TableCell>
-                        <TableCell className="max-w-xs truncate" title={row.descripcion}>
+                        <TableCell className="whitespace-nowrap text-xs px-2">{formatDate(row.fecha)}</TableCell>
+                        <TableCell className="max-w-[200px] truncate text-xs px-2" title={row.descripcion}>
                           {row.descripcion}
                         </TableCell>
-                        <TableCell className={`font-medium ${getTipoColor()}`}>
-                          {getTipoDisplay()}
-                          {row.esReembolso && (
-                            <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
-                              Reembolso
-                            </span>
-                          )}
+                        {isCreditCard && hasTarjetahabiente && (
+                          <TableCell className="text-xs px-2 max-w-[100px] truncate" title={row.tarjetahabiente || ''}>
+                            {row.tarjetahabiente || '-'}
+                          </TableCell>
+                        )}
+                        <TableCell className={`text-right text-xs font-medium px-2 ${isExpense ? 'text-destructive' : 'text-green-600'}`}>
+                          <span className="flex items-center justify-end gap-1">
+                            <span className="text-[10px] opacity-60">{getTipoDisplay()}</span>
+                            {isExpense ? '-' : '+'}{formatMoney(row.monto)}
+                          </span>
                         </TableCell>
-                        <TableCell className="text-right text-green-600">
-                          {!row.esGasto ? formatMoney(row.monto) : '-'}
-                        </TableCell>
-                        <TableCell className={`text-right ${row.esReembolso ? 'text-green-600' : 'text-destructive'}`}>
-                          {row.esGasto ? formatMoney(row.monto) : '-'}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {/* Show reembolso checkbox only for income rows (can convert to reembolso) 
-                              or rows that are already marked as reembolso */}
+                        <TableCell className="text-center px-1">
                           {(!row.esGasto || row.esReembolso) ? (
                             <Checkbox
                               checked={row.esReembolso}
@@ -1113,25 +1120,26 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                             />
                           ) : null}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-2">
                           <Popover modal={true} open={openCatRowId === row.id} onOpenChange={(isOpen) => setOpenCatRowId(isOpen ? row.id : null)}>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
                                 role="combobox"
+                                size="sm"
                                 className={cn(
-                                  "w-60 justify-between text-left font-normal",
+                                  "w-48 justify-between text-left font-normal text-xs h-7",
                                   isSinAsignar && "border-yellow-500"
                                 )}
                               >
                                 <span className="truncate">
                                   {category ? `${category.categoria} - ${category.subcategoria}` : 'Sin Asignar'}
                                 </span>
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent 
-                              className="w-80 p-0 bg-background pointer-events-auto z-[100]" 
+                              className="w-72 p-0 bg-background pointer-events-auto z-[100]" 
                               align="start"
                               side="bottom"
                               sideOffset={4}
@@ -1144,7 +1152,6 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                                   <CommandEmpty>No se encontraron categorías.</CommandEmpty>
                                   {(() => {
                                     const groups = getGroupedCategoriesForRow(row);
-                                    // Reorder groups so the selected category's group comes first
                                     const selectedCat = categories.find(c => c.id === row.categoriaId);
                                     if (selectedCat) {
                                       const selectedGroupIdx = groups.findIndex(g => 
@@ -1154,7 +1161,6 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                                         const [selectedGroup] = groups.splice(selectedGroupIdx, 1);
                                         groups.unshift(selectedGroup);
                                       }
-                                      // Within the group, put selected category first
                                       const group = groups[0];
                                       if (group) {
                                         const idx = group.categories.findIndex(c => c.id === row.categoriaId);
@@ -1179,7 +1185,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                                                 row.categoriaId === cat.id ? "opacity-100" : "opacity-0"
                                               )}
                                             />
-                                            <span className="break-words">{cat.categoria} - {cat.subcategoria}</span>
+                                            <span className="break-words text-xs">{cat.categoria} - {cat.subcategoria}</span>
                                           </CommandItem>
                                         ))}
                                       </CommandGroup>
@@ -1197,15 +1203,15 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
               </Table>
             </div>
             
-            <div className="flex justify-between items-center pt-4 border-t">
-              <Button variant="outline" onClick={() => { setParsedRows([]); setStep('upload'); }}>
+            <div className="flex justify-between items-center pt-3 border-t">
+              <Button variant="outline" size="sm" onClick={() => { setParsedRows([]); setStep('upload'); }}>
                 Atrás
               </Button>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">
-                  {selectedCount} transacciones a importar
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">
+                  {selectedCount} de {parsedRows.length} a importar
                 </span>
-                <Button onClick={handleImport} disabled={importing || selectedCount === 0}>
+                <Button size="sm" onClick={handleImport} disabled={importing || selectedCount === 0}>
                   {importing ? 'Importando...' : 'Importar'}
                 </Button>
               </div>
