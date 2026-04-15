@@ -681,9 +681,9 @@ export const TransactionsManager = ({
                                     setFormData({ 
                                       ...formData, 
                                       subcategoriaId: category.id,
-                                      // Limpiar campos de ingreso/gasto según el tipo de categoría
-                                      ingreso: category.tipo === 'Ingreso' || category.tipo === 'Aportación' ? formData.ingreso : 0,
-                                      gasto: category.tipo === 'Gastos' || category.tipo === 'Retiro' ? formData.gasto : 0
+                                      // Si es reembolso, mantener ingreso y gasto=0
+                                      ingreso: isReimbursement ? formData.ingreso : (category.tipo === 'Ingreso' || category.tipo === 'Aportación' ? formData.ingreso : 0),
+                                      gasto: isReimbursement ? 0 : (category.tipo === 'Gastos' || category.tipo === 'Retiro' ? formData.gasto : 0)
                                     });
                                     setCategoryFormOpen(false);
                                   }}
