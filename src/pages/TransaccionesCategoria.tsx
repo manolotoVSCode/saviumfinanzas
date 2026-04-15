@@ -29,6 +29,8 @@ const TransaccionesCategoria = () => {
   const divisa = searchParams.get('divisa') || 'MXN';
   const periodo = searchParams.get('periodo') || 'Últimos 12 meses';
   const mesIndex = searchParams.get('mes');
+  const monthNum = searchParams.get('monthNum');
+  const yearNum = searchParams.get('yearNum');
 
   // Obtener categorías únicas agrupadas
   const categoriesGrouped = useMemo(() => {
