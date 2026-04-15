@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Calendar, Clock, Repeat, RefreshCw, Edit2, Check, X } from 'lucide-react';
+import { CreditCard, Calendar, Clock, Repeat, RefreshCw, Edit2, Check, X, TrendingUp, TrendingDown } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -128,6 +128,7 @@ interface SubscriptionService {
     fecha: Date;
     mes: string;
   };
+  previousPaymentAmount?: number | null;
   frecuencia: SubscriptionFrequency;
   proximoPago: Date;
   numeroPagos: number;
@@ -425,14 +426,14 @@ export const SubscriptionsManager = () => {
         return;
       }
 
-      const twelveMonthsAgo = new Date();
-      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+      const twentyFourMonthsAgo = new Date();
+      twentyFourMonthsAgo.setMonth(twentyFourMonthsAgo.getMonth() - 24);
 
-      // Filtrar transacciones de subcategoría "Suscripciones" de los últimos 12 meses con gasto > 0
+      // Filtrar transacciones de subcategoría "Suscripciones" de los últimos 24 meses con gasto > 0
       const subscriptionTransactions = transactions.filter(t =>
         t.gasto > 0 &&
         subscriptionCategoryIds.includes(t.subcategoriaId) &&
-        new Date(t.fecha) >= twelveMonthsAgo
+        new Date(t.fecha) >= twentyFourMonthsAgo
       );
 
       // Agrupar transacciones por patternId resuelto
@@ -501,6 +502,9 @@ export const SubscriptionsManager = () => {
           }
         }
 
+        // Get previous payment amount for trend comparison
+        const previousPaymentAmount = sorted.length >= 2 ? sorted[1].gasto : null;
+
         const subscription: SubscriptionService = {
           serviceName: group.serviceName,
           tipoServicio: group.tipoServicio,
@@ -509,6 +513,7 @@ export const SubscriptionsManager = () => {
             fecha: lastPaymentDate,
             mes: lastPaymentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
           },
+          previousPaymentAmount,
           frecuencia: detectedFrecuencia,
           proximoPago: calculateNextPayment(lastPaymentDate, detectedFrecuencia),
           numeroPagos: sorted.length,
@@ -760,8 +765,18 @@ export const SubscriptionsManager = () => {
                       <div>
                         <span className="text-muted-foreground">Último pago:</span>
                         <div className="font-medium">{service.ultimoPago.mes}</div>
-                        <div className="text-primary font-bold text-lg">
-                          ${formatCurrency(service.ultimoPago.monto)}
+                        <div className="flex items-center gap-1">
+                          <span className="text-primary font-bold text-lg">
+                            ${formatCurrency(service.ultimoPago.monto)}
+                          </span>
+                          {service.previousPaymentAmount != null && service.previousPaymentAmount !== service.ultimoPago.monto && (
+                            <span title={`Anterior: $${formatCurrency(service.previousPaymentAmount)}`}>
+                              {service.ultimoPago.monto > service.previousPaymentAmount
+                                ? <TrendingUp className="h-4 w-4 text-destructive" />
+                                : <TrendingDown className="h-4 w-4 text-success" />
+                              }
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
