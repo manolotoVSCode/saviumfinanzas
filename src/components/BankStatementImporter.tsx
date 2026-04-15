@@ -36,6 +36,7 @@ interface ParsedRow {
   incluir: boolean;
   montoOriginal: number;
   tipo: TransactionType;
+  tarjetahabiente?: string;
 }
 
 type Step = 'select-account' | 'upload' | 'preview';
@@ -377,6 +378,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
     const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'importe cargo'].includes(h));
     const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
+    const tarjetahabienteCol = headerLower.findIndex(h => {
+      const normalized = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return ['tarjetahabiente', 'titular', 'nombre titular', 'cardholder', 'nombre tarjetahabiente', 'nombre del tarjetahabiente', 'tarjeta habiente'].includes(normalized);
+    });
 
     const dataRows = hasHeader ? rows.slice(1) : rows;
 
@@ -449,7 +454,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         categoriaId,
         incluir: true,
         montoOriginal,
-        tipo
+        tipo,
+        tarjetahabiente: tarjetahabienteCol >= 0 ? (row[tarjetahabienteCol] || '').trim() || undefined : undefined
       });
     }
 
@@ -533,6 +539,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     const headerLower = headerRow.map(h => (h || '').toLowerCase().trim());
     const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'importe cargo'].includes(h));
     const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
+    const tarjetahabienteColExcel = headerLower.findIndex(h => {
+      const normalized = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return ['tarjetahabiente', 'titular', 'nombre titular', 'cardholder', 'nombre tarjetahabiente', 'nombre del tarjetahabiente', 'tarjeta habiente'].includes(normalized);
+    });
 
     // Get data rows (skip header if detected)
     const rowsToProcess = hasHeader ? rows.slice(1) : rows;
@@ -628,7 +638,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         categoriaId,
         incluir: true,
         montoOriginal,
-        tipo
+        tipo,
+        tarjetahabiente: tarjetahabienteColExcel >= 0 ? (safeCol(tarjetahabienteColExcel) || '').trim() || undefined : undefined
       });
     }
     
@@ -750,7 +761,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         const ingreso = row.esReembolso ? row.monto : (row.esGasto ? 0 : row.monto);
         const gasto = row.esReembolso ? 0 : (row.esGasto ? row.monto : 0);
 
-        return {
+        const result: any = {
           cuentaId: selectedAccountId,
           fecha: row.fecha,
           comentario: row.descripcion,
@@ -759,6 +770,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
           subcategoriaId,
           divisa: selectedAccount?.divisa || 'MXN',
         };
+        if (row.tarjetahabiente) {
+          result.tarjetahabiente = row.tarjetahabiente;
+        }
+        return result;
       });
 
       await onImportTransactions(transactionsToImport);

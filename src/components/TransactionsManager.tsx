@@ -97,7 +97,8 @@ export const TransactionsManager = ({
       maxAmount: '',
       importadas: 'all',
       montos: 'all',
-      reembolsos: 'all' // 'all' | 'solo' | 'excluir'
+      reembolsos: 'all',
+      tarjetahabiente: 'all'
     };
   });
 
@@ -207,6 +208,10 @@ export const TransactionsManager = ({
       if (filters.reembolsos === 'solo' && !isReembolso) return false;
       if (filters.reembolsos === 'excluir' && isReembolso) return false;
     }
+    // Filtro por tarjetahabiente
+    if (filters.tarjetahabiente && filters.tarjetahabiente !== 'all') {
+      if ((transaction.tarjetahabiente || '') !== filters.tarjetahabiente) return false;
+    }
     
     return true;
   });
@@ -219,7 +224,7 @@ export const TransactionsManager = ({
   };
 
   const resetFilters = () => {
-    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '', importadas: 'all', montos: 'all', reembolsos: 'all' });
+    setFilters({ cuentaId: 'all', mes: 'all', categoriaId: 'all', tipo: 'all', divisa: 'all', comentario: '', minAmount: '', maxAmount: '', importadas: 'all', montos: 'all', reembolsos: 'all', tarjetahabiente: 'all' });
   };
 
   const resetForm = () => {
@@ -777,7 +782,8 @@ export const TransactionsManager = ({
                       </>
                     );
                   })()}
-                </div>
+            </div>
+
 
 
                 {/* Aportación automática disponible para crear y editar */}
@@ -1246,7 +1252,7 @@ export const TransactionsManager = ({
               <Label htmlFor="filter-cuenta">Cuenta</Label>
               <Select 
                 value={filters.cuentaId} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, cuentaId: value }))}
+                onValueChange={(value) => setFilters(prev => ({ ...prev, cuentaId: value, tarjetahabiente: 'all' }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas las cuentas" />
@@ -1261,6 +1267,42 @@ export const TransactionsManager = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {(() => {
+              const selectedFilterAccount = accounts.find(a => a.id === filters.cuentaId);
+              const isCreditCardSelected = selectedFilterAccount?.tipo === 'Tarjeta de Crédito';
+              if (!isCreditCardSelected) return null;
+              
+              const tarjetahabientes = Array.from(new Set(
+                transactions
+                  .filter(t => t.cuentaId === filters.cuentaId && t.tarjetahabiente)
+                  .map(t => t.tarjetahabiente!)
+              )).sort();
+              
+              if (tarjetahabientes.length === 0) return null;
+              
+              return (
+                <div>
+                  <Label htmlFor="filter-tarjetahabiente">Tarjetahabiente</Label>
+                  <Select 
+                    value={filters.tarjetahabiente} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, tarjetahabiente: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="all">Todos</SelectItem>
+                      {tarjetahabientes.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })()}
 
             <div>
               <Label htmlFor="filter-comentario">Comentario</Label>
