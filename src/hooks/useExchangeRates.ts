@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface ExchangeRates {
   USD: number;
@@ -6,75 +6,96 @@ export interface ExchangeRates {
   MXN: number;
 }
 
-export const useExchangeRates = () => {
-  const [rates, setRates] = useState<ExchangeRates>({ USD: 0, EUR: 0, MXN: 1 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+// Singleton cache to avoid multiple API calls across components
+let cachedRates: ExchangeRates | null = null;
+let cacheTimestamp = 0;
+let fetchPromise: Promise<ExchangeRates> | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  const fetchRates = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/MXN');
-      
-      if (!response.ok) {
-        throw new Error('Error al obtener las tasas de cambio');
-      }
-      
-      const data = await response.json();
-      
-      // Las tasas vienen en formato: 1 MXN = X USD/EUR
-      // Necesitamos convertir a: 1 USD/EUR = X MXN
-      setRates({
-        MXN: 1,
-        USD: 1 / data.rates.USD, // Cuántos pesos por 1 dólar
-        EUR: 1 / data.rates.EUR  // Cuántos pesos por 1 euro
-      });
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching exchange rates:', err);
-      
-      // Usar tasas por defecto en caso de error
-      setRates({ USD: 20, EUR: 22, MXN: 1 });
-    } finally {
-      setLoading(false);
-    }
-  };
+const DEFAULT_RATES: ExchangeRates = { USD: 20, EUR: 22, MXN: 1 };
+
+async function fetchRatesFromAPI(): Promise<ExchangeRates> {
+  try {
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/MXN');
+    if (!response.ok) throw new Error('Error al obtener las tasas de cambio');
+    const data = await response.json();
+    return {
+      MXN: 1,
+      USD: 1 / data.rates.USD,
+      EUR: 1 / data.rates.EUR,
+    };
+  } catch {
+    return DEFAULT_RATES;
+  }
+}
+
+async function getOrFetchRates(): Promise<ExchangeRates> {
+  const now = Date.now();
+  if (cachedRates && now - cacheTimestamp < CACHE_TTL) {
+    return cachedRates;
+  }
+  // Deduplicate concurrent calls
+  if (!fetchPromise) {
+    fetchPromise = fetchRatesFromAPI().then(rates => {
+      cachedRates = rates;
+      cacheTimestamp = Date.now();
+      fetchPromise = null;
+      return rates;
+    });
+  }
+  return fetchPromise;
+}
+
+export const useExchangeRates = () => {
+  const [rates, setRates] = useState<ExchangeRates>(cachedRates || DEFAULT_RATES);
+  const [loading, setLoading] = useState(!cachedRates);
+  const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
-    fetchRates();
-    
-    // Actualizar cada 5 minutos
-    const interval = setInterval(fetchRates, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        const newRates = await getOrFetchRates();
+        if (mounted) {
+          setRates(newRates);
+          setError(null);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'Error desconocido');
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    // Refresh every 5 minutes
+    intervalRef.current = setInterval(load, CACHE_TTL);
+    return () => {
+      mounted = false;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, []);
 
-  // Función para convertir de una moneda a otra
-  const convertCurrency = (amount: number, fromCurrency: 'MXN' | 'USD' | 'EUR', toCurrency: 'MXN' | 'USD' | 'EUR'): number => {
-    if (fromCurrency === toCurrency) return amount;
-    
-    // Convertir todo a MXN primero
-    let amountInMXN = amount;
-    if (fromCurrency !== 'MXN') {
-      amountInMXN = amount * rates[fromCurrency];
-    }
-    
-    // Luego convertir de MXN a la moneda destino
-    if (toCurrency === 'MXN') {
-      return amountInMXN;
-    } else {
-      return amountInMXN / rates[toCurrency];
-    }
-  };
+  // Stable convertCurrency function
+  const convertCurrency = useCallback(
+    (amount: number, fromCurrency: 'MXN' | 'USD' | 'EUR', toCurrency: 'MXN' | 'USD' | 'EUR'): number => {
+      if (fromCurrency === toCurrency) return amount;
+      let amountInMXN = fromCurrency !== 'MXN' ? amount * rates[fromCurrency] : amount;
+      return toCurrency === 'MXN' ? amountInMXN : amountInMXN / rates[toCurrency];
+    },
+    [rates]
+  );
 
-  return {
-    rates,
-    loading,
-    error,
-    convertCurrency,
-    refreshRates: fetchRates
-  };
+  const refreshRates = useCallback(async () => {
+    cachedRates = null; // Force refresh
+    const newRates = await getOrFetchRates();
+    setRates(newRates);
+  }, []);
+
+  return { rates, loading, error, convertCurrency, refreshRates };
 };
