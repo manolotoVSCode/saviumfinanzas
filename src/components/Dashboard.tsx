@@ -901,6 +901,22 @@ const CategoryItem = ({
         </CardContent>
       </Card>
 
+      {/* DONUT CHART + SAVINGS RATE */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DashboardDonutChart
+          pieDataGastosMes={pieDataGastosMesAnterior}
+          pieDataIngresosMes={pieDataIngresosMesAnterior}
+          selectedCurrency={selectedCurrency}
+          selectedMonth={selectedMonth}
+          selectedMonthYear={selectedMonthYear}
+          formatCurrency={formatCurrencyConsistent}
+        />
+        <DashboardSavingsRate
+          tendenciaMensual={filteredMetrics.tendenciaMensual}
+          selectedCurrency={selectedCurrency}
+          formatCurrency={formatCurrencyConsistent}
+        />
+      </div>
 
       {/* 2. TOP 10 CATEGORÍAS - ÚLTIMOS 12 MESES */}
       <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
