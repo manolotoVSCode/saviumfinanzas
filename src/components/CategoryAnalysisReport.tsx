@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { TrendingUp, TrendingDown, ArrowRightLeft, ArrowDownCircle, Calendar, Filter, Sun, LayoutGrid, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Treemap, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart as RechartsPieChart, Pie, Cell, Legend } from 'recharts';
+import { useAppConfig } from '@/hooks/useAppConfig';
 
 interface Transaction {
   id: string;
@@ -44,13 +45,22 @@ const COLORS = [
 
 export const CategoryAnalysisReport = ({ transactions, categories, formatCurrency }: CategoryAnalysisReportProps) => {
   const now = new Date();
+  const { config } = useAppConfig();
   
   // Estados para filtros
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>(now.getMonth());
   const [selectedType, setSelectedType] = useState<TransactionTypeFilter>('Gastos');
-  const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
+  const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>(config.currency);
   const [chartType, setChartType] = useState<ChartType>('sunburst');
+  const [currencyInitialized, setCurrencyInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!currencyInitialized) {
+      setSelectedCurrency(config.currency);
+      setCurrencyInitialized(true);
+    }
+  }, [config.currency, currencyInitialized]);
 
   // Obtener años disponibles
   const availableYears = useMemo(() => {

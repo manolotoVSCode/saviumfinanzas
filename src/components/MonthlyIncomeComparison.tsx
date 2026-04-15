@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,6 +6,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { Transaction, Category } from '@/types/finance';
 import { formatNumber } from '@/lib/formatters';
+import { useAppConfig } from '@/hooks/useAppConfig';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface MonthlyIncomeComparisonProps {
@@ -25,8 +26,17 @@ const MONTH_SHORT = [
 ];
 
 export const MonthlyIncomeComparison = ({ transactions, categories, formatCurrency }: MonthlyIncomeComparisonProps) => {
+  const { config } = useAppConfig();
   const [monthsToShow, setMonthsToShow] = useState<string>('6');
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('MXN');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(config.currency);
+  const [currencyInitialized, setCurrencyInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!currencyInitialized) {
+      setSelectedCurrency(config.currency);
+      setCurrencyInitialized(true);
+    }
+  }, [config.currency, currencyInitialized]);
 
   // Get unique currencies from income transactions
   const availableCurrencies = useMemo(() => {

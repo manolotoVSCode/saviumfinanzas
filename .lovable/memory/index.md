@@ -9,6 +9,8 @@ Filter dates by local components (year/month), not ISO UTC, to prevent timezone 
 Supabase keep-alive daily cron 'keepalive-edge-ping' via pg_net prevents project pause.
 Dark mode disabled — user rejected it. Do not re-add.
 Desktop: sidebar nav. Mobile: bottom bar nav.
+All currency conversions use user's divisa_preferida (from profile), never hardcoded MXN.
+Admin email is manoloto@gmail.com — protected from deletion. SIN ASIGNAR category is locked.
 
 ## Memories
 - [Sold Property Logic](mem://finance/bienes-raices-sold-property-handling) — Sets balance to 0, disables form, hides from reports
@@ -22,8 +24,9 @@ Desktop: sidebar nav. Mobile: bottom bar nav.
 - [Supabase Keep-Alive](mem://infra/supabase-keep-alive) — Daily edge function ping via pg_net to prevent project suspension
 - [Investment Visibility](mem://finance/investment-visibility-rules) — Hides accounts with zero balance from the Investments tab
 - [Subscription Detection](mem://finance/subscription-detection-logic) — Hardcoded pattern list (no AI), dynamic frequency calculation
-- [Income Comparison Report](mem://features/income-comparison-report) — Excludes current month, MXN default, excludes Real Estate sales
+- [Income Comparison Report](mem://features/income-comparison-report) — Excludes current month, excludes Real Estate sales
 - [Security & Auth Config](mem://auth/security-config) — RBAC via user_roles, magic links, JWT for Edge Functions, 10MB limits, is_sample flag
 - [Transactions Filter Logic](mem://ui/transactions-filter-logic) — Month filter dynamic, uses local dates
-- [Investments Chart Data](mem://ui/investments-chart-data) — Pie chart uses 'Saldo Actual' converted to MXN, not initial amount
+- [Investments Chart Data](mem://ui/investments-chart-data) — Pie chart uses 'Saldo Actual' converted to preferred currency
 - [Classification Rules](mem://features/classification-rules) — Auto-classification rules engine with exact/contains matching and drill-down UI
+- [Preferred Currency](mem://features/preferred-currency) — useAppConfig reads divisa_preferida, all calculations convert to it

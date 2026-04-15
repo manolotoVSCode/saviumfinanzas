@@ -284,57 +284,57 @@ export const useFinanceDataSupabase = () => {
     const transactionsThisYear = enrichedTransactions.filter(t => t.fecha >= startOfYear && t.fecha <= endOfYear);
     const transactionsLastYear = enrichedTransactions.filter(t => t.fecha >= startOfLastYear && t.fecha <= endOfLastYear);
     
-    // INGRESOS Y GASTOS MENSUALES - CONVERTIR A MXN
+    // INGRESOS Y GASTOS MENSUALES - CONVERTIR A DIVISA PREFERIDA
     // Reembolso = ingreso > 0 asociado a categoría tipo 'Gastos' (ingreso en categoría de gasto)
     const reembolsosMes = transactionsThisMonth
       .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
     
     const ingresosMes = transactionsThisMonth
       .filter(t => t.ingreso > 0 && t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
-      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
     const gastosMes = transactionsThisMonth
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
-      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMes;
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, config.currency), 0) - reembolsosMes;
     const balanceMes = ingresosMes - gastosMes;
     
-    // MES ANTERIOR (dinámico) - CONVERTIR A MXN
+    // MES ANTERIOR (dinámico) - CONVERTIR A DIVISA PREFERIDA
     const reembolsosMesAnterior = transactionsPreviousMonth
       .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
     
     const ingresosMesAnterior = transactionsPreviousMonth
       .filter(t => t.ingreso > 0 && t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
-      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
     const gastosMesAnterior = transactionsPreviousMonth
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
-      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMesAnterior;
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, config.currency), 0) - reembolsosMesAnterior;
     const balanceMesAnterior = ingresosMesAnterior - gastosMesAnterior;
     
-    // ANUALES - CONVERTIR A MXN
+    // ANUALES - CONVERTIR A DIVISA PREFERIDA
     const reembolsosAnio = transactionsThisYear
       .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
     
     const ingresosAnio = transactionsThisYear
       .filter(t => t.ingreso > 0 && t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
-      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
     const gastosAnio = transactionsThisYear
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
-      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosAnio;
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, config.currency), 0) - reembolsosAnio;
     const balanceAnio = ingresosAnio - gastosAnio;
     
-    // AÑO ANTERIOR - CONVERTIR A MXN
+    // AÑO ANTERIOR - CONVERTIR A DIVISA PREFERIDA
     const reembolsosAnioAnterior = transactionsLastYear
       .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
-      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
     
     const ingresosAnioAnterior = transactionsLastYear
       .filter(t => t.ingreso > 0 && t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
-      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+      .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
     const gastosAnioAnterior = transactionsLastYear
       .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
-      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosAnioAnterior;
+      .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, config.currency), 0) - reembolsosAnioAnterior;
     const balanceAnioAnterior = ingresosAnioAnterior - gastosAnioAnterior;
     
     // VARIACIONES PORCENTUALES (Mes actual vs Mes anterior)
@@ -488,7 +488,7 @@ export const useFinanceDataSupabase = () => {
     const topCategoriasIngresosMesAnterior = getCategoryTotalsIngresos(transactionsPreviousMonth);
     const topCategoriasIngresosAnual = getCategoryTotalsIngresos(transactionsThisYear);
     
-    // TENDENCIA MENSUAL (últimos 12 meses) - CONVERTIDO A MXN PARA DASHBOARD
+    // TENDENCIA MENSUAL (últimos 12 meses) - CONVERTIDO A DIVISA PREFERIDA
     const tendenciaMensual = [];
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
@@ -500,14 +500,14 @@ export const useFinanceDataSupabase = () => {
       
       const reembolsosMesTendencia = monthTransactions
         .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
-        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
       
       const ingresos = monthTransactions
         .filter(t => t.tipo === 'Ingreso' && t.categoria !== 'Compra Venta Inmuebles')
-        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
       const gastos = monthTransactions
         .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
-        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMesTendencia;
+        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, config.currency), 0) - reembolsosMesTendencia;
       
       tendenciaMensual.push({
         mes: date.toLocaleDateString('es-MX', { month: 'short', year: '2-digit' }),
@@ -530,18 +530,18 @@ export const useFinanceDataSupabase = () => {
       // Reembolso = ingreso > 0 asociado a categoría tipo 'Gastos'
       const reembolsosMesMedia = monthTransactions
         .filter(t => t.ingreso > 0 && t.tipo === 'Gastos')
-        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
       
       const ingresos = monthTransactions
         .filter(t => 
           t.tipo === 'Ingreso' && 
           t.categoria !== 'Compra Venta Inmuebles'
         )
-        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, 'MXN'), 0);
+        .reduce((sum, t) => sum + convertCurrency(t.ingreso, t.divisa, config.currency), 0);
         
       const gastos = monthTransactions
         .filter(t => t.tipo === 'Gastos' && t.categoria !== 'Compra Venta Inmuebles')
-        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, 'MXN'), 0) - reembolsosMesMedia;
+        .reduce((sum, t) => sum + convertCurrency(t.gasto, t.divisa, config.currency), 0) - reembolsosMesMedia;
       
       tendenciaUltimos6Meses.push({ ingresos, gastos });
     }
@@ -559,7 +559,7 @@ export const useFinanceDataSupabase = () => {
     // INVERSIONES DETALLADAS (considerando saldo inicial)
     const cuentasInversionIds = accountsWithBalances.filter(a => a.tipo === 'Inversiones').map(a => a.id);
     const totalInversiones = accountsWithBalances.filter(a => a.tipo === 'Inversiones').reduce((s, a) => {
-      const convertedAmount = convertCurrency(a.saldoActual, a.divisa, 'MXN');
+      const convertedAmount = convertCurrency(a.saldoActual, a.divisa, config.currency);
       return s + convertedAmount;
     }, 0);
     

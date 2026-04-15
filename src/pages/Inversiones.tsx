@@ -25,8 +25,9 @@ const Inversiones = (): JSX.Element => {
   console.log('Todas las cuentas:', accounts);
   console.log('Loading:', loading);
   
-  const { formatCurrency } = useAppConfig();
+  const { formatCurrency, config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
+  const prefCurrency = config.currency;
 
   // Filtrar solo cuentas de inversión (excluir las que tienen valor 0)
   const cuentasInversion = accounts.filter(account => account.tipo === 'Inversiones' && account.saldoActual !== 0);
@@ -101,38 +102,38 @@ const Inversiones = (): JSX.Element => {
     return acc;
   }, {} as Record<string, { cuentas: Array<typeof cuentasCompletas[0] & { valorActual: number, rendimiento: number, porcentaje: number }> }>);
 
-  // Calcular totales en MXN para resumen general
+  // Calcular totales en divisa preferida para resumen general
   const totalGeneral = Object.values(resumenPorTipo).reduce((acc, item) => {
-    const valorActualMXN = item.cuentas.reduce((sum, cuenta) => {
-      const valorEnMXN = cuenta.divisa === 'MXN' 
+    const valorActualConvertido = item.cuentas.reduce((sum, cuenta) => {
+      const valor = cuenta.divisa === prefCurrency 
         ? cuenta.valorActual
-        : convertCurrency(cuenta.valorActual, cuenta.divisa, 'MXN');
-      return sum + valorEnMXN;
+        : convertCurrency(cuenta.valorActual, cuenta.divisa, prefCurrency);
+      return sum + valor;
     }, 0);
     
-    const montoInvertidoMXN = item.cuentas.reduce((sum, cuenta) => {
-      const montoEnMXN = cuenta.divisa === 'MXN' 
+    const montoInvertidoConvertido = item.cuentas.reduce((sum, cuenta) => {
+      const monto = cuenta.divisa === prefCurrency 
         ? cuenta.saldoInicial
-        : convertCurrency(cuenta.saldoInicial, cuenta.divisa, 'MXN');
-      return sum + montoEnMXN;
+        : convertCurrency(cuenta.saldoInicial, cuenta.divisa, prefCurrency);
+      return sum + monto;
     }, 0);
     
     return {
-      valorActual: acc.valorActual + valorActualMXN,
-      montoInvertido: acc.montoInvertido + montoInvertidoMXN,
+      valorActual: acc.valorActual + valorActualConvertido,
+      montoInvertido: acc.montoInvertido + montoInvertidoConvertido,
     };
   }, { valorActual: 0, montoInvertido: 0 });
 
   // Datos para el gráfico de pie - por cuenta individual y saldo actual
   const pieData = cuentasCompletas.map((cuenta) => {
     const valorActual = calcularValorActualReinversion(cuenta);
-    const valorEnMXN = cuenta.divisa === 'MXN' 
+    const valorConvertido = cuenta.divisa === prefCurrency 
       ? valorActual
-      : convertCurrency(valorActual, cuenta.divisa, 'MXN');
+      : convertCurrency(valorActual, cuenta.divisa, prefCurrency);
     
     return {
       name: cuenta.nombre,
-      value: Math.abs(valorEnMXN),
+      value: Math.abs(valorConvertido),
     };
   });
 
