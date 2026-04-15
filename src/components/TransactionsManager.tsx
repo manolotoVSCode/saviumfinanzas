@@ -1299,11 +1299,6 @@ export const TransactionsManager = ({
                       ))}
                     </SelectContent>
                   </Select>
-                  {isCreditCardSelected && tarjetahabientes.length === 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Importa un estado de cuenta con columna de tarjetahabiente
-                    </p>
-                  )}
                 </div>
               );
             })()}
