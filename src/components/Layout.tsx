@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
+import { GlobalSearch, GlobalSearchTrigger } from '@/components/GlobalSearch';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,8 +21,21 @@ const Layout = ({ children }: LayoutProps) => {
   const { profile } = useUserProfile();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Ctrl+K / Cmd+K shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(prev => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const mainNavItems = [
     { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
@@ -48,6 +63,8 @@ const Layout = ({ children }: LayoutProps) => {
   if (!isMobile) {
     return (
       <div className="min-h-screen bg-background flex">
+        <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+
         {/* SIDEBAR */}
         <aside className="w-64 fixed top-0 left-0 bottom-0 bg-card border-r flex flex-col z-50">
           <div className="p-4 border-b">
@@ -57,6 +74,11 @@ const Layout = ({ children }: LayoutProps) => {
             >
               <Logo size={56} className="justify-start" />
             </button>
+          </div>
+
+          {/* SEARCH */}
+          <div className="p-3 pb-0">
+            <GlobalSearchTrigger onClick={() => setSearchOpen(true)} />
           </div>
 
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -133,6 +155,8 @@ const Layout = ({ children }: LayoutProps) => {
   // Mobile layout with bottom nav
   return (
     <div className="min-h-screen bg-background pb-20">
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+
       <div className="container mx-auto px-4 py-8">
         {/* MOBILE HEADER */}
         <div className="mb-8 flex justify-between items-center gap-4">
@@ -142,9 +166,14 @@ const Layout = ({ children }: LayoutProps) => {
           >
             <Logo size={56} className="justify-start" />
           </button>
-          <Button variant="outline" size="sm" onClick={signOut}>
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setSearchOpen(true)} className="h-9 w-9">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </Button>
+            <Button variant="outline" size="sm" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
