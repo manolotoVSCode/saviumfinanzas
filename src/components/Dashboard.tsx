@@ -803,6 +803,20 @@ const CategoryItem = ({
         </div>
       </div>
 
+      {/* KPI CARDS WITH SELECTORS */}
+      <DashboardKPIs
+        selectedMonth={selectedMonth}
+        selectedMonthYear={selectedMonthYear}
+        selectedYear={selectedYear}
+        onMonthChange={setSelectedMonth}
+        onMonthYearChange={setSelectedMonthYear}
+        onYearChange={setSelectedYear}
+        availableYears={availableYears}
+        filteredMetrics={filteredMetrics}
+        selectedCurrency={selectedCurrency}
+        formatCurrency={formatCurrencyConsistent}
+      />
+
       {/* 1. GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES CON MEDIAS */}
       <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
         <CardHeader>
