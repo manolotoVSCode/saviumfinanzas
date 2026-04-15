@@ -25,8 +25,9 @@ const Inversiones = (): JSX.Element => {
   console.log('Todas las cuentas:', accounts);
   console.log('Loading:', loading);
   
-  const { formatCurrency } = useAppConfig();
+  const { formatCurrency, config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
+  const prefCurrency = config.currency;
 
   // Filtrar solo cuentas de inversión (excluir las que tienen valor 0)
   const cuentasInversion = accounts.filter(account => account.tipo === 'Inversiones' && account.saldoActual !== 0);
