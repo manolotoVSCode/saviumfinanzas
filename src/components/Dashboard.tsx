@@ -170,6 +170,7 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>('MXN');
   const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
 
 // Componente para subcategoría con hover state
 const SubcategoryItem = ({ 
