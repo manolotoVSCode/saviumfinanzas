@@ -145,18 +145,25 @@ export const useFinanceDataSupabase = () => {
     });
   }, [accounts, transactions]);
 
-  // Transacciones enriquecidas
+  // Category lookup map for O(1) access
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, Category>();
+    categories.forEach(c => map.set(c.id, c));
+    return map;
+  }, [categories]);
+
+  // Transacciones enriquecidas - uses Map for O(1) lookup instead of O(n) .find()
   const enrichedTransactions = useMemo(() => {
     return transactions.map(transaction => {
-      const category = categories.find(c => c.id === transaction.subcategoriaId);
+      const category = categoryMap.get(transaction.subcategoriaId);
       return {
         ...transaction,
         categoria: category?.categoria || 'SIN ASIGNAR',
-        subcategoria: category?.subcategoria || 'SIN ASIGNAR', // Agregar subcategoría
-        tipo: category?.tipo || undefined // Permitir undefined para transacciones sin clasificar
+        subcategoria: category?.subcategoria || 'SIN ASIGNAR',
+        tipo: category?.tipo || undefined
       };
     });
-  }, [transactions, categories]);
+  }, [transactions, categoryMap]);
 
   // Funciones auxiliares para el cálculo de score financiero (definidas antes del useMemo)
   const calcularScoreFinanciero = (
