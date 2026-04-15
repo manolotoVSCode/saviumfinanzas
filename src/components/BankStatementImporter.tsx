@@ -916,7 +916,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         </Button>
       </DialogTrigger>
       
-      <DialogContent className={`${step === 'preview' ? 'max-w-6xl max-h-[90vh]' : 'max-w-md'}`} onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className={`${step === 'preview' ? 'max-w-5xl max-h-[90vh]' : 'max-w-md'}`} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5" />
