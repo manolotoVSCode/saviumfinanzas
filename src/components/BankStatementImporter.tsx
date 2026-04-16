@@ -263,43 +263,79 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         firstRowText.includes('importe') || firstRowText.includes('amount')) {
       hasHeader = true;
       
-      // Use header names to find columns
+      // Use header names to find columns. Track date candidates to disambiguate
+      // when the file has both "Fecha operación" and "Fecha valor".
+      const dateOperacionCandidates: number[] = [];
+      const dateValorCandidates: number[] = [];
+      const dateGenericCandidates: number[] = [];
+
       for (let i = 0; i < firstRow.length; i++) {
         const header = firstRow[i].toLowerCase().trim();
+        // Strip accents AND parenthetical units like "(€)", "(MXN)", "(USD)" from header names
         const normalizedHeader = header
           .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
-        
-        // Date column - support common banking headers (fecha, fecha valor, f. valor)
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s*\([^)]*\)\s*/g, '')
+          .trim();
+
+        // --- Date column candidates ---
         if (
-          normalizedHeader === 'fecha' ||
-          normalizedHeader === 'f. valor' ||
-          normalizedHeader === 'date' ||
-          normalizedHeader.includes('fecha valor')
+          normalizedHeader === 'fecha operacion' ||
+          normalizedHeader === 'fecha mov' ||
+          normalizedHeader === 'fecha mov.' ||
+          normalizedHeader.includes('fecha operacion') ||
+          normalizedHeader.includes('fecha mov')
         ) {
-          dateCol = i;
+          dateOperacionCandidates.push(i);
+        } else if (
+          normalizedHeader === 'f. valor' ||
+          normalizedHeader === 'f valor' ||
+          normalizedHeader === 'fecha valor' ||
+          normalizedHeader.includes('fecha valor') ||
+          normalizedHeader.includes('f. valor')
+        ) {
+          dateValorCandidates.push(i);
+        } else if (
+          normalizedHeader === 'fecha' ||
+          normalizedHeader === 'date'
+        ) {
+          dateGenericCandidates.push(i);
         }
-        
-        // Amount column - prefer importe/monto variants
+
+        // --- Amount column (single) ---
         if (
           normalizedHeader === 'importe' ||
-          normalizedHeader === 'importe (€)' ||
           normalizedHeader === 'amount' ||
           normalizedHeader === 'monto' ||
+          normalizedHeader === 'cantidad' ||
+          normalizedHeader === 'valor' ||
           normalizedHeader.includes('importe')
         ) {
           amountCol = i;
         }
-        
-        // Description column
+
+        // --- Description column ---
         if (
           normalizedHeader === 'descripcion' ||
           normalizedHeader === 'description' ||
           normalizedHeader === 'concepto' ||
-          normalizedHeader.includes('descripcion')
+          normalizedHeader === 'detalle' ||
+          normalizedHeader === 'comentario' ||
+          normalizedHeader === 'referencia' ||
+          normalizedHeader.includes('descripcion') ||
+          normalizedHeader.includes('concepto')
         ) {
           descCol = i;
         }
+      }
+
+      // Date priority: operación/mov > generic "fecha" > f. valor (only used as fallback)
+      if (dateOperacionCandidates.length > 0) {
+        dateCol = dateOperacionCandidates[0];
+      } else if (dateGenericCandidates.length > 0) {
+        dateCol = dateGenericCandidates[0];
+      } else if (dateValorCandidates.length > 0) {
+        dateCol = dateValorCandidates[0];
       }
     }
     
