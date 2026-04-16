@@ -891,6 +891,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     setStep('select-account');
     setSelectedAccountId('');
     setParsedRows([]);
+    setDateFormat('auto');
+    setNeedsDateFormatChoice(false);
+    setPendingFile(null);
   };
 
   const categoriesByType = useMemo(() => {
@@ -1085,7 +1088,29 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                 <p className="text-sm text-muted-foreground mt-1">CSV o Excel (.csv, .xls, .xlsx)</p>
               </label>
             </div>
-            
+
+            {needsDateFormatChoice && (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium text-foreground">Formato de fecha ambiguo</p>
+                    <p className="text-muted-foreground mt-1">
+                      Algunas fechas pueden interpretarse como DD/MM o MM/DD. Selecciona el formato:
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button size="sm" variant="default" onClick={() => handleConfirmDateFormat('DMY')}>
+                    DD/MM/YYYY (México / España)
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleConfirmDateFormat('MDY')}>
+                    MM/DD/YYYY (EEUU)
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep('select-account')}>
                 Atrás
