@@ -706,7 +706,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       });
     }
     
-    return parsed;
+    const ambiguous = detectDateAmbiguity(dataRows, dateCol);
+    return { rows: parsed, ambiguous };
   }
 
   const processFile = async (file: File, hint: 'auto' | 'DMY' | 'MDY') => {
