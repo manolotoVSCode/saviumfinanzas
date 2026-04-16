@@ -54,6 +54,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const [sortColumn, setSortColumn] = useState<SortColumn>('fecha');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [openCatRowId, setOpenCatRowId] = useState<string | null>(null);
+  const [dateFormat, setDateFormat] = useState<'auto' | 'DMY' | 'MDY'>('auto');
+  const [needsDateFormatChoice, setNeedsDateFormatChoice] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { findMatchingRule } = useClassificationRules();
 
