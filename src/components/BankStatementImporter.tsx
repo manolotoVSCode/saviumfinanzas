@@ -535,7 +535,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return d;
   }
 
-  function parseExcelContent(data: ArrayBuffer): ParsedRow[] {
+  function parseExcelContent(data: ArrayBuffer, formatHint: 'auto' | 'DMY' | 'MDY' = 'auto'): { rows: ParsedRow[]; ambiguous: boolean } {
     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, dateNF: 'dd/mm/yyyy' }) as unknown[][];
@@ -617,14 +617,14 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       return row.some(cell => cell && parseDate(cell));
     });
     
-    if (dataRows.length === 0) return [];
+    if (dataRows.length === 0) return { rows: [], ambiguous: false };
     
     const parsed: ParsedRow[] = [];
     
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
       
-      const fecha = parseDate(row[dateCol] || '');
+      const fecha = parseDate(row[dateCol] || '', formatHint);
       if (!fecha) continue;
       
       // Safe column access helper
