@@ -709,37 +709,70 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return parsed;
   }
 
+  const processFile = async (file: File, hint: 'auto' | 'DMY' | 'MDY') => {
+    const lowerFileName = file.name.toLowerCase();
+    const isExcel = lowerFileName.endsWith('.xls') || lowerFileName.endsWith('.xlsx');
+
+    let result: { rows: ParsedRow[]; ambiguous: boolean };
+    if (isExcel) {
+      const buffer = await file.arrayBuffer();
+      result = parseExcelContent(buffer, hint);
+    } else {
+      const text = await file.text();
+      result = parseCSVContent(text, hint);
+    }
+
+    if (result.rows.length === 0) {
+      toast({
+        title: 'Error',
+        description: isExcel
+          ? 'No se encontraron transacciones válidas en el archivo Excel. Revisa que tenga columnas de fecha e importe.'
+          : 'No se encontraron transacciones válidas en el archivo',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // If ambiguous and user hasn't chosen yet, ask
+    if (result.ambiguous && hint === 'auto' && !needsDateFormatChoice) {
+      setPendingFile(file);
+      setNeedsDateFormatChoice(true);
+      return;
+    }
+
+    setParsedRows(result.rows);
+    setStep('preview');
+    setNeedsDateFormatChoice(false);
+    setPendingFile(null);
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     try {
-      const lowerFileName = file.name.toLowerCase();
-      const isExcel = lowerFileName.endsWith('.xls') || lowerFileName.endsWith('.xlsx');
-      
-      if (isExcel) {
-        const buffer = await file.arrayBuffer();
-        const rows = parseExcelContent(buffer);
-        if (rows.length === 0) {
-          toast({ title: 'Error', description: 'No se encontraron transacciones válidas en el archivo Excel. Revisa que tenga columnas de fecha e importe.', variant: 'destructive' });
-          return;
-        }
-        setParsedRows(rows);
-        setStep('preview');
-      } else {
-        const text = await file.text();
-        const rows = parseCSVContent(text);
-        if (rows.length === 0) {
-          toast({ title: 'Error', description: 'No se encontraron transacciones válidas en el archivo', variant: 'destructive' });
-          return;
-        }
-        setParsedRows(rows);
-        setStep('preview');
-      }
+      await processFile(file, dateFormat);
     } catch (error) {
       console.error('Error parsing file:', error);
       const description = error instanceof Error ? error.message : 'Error al procesar el archivo';
       toast({ title: 'Error', description, variant: 'destructive' });
+    } finally {
+      // Allow re-uploading same file
+      e.target.value = '';
+    }
+  };
+
+  const handleConfirmDateFormat = async (chosen: 'DMY' | 'MDY') => {
+    setDateFormat(chosen);
+    if (!pendingFile) {
+      setNeedsDateFormatChoice(false);
+      return;
+    }
+    try {
+      await processFile(pendingFile, chosen);
+    } catch (error) {
+      console.error('Error reparsing file:', error);
+      toast({ title: 'Error', description: 'Error al reprocesar el archivo', variant: 'destructive' });
     }
   };
 
