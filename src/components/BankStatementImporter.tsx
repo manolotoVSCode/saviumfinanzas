@@ -1090,9 +1090,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
             </div>
 
             {needsDateFormatChoice && (
-              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 space-y-3">
+              <div className="rounded-lg border border-border bg-muted p-4 space-y-3">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                  <AlertCircle className="h-4 w-4 text-foreground mt-0.5 shrink-0" />
                   <div className="text-sm">
                     <p className="font-medium text-foreground">Formato de fecha ambiguo</p>
                     <p className="text-muted-foreground mt-1">
