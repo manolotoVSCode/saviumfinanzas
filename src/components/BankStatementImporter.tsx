@@ -54,6 +54,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const [sortColumn, setSortColumn] = useState<SortColumn>('fecha');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [openCatRowId, setOpenCatRowId] = useState<string | null>(null);
+  const [dateFormat, setDateFormat] = useState<'auto' | 'DMY' | 'MDY'>('auto');
+  const [needsDateFormatChoice, setNeedsDateFormatChoice] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { findMatchingRule } = useClassificationRules();
 
@@ -153,55 +156,67 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
   function parseAmount(amountStr: string): number {
     if (!amountStr) return 0;
-    
-    // Remove quotes and spaces
-    let cleaned = amountStr.replace(/["'\s]/g, '');
-    
-    // Handle European format (1.234,56) vs American format (1,234.56)
-    const hasCommaDecimal = /,\d{1,2}$/.test(cleaned);
-    
-    if (hasCommaDecimal) {
-      // European format: remove dots (thousands), replace comma with dot
-      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+
+    // Remove quotes, spaces, currency symbols & codes from the VALUE
+    let cleaned = amountStr
+      .replace(/["'\s]/g, '')
+      .replace(/[$€£¥]/g, '')
+      .replace(/\b(MXN|USD|EUR|GBP)\b/gi, '');
+
+    const sign = /^-/.test(cleaned) || /-$/.test(cleaned) ? -1 : 1;
+    const unsigned = cleaned.replace(/^[-+]|[-+]$/g, '');
+
+    // Unambiguous European: 1.234,56 / 1.234.567,89 / 1234,56
+    const europeanUnambiguous = /^\d{1,3}(\.\d{3})+(,\d{1,2})?$|^\d+,\d{1,2}$/.test(unsigned);
+    // Unambiguous American: 1,234.56 / 1,234,567.89 / 1234.56
+    const americanUnambiguous = /^\d{1,3}(,\d{3})+(\.\d{1,2})?$|^\d+\.\d{1,2}$/.test(unsigned);
+
+    if (europeanUnambiguous && !americanUnambiguous) {
+      cleaned = unsigned.replace(/\./g, '').replace(',', '.');
+    } else if (americanUnambiguous && !europeanUnambiguous) {
+      cleaned = unsigned.replace(/,/g, '');
     } else {
-      // American format: remove commas
-      cleaned = cleaned.replace(/,/g, '');
+      // Ambiguous fallback (matches previous behaviour)
+      const hasCommaDecimal = /,\d{1,2}$/.test(unsigned);
+      cleaned = hasCommaDecimal
+        ? unsigned.replace(/\./g, '').replace(',', '.')
+        : unsigned.replace(/,/g, '');
     }
-    
-    return parseFloat(cleaned) || 0;
+
+    const n = parseFloat(cleaned);
+    if (isNaN(n)) return 0;
+    return sign * n;
   }
 
-  function parseDate(dateStr: string): Date | null {
+  function parseDate(dateStr: string, formatHint: 'auto' | 'DMY' | 'MDY' = 'auto'): Date | null {
     if (!dateStr) return null;
 
     const cleaned = dateStr.trim();
 
-    // DD/MM/YYYY, DD-MM-YYYY or DD.MM.YYYY
-    const ddmmyyyy = cleaned.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
-    if (ddmmyyyy) {
-      return new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
+    // Numeric DD/MM/YYYY or MM/DD/YYYY (also '-' or '.')
+    const numeric = cleaned.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (numeric) {
+      const a = parseInt(numeric[1]);
+      const b = parseInt(numeric[2]);
+      const y = parseInt(numeric[3]);
+      let day: number, month: number;
+      if (a > 12 && b <= 12) { day = a; month = b; }
+      else if (b > 12 && a <= 12) { day = b; month = a; }
+      else if (formatHint === 'MDY') { month = a; day = b; }
+      else { day = a; month = b; } // default DMY (MX/ES)
+      return new Date(y, month - 1, day);
     }
 
-    // DD Mon YYYY (English/Spanish short month, e.g., "06 Jan 2026" or "06 Ene 2026")
+    // DD Mon YYYY
     const ddMonYYYY = cleaned.match(/^(\d{1,2})\s+([A-Za-zÁÉÍÓÚáéíóú]{3})\s+(\d{4})$/);
     if (ddMonYYYY) {
       const monthKey = ddMonYYYY[2].toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
-
       const months: Record<string, number> = {
-        jan: 0, ene: 0,
-        feb: 1,
-        mar: 2,
-        apr: 3, abr: 3,
-        may: 4,
-        jun: 5,
-        jul: 6,
-        aug: 7, ago: 7,
-        sep: 8,
-        oct: 9,
-        nov: 10,
-        dec: 11, dic: 11,
+        jan: 0, ene: 0, feb: 1, mar: 2, apr: 3, abr: 3,
+        may: 4, jun: 5, jul: 6, aug: 7, ago: 7, sep: 8,
+        oct: 9, nov: 10, dec: 11, dic: 11,
       };
       const month = months[monthKey];
       if (month !== undefined) {
@@ -215,9 +230,20 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       return new Date(parseInt(yyyymmdd[1]), parseInt(yyyymmdd[2]) - 1, parseInt(yyyymmdd[3]));
     }
 
-    // Let JS try as a final fallback
     const fallback = new Date(cleaned);
     return isNaN(fallback.getTime()) ? null : fallback;
+  }
+
+  // True if any DD/MM/YYYY-style date in dateCol has both first parts ≤ 12 (ambiguous)
+  function detectDateAmbiguity(rows: string[][], dateCol: number): boolean {
+    for (const row of rows) {
+      const cell = row?.[dateCol];
+      if (!cell) continue;
+      const m = String(cell).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{4}$/);
+      if (!m) continue;
+      if (parseInt(m[1]) <= 12 && parseInt(m[2]) <= 12) return true;
+    }
+    return false;
   }
 
   function detectFormat(lines: string[][]): { dateCol: number; descCol: number; amountCol: number; hasHeader: boolean } {
@@ -237,43 +263,79 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
         firstRowText.includes('importe') || firstRowText.includes('amount')) {
       hasHeader = true;
       
-      // Use header names to find columns
+      // Use header names to find columns. Track date candidates to disambiguate
+      // when the file has both "Fecha operación" and "Fecha valor".
+      const dateOperacionCandidates: number[] = [];
+      const dateValorCandidates: number[] = [];
+      const dateGenericCandidates: number[] = [];
+
       for (let i = 0; i < firstRow.length; i++) {
         const header = firstRow[i].toLowerCase().trim();
+        // Strip accents AND parenthetical units like "(€)", "(MXN)", "(USD)" from header names
         const normalizedHeader = header
           .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '');
-        
-        // Date column - support common banking headers (fecha, fecha valor, f. valor)
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s*\([^)]*\)\s*/g, '')
+          .trim();
+
+        // --- Date column candidates ---
         if (
-          normalizedHeader === 'fecha' ||
-          normalizedHeader === 'f. valor' ||
-          normalizedHeader === 'date' ||
-          normalizedHeader.includes('fecha valor')
+          normalizedHeader === 'fecha operacion' ||
+          normalizedHeader === 'fecha mov' ||
+          normalizedHeader === 'fecha mov.' ||
+          normalizedHeader.includes('fecha operacion') ||
+          normalizedHeader.includes('fecha mov')
         ) {
-          dateCol = i;
+          dateOperacionCandidates.push(i);
+        } else if (
+          normalizedHeader === 'f. valor' ||
+          normalizedHeader === 'f valor' ||
+          normalizedHeader === 'fecha valor' ||
+          normalizedHeader.includes('fecha valor') ||
+          normalizedHeader.includes('f. valor')
+        ) {
+          dateValorCandidates.push(i);
+        } else if (
+          normalizedHeader === 'fecha' ||
+          normalizedHeader === 'date'
+        ) {
+          dateGenericCandidates.push(i);
         }
-        
-        // Amount column - prefer importe/monto variants
+
+        // --- Amount column (single) ---
         if (
           normalizedHeader === 'importe' ||
-          normalizedHeader === 'importe (€)' ||
           normalizedHeader === 'amount' ||
           normalizedHeader === 'monto' ||
+          normalizedHeader === 'cantidad' ||
+          normalizedHeader === 'valor' ||
           normalizedHeader.includes('importe')
         ) {
           amountCol = i;
         }
-        
-        // Description column
+
+        // --- Description column ---
         if (
           normalizedHeader === 'descripcion' ||
           normalizedHeader === 'description' ||
           normalizedHeader === 'concepto' ||
-          normalizedHeader.includes('descripcion')
+          normalizedHeader === 'detalle' ||
+          normalizedHeader === 'comentario' ||
+          normalizedHeader === 'referencia' ||
+          normalizedHeader.includes('descripcion') ||
+          normalizedHeader.includes('concepto')
         ) {
           descCol = i;
         }
+      }
+
+      // Date priority: operación/mov > generic "fecha" > f. valor (only used as fallback)
+      if (dateOperacionCandidates.length > 0) {
+        dateCol = dateOperacionCandidates[0];
+      } else if (dateGenericCandidates.length > 0) {
+        dateCol = dateGenericCandidates[0];
+      } else if (dateValorCandidates.length > 0) {
+        dateCol = dateValorCandidates[0];
       }
     }
     
@@ -353,7 +415,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return { dateCol, descCol, amountCol, hasHeader };
   }
 
-  function parseCSVContent(content: string): ParsedRow[] {
+  function parseCSVContent(content: string, formatHint: 'auto' | 'DMY' | 'MDY' = 'auto'): { rows: ParsedRow[]; ambiguous: boolean } {
     // Use a robust CSV parser (supports multi-line quoted fields like AMEX addresses)
     const parsedCsv = Papa.parse<string[]>(content, {
       delimiter: ',',
@@ -370,14 +432,14 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       .map((row) => (row || []).map((cell) => (cell ?? '').toString().trim()))
       .filter((row) => row.some((c) => c.length > 0));
 
-    if (rows.length === 0) return [];
+    if (rows.length === 0) return { rows: [], ambiguous: false };
 
     const { dateCol, descCol, amountCol, hasHeader } = detectFormat(rows);
     const headerRow = hasHeader ? rows[0] : [];
     const headerLower = headerRow.map(h => (h || '').toLowerCase().trim());
 
-    const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'importe cargo'].includes(h));
-    const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
+    const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'retiro', 'egreso', 'importe cargo'].includes(h));
+    const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'deposito', 'depósito', 'ingreso', 'importe abono'].includes(h));
     const tarjetahabienteCol = headerLower.findIndex(h => {
       const normalized = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       return ['tarjetahabiente', 'titular', 'nombre titular', 'cardholder', 'nombre tarjetahabiente', 'nombre del tarjetahabiente', 'tarjeta habiente', 'titular de la tarjeta', 'titular tarjeta', 'card member', 'card member name', 'member name', 'nombre del titular', 'titulartarjeta'].includes(normalized);
@@ -390,7 +452,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
 
-      const fecha = parseDate(row[dateCol]);
+      const fecha = parseDate(row[dateCol], formatHint);
       if (!fecha) continue; // Skip rows without valid date
 
       const descripcion = row[descCol] || '';
@@ -459,7 +521,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       });
     }
 
-    return parsed;
+    const ambiguous = detectDateAmbiguity(dataRows, dateCol);
+    return { rows: parsed, ambiguous };
   }
 
   function excelSerialToDate(serial: number): Date | null {
@@ -472,7 +535,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return d;
   }
 
-  function parseExcelContent(data: ArrayBuffer): ParsedRow[] {
+  function parseExcelContent(data: ArrayBuffer, formatHint: 'auto' | 'DMY' | 'MDY' = 'auto'): { rows: ParsedRow[]; ambiguous: boolean } {
     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, dateNF: 'dd/mm/yyyy' }) as unknown[][];
@@ -537,8 +600,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
     const headerRow = hasHeader ? rows[0] : [];
     const headerLower = headerRow.map(h => (h || '').toLowerCase().trim());
-    const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'importe cargo'].includes(h));
-    const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
+    const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'retiro', 'egreso', 'importe cargo'].includes(h));
+    const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'deposito', 'depósito', 'ingreso', 'importe abono'].includes(h));
     const tarjetahabienteColExcel = headerLower.findIndex(h => {
       const normalized = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       return ['tarjetahabiente', 'titular', 'nombre titular', 'cardholder', 'nombre tarjetahabiente', 'nombre del tarjetahabiente', 'tarjeta habiente', 'titular de la tarjeta', 'titular tarjeta', 'card member', 'card member name', 'member name', 'nombre del titular', 'titulartarjeta'].includes(normalized);
@@ -554,14 +617,14 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       return row.some(cell => cell && parseDate(cell));
     });
     
-    if (dataRows.length === 0) return [];
+    if (dataRows.length === 0) return { rows: [], ambiguous: false };
     
     const parsed: ParsedRow[] = [];
     
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
       
-      const fecha = parseDate(row[dateCol] || '');
+      const fecha = parseDate(row[dateCol] || '', formatHint);
       if (!fecha) continue;
       
       // Safe column access helper
@@ -643,40 +706,74 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       });
     }
     
-    return parsed;
+    const ambiguous = detectDateAmbiguity(dataRows, dateCol);
+    return { rows: parsed, ambiguous };
   }
+
+  const processFile = async (file: File, hint: 'auto' | 'DMY' | 'MDY') => {
+    const lowerFileName = file.name.toLowerCase();
+    const isExcel = lowerFileName.endsWith('.xls') || lowerFileName.endsWith('.xlsx');
+
+    let result: { rows: ParsedRow[]; ambiguous: boolean };
+    if (isExcel) {
+      const buffer = await file.arrayBuffer();
+      result = parseExcelContent(buffer, hint);
+    } else {
+      const text = await file.text();
+      result = parseCSVContent(text, hint);
+    }
+
+    if (result.rows.length === 0) {
+      toast({
+        title: 'Error',
+        description: isExcel
+          ? 'No se encontraron transacciones válidas en el archivo Excel. Revisa que tenga columnas de fecha e importe.'
+          : 'No se encontraron transacciones válidas en el archivo',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // If ambiguous and user hasn't chosen yet, ask
+    if (result.ambiguous && hint === 'auto' && !needsDateFormatChoice) {
+      setPendingFile(file);
+      setNeedsDateFormatChoice(true);
+      return;
+    }
+
+    setParsedRows(result.rows);
+    setStep('preview');
+    setNeedsDateFormatChoice(false);
+    setPendingFile(null);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     try {
-      const lowerFileName = file.name.toLowerCase();
-      const isExcel = lowerFileName.endsWith('.xls') || lowerFileName.endsWith('.xlsx');
-      
-      if (isExcel) {
-        const buffer = await file.arrayBuffer();
-        const rows = parseExcelContent(buffer);
-        if (rows.length === 0) {
-          toast({ title: 'Error', description: 'No se encontraron transacciones válidas en el archivo Excel. Revisa que tenga columnas de fecha e importe.', variant: 'destructive' });
-          return;
-        }
-        setParsedRows(rows);
-        setStep('preview');
-      } else {
-        const text = await file.text();
-        const rows = parseCSVContent(text);
-        if (rows.length === 0) {
-          toast({ title: 'Error', description: 'No se encontraron transacciones válidas en el archivo', variant: 'destructive' });
-          return;
-        }
-        setParsedRows(rows);
-        setStep('preview');
-      }
+      await processFile(file, dateFormat);
     } catch (error) {
       console.error('Error parsing file:', error);
       const description = error instanceof Error ? error.message : 'Error al procesar el archivo';
       toast({ title: 'Error', description, variant: 'destructive' });
+    } finally {
+      // Allow re-uploading same file
+      e.target.value = '';
+    }
+  };
+
+  const handleConfirmDateFormat = async (chosen: 'DMY' | 'MDY') => {
+    setDateFormat(chosen);
+    if (!pendingFile) {
+      setNeedsDateFormatChoice(false);
+      return;
+    }
+    try {
+      await processFile(pendingFile, chosen);
+    } catch (error) {
+      console.error('Error reparsing file:', error);
+      toast({ title: 'Error', description: 'Error al reprocesar el archivo', variant: 'destructive' });
     }
   };
 
@@ -794,6 +891,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     setStep('select-account');
     setSelectedAccountId('');
     setParsedRows([]);
+    setDateFormat('auto');
+    setNeedsDateFormatChoice(false);
+    setPendingFile(null);
   };
 
   const categoriesByType = useMemo(() => {
@@ -988,7 +1088,29 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                 <p className="text-sm text-muted-foreground mt-1">CSV o Excel (.csv, .xls, .xlsx)</p>
               </label>
             </div>
-            
+
+            {needsDateFormatChoice && (
+              <div className="rounded-lg border border-border bg-muted p-4 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-foreground mt-0.5 shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium text-foreground">Formato de fecha ambiguo</p>
+                    <p className="text-muted-foreground mt-1">
+                      Algunas fechas pueden interpretarse como DD/MM o MM/DD. Selecciona el formato:
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button size="sm" variant="default" onClick={() => handleConfirmDateFormat('DMY')}>
+                    DD/MM/YYYY (México / España)
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleConfirmDateFormat('MDY')}>
+                    MM/DD/YYYY (EEUU)
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep('select-account')}>
                 Atrás
