@@ -432,7 +432,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       .map((row) => (row || []).map((cell) => (cell ?? '').toString().trim()))
       .filter((row) => row.some((c) => c.length > 0));
 
-    if (rows.length === 0) return [];
+    if (rows.length === 0) return { rows: [], ambiguous: false };
 
     const { dateCol, descCol, amountCol, hasHeader } = detectFormat(rows);
     const headerRow = hasHeader ? rows[0] : [];
@@ -452,7 +452,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
 
-      const fecha = parseDate(row[dateCol]);
+      const fecha = parseDate(row[dateCol], formatHint);
       if (!fecha) continue; // Skip rows without valid date
 
       const descripcion = row[descCol] || '';
@@ -521,7 +521,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       });
     }
 
-    return parsed;
+    const ambiguous = detectDateAmbiguity(dataRows, dateCol);
+    return { rows: parsed, ambiguous };
   }
 
   function excelSerialToDate(serial: number): Date | null {
