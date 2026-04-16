@@ -415,7 +415,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return { dateCol, descCol, amountCol, hasHeader };
   }
 
-  function parseCSVContent(content: string): ParsedRow[] {
+  function parseCSVContent(content: string, formatHint: 'auto' | 'DMY' | 'MDY' = 'auto'): { rows: ParsedRow[]; ambiguous: boolean } {
     // Use a robust CSV parser (supports multi-line quoted fields like AMEX addresses)
     const parsedCsv = Papa.parse<string[]>(content, {
       delimiter: ',',
