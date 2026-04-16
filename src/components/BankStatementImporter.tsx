@@ -599,8 +599,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
     const headerRow = hasHeader ? rows[0] : [];
     const headerLower = headerRow.map(h => (h || '').toLowerCase().trim());
-    const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'importe cargo'].includes(h));
-    const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'importe abono'].includes(h));
+    const cargoCol = headerLower.findIndex(h => ['cargo', 'debe', 'débito', 'debito', 'retiro', 'egreso', 'importe cargo'].includes(h));
+    const abonoCol = headerLower.findIndex(h => ['abono', 'haber', 'crédito', 'credito', 'deposito', 'depósito', 'ingreso', 'importe abono'].includes(h));
     const tarjetahabienteColExcel = headerLower.findIndex(h => {
       const normalized = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       return ['tarjetahabiente', 'titular', 'nombre titular', 'cardholder', 'nombre tarjetahabiente', 'nombre del tarjetahabiente', 'tarjeta habiente', 'titular de la tarjeta', 'titular tarjeta', 'card member', 'card member name', 'member name', 'nombre del titular', 'titulartarjeta'].includes(normalized);
