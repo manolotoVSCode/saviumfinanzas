@@ -156,55 +156,67 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
   function parseAmount(amountStr: string): number {
     if (!amountStr) return 0;
-    
-    // Remove quotes and spaces
-    let cleaned = amountStr.replace(/["'\s]/g, '');
-    
-    // Handle European format (1.234,56) vs American format (1,234.56)
-    const hasCommaDecimal = /,\d{1,2}$/.test(cleaned);
-    
-    if (hasCommaDecimal) {
-      // European format: remove dots (thousands), replace comma with dot
-      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+
+    // Remove quotes, spaces, currency symbols & codes from the VALUE
+    let cleaned = amountStr
+      .replace(/["'\s]/g, '')
+      .replace(/[$€£¥]/g, '')
+      .replace(/\b(MXN|USD|EUR|GBP)\b/gi, '');
+
+    const sign = /^-/.test(cleaned) || /-$/.test(cleaned) ? -1 : 1;
+    const unsigned = cleaned.replace(/^[-+]|[-+]$/g, '');
+
+    // Unambiguous European: 1.234,56 / 1.234.567,89 / 1234,56
+    const europeanUnambiguous = /^\d{1,3}(\.\d{3})+(,\d{1,2})?$|^\d+,\d{1,2}$/.test(unsigned);
+    // Unambiguous American: 1,234.56 / 1,234,567.89 / 1234.56
+    const americanUnambiguous = /^\d{1,3}(,\d{3})+(\.\d{1,2})?$|^\d+\.\d{1,2}$/.test(unsigned);
+
+    if (europeanUnambiguous && !americanUnambiguous) {
+      cleaned = unsigned.replace(/\./g, '').replace(',', '.');
+    } else if (americanUnambiguous && !europeanUnambiguous) {
+      cleaned = unsigned.replace(/,/g, '');
     } else {
-      // American format: remove commas
-      cleaned = cleaned.replace(/,/g, '');
+      // Ambiguous fallback (matches previous behaviour)
+      const hasCommaDecimal = /,\d{1,2}$/.test(unsigned);
+      cleaned = hasCommaDecimal
+        ? unsigned.replace(/\./g, '').replace(',', '.')
+        : unsigned.replace(/,/g, '');
     }
-    
-    return parseFloat(cleaned) || 0;
+
+    const n = parseFloat(cleaned);
+    if (isNaN(n)) return 0;
+    return sign * n;
   }
 
-  function parseDate(dateStr: string): Date | null {
+  function parseDate(dateStr: string, formatHint: 'auto' | 'DMY' | 'MDY' = 'auto'): Date | null {
     if (!dateStr) return null;
 
     const cleaned = dateStr.trim();
 
-    // DD/MM/YYYY, DD-MM-YYYY or DD.MM.YYYY
-    const ddmmyyyy = cleaned.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
-    if (ddmmyyyy) {
-      return new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
+    // Numeric DD/MM/YYYY or MM/DD/YYYY (also '-' or '.')
+    const numeric = cleaned.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (numeric) {
+      const a = parseInt(numeric[1]);
+      const b = parseInt(numeric[2]);
+      const y = parseInt(numeric[3]);
+      let day: number, month: number;
+      if (a > 12 && b <= 12) { day = a; month = b; }
+      else if (b > 12 && a <= 12) { day = b; month = a; }
+      else if (formatHint === 'MDY') { month = a; day = b; }
+      else { day = a; month = b; } // default DMY (MX/ES)
+      return new Date(y, month - 1, day);
     }
 
-    // DD Mon YYYY (English/Spanish short month, e.g., "06 Jan 2026" or "06 Ene 2026")
+    // DD Mon YYYY
     const ddMonYYYY = cleaned.match(/^(\d{1,2})\s+([A-Za-zÁÉÍÓÚáéíóú]{3})\s+(\d{4})$/);
     if (ddMonYYYY) {
       const monthKey = ddMonYYYY[2].toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
-
       const months: Record<string, number> = {
-        jan: 0, ene: 0,
-        feb: 1,
-        mar: 2,
-        apr: 3, abr: 3,
-        may: 4,
-        jun: 5,
-        jul: 6,
-        aug: 7, ago: 7,
-        sep: 8,
-        oct: 9,
-        nov: 10,
-        dec: 11, dic: 11,
+        jan: 0, ene: 0, feb: 1, mar: 2, apr: 3, abr: 3,
+        may: 4, jun: 5, jul: 6, aug: 7, ago: 7, sep: 8,
+        oct: 9, nov: 10, dec: 11, dic: 11,
       };
       const month = months[monthKey];
       if (month !== undefined) {
@@ -218,9 +230,20 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       return new Date(parseInt(yyyymmdd[1]), parseInt(yyyymmdd[2]) - 1, parseInt(yyyymmdd[3]));
     }
 
-    // Let JS try as a final fallback
     const fallback = new Date(cleaned);
     return isNaN(fallback.getTime()) ? null : fallback;
+  }
+
+  // True if any DD/MM/YYYY-style date in dateCol has both first parts ≤ 12 (ambiguous)
+  function detectDateAmbiguity(rows: string[][], dateCol: number): boolean {
+    for (const row of rows) {
+      const cell = row?.[dateCol];
+      if (!cell) continue;
+      const m = String(cell).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{4}$/);
+      if (!m) continue;
+      if (parseInt(m[1]) <= 12 && parseInt(m[2]) <= 12) return true;
+    }
+    return false;
   }
 
   function detectFormat(lines: string[][]): { dateCol: number; descCol: number; amountCol: number; hasHeader: boolean } {
