@@ -528,6 +528,10 @@ export type Database = {
         Returns: undefined
       }
       clear_sample_data: { Args: { user_uuid: string }; Returns: undefined }
+      create_default_classification_rules: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       ensure_sin_asignar_category: {
         Args: { user_uuid: string }
         Returns: string
