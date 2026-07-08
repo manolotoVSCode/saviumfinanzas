@@ -43,6 +43,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard'), tourId: 'nav-dashboard' },
     { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions'), tourId: 'nav-transacciones' },
     { path: '/inversiones', icon: TrendingUp, label: t('nav.investments'), tourId: 'nav-inversiones' },
+    { path: '/pendientes', icon: Clock, label: 'Pendientes', tourId: 'nav-pendientes', badge: overdueCount || undefined, dotCount: activeCount },
     { path: '/informes', icon: FileText, label: t('nav.reports'), tourId: 'nav-informes' },
   ];
 
