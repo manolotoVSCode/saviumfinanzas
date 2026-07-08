@@ -62,6 +62,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { findMatchingRule } = useClassificationRules();
+  const { pendings, reload: reloadPendings } = usePendings();
+  const [pendingLinks, setPendingLinks] = useState<Record<string, string>>({});
+
+
 
   const selectedAccount = useMemo(() => 
     accounts.find(a => a.id === selectedAccountId),
