@@ -1293,9 +1293,37 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                           />
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs px-2">{formatDate(row.fecha)}</TableCell>
-                        <TableCell className="max-w-[200px] truncate text-xs px-2" title={row.descripcion}>
-                          {row.descripcion}
+                        <TableCell className="max-w-[220px] text-xs px-2" title={row.descripcion}>
+                          <div className="truncate">{row.descripcion}</div>
+                          {(() => {
+                            const matches = rowPendingMatches.get(row.id);
+                            if (!matches || matches.length === 0) return null;
+                            const linkedId = pendingLinks[row.id];
+                            const selectedMatch = linkedId ? matches.find(m => m.id === linkedId) : matches[0];
+                            const toggle = () => {
+                              setPendingLinks(prev => {
+                                const next = { ...prev };
+                                if (next[row.id]) delete next[row.id];
+                                else next[row.id] = (selectedMatch ?? matches[0]).id;
+                                return next;
+                              });
+                            };
+                            return (
+                              <button
+                                type="button"
+                                onClick={toggle}
+                                className="mt-1 inline-flex items-center gap-1"
+                                title={selectedMatch?.concepto}
+                              >
+                                <Badge variant={linkedId ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0 font-normal">
+                                  {linkedId ? '✓ ' : ''}Pendiente: {selectedMatch?.concepto}
+                                  {matches.length > 1 ? ` (+${matches.length - 1})` : ''}
+                                </Badge>
+                              </button>
+                            );
+                          })()}
                         </TableCell>
+
                         {isCreditCard && hasTarjetahabiente && (
                           <TableCell className="text-xs px-2 max-w-[100px] truncate" title={row.tarjetahabiente || ''}>
                             {row.tarjetahabiente || '-'}
