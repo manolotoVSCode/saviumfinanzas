@@ -23,6 +23,7 @@ const Layout = ({ children }: LayoutProps) => {
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
+  const { activeCount, overdueCount } = usePendings();
 
   const isActive = (path: string) => location.pathname === path;
 
