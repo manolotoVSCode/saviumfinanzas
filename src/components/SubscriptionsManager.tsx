@@ -203,9 +203,16 @@ export const SubscriptionsManager = () => {
         .eq('canon_key', patternId)
         .maybeSingle();
 
-      // Preserve manually edited fields (name, frequency, next payment, active)
+      // Preserve manually edited fields (name, frequency, active).
+      // proximo_pago se recalcula si el pago más reciente ya lo superó,
+      // para evitar próximos pagos anteriores al último pago detectado.
       const preservedFrequency = existing?.frecuencia || subscription.frecuencia;
-      const preservedNextPayment = existing?.proximo_pago || subscription.proximoPago.toISOString().split('T')[0];
+      const recomputedNext = calculateNextPayment(subscription.ultimoPago.fecha, preservedFrequency as SubscriptionFrequency);
+      const storedNext = existing?.proximo_pago ? new Date(existing.proximo_pago) : null;
+      const preservedNextPayment = (storedNext && storedNext > subscription.ultimoPago.fecha)
+        ? existing!.proximo_pago
+        : recomputedNext.toISOString().split('T')[0];
+
 
       const subscriptionData = {
         user_id: user.id,
