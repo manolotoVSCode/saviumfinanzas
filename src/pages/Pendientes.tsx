@@ -331,18 +331,13 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
 
           <div>
             <Label>Transacción vinculada (opcional)</Label>
-            <Select value={transaccionId} onValueChange={setTransaccionId}>
-              <SelectTrigger><SelectValue placeholder="Ninguna" /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="none">— Ninguna —</SelectItem>
-                {transactions.slice(0, 200).map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {new Date(t.fecha).toLocaleDateString()} · {t.comentario || 'Sin descripción'} · {formatNumber(t.monto)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <TransactionCombobox
+              transactions={transactions}
+              value={transaccionId}
+              onChange={setTransaccionId}
+            />
           </div>
+
 
           <div>
             <Label>Notas</Label>
