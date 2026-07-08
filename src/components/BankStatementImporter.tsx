@@ -941,7 +941,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     setDateFormat('auto');
     setNeedsDateFormatChoice(false);
     setPendingFile(null);
+    setPendingLinks({});
   };
+
 
   const categoriesByType = useMemo(() => {
     const gastoCategories = categories.filter(c => c.tipo === 'Gastos');
