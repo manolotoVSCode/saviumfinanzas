@@ -354,6 +354,73 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
   );
 };
 
+// ---------- Combobox buscador de transacciones ----------
+const TransactionCombobox = ({
+  transactions,
+  value,
+  onChange,
+}: {
+  transactions: any[];
+  value: string;
+  onChange: (v: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const selected = value !== 'none' ? transactions.find((t) => t.id === value) : null;
+
+  const label = (t: any) => {
+    const monto = t.gasto > 0 ? t.gasto : t.ingreso;
+    const fecha = new Date(t.fecha + 'T00:00:00').toLocaleDateString();
+    return `${fecha} · ${t.comentario || 'Sin descripción'} · ${formatNumber(monto ?? 0)} ${t.divisa ?? ''}`.trim();
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+          <span className="truncate">{selected ? label(selected) : '— Ninguna —'}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command
+          filter={(val, search) => {
+            // val is the CommandItem value which we set to a searchable string
+            return val.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Buscar por concepto o monto..." />
+          <CommandList>
+            <CommandEmpty>Sin resultados.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value="ninguna"
+                onSelect={() => { onChange('none'); setOpen(false); }}
+              >
+                <Check className={cn('mr-2 h-4 w-4', value === 'none' ? 'opacity-100' : 'opacity-0')} />
+                — Ninguna —
+              </CommandItem>
+              {transactions.slice(0, 500).map((t) => {
+                const monto = t.gasto > 0 ? t.gasto : t.ingreso;
+                const search = `${t.comentario ?? ''} ${monto ?? ''} ${t.fecha ?? ''}`;
+                return (
+                  <CommandItem
+                    key={t.id}
+                    value={`${search}__${t.id}`}
+                    onSelect={() => { onChange(t.id); setOpen(false); }}
+                  >
+                    <Check className={cn('mr-2 h-4 w-4', value === t.id ? 'opacity-100' : 'opacity-0')} />
+                    <span className="truncate">{label(t)}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 // ---------- Modal cobrar ----------
 interface PayDialogProps {
   pending: Pending;
