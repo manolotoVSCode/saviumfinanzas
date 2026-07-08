@@ -106,33 +106,35 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   }
 
   function findMatchingCategory(description: string, amount?: number, accountId?: string): string | null {
-    // 1. First check user-defined classification rules
-    const ruleMatch = findMatchingRule(description, amount, accountId);
-    if (ruleMatch) return ruleMatch;
-
-    // 2. Fall back to history-based matching
+    // 1. PRIMERO: historial de transacciones existentes (mayor prioridad).
+    //    Si el usuario ya categorizó antes una transacción parecida, respetamos su decisión.
     const normalized = normalizeDescription(description);
-    
-    // Direct match
+
+    // Coincidencia directa
     if (descriptionToCategoryMap.has(normalized)) {
       return descriptionToCategoryMap.get(normalized)!;
     }
-    
-    // Partial match
+
+    // Coincidencia parcial
     for (const [existingDesc, categoryId] of descriptionToCategoryMap) {
       if (normalized.includes(existingDesc) || existingDesc.includes(normalized)) {
         return categoryId;
       }
-      
+
       const words1 = normalized.split(' ').slice(0, 3).join(' ');
       const words2 = existingDesc.split(' ').slice(0, 3).join(' ');
       if (words1.length >= 5 && words1 === words2) {
         return categoryId;
       }
     }
-    
+
+    // 2. Fallback: reglas de clasificación del usuario.
+    const ruleMatch = findMatchingRule(description, amount, accountId);
+    if (ruleMatch) return ruleMatch;
+
     return null;
   }
+
 
   function parseCSVLine(line: string): string[] {
     const result: string[] = [];
