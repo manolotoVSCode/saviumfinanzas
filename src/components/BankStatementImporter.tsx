@@ -882,9 +882,49 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
       await onImportTransactions(transactionsToImport);
 
-      // Success - no toast needed
+      // Vincular pendientes: para cada fila marcada, localizar la transacción recién
+      // creada (por cuenta+fecha+monto+comentario) y marcar el pendiente como cobrado.
+      const linkedEntries = rowsToImport
+        .map(r => ({ row: r, pendingId: pendingLinks[r.id] }))
+        .filter(e => e.pendingId);
+
+      if (linkedEntries.length > 0) {
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData.user?.id;
+        if (userId) {
+          for (const { row, pendingId } of linkedEntries) {
+            const pending = pendings.find(p => p.id === pendingId);
+            if (!pending) continue;
+            const fechaStr = row.fecha.toISOString().split('T')[0];
+            const { data: txMatches } = await supabase
+              .from('transacciones')
+              .select('id, ingreso, comentario, cuenta_id, fecha, created_at')
+              .eq('user_id', userId)
+              .eq('cuenta_id', selectedAccountId)
+              .eq('fecha', fechaStr)
+              .eq('comentario', row.descripcion)
+              .order('created_at', { ascending: false })
+              .limit(5);
+            const tx = (txMatches ?? []).find(t => Math.abs(Number(t.ingreso) - row.monto) < 0.01);
+            if (!tx) continue;
+            const totalCobrado = (pending.monto_cobrado ?? 0) + row.monto;
+            const nuevoEstado = totalCobrado >= pending.monto_esperado ? 'cobrado' : 'cobrado_parcial';
+            await supabase
+              .from('transaction_pendings')
+              .update({
+                transaccion_cobro_id: tx.id,
+                monto_cobrado: totalCobrado,
+                fecha_cobro: fechaStr,
+                estado: nuevoEstado,
+              })
+              .eq('id', pendingId);
+          }
+          await reloadPendings();
+        }
+      }
 
       handleClose();
+
     } catch (error) {
       console.error('Error importing:', error);
       toast({ title: 'Error', description: 'Error al importar transacciones', variant: 'destructive' });
