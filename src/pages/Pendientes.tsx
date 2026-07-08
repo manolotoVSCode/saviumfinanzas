@@ -12,17 +12,21 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import {
   Tabs, TabsList, TabsTrigger, TabsContent,
 } from '@/components/ui/tabs';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, CheckCircle2, XCircle, Pencil, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, CheckCircle2, XCircle, Pencil, Trash2, AlertCircle, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { usePendings, Pending, PendingTipo } from '@/hooks/usePendings';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -327,18 +331,13 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
 
           <div>
             <Label>Transacción vinculada (opcional)</Label>
-            <Select value={transaccionId} onValueChange={setTransaccionId}>
-              <SelectTrigger><SelectValue placeholder="Ninguna" /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="none">— Ninguna —</SelectItem>
-                {transactions.slice(0, 200).map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {new Date(t.fecha).toLocaleDateString()} · {t.comentario || 'Sin descripción'} · {formatNumber(t.monto)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <TransactionCombobox
+              transactions={transactions}
+              value={transaccionId}
+              onChange={setTransaccionId}
+            />
           </div>
+
 
           <div>
             <Label>Notas</Label>
@@ -352,6 +351,73 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
         </form>
       </DialogContent>
     </Dialog>
+  );
+};
+
+// ---------- Combobox buscador de transacciones ----------
+const TransactionCombobox = ({
+  transactions,
+  value,
+  onChange,
+}: {
+  transactions: any[];
+  value: string;
+  onChange: (v: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const selected = value !== 'none' ? transactions.find((t) => t.id === value) : null;
+
+  const label = (t: any) => {
+    const monto = t.gasto > 0 ? t.gasto : t.ingreso;
+    const fecha = new Date(t.fecha + 'T00:00:00').toLocaleDateString();
+    return `${fecha} · ${t.comentario || 'Sin descripción'} · ${formatNumber(monto ?? 0)} ${t.divisa ?? ''}`.trim();
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+          <span className="truncate">{selected ? label(selected) : '— Ninguna —'}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command
+          filter={(val, search) => {
+            // val is the CommandItem value which we set to a searchable string
+            return val.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Buscar por concepto o monto..." />
+          <CommandList>
+            <CommandEmpty>Sin resultados.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value="ninguna"
+                onSelect={() => { onChange('none'); setOpen(false); }}
+              >
+                <Check className={cn('mr-2 h-4 w-4', value === 'none' ? 'opacity-100' : 'opacity-0')} />
+                — Ninguna —
+              </CommandItem>
+              {transactions.slice(0, 500).map((t) => {
+                const monto = t.gasto > 0 ? t.gasto : t.ingreso;
+                const search = `${t.comentario ?? ''} ${monto ?? ''} ${t.fecha ?? ''}`;
+                return (
+                  <CommandItem
+                    key={t.id}
+                    value={`${search}__${t.id}`}
+                    onSelect={() => { onChange(t.id); setOpen(false); }}
+                  >
+                    <Check className={cn('mr-2 h-4 w-4', value === t.id ? 'opacity-100' : 'opacity-0')} />
+                    <span className="truncate">{label(t)}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 };
 
