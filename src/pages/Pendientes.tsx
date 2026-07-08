@@ -367,9 +367,18 @@ const TransactionCombobox = ({
   const [open, setOpen] = useState(false);
   const selected = value !== 'none' ? transactions.find((t) => t.id === value) : null;
 
+  const formatFecha = (raw: any): string => {
+    if (!raw) return '';
+    const s = String(raw).slice(0, 10);
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString();
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? String(raw) : d.toLocaleDateString();
+  };
+
   const label = (t: any) => {
     const monto = t.gasto > 0 ? t.gasto : t.ingreso;
-    const fecha = new Date(t.fecha + 'T00:00:00').toLocaleDateString();
+    const fecha = formatFecha(t.fecha);
     return `${fecha} · ${t.comentario || 'Sin descripción'} · ${formatNumber(monto ?? 0)} ${t.divisa ?? ''}`.trim();
   };
 
