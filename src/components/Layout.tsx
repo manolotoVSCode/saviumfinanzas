@@ -85,20 +85,25 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
 
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {mainNavItems.map(({ path, icon: Icon, label, tourId }) => (
+            {mainNavItems.map(({ path, icon: Icon, label, tourId, badge }: any) => (
               <button
                 key={path}
                 data-tour={tourId}
                 onClick={() => navigate(path)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative',
                   isActive(path)
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
-                <span>{label}</span>
+                <span className="flex-1 text-left">{label}</span>
+                {badge ? (
+                  <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-semibold rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center">
+                    {badge}
+                  </span>
+                ) : null}
               </button>
             ))}
 
