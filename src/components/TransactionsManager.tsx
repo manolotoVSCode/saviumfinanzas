@@ -1812,6 +1812,18 @@ export const TransactionsManager = ({
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
+                      {(transaction.gasto > 0 || transaction.ingreso > 0) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCreatePendingFromTx(transaction)}
+                          title={pendingByTxId.get(transaction.id) ? 'Pendiente ya creado' : 'Crear pendiente de cobro'}
+                          disabled={!!pendingByTxId.get(transaction.id)}
+                        >
+                          <HandCoins className="h-4 w-4" />
+                        </Button>
+                      )}
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button 
