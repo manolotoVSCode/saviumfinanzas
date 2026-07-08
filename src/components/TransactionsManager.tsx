@@ -14,8 +14,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Transaction, Account, Category } from '@/types/finance';
-import { Plus, Edit, Trash2, Calendar, ArrowUpDown, ArrowUp, ArrowDown, Check, ChevronsUpDown, Copy } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, ArrowUpDown, ArrowUp, ArrowDown, Check, ChevronsUpDown, Copy, HandCoins } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePendings } from '@/hooks/usePendings';
+import { toast } from '@/hooks/use-toast';
+
 
 interface TransactionsManagerProps {
   transactions: Transaction[];
@@ -42,6 +45,34 @@ export const TransactionsManager = ({
   const isMobile = useIsMobile();
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const { pendings, addPending } = usePendings();
+
+  const pendingByTxId = useMemo(() => {
+    const m = new Map<string, typeof pendings[number]>();
+    for (const p of pendings) if (p.transaccion_id) m.set(p.transaccion_id, p);
+    return m;
+  }, [pendings]);
+
+  const handleCreatePendingFromTx = async (tx: Transaction) => {
+    const monto = tx.gasto || tx.ingreso || 0;
+    if (monto <= 0) return;
+    const existing = pendingByTxId.get(tx.id);
+    if (existing) {
+      toast({ title: 'Ya existe', description: 'Esta transacción ya tiene un pendiente vinculado.' });
+      return;
+    }
+    const tipo = tx.gasto > 0 ? 'reembolso_gasto' : 'ingreso_esperado';
+    await addPending({
+      transaccion_id: tx.id,
+      tipo,
+      monto_esperado: monto,
+      divisa: tx.divisa,
+      fecha_esperada: new Date().toISOString().split('T')[0],
+      concepto: tx.comentario || (tipo === 'reembolso_gasto' ? 'Reembolso esperado' : 'Ingreso esperado'),
+      notas: null,
+    });
+  };
+
   
   // Estados para ordenamiento
   const [sortField, setSortField] = useState<SortField>('fecha');
@@ -1781,6 +1812,18 @@ export const TransactionsManager = ({
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
+                      {(transaction.gasto > 0 || transaction.ingreso > 0) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCreatePendingFromTx(transaction)}
+                          title={pendingByTxId.get(transaction.id) ? 'Pendiente ya creado' : 'Crear pendiente de cobro'}
+                          disabled={!!pendingByTxId.get(transaction.id)}
+                        >
+                          <HandCoins className="h-4 w-4" />
+                        </Button>
+                      )}
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button 
