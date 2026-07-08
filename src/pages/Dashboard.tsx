@@ -46,6 +46,7 @@ const Dashboard = () => {
       <div className="animate-fade-in">
         <SampleDataBanner />
         <WelcomeGuide />
+        <PendingsWidget />
         <DashboardComponent 
           metrics={financeData.dashboardMetrics} 
           formatCurrency={formatCurrency}
