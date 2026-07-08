@@ -45,6 +45,34 @@ export const TransactionsManager = ({
   const isMobile = useIsMobile();
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const { pendings, addPending } = usePendings();
+
+  const pendingByTxId = useMemo(() => {
+    const m = new Map<string, typeof pendings[number]>();
+    for (const p of pendings) if (p.transaccion_id) m.set(p.transaccion_id, p);
+    return m;
+  }, [pendings]);
+
+  const handleCreatePendingFromTx = async (tx: Transaction) => {
+    const monto = tx.gasto || tx.ingreso || 0;
+    if (monto <= 0) return;
+    const existing = pendingByTxId.get(tx.id);
+    if (existing) {
+      toast({ title: 'Ya existe', description: 'Esta transacción ya tiene un pendiente vinculado.' });
+      return;
+    }
+    const tipo = tx.gasto > 0 ? 'reembolso_gasto' : 'ingreso_esperado';
+    await addPending({
+      transaccion_id: tx.id,
+      tipo,
+      monto_esperado: monto,
+      divisa: tx.divisa,
+      fecha_esperada: new Date().toISOString().split('T')[0],
+      concepto: tx.comentario || (tipo === 'reembolso_gasto' ? 'Reembolso esperado' : 'Ingreso esperado'),
+      notas: null,
+    });
+  };
+
   
   // Estados para ordenamiento
   const [sortField, setSortField] = useState<SortField>('fecha');
