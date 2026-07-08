@@ -14,9 +14,12 @@ import { Account, Category, Transaction, TransactionType } from '@/types/finance
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useClassificationRules } from '@/hooks/useClassificationRules';
+import { usePendings, Pending } from '@/hooks/usePendings';
 import { cn } from '@/lib/utils';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import { Badge } from '@/components/ui/badge';
+
 
 interface BankStatementImporterProps {
   accounts: Account[];
