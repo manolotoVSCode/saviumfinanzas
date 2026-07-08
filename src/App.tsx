@@ -97,6 +97,11 @@ const App = () => (
                   <SeguimientoIngresos />
                 </ProtectedRoute>
               } />
+              <Route path="/pendientes" element={
+                <ProtectedRoute>
+                  <Pendientes />
+                </ProtectedRoute>
+              } />
               <Route path="/changelog" element={
                 <ProtectedRoute>
                   <ChangelogPage />
