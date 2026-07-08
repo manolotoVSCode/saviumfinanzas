@@ -524,9 +524,10 @@ export const SubscriptionsManager = () => {
           },
           previousPaymentAmount,
           frecuencia: detectedFrecuencia,
-          proximoPago: existingSub?.proximo_pago 
-            ? new Date(existingSub.proximo_pago) 
+          proximoPago: (existingSub?.proximo_pago && new Date(existingSub.proximo_pago) > lastPaymentDate)
+            ? new Date(existingSub.proximo_pago)
             : calculateNextPayment(lastPaymentDate, detectedFrecuencia),
+
           numeroPagos: sorted.length,
           originalComments: sorted.map(t => t.comentario),
           patternId,
