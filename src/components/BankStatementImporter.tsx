@@ -14,9 +14,12 @@ import { Account, Category, Transaction, TransactionType } from '@/types/finance
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useClassificationRules } from '@/hooks/useClassificationRules';
+import { usePendings, Pending } from '@/hooks/usePendings';
 import { cn } from '@/lib/utils';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import { Badge } from '@/components/ui/badge';
+
 
 interface BankStatementImporterProps {
   accounts: Account[];
@@ -59,6 +62,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { findMatchingRule } = useClassificationRules();
+  const { pendings, reload: reloadPendings } = usePendings();
+  const [pendingLinks, setPendingLinks] = useState<Record<string, string>>({});
+
+
 
   const selectedAccount = useMemo(() => 
     accounts.find(a => a.id === selectedAccountId),
@@ -875,9 +882,49 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
       await onImportTransactions(transactionsToImport);
 
-      // Success - no toast needed
+      // Vincular pendientes: para cada fila marcada, localizar la transacción recién
+      // creada (por cuenta+fecha+monto+comentario) y marcar el pendiente como cobrado.
+      const linkedEntries = rowsToImport
+        .map(r => ({ row: r, pendingId: pendingLinks[r.id] }))
+        .filter(e => e.pendingId);
+
+      if (linkedEntries.length > 0) {
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData.user?.id;
+        if (userId) {
+          for (const { row, pendingId } of linkedEntries) {
+            const pending = pendings.find(p => p.id === pendingId);
+            if (!pending) continue;
+            const fechaStr = row.fecha.toISOString().split('T')[0];
+            const { data: txMatches } = await supabase
+              .from('transacciones')
+              .select('id, ingreso, comentario, cuenta_id, fecha, created_at')
+              .eq('user_id', userId)
+              .eq('cuenta_id', selectedAccountId)
+              .eq('fecha', fechaStr)
+              .eq('comentario', row.descripcion)
+              .order('created_at', { ascending: false })
+              .limit(5);
+            const tx = (txMatches ?? []).find(t => Math.abs(Number(t.ingreso) - row.monto) < 0.01);
+            if (!tx) continue;
+            const totalCobrado = (pending.monto_cobrado ?? 0) + row.monto;
+            const nuevoEstado = totalCobrado >= pending.monto_esperado ? 'cobrado' : 'cobrado_parcial';
+            await supabase
+              .from('transaction_pendings')
+              .update({
+                transaccion_cobro_id: tx.id,
+                monto_cobrado: totalCobrado,
+                fecha_cobro: fechaStr,
+                estado: nuevoEstado,
+              })
+              .eq('id', pendingId);
+          }
+          await reloadPendings();
+        }
+      }
 
       handleClose();
+
     } catch (error) {
       console.error('Error importing:', error);
       toast({ title: 'Error', description: 'Error al importar transacciones', variant: 'destructive' });
@@ -894,7 +941,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     setDateFormat('auto');
     setNeedsDateFormatChoice(false);
     setPendingFile(null);
+    setPendingLinks({});
   };
+
 
   const categoriesByType = useMemo(() => {
     const gastoCategories = categories.filter(c => c.tipo === 'Gastos');
@@ -945,6 +994,29 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   }).length, [parsedRows, categories]);
 
   const hasTarjetahabiente = useMemo(() => parsedRows.some(r => r.tarjetahabiente), [parsedRows]);
+
+  // Pendientes activos que coinciden con filas de ingreso detectadas (por divisa + monto).
+  // Solo se ofrece vincular en filas tipo Ingreso (no gastos, no reembolsos, no aportes/retiros).
+  const activePendings = useMemo(
+    () => pendings.filter(p => p.estado === 'pendiente' || p.estado === 'cobrado_parcial'),
+    [pendings]
+  );
+
+  const rowPendingMatches = useMemo(() => {
+    const map = new Map<string, Pending[]>();
+    if (!selectedAccount || activePendings.length === 0) return map;
+    for (const row of parsedRows) {
+      if (row.esGasto || row.esReembolso) continue;
+      if (row.tipo !== 'Ingreso') continue;
+      const pendiente = (p: Pending) =>
+        p.divisa === selectedAccount.divisa &&
+        Math.abs((p.monto_esperado - (p.monto_cobrado ?? 0)) - row.monto) < 0.01;
+      const matches = activePendings.filter(pendiente);
+      if (matches.length > 0) map.set(row.id, matches);
+    }
+    return map;
+  }, [parsedRows, activePendings, selectedAccount]);
+
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -1221,9 +1293,37 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                           />
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs px-2">{formatDate(row.fecha)}</TableCell>
-                        <TableCell className="max-w-[200px] truncate text-xs px-2" title={row.descripcion}>
-                          {row.descripcion}
+                        <TableCell className="max-w-[220px] text-xs px-2" title={row.descripcion}>
+                          <div className="truncate">{row.descripcion}</div>
+                          {(() => {
+                            const matches = rowPendingMatches.get(row.id);
+                            if (!matches || matches.length === 0) return null;
+                            const linkedId = pendingLinks[row.id];
+                            const selectedMatch = linkedId ? matches.find(m => m.id === linkedId) : matches[0];
+                            const toggle = () => {
+                              setPendingLinks(prev => {
+                                const next = { ...prev };
+                                if (next[row.id]) delete next[row.id];
+                                else next[row.id] = (selectedMatch ?? matches[0]).id;
+                                return next;
+                              });
+                            };
+                            return (
+                              <button
+                                type="button"
+                                onClick={toggle}
+                                className="mt-1 inline-flex items-center gap-1"
+                                title={selectedMatch?.concepto}
+                              >
+                                <Badge variant={linkedId ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0 font-normal">
+                                  {linkedId ? '✓ ' : ''}Pendiente: {selectedMatch?.concepto}
+                                  {matches.length > 1 ? ` (+${matches.length - 1})` : ''}
+                                </Badge>
+                              </button>
+                            );
+                          })()}
                         </TableCell>
+
                         {isCreditCard && hasTarjetahabiente && (
                           <TableCell className="text-xs px-2 max-w-[100px] truncate" title={row.tarjetahabiente || ''}>
                             {row.tarjetahabiente || '-'}
