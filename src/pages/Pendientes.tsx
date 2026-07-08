@@ -25,7 +25,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, CheckCircle2, XCircle, Pencil, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, CheckCircle2, XCircle, Pencil, Trash2, AlertCircle, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { usePendings, Pending, PendingTipo } from '@/hooks/usePendings';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
