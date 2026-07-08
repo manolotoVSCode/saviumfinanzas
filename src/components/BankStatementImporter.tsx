@@ -953,6 +953,29 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
   const hasTarjetahabiente = useMemo(() => parsedRows.some(r => r.tarjetahabiente), [parsedRows]);
 
+  // Pendientes activos que coinciden con filas de ingreso detectadas (por divisa + monto).
+  // Solo se ofrece vincular en filas tipo Ingreso (no gastos, no reembolsos, no aportes/retiros).
+  const activePendings = useMemo(
+    () => pendings.filter(p => p.estado === 'pendiente' || p.estado === 'cobrado_parcial'),
+    [pendings]
+  );
+
+  const rowPendingMatches = useMemo(() => {
+    const map = new Map<string, Pending[]>();
+    if (!selectedAccount || activePendings.length === 0) return map;
+    for (const row of parsedRows) {
+      if (row.esGasto || row.esReembolso) continue;
+      if (row.tipo !== 'Ingreso') continue;
+      const pendiente = (p: Pending) =>
+        p.divisa === selectedAccount.divisa &&
+        Math.abs((p.monto_esperado - (p.monto_cobrado ?? 0)) - row.monto) < 0.01;
+      const matches = activePendings.filter(pendiente);
+      if (matches.length > 0) map.set(row.id, matches);
+    }
+    return map;
+  }, [parsedRows, activePendings, selectedAccount]);
+
+
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
