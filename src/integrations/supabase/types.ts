@@ -497,6 +497,75 @@ export type Database = {
           },
         ]
       }
+      transaction_pendings: {
+        Row: {
+          concepto: string
+          created_at: string
+          divisa: string
+          estado: Database["public"]["Enums"]["pending_estado"]
+          fecha_cobro: string | null
+          fecha_esperada: string | null
+          id: string
+          monto_cobrado: number
+          monto_esperado: number
+          notas: string | null
+          tipo: Database["public"]["Enums"]["pending_tipo"]
+          transaccion_cobro_id: string | null
+          transaccion_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          concepto: string
+          created_at?: string
+          divisa?: string
+          estado?: Database["public"]["Enums"]["pending_estado"]
+          fecha_cobro?: string | null
+          fecha_esperada?: string | null
+          id?: string
+          monto_cobrado?: number
+          monto_esperado: number
+          notas?: string | null
+          tipo: Database["public"]["Enums"]["pending_tipo"]
+          transaccion_cobro_id?: string | null
+          transaccion_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          concepto?: string
+          created_at?: string
+          divisa?: string
+          estado?: Database["public"]["Enums"]["pending_estado"]
+          fecha_cobro?: string | null
+          fecha_esperada?: string | null
+          id?: string
+          monto_cobrado?: number
+          monto_esperado?: number
+          notas?: string | null
+          tipo?: Database["public"]["Enums"]["pending_tipo"]
+          transaccion_cobro_id?: string | null
+          transaccion_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_pendings_transaccion_cobro_id_fkey"
+            columns: ["transaccion_cobro_id"]
+            isOneToOne: false
+            referencedRelation: "transacciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_pendings_transaccion_id_fkey"
+            columns: ["transaccion_id"]
+            isOneToOne: false
+            referencedRelation: "transacciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -557,6 +626,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      pending_estado: "pendiente" | "cobrado_parcial" | "cobrado" | "cancelado"
+      pending_tipo: "reembolso_gasto" | "ingreso_esperado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -685,6 +756,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      pending_estado: ["pendiente", "cobrado_parcial", "cobrado", "cancelado"],
+      pending_tipo: ["reembolso_gasto", "ingreso_esperado"],
     },
   },
 } as const
