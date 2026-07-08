@@ -5,6 +5,7 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { SampleDataBanner } from '@/components/SampleDataBanner';
 import { WelcomeGuide } from '@/components/WelcomeGuide';
 import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
+import { PendingsWidget } from '@/components/dashboard/PendingsWidget';
 import { useEffect, useState } from 'react';
 
 const Dashboard = () => {
@@ -45,6 +46,7 @@ const Dashboard = () => {
       <div className="animate-fade-in">
         <SampleDataBanner />
         <WelcomeGuide />
+        <PendingsWidget />
         <DashboardComponent 
           metrics={financeData.dashboardMetrics} 
           formatCurrency={formatCurrency}

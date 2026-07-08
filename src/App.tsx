@@ -20,6 +20,7 @@ import Cuentas from "./pages/Cuentas";
 import Categorias from "./pages/Categorias";
 import SeguimientoGastos from "./pages/SeguimientoGastos";
 import SeguimientoIngresos from "./pages/SeguimientoIngresos";
+import Pendientes from "./pages/Pendientes";
 import ChangelogPage from "./pages/ChangelogPage";
 import Terminos from "./pages/Terminos";
 import NotFound from "./pages/NotFound";
@@ -94,6 +95,11 @@ const App = () => (
               <Route path="/seguimiento-ingresos" element={
                 <ProtectedRoute>
                   <SeguimientoIngresos />
+                </ProtectedRoute>
+              } />
+              <Route path="/pendientes" element={
+                <ProtectedRoute>
+                  <Pendientes />
                 </ProtectedRoute>
               } />
               <Route path="/changelog" element={
