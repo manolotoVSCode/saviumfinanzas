@@ -371,9 +371,11 @@ const TransactionCombobox = ({
     if (!raw) return '';
     const s = String(raw).slice(0, 10);
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (m) return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    if (m) return `${pad(+m[3])}/${pad(+m[2])}/${m[1]}`;
     const d = new Date(raw);
-    return isNaN(d.getTime()) ? String(raw) : d.toLocaleDateString();
+    if (isNaN(d.getTime())) return String(raw);
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
   };
 
   const label = (t: any) => {
