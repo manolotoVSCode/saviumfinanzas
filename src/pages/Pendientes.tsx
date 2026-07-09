@@ -387,8 +387,8 @@ const TransactionCombobox = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-          <span className="truncate">{selected ? label(selected) : '— Ninguna —'}</span>
+        <Button variant="outline" role="combobox" className="w-full max-w-full justify-between font-normal overflow-hidden">
+          <span className="truncate min-w-0 flex-1 text-left">{selected ? label(selected) : '— Ninguna —'}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
