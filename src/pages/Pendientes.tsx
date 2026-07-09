@@ -329,7 +329,7 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
             </div>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <Label>Transacción vinculada (opcional)</Label>
             <TransactionCombobox
               transactions={transactions}
@@ -337,6 +337,8 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
               onChange={setTransaccionId}
             />
           </div>
+
+
 
 
           <div>
@@ -387,11 +389,18 @@ const TransactionCombobox = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" className="w-full max-w-full justify-between font-normal overflow-hidden">
-          <span className="truncate min-w-0 flex-1 text-left">{selected ? label(selected) : '— Ninguna —'}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        <Button
+          variant="outline"
+          role="combobox"
+          className="flex w-full min-w-0 max-w-full items-center justify-between gap-2 overflow-hidden px-3 font-normal"
+        >
+          <span className="block flex-1 min-w-0 truncate text-left">
+            {selected ? label(selected) : '— Ninguna —'}
+          </span>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
+
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command
           filter={(val, search) => {
