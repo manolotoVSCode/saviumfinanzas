@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
-import { useSubscriptionServices } from '@/hooks/useSubscriptionServices';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +31,14 @@ const CxP = () => {
   const financeData = useFinanceDataSupabase();
   const { formatCurrency, config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
-  const { subscriptions } = useSubscriptionServices();
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('subscription_services').select('*').eq('active', true);
+      setSubscriptions(data || []);
+    })();
+  }, []);
 
   const [horizonte, setHorizonte] = useState<number>(30);
 
