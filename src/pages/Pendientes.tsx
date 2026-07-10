@@ -281,7 +281,7 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-2xl lg:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{initial ? 'Editar pendiente' : 'Nuevo pendiente'}</DialogTitle>
           <DialogDescription>
