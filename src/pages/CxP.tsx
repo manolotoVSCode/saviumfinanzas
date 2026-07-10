@@ -249,10 +249,15 @@ const CxP = () => {
         .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
       if (!txs.length) return;
       const last = txs[0];
-      const nextDate = new Date(last.fecha);
+      const lastDate = new Date(last.fecha);
+      const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+      // Préstamo saldado / inactivo: si el último pago es de hace >45 días, no hay compromiso vigente
+      if (diasDesdeUltimo > 45) return;
+      const nextDate = new Date(lastDate);
       nextDate.setMonth(nextDate.getMonth() + 1);
       while (nextDate < now) nextDate.setMonth(nextDate.getMonth() + 1);
       if (nextDate > limite) return;
+
 
       rows.push({
         id: `loan-${cat.id}`,
