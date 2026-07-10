@@ -88,7 +88,9 @@ const CxP = () => {
       const last = txs[0];
       const nextDate = new Date(last.fecha);
       nextDate.setFullYear(nextDate.getFullYear() + 1);
-      if (nextDate >= now && nextDate <= limite) {
+      // Si ya pasó, rodar hacia adelante en incrementos anuales
+      while (nextDate < now) nextDate.setFullYear(nextDate.getFullYear() + 1);
+      if (nextDate <= limite) {
         rows.push({
           id: `anual-${cat.id}`,
           concepto: `${cat.categoria} · ${cat.subcategoria}`,
@@ -100,6 +102,7 @@ const CxP = () => {
         });
       }
     });
+
     return rows;
   }, [financeData.categories, financeData.transactions, horizonte, baseCurrency]);
 
