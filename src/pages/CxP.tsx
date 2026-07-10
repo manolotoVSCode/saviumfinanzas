@@ -106,62 +106,33 @@ const CxP = () => {
     return rows;
   }, [financeData.categories, financeData.transactions, horizonte, baseCurrency]);
 
-  // 3) Recurrentes mensuales — AUTO-DETECCIÓN por MISMO COMERCIO recurriendo cada mes
-  //    Criterio: mismo comentario normalizado con ≥2 pagos en meses distintos (últimos 120 días),
-  //    monto estable (variación ≤25%) y último pago ≤45 días.
-  //    Esto evita capturar Restaurantes/Supermercados/Amazon donde el comercio cambia cada vez.
+  // 3) Recurrentes — obligaciones fijas ineludibles agrupadas POR SUBCATEGORÍA.
+  //    Detecta periodicidad real (mensual, bimensual, trimestral) según el espaciado
+  //    entre pagos y usa el promedio de los ÚLTIMOS 2 PAGOS como monto de referencia.
   const cxpRecurrentes = useMemo<CxPRow[]>(() => {
     const rows: CxPRow[] = [];
     const now = new Date();
     const limite = new Date();
     limite.setDate(now.getDate() + horizonte);
     const desde = new Date();
-    desde.setDate(desde.getDate() - 120);
+    desde.setDate(desde.getDate() - 240); // ventana amplia para captar bimensuales/trimestrales
 
     const catsById = new Map(financeData.categories.map((c: any) => [c.id, c]));
 
-    const normalize = (s: string) =>
-      (s || '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9 ]+/g, ' ')
-        .replace(/\b\d{2,}\b/g, ' ') // quitar números largos (fechas/ref)
-        .replace(/\s+/g, ' ')
-        .trim()
-        .split(' ')
-        .slice(0, 3) // primeras 3 palabras identifican al comercio
-        .join(' ');
-
-    // Suscripciones activas ya cubiertas por el bloque 1 — evitamos duplicarlas.
-    // Comparamos por contención parcial (ej. "netflix mexico" vs "netflix").
-    const subMerchants = (subscriptions || [])
-      .map((s: any) => normalize(s.service_name || ''))
-      .filter((x: string) => x.length >= 3);
-
-
-    // Whitelist: SOLO categorías que representan obligaciones fijas ineludibles.
-    // Alimentación, Ocio, Transporte (movilidad/peajes/estacionamiento/gasolina),
-    // Compras personales, etc. son discrecionales y NO cuentan como recurrentes
-    // aunque el comercio se repita.
+    // Whitelist: SOLO obligaciones fijas ineludibles.
     const esObligacionFija = (cat: any) => {
       const c = (cat.categoria || '').toLowerCase();
       const s = (cat.subcategoria || '').toLowerCase();
-      // Hogar: servicios básicos (luz, agua, gas, internet, admin, predial)
       if (c === 'hogar' && !s.includes('alquiler') && !s.includes('hipoteca')) return true;
-      // Educación: colegiaturas / cursos
       if (c === 'educación' || c === 'educacion') return true;
-      // Servicios (envíos no, pero telefonía/celular sí)
       if (c === 'servicios' && (s.includes('celular') || s.includes('telefon') || s.includes('internet'))) return true;
-      // Salud: solo seguros médicos recurrentes
       if (c === 'salud' && s.includes('seguro')) return true;
-      // Seguros vehículo
       if (c === 'transporte' && s.includes('seguro')) return true;
       return false;
     };
 
-    // Agrupar por (subcatId + comercio normalizado)
-    const byMerchant = new Map<string, { txs: any[]; cat: any; merchant: string }>();
+    // Agrupar directamente por subcategoría
+    const bySubcat = new Map<string, { txs: any[]; cat: any }>();
     financeData.transactions.forEach((t) => {
       if (!t.subcategoriaId || !(t.gasto > 0)) return;
       const fecha = new Date(t.fecha);
@@ -169,65 +140,71 @@ const CxP = () => {
       const cat: any = catsById.get(t.subcategoriaId);
       if (!cat || cat.tipo !== 'Gastos') return;
       if (!esObligacionFija(cat)) return;
+      if (cat.frecuencia_seguimiento === 'anual') return;
       const label = `${cat.categoria} ${cat.subcategoria}`.toLowerCase();
       if (label.includes('suscripc')) return;
-      if (cat.frecuencia_seguimiento === 'anual') return;
-      // Hipoteca/préstamo van al bloque de Préstamos (b5)
       if (label.includes('prestamo') || label.includes('préstamo') || label.includes('hipoteca')) return;
 
-      const merchant = normalize(t.comentario || '');
-      if (!merchant || merchant.length < 3) return;
-      const key = `${t.subcategoriaId}::${merchant}`;
-      const g = byMerchant.get(key) || { txs: [], cat, merchant };
+      const g = bySubcat.get(t.subcategoriaId) || { txs: [], cat };
       g.txs.push(t);
-      byMerchant.set(key, g);
+      bySubcat.set(t.subcategoriaId, g);
     });
 
-
-    byMerchant.forEach(({ txs, cat, merchant }) => {
+    bySubcat.forEach(({ txs, cat }) => {
       const sorted = txs.sort(
         (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
       );
-      const meses = new Set(
-        sorted.map((t) => {
-          const d = new Date(t.fecha);
-          return `${d.getFullYear()}-${d.getMonth()}`;
-        })
-      );
-      if (meses.size < 2) return;
+      if (sorted.length < 2) return;
+
+      // Detectar periodicidad: mediana de gaps (días) entre pagos consecutivos
+      const gaps: number[] = [];
+      for (let i = 0; i < sorted.length - 1; i++) {
+        const d1 = new Date(sorted[i].fecha).getTime();
+        const d2 = new Date(sorted[i + 1].fecha).getTime();
+        gaps.push((d1 - d2) / (1000 * 60 * 60 * 24));
+      }
+      gaps.sort((a, b) => a - b);
+      const gapMed = gaps[Math.floor(gaps.length / 2)];
+
+      // Clasificar en 1, 2 o 3 meses
+      let periodoMeses = 1;
+      let etiqueta = 'mensual';
+      if (gapMed >= 75) {
+        periodoMeses = 3;
+        etiqueta = 'trimestral';
+      } else if (gapMed >= 45) {
+        periodoMeses = 2;
+        etiqueta = 'bimensual';
+      }
 
       const last = sorted[0];
       const lastDate = new Date(last.fecha);
-      const dias = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
-      if (dias > 45) return;
+      const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+      // Tolerancia: 1.5x el periodo esperado. Si es más viejo, el servicio ya no está activo.
+      if (diasDesdeUltimo > periodoMeses * 45) return;
 
-      if (subMerchants.some((sm: string) => merchant.includes(sm) || sm.includes(merchant))) return;
-
-      // Estabilidad del monto (coef. variación ≤ 0.25)
-      const montos = sorted.map((t) => Number(t.gasto));
-      const media = montos.reduce((a, b) => a + b, 0) / montos.length;
-      const varianza =
-        montos.reduce((a, b) => a + (b - media) ** 2, 0) / montos.length;
-      const std = Math.sqrt(varianza);
-      if (media > 0 && std / media > 0.25) return;
+      // Monto = promedio de los últimos 2 pagos (según instrucción del usuario)
+      const ultimos = sorted.slice(0, 2);
+      const monto = ultimos.reduce((s, t) => s + Number(t.gasto), 0) / ultimos.length;
 
       const nextDate = new Date(lastDate);
-      nextDate.setMonth(nextDate.getMonth() + 1);
-      while (nextDate < now) nextDate.setMonth(nextDate.getMonth() + 1);
+      nextDate.setMonth(nextDate.getMonth() + periodoMeses);
+      while (nextDate < now) nextDate.setMonth(nextDate.getMonth() + periodoMeses);
       if (nextDate > limite) return;
 
       rows.push({
-        id: `rec-${cat.id}-${merchant}`,
+        id: `rec-${cat.id}`,
         concepto: `${cat.categoria} · ${cat.subcategoria}`,
         tipo: 'Recurrente mensual',
-        monto: media,
+        monto,
         divisa: (last.divisa as any) || baseCurrency,
         fechaEstimada: nextDate,
-        detalle: `${merchant} · ${meses.size} meses`,
+        detalle: `${etiqueta} · prom. últimos 2`,
       });
     });
     return rows;
-  }, [financeData.categories, financeData.transactions, subscriptions, horizonte, baseCurrency]);
+  }, [financeData.categories, financeData.transactions, horizonte, baseCurrency]);
+
 
 
 
