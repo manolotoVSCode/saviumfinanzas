@@ -24,6 +24,7 @@ import Pendientes from "./pages/Pendientes";
 import Suscripciones from "./pages/Suscripciones";
 import IngresosRecurrentes from "./pages/IngresosRecurrentes";
 import PagosAnuales from "./pages/PagosAnuales";
+import CxP from "./pages/CxP";
 import ChangelogPage from "./pages/ChangelogPage";
 import Terminos from "./pages/Terminos";
 import NotFound from "./pages/NotFound";
