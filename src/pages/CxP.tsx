@@ -88,7 +88,9 @@ const CxP = () => {
       const last = txs[0];
       const nextDate = new Date(last.fecha);
       nextDate.setFullYear(nextDate.getFullYear() + 1);
-      if (nextDate >= now && nextDate <= limite) {
+      // Si ya pasó, rodar hacia adelante en incrementos anuales
+      while (nextDate < now) nextDate.setFullYear(nextDate.getFullYear() + 1);
+      if (nextDate <= limite) {
         rows.push({
           id: `anual-${cat.id}`,
           concepto: `${cat.categoria} · ${cat.subcategoria}`,
@@ -100,13 +102,14 @@ const CxP = () => {
         });
       }
     });
+
     return rows;
   }, [financeData.categories, financeData.transactions, horizonte, baseCurrency]);
 
-  // 3) Recurrentes mensuales — AUTO-DETECCIÓN por historial de transacciones
-  //    Criterio: subcategoría con ≥2 pagos en meses distintos dentro de los últimos 120 días,
-  //    y último pago con ≤45 días de antigüedad (sigue siendo recurrente vigente).
-  //    Excluye Suscripciones (b1), Anuales (b2), Tarjetas (b4) y Préstamos/Hipoteca (b5).
+  // 3) Recurrentes mensuales — AUTO-DETECCIÓN por MISMO COMERCIO recurriendo cada mes
+  //    Criterio: mismo comentario normalizado con ≥2 pagos en meses distintos (últimos 120 días),
+  //    monto estable (variación ≤25%) y último pago ≤45 días.
+  //    Esto evita capturar Restaurantes/Supermercados/Amazon donde el comercio cambia cada vez.
   const cxpRecurrentes = useMemo<CxPRow[]>(() => {
     const rows: CxPRow[] = [];
     const now = new Date();
@@ -117,31 +120,47 @@ const CxP = () => {
 
     const catsById = new Map(financeData.categories.map((c: any) => [c.id, c]));
     const subLabels = new Set(
-      (subscriptions || []).map((s: any) => (s.service_name || '').toLowerCase())
+      (subscriptions || []).map((s: any) => (s.service_name || '').toLowerCase().trim())
     );
 
-    // Agrupar gastos por subcategoría dentro de la ventana
-    const bySubcat = new Map<string, any[]>();
+    const normalize = (s: string) =>
+      (s || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9 ]+/g, ' ')
+        .replace(/\b\d{2,}\b/g, ' ') // quitar números largos (fechas/ref)
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(' ')
+        .slice(0, 3) // primeras 3 palabras identifican al comercio
+        .join(' ');
+
+    // Agrupar por (subcatId + comercio normalizado)
+    const byMerchant = new Map<string, { txs: any[]; cat: any; merchant: string }>();
     financeData.transactions.forEach((t) => {
       if (!t.subcategoriaId || !(t.gasto > 0)) return;
       const fecha = new Date(t.fecha);
       if (fecha < desde) return;
-      const arr = bySubcat.get(t.subcategoriaId) || [];
-      arr.push(t);
-      bySubcat.set(t.subcategoriaId, arr);
-    });
-
-    bySubcat.forEach((txs, subcatId) => {
-      const cat: any = catsById.get(subcatId);
+      const cat: any = catsById.get(t.subcategoriaId);
       if (!cat || cat.tipo !== 'Gastos') return;
-
       const label = `${cat.categoria} ${cat.subcategoria}`.toLowerCase();
       if (label.includes('suscripc')) return;
       if (cat.frecuencia_seguimiento === 'anual') return;
-      if (label.includes('préstamo') || label.includes('prestamo') || label.includes('hipoteca')) return;
+      if (label.includes('transferencia')) return;
+      // Hipoteca/préstamo van al bloque de Préstamos (b5)
+      if (label.includes('prestamo') || label.includes('préstamo') || label.includes('hipoteca')) return;
       if (label.includes('tarjeta de credito') || label.includes('tarjeta de crédito')) return;
 
-      // ≥2 pagos en meses distintos
+      const merchant = normalize(t.comentario || '');
+      if (!merchant || merchant.length < 3) return;
+      const key = `${t.subcategoriaId}::${merchant}`;
+      const g = byMerchant.get(key) || { txs: [], cat, merchant };
+      g.txs.push(t);
+      byMerchant.set(key, g);
+    });
+
+    byMerchant.forEach(({ txs, cat, merchant }) => {
       const sorted = txs.sort(
         (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
       );
@@ -155,32 +174,37 @@ const CxP = () => {
 
       const last = sorted[0];
       const lastDate = new Date(last.fecha);
-      const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
-      if (diasDesdeUltimo > 45) return;
+      const dias = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (dias > 45) return;
 
-      if (subLabels.has((last.comentario || '').toLowerCase())) return;
+      if (subLabels.has(merchant)) return;
+
+      // Estabilidad del monto (coef. variación ≤ 0.25)
+      const montos = sorted.map((t) => Number(t.gasto));
+      const media = montos.reduce((a, b) => a + b, 0) / montos.length;
+      const varianza =
+        montos.reduce((a, b) => a + (b - media) ** 2, 0) / montos.length;
+      const std = Math.sqrt(varianza);
+      if (media > 0 && std / media > 0.25) return;
 
       const nextDate = new Date(lastDate);
       nextDate.setMonth(nextDate.getMonth() + 1);
-      if (nextDate < now || nextDate > limite) return;
-
-      // Promedio de los últimos 3 pagos para estabilidad
-      const ultimos = sorted.slice(0, 3);
-      const promedio =
-        ultimos.reduce((s, t) => s + Number(t.gasto), 0) / ultimos.length;
+      while (nextDate < now) nextDate.setMonth(nextDate.getMonth() + 1);
+      if (nextDate > limite) return;
 
       rows.push({
-        id: `rec-${subcatId}`,
+        id: `rec-${cat.id}-${merchant}`,
         concepto: `${cat.categoria} · ${cat.subcategoria}`,
         tipo: 'Recurrente mensual',
-        monto: promedio,
+        monto: media,
         divisa: (last.divisa as any) || baseCurrency,
         fechaEstimada: nextDate,
-        detalle: `Promedio de ${ultimos.length} últimos pagos`,
+        detalle: `${merchant} · ${meses.size} meses`,
       });
     });
     return rows;
   }, [financeData.categories, financeData.transactions, subscriptions, horizonte, baseCurrency]);
+
 
 
   // 4) Tarjetas de crédito con saldo negativo
@@ -223,7 +247,9 @@ const CxP = () => {
       const last = txs[0];
       const nextDate = new Date(last.fecha);
       nextDate.setMonth(nextDate.getMonth() + 1);
-      if (nextDate < now || nextDate > limite) return;
+      while (nextDate < now) nextDate.setMonth(nextDate.getMonth() + 1);
+      if (nextDate > limite) return;
+
       rows.push({
         id: `loan-${cat.id}`,
         concepto: `${cat.categoria} · ${cat.subcategoria}`,
