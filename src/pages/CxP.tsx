@@ -119,9 +119,6 @@ const CxP = () => {
     desde.setDate(desde.getDate() - 120);
 
     const catsById = new Map(financeData.categories.map((c: any) => [c.id, c]));
-    const subLabels = new Set(
-      (subscriptions || []).map((s: any) => (s.service_name || '').toLowerCase().trim())
-    );
 
     const normalize = (s: string) =>
       (s || '')
@@ -135,6 +132,13 @@ const CxP = () => {
         .split(' ')
         .slice(0, 3) // primeras 3 palabras identifican al comercio
         .join(' ');
+
+    // Suscripciones activas ya cubiertas por el bloque 1 — evitamos duplicarlas.
+    // Comparamos por contención parcial (ej. "netflix mexico" vs "netflix").
+    const subMerchants = (subscriptions || [])
+      .map((s: any) => normalize(s.service_name || ''))
+      .filter((x: string) => x.length >= 3);
+
 
     // Agrupar por (subcatId + comercio normalizado)
     const byMerchant = new Map<string, { txs: any[]; cat: any; merchant: string }>();
@@ -177,7 +181,7 @@ const CxP = () => {
       const dias = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
       if (dias > 45) return;
 
-      if (subLabels.has(merchant)) return;
+      if (subMerchants.some((sm: string) => merchant.includes(sm) || sm.includes(merchant))) return;
 
       // Estabilidad del monto (coef. variación ≤ 0.25)
       const montos = sorted.map((t) => Number(t.gasto));
@@ -245,10 +249,15 @@ const CxP = () => {
         .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
       if (!txs.length) return;
       const last = txs[0];
-      const nextDate = new Date(last.fecha);
+      const lastDate = new Date(last.fecha);
+      const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+      // Préstamo saldado / inactivo: si el último pago es de hace >45 días, no hay compromiso vigente
+      if (diasDesdeUltimo > 45) return;
+      const nextDate = new Date(lastDate);
       nextDate.setMonth(nextDate.getMonth() + 1);
       while (nextDate < now) nextDate.setMonth(nextDate.getMonth() + 1);
       if (nextDate > limite) return;
+
 
       rows.push({
         id: `loan-${cat.id}`,
