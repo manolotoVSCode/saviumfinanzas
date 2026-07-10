@@ -73,9 +73,12 @@ const CxP = () => {
     limite.setDate(now.getDate() + horizonte);
     const rows: CxPRow[] = [];
 
-    const anualCats = financeData.categories.filter(
-      (c: any) => c.frecuencia_seguimiento === 'anual' && c.tipo === 'Gastos'
-    );
+    const anualCats = financeData.categories.filter((c: any) => {
+      const s = `${c.categoria} ${c.subcategoria}`.toLowerCase();
+      const esPrestamo = s.includes('préstamo') || s.includes('prestamo') || s.includes('hipoteca');
+      return c.frecuencia_seguimiento === 'anual' && c.tipo === 'Gastos' && !esPrestamo;
+    });
+
 
     anualCats.forEach((cat) => {
       const txs = financeData.transactions
@@ -111,8 +114,11 @@ const CxP = () => {
     const subLabels = new Set((subscriptions || []).map((s: any) => (s.service_name || '').toLowerCase()));
 
     mensualCats.forEach((cat) => {
-      // Excluir subcategoría "Suscripciones" completa (ya está en bloque 1)
-      if ((cat.subcategoria || '').toLowerCase().includes('suscripc')) return;
+      // Excluir subcategoría "Suscripciones" (bloque 1) y préstamos/hipoteca (bloque 5)
+      const s = `${cat.categoria} ${cat.subcategoria}`.toLowerCase();
+      if (s.includes('suscripc')) return;
+      if (s.includes('préstamo') || s.includes('prestamo') || s.includes('hipoteca')) return;
+
 
       const txs = financeData.transactions
         .filter((t) => t.subcategoriaId === cat.id && t.gasto > 0)
@@ -208,14 +214,22 @@ const CxP = () => {
     [allRows, convertCurrency, baseCurrency]
   );
 
-  // Liquidez: efectivo + banco + ahorros (todas divisas convertidas a base)
-  const liquidez = useMemo(() => {
-    return financeData.accounts
+  // Liquidez: saldo actual real de cuentas líquidas (Efectivo + Banco + Ahorros)
+  // Desglose por tipo para mostrar de dónde viene el total
+  const liquidezBreakdown = useMemo(() => {
+    const acc: Record<string, number> = { Efectivo: 0, Banco: 0, Ahorros: 0 };
+    financeData.accounts
       .filter((a) => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && !a.vendida)
-      .reduce((s, a) => s + convertCurrency(a.saldoActual, a.divisa, baseCurrency), 0);
+      .forEach((a) => {
+        acc[a.tipo] += convertCurrency(a.saldoActual, a.divisa, baseCurrency);
+      });
+    return acc;
   }, [financeData.accounts, convertCurrency, baseCurrency]);
 
+  const liquidez = liquidezBreakdown.Efectivo + liquidezBreakdown.Banco + liquidezBreakdown.Ahorros;
+
   const colchon = liquidez - totalEnBase;
+
 
   const totalPorTipo = (tipo: CxPRow['tipo']) =>
     allRows
@@ -235,13 +249,14 @@ const CxP = () => {
     );
   }
 
-  const bloques: { key: string; label: string; icon: any; rows: CxPRow[] }[] = [
-    { key: 'susc', label: 'Suscripciones', icon: CreditCard, rows: cxpSuscripciones },
-    { key: 'anual', label: 'Pagos Anuales', icon: CalendarClock, rows: cxpAnuales },
-    { key: 'recur', label: 'Recurrentes', icon: Repeat, rows: cxpRecurrentes },
-    { key: 'card', label: 'Tarjetas', icon: CreditCard, rows: cxpTarjetas },
-    { key: 'loan', label: 'Préstamos', icon: Landmark, rows: cxpPrestamos },
+  const bloques: { key: string; label: string; icon: any; rows: CxPRow[]; tipo: CxPRow['tipo'] }[] = [
+    { key: 'susc', label: 'Suscripciones', icon: CreditCard, rows: cxpSuscripciones, tipo: 'Suscripción' },
+    { key: 'anual', label: 'Pagos Anuales', icon: CalendarClock, rows: cxpAnuales, tipo: 'Pago anual' },
+    { key: 'recur', label: 'Recurrentes', icon: Repeat, rows: cxpRecurrentes, tipo: 'Recurrente mensual' },
+    { key: 'card', label: 'Tarjetas', icon: CreditCard, rows: cxpTarjetas, tipo: 'Tarjeta de crédito' },
+    { key: 'loan', label: 'Préstamos', icon: Landmark, rows: cxpPrestamos, tipo: 'Préstamo' },
   ];
+
 
   return (
     <Layout>
@@ -290,7 +305,15 @@ const CxP = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">${formatCurrency(liquidez)}</p>
-              <p className="text-xs text-muted-foreground">Efectivo + Banco + Ahorros</p>
+              <p className="text-xs text-muted-foreground">
+                Saldo actual de cuentas líquidas
+              </p>
+              <div className="mt-2 space-y-0.5 text-[11px] text-muted-foreground">
+                <div className="flex justify-between"><span>Efectivo</span><span>${formatCurrency(liquidezBreakdown.Efectivo)}</span></div>
+                <div className="flex justify-between"><span>Banco</span><span>${formatCurrency(liquidezBreakdown.Banco)}</span></div>
+                <div className="flex justify-between"><span>Ahorros</span><span>${formatCurrency(liquidezBreakdown.Ahorros)}</span></div>
+              </div>
+
             </CardContent>
           </Card>
           <Card className={colchon < 0 ? 'border-destructive' : ''}>
@@ -319,7 +342,7 @@ const CxP = () => {
                   <b.icon className="h-4 w-4 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">{b.label}</p>
                 </div>
-                <p className="text-lg font-semibold">${formatCurrency(totalPorTipo(b.rows[0]?.tipo || 'Suscripción'))}</p>
+                <p className="text-lg font-semibold">${formatCurrency(totalPorTipo(b.tipo))}</p>
                 <p className="text-[10px] text-muted-foreground">{b.rows.length} conceptos</p>
               </CardContent>
             </Card>
