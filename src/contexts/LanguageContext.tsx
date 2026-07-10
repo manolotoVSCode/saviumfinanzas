@@ -17,7 +17,7 @@ const translations = {
     'nav.dashboard': 'Dashboard',
     'nav.transactions': 'Transacciones',
     'nav.investments': 'Inversiones',
-    'nav.reports': 'Informes',
+    'nav.reports': 'Informes Financieros',
     'nav.settings': 'Configuración',
     
     // Dashboard
