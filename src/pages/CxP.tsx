@@ -326,7 +326,7 @@ const CxP = () => {
                   <b.icon className="h-4 w-4 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">{b.label}</p>
                 </div>
-                <p className="text-lg font-semibold">${formatCurrency(totalPorTipo(b.rows[0]?.tipo || 'Suscripción'))}</p>
+                <p className="text-lg font-semibold">${formatCurrency(totalPorTipo(b.tipo))}</p>
                 <p className="text-[10px] text-muted-foreground">{b.rows.length} conceptos</p>
               </CardContent>
             </Card>
