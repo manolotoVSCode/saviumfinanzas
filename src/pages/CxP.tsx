@@ -131,8 +131,8 @@ const CxP = () => {
       return false;
     };
 
-    // Agrupar directamente por subcategoría
-    const bySubcat = new Map<string, { txs: any[]; cat: any }>();
+    // Agrupar por subcategoría + divisa (mismo servicio en distintos países = recurrentes distintos)
+    const bySubcat = new Map<string, { txs: any[]; cat: any; divisa: string }>();
     financeData.transactions.forEach((t) => {
       if (!t.subcategoriaId || !(t.gasto > 0)) return;
       const fecha = new Date(t.fecha);
@@ -145,9 +145,11 @@ const CxP = () => {
       if (label.includes('suscripc')) return;
       if (label.includes('prestamo') || label.includes('préstamo') || label.includes('hipoteca')) return;
 
-      const g = bySubcat.get(t.subcategoriaId) || { txs: [], cat };
+      const divisa = (t.divisa as string) || baseCurrency;
+      const key = `${t.subcategoriaId}::${divisa}`;
+      const g = bySubcat.get(key) || { txs: [], cat, divisa };
       g.txs.push(t);
-      bySubcat.set(t.subcategoriaId, g);
+      bySubcat.set(key, g);
     });
 
     bySubcat.forEach(({ txs, cat }) => {
