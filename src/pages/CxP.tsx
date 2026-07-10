@@ -181,7 +181,7 @@ const CxP = () => {
       const dias = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
       if (dias > 45) return;
 
-      if (subLabels.has(merchant)) return;
+      if (subMerchants.some((sm: string) => merchant.includes(sm) || sm.includes(merchant))) return;
 
       // Estabilidad del monto (coef. variación ≤ 0.25)
       const montos = sorted.map((t) => Number(t.gasto));
