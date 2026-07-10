@@ -305,7 +305,15 @@ const CxP = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">${formatCurrency(liquidez)}</p>
-              <p className="text-xs text-muted-foreground">Efectivo + Banco + Ahorros</p>
+              <p className="text-xs text-muted-foreground">
+                Saldo actual de cuentas líquidas
+              </p>
+              <div className="mt-2 space-y-0.5 text-[11px] text-muted-foreground">
+                <div className="flex justify-between"><span>Efectivo</span><span>${formatCurrency(liquidezBreakdown.Efectivo)}</span></div>
+                <div className="flex justify-between"><span>Banco</span><span>${formatCurrency(liquidezBreakdown.Banco)}</span></div>
+                <div className="flex justify-between"><span>Ahorros</span><span>${formatCurrency(liquidezBreakdown.Ahorros)}</span></div>
+              </div>
+
             </CardContent>
           </Card>
           <Card className={colchon < 0 ? 'border-destructive' : ''}>
