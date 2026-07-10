@@ -123,7 +123,7 @@ const CxP = () => {
     const esObligacionFija = (cat: any) => {
       const c = (cat.categoria || '').toLowerCase();
       const s = (cat.subcategoria || '').toLowerCase();
-      if (c === 'hogar' && !s.includes('alquiler') && !s.includes('hipoteca')) return true;
+      if (c === 'hogar' && !s.includes('alquiler') && !s.includes('hipoteca') && !s.includes('servicios hogar') && s !== 'servicios') return true;
       if (c === 'educación' || c === 'educacion') return true;
       if (c === 'servicios' && (s.includes('celular') || s.includes('telefon') || s.includes('internet'))) return true;
       if (c === 'salud' && s.includes('seguro')) return true;
