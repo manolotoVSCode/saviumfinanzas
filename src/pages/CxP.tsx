@@ -214,14 +214,22 @@ const CxP = () => {
     [allRows, convertCurrency, baseCurrency]
   );
 
-  // Liquidez: efectivo + banco + ahorros (todas divisas convertidas a base)
-  const liquidez = useMemo(() => {
-    return financeData.accounts
+  // Liquidez: saldo actual real de cuentas líquidas (Efectivo + Banco + Ahorros)
+  // Desglose por tipo para mostrar de dónde viene el total
+  const liquidezBreakdown = useMemo(() => {
+    const acc: Record<string, number> = { Efectivo: 0, Banco: 0, Ahorros: 0 };
+    financeData.accounts
       .filter((a) => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && !a.vendida)
-      .reduce((s, a) => s + convertCurrency(a.saldoActual, a.divisa, baseCurrency), 0);
+      .forEach((a) => {
+        acc[a.tipo] += convertCurrency(a.saldoActual, a.divisa, baseCurrency);
+      });
+    return acc;
   }, [financeData.accounts, convertCurrency, baseCurrency]);
 
+  const liquidez = liquidezBreakdown.Efectivo + liquidezBreakdown.Banco + liquidezBreakdown.Ahorros;
+
   const colchon = liquidez - totalEnBase;
+
 
   const totalPorTipo = (tipo: CxPRow['tipo']) =>
     allRows
