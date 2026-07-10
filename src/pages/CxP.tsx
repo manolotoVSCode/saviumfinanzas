@@ -114,8 +114,11 @@ const CxP = () => {
     const subLabels = new Set((subscriptions || []).map((s: any) => (s.service_name || '').toLowerCase()));
 
     mensualCats.forEach((cat) => {
-      // Excluir subcategoría "Suscripciones" completa (ya está en bloque 1)
-      if ((cat.subcategoria || '').toLowerCase().includes('suscripc')) return;
+      // Excluir subcategoría "Suscripciones" (bloque 1) y préstamos/hipoteca (bloque 5)
+      const s = `${cat.categoria} ${cat.subcategoria}`.toLowerCase();
+      if (s.includes('suscripc')) return;
+      if (s.includes('préstamo') || s.includes('prestamo') || s.includes('hipoteca')) return;
+
 
       const txs = financeData.transactions
         .filter((t) => t.subcategoriaId === cat.id && t.gasto > 0)
