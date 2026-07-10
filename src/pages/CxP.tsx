@@ -131,8 +131,8 @@ const CxP = () => {
       return false;
     };
 
-    // Agrupar directamente por subcategoría
-    const bySubcat = new Map<string, { txs: any[]; cat: any }>();
+    // Agrupar por subcategoría + divisa (mismo servicio en distintos países = recurrentes distintos)
+    const bySubcat = new Map<string, { txs: any[]; cat: any; divisa: string }>();
     financeData.transactions.forEach((t) => {
       if (!t.subcategoriaId || !(t.gasto > 0)) return;
       const fecha = new Date(t.fecha);
@@ -145,12 +145,14 @@ const CxP = () => {
       if (label.includes('suscripc')) return;
       if (label.includes('prestamo') || label.includes('préstamo') || label.includes('hipoteca')) return;
 
-      const g = bySubcat.get(t.subcategoriaId) || { txs: [], cat };
+      const divisa = (t.divisa as string) || baseCurrency;
+      const key = `${t.subcategoriaId}::${divisa}`;
+      const g = bySubcat.get(key) || { txs: [], cat, divisa };
       g.txs.push(t);
-      bySubcat.set(t.subcategoriaId, g);
+      bySubcat.set(key, g);
     });
 
-    bySubcat.forEach(({ txs, cat }) => {
+    bySubcat.forEach(({ txs, cat, divisa }) => {
       const sorted = txs.sort(
         (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
       );
@@ -180,8 +182,9 @@ const CxP = () => {
       const last = sorted[0];
       const lastDate = new Date(last.fecha);
       const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
-      // Tolerancia: 1.5x el periodo esperado. Si es más viejo, el servicio ya no está activo.
-      if (diasDesdeUltimo > periodoMeses * 45) return;
+      // Tolerancia: 1.5x el periodo esperado (mínimo 45 días para dar margen a mensuales)
+      const tolerancia = Math.max(45, periodoMeses * 30 * 1.5);
+      if (diasDesdeUltimo > tolerancia) return;
 
       // Monto = promedio de los últimos 2 pagos (según instrucción del usuario)
       const ultimos = sorted.slice(0, 2);
@@ -193,11 +196,11 @@ const CxP = () => {
       if (nextDate > limite) return;
 
       rows.push({
-        id: `rec-${cat.id}`,
+        id: `rec-${cat.id}-${divisa}`,
         concepto: `${cat.categoria} · ${cat.subcategoria}`,
         tipo: 'Recurrente mensual',
         monto,
-        divisa: (last.divisa as any) || baseCurrency,
+        divisa: divisa as any,
         fechaEstimada: nextDate,
         detalle: `${etiqueta} · prom. últimos 2`,
       });
