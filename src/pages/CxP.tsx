@@ -152,7 +152,7 @@ const CxP = () => {
       bySubcat.set(key, g);
     });
 
-    bySubcat.forEach(({ txs, cat }) => {
+    bySubcat.forEach(({ txs, cat, divisa }) => {
       const sorted = txs.sort(
         (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
       );
@@ -182,8 +182,9 @@ const CxP = () => {
       const last = sorted[0];
       const lastDate = new Date(last.fecha);
       const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
-      // Tolerancia: 1.5x el periodo esperado. Si es más viejo, el servicio ya no está activo.
-      if (diasDesdeUltimo > periodoMeses * 45) return;
+      // Tolerancia: 1.5x el periodo esperado (mínimo 45 días para dar margen a mensuales)
+      const tolerancia = Math.max(45, periodoMeses * 30 * 1.5);
+      if (diasDesdeUltimo > tolerancia) return;
 
       // Monto = promedio de los últimos 2 pagos (según instrucción del usuario)
       const ultimos = sorted.slice(0, 2);
@@ -195,11 +196,11 @@ const CxP = () => {
       if (nextDate > limite) return;
 
       rows.push({
-        id: `rec-${cat.id}`,
+        id: `rec-${cat.id}-${divisa}`,
         concepto: `${cat.categoria} · ${cat.subcategoria}`,
         tipo: 'Recurrente mensual',
         monto,
-        divisa: (last.divisa as any) || baseCurrency,
+        divisa: divisa as any,
         fechaEstimada: nextDate,
         detalle: `${etiqueta} · prom. últimos 2`,
       });
