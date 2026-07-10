@@ -121,6 +121,11 @@ const App = () => (
                   <PagosAnuales />
                 </ProtectedRoute>
               } />
+              <Route path="/cxp" element={
+                <ProtectedRoute>
+                  <CxP />
+                </ProtectedRoute>
+              } />
               <Route path="/changelog" element={
                 <ProtectedRoute>
                   <ChangelogPage />
