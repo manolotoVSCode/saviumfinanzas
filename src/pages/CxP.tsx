@@ -103,49 +103,85 @@ const CxP = () => {
     return rows;
   }, [financeData.categories, financeData.transactions, horizonte, baseCurrency]);
 
-  // 3) Recurrentes mensuales (frecuencia_seguimiento = 'mensual', tipo Gasto)
+  // 3) Recurrentes mensuales — AUTO-DETECCIÓN por historial de transacciones
+  //    Criterio: subcategoría con ≥2 pagos en meses distintos dentro de los últimos 120 días,
+  //    y último pago con ≤45 días de antigüedad (sigue siendo recurrente vigente).
+  //    Excluye Suscripciones (b1), Anuales (b2), Tarjetas (b4) y Préstamos/Hipoteca (b5).
   const cxpRecurrentes = useMemo<CxPRow[]>(() => {
     const rows: CxPRow[] = [];
-    const mensualCats = financeData.categories.filter(
-      (c: any) => c.frecuencia_seguimiento === 'mensual' && c.tipo === 'Gastos'
+    const now = new Date();
+    const limite = new Date();
+    limite.setDate(now.getDate() + horizonte);
+    const desde = new Date();
+    desde.setDate(desde.getDate() - 120);
+
+    const catsById = new Map(financeData.categories.map((c: any) => [c.id, c]));
+    const subLabels = new Set(
+      (subscriptions || []).map((s: any) => (s.service_name || '').toLowerCase())
     );
 
-    // Excluir subcategorías ya cubiertas como "Suscripciones" para no duplicar
-    const subLabels = new Set((subscriptions || []).map((s: any) => (s.service_name || '').toLowerCase()));
+    // Agrupar gastos por subcategoría dentro de la ventana
+    const bySubcat = new Map<string, any[]>();
+    financeData.transactions.forEach((t) => {
+      if (!t.subcategoriaId || !(t.gasto > 0)) return;
+      const fecha = new Date(t.fecha);
+      if (fecha < desde) return;
+      const arr = bySubcat.get(t.subcategoriaId) || [];
+      arr.push(t);
+      bySubcat.set(t.subcategoriaId, arr);
+    });
 
-    mensualCats.forEach((cat) => {
-      // Excluir subcategoría "Suscripciones" (bloque 1) y préstamos/hipoteca (bloque 5)
-      const s = `${cat.categoria} ${cat.subcategoria}`.toLowerCase();
-      if (s.includes('suscripc')) return;
-      if (s.includes('préstamo') || s.includes('prestamo') || s.includes('hipoteca')) return;
+    bySubcat.forEach((txs, subcatId) => {
+      const cat: any = catsById.get(subcatId);
+      if (!cat || cat.tipo !== 'Gastos') return;
 
+      const label = `${cat.categoria} ${cat.subcategoria}`.toLowerCase();
+      if (label.includes('suscripc')) return;
+      if (cat.frecuencia_seguimiento === 'anual') return;
+      if (label.includes('préstamo') || label.includes('prestamo') || label.includes('hipoteca')) return;
+      if (label.includes('tarjeta de credito') || label.includes('tarjeta de crédito')) return;
 
-      const txs = financeData.transactions
-        .filter((t) => t.subcategoriaId === cat.id && t.gasto > 0)
-        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-      if (!txs.length) return;
-      const last = txs[0];
-      // Estimado: mismo día del próximo mes
-      const nextDate = new Date(last.fecha);
-      nextDate.setMonth(nextDate.getMonth() + 1);
-      const now = new Date();
-      const limite = new Date();
-      limite.setDate(now.getDate() + horizonte);
-      if (nextDate < now || nextDate > limite) return;
+      // ≥2 pagos en meses distintos
+      const sorted = txs.sort(
+        (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+      );
+      const meses = new Set(
+        sorted.map((t) => {
+          const d = new Date(t.fecha);
+          return `${d.getFullYear()}-${d.getMonth()}`;
+        })
+      );
+      if (meses.size < 2) return;
+
+      const last = sorted[0];
+      const lastDate = new Date(last.fecha);
+      const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (diasDesdeUltimo > 45) return;
+
       if (subLabels.has((last.comentario || '').toLowerCase())) return;
 
+      const nextDate = new Date(lastDate);
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      if (nextDate < now || nextDate > limite) return;
+
+      // Promedio de los últimos 3 pagos para estabilidad
+      const ultimos = sorted.slice(0, 3);
+      const promedio =
+        ultimos.reduce((s, t) => s + Number(t.gasto), 0) / ultimos.length;
+
       rows.push({
-        id: `rec-${cat.id}`,
+        id: `rec-${subcatId}`,
         concepto: `${cat.categoria} · ${cat.subcategoria}`,
         tipo: 'Recurrente mensual',
-        monto: Number(last.gasto),
+        monto: promedio,
         divisa: (last.divisa as any) || baseCurrency,
         fechaEstimada: nextDate,
-        detalle: last.comentario?.slice(0, 40),
+        detalle: `Promedio de ${ultimos.length} últimos pagos`,
       });
     });
     return rows;
   }, [financeData.categories, financeData.transactions, subscriptions, horizonte, baseCurrency]);
+
 
   // 4) Tarjetas de crédito con saldo negativo
   const cxpTarjetas = useMemo<CxPRow[]>(() => {
