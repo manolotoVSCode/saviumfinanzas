@@ -241,13 +241,14 @@ const CxP = () => {
     );
   }
 
-  const bloques: { key: string; label: string; icon: any; rows: CxPRow[] }[] = [
-    { key: 'susc', label: 'Suscripciones', icon: CreditCard, rows: cxpSuscripciones },
-    { key: 'anual', label: 'Pagos Anuales', icon: CalendarClock, rows: cxpAnuales },
-    { key: 'recur', label: 'Recurrentes', icon: Repeat, rows: cxpRecurrentes },
-    { key: 'card', label: 'Tarjetas', icon: CreditCard, rows: cxpTarjetas },
-    { key: 'loan', label: 'Préstamos', icon: Landmark, rows: cxpPrestamos },
+  const bloques: { key: string; label: string; icon: any; rows: CxPRow[]; tipo: CxPRow['tipo'] }[] = [
+    { key: 'susc', label: 'Suscripciones', icon: CreditCard, rows: cxpSuscripciones, tipo: 'Suscripción' },
+    { key: 'anual', label: 'Pagos Anuales', icon: CalendarClock, rows: cxpAnuales, tipo: 'Pago anual' },
+    { key: 'recur', label: 'Recurrentes', icon: Repeat, rows: cxpRecurrentes, tipo: 'Recurrente mensual' },
+    { key: 'card', label: 'Tarjetas', icon: CreditCard, rows: cxpTarjetas, tipo: 'Tarjeta de crédito' },
+    { key: 'loan', label: 'Préstamos', icon: Landmark, rows: cxpPrestamos, tipo: 'Préstamo' },
   ];
+
 
   return (
     <Layout>
