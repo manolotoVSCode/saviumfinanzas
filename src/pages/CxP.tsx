@@ -73,9 +73,12 @@ const CxP = () => {
     limite.setDate(now.getDate() + horizonte);
     const rows: CxPRow[] = [];
 
-    const anualCats = financeData.categories.filter(
-      (c: any) => c.frecuencia_seguimiento === 'anual' && c.tipo === 'Gastos'
-    );
+    const anualCats = financeData.categories.filter((c: any) => {
+      const s = `${c.categoria} ${c.subcategoria}`.toLowerCase();
+      const esPrestamo = s.includes('préstamo') || s.includes('prestamo') || s.includes('hipoteca');
+      return c.frecuencia_seguimiento === 'anual' && c.tipo === 'Gastos' && !esPrestamo;
+    });
+
 
     anualCats.forEach((cat) => {
       const txs = financeData.transactions
