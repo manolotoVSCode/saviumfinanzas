@@ -247,7 +247,9 @@ const CxP = () => {
       const last = txs[0];
       const nextDate = new Date(last.fecha);
       nextDate.setMonth(nextDate.getMonth() + 1);
-      if (nextDate < now || nextDate > limite) return;
+      while (nextDate < now) nextDate.setMonth(nextDate.getMonth() + 1);
+      if (nextDate > limite) return;
+
       rows.push({
         id: `loan-${cat.id}`,
         concepto: `${cat.categoria} · ${cat.subcategoria}`,
