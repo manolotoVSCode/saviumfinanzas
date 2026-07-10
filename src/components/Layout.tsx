@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard } from 'lucide-react';
 import { usePendings } from '@/hooks/usePendings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -44,6 +44,9 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions'), tourId: 'nav-transacciones' },
     { path: '/inversiones', icon: TrendingUp, label: t('nav.investments'), tourId: 'nav-inversiones' },
     { path: '/pendientes', icon: Clock, label: 'Pendientes', tourId: 'nav-pendientes', badge: overdueCount || undefined, dotCount: activeCount },
+    { path: '/suscripciones', icon: CreditCard, label: 'Suscripciones', tourId: 'nav-suscripciones' },
+    { path: '/ingresos-recurrentes', icon: Repeat, label: 'Ingresos Recurrentes', tourId: 'nav-ingresos-recurrentes' },
+    { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales', tourId: 'nav-pagos-anuales' },
     { path: '/informes', icon: FileText, label: t('nav.reports'), tourId: 'nav-informes' },
   ];
 

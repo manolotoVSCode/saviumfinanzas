@@ -21,6 +21,9 @@ import Categorias from "./pages/Categorias";
 import SeguimientoGastos from "./pages/SeguimientoGastos";
 import SeguimientoIngresos from "./pages/SeguimientoIngresos";
 import Pendientes from "./pages/Pendientes";
+import Suscripciones from "./pages/Suscripciones";
+import IngresosRecurrentes from "./pages/IngresosRecurrentes";
+import PagosAnuales from "./pages/PagosAnuales";
 import ChangelogPage from "./pages/ChangelogPage";
 import Terminos from "./pages/Terminos";
 import NotFound from "./pages/NotFound";
@@ -100,6 +103,21 @@ const App = () => (
               <Route path="/pendientes" element={
                 <ProtectedRoute>
                   <Pendientes />
+                </ProtectedRoute>
+              } />
+              <Route path="/suscripciones" element={
+                <ProtectedRoute>
+                  <Suscripciones />
+                </ProtectedRoute>
+              } />
+              <Route path="/ingresos-recurrentes" element={
+                <ProtectedRoute>
+                  <IngresosRecurrentes />
+                </ProtectedRoute>
+              } />
+              <Route path="/pagos-anuales" element={
+                <ProtectedRoute>
+                  <PagosAnuales />
                 </ProtectedRoute>
               } />
               <Route path="/changelog" element={
