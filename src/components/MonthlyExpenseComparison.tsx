@@ -41,7 +41,7 @@ export const MonthlyExpenseComparison = ({ transactions, categories, formatCurre
 
   const expenseCategoryIds = useMemo(() => {
     return categories
-      .filter(c => c.tipo === 'Gasto' && c.categoria !== 'Compra Venta Inmuebles')
+      .filter(c => c.tipo === 'Gastos' && c.categoria !== 'Compra Venta Inmuebles')
       .map(c => c.id);
   }, [categories]);
 
