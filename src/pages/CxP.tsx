@@ -140,6 +140,26 @@ const CxP = () => {
       .filter((x: string) => x.length >= 3);
 
 
+    // Whitelist: SOLO categorías que representan obligaciones fijas ineludibles.
+    // Alimentación, Ocio, Transporte (movilidad/peajes/estacionamiento/gasolina),
+    // Compras personales, etc. son discrecionales y NO cuentan como recurrentes
+    // aunque el comercio se repita.
+    const esObligacionFija = (cat: any) => {
+      const c = (cat.categoria || '').toLowerCase();
+      const s = (cat.subcategoria || '').toLowerCase();
+      // Hogar: servicios básicos (luz, agua, gas, internet, admin, predial)
+      if (c === 'hogar' && !s.includes('alquiler') && !s.includes('hipoteca')) return true;
+      // Educación: colegiaturas / cursos
+      if (c === 'educación' || c === 'educacion') return true;
+      // Servicios (envíos no, pero telefonía/celular sí)
+      if (c === 'servicios' && (s.includes('celular') || s.includes('telefon') || s.includes('internet'))) return true;
+      // Salud: solo seguros médicos recurrentes
+      if (c === 'salud' && s.includes('seguro')) return true;
+      // Seguros vehículo
+      if (c === 'transporte' && s.includes('seguro')) return true;
+      return false;
+    };
+
     // Agrupar por (subcatId + comercio normalizado)
     const byMerchant = new Map<string, { txs: any[]; cat: any; merchant: string }>();
     financeData.transactions.forEach((t) => {
@@ -148,13 +168,12 @@ const CxP = () => {
       if (fecha < desde) return;
       const cat: any = catsById.get(t.subcategoriaId);
       if (!cat || cat.tipo !== 'Gastos') return;
+      if (!esObligacionFija(cat)) return;
       const label = `${cat.categoria} ${cat.subcategoria}`.toLowerCase();
       if (label.includes('suscripc')) return;
       if (cat.frecuencia_seguimiento === 'anual') return;
-      if (label.includes('transferencia')) return;
       // Hipoteca/préstamo van al bloque de Préstamos (b5)
       if (label.includes('prestamo') || label.includes('préstamo') || label.includes('hipoteca')) return;
-      if (label.includes('tarjeta de credito') || label.includes('tarjeta de crédito')) return;
 
       const merchant = normalize(t.comentario || '');
       if (!merchant || merchant.length < 3) return;
@@ -163,6 +182,7 @@ const CxP = () => {
       g.txs.push(t);
       byMerchant.set(key, g);
     });
+
 
     byMerchant.forEach(({ txs, cat, merchant }) => {
       const sorted = txs.sort(
