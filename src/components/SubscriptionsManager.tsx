@@ -181,7 +181,7 @@ export const SubscriptionsManager = () => {
       if (delErr) throw delErr;
       setMergeSourceId(null);
       setMergeTargetId('');
-      await processSubscriptions();
+      setTimeout(() => { processSubscriptions(); }, 0);
     } catch (e) {
       console.error('Error merging subscriptions:', e);
       toast.error('Error al fusionar las suscripciones');
