@@ -447,26 +447,18 @@ interface PayDialogProps {
   accounts: any[];
   categories: any[];
   onCancel: () => void;
-  onConfirm: (opts: { cuentaId: string; subcategoriaId: string; fechaCobro: Date; montoCobrado: number; comentario?: string }) => Promise<void>;
+  onConfirm: (opts: { fechaCobro: Date; montoCobrado: number }) => Promise<void>;
 }
-const PayPendingDialog = ({ pending, accounts, categories, onCancel, onConfirm }: PayDialogProps) => {
+const PayPendingDialog = ({ pending, onCancel, onConfirm }: PayDialogProps) => {
   const restante = pending.monto_esperado - (pending.monto_cobrado ?? 0);
-  const [cuentaId, setCuentaId] = useState<string>(accounts[0]?.id ?? '');
   const [monto, setMonto] = useState(restante.toString());
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
-  const [comentario, setComentario] = useState('');
-
-  const ingresoCats = categories.filter((c: any) => c.tipo === 'Ingreso');
-  const [subcatId, setSubcatId] = useState<string>(ingresoCats[0]?.id ?? '');
 
   const handleConfirm = async () => {
-    if (!cuentaId || !subcatId || !monto) return;
+    if (!monto) return;
     await onConfirm({
-      cuentaId,
-      subcategoriaId: subcatId,
       fechaCobro: new Date(fecha + 'T00:00:00'),
       montoCobrado: parseFloat(monto),
-      comentario: comentario || undefined,
     });
   };
 
@@ -476,7 +468,7 @@ const PayPendingDialog = ({ pending, accounts, categories, onCancel, onConfirm }
         <DialogHeader>
           <DialogTitle>Marcar como cobrado</DialogTitle>
           <DialogDescription>
-            Se creará una transacción real de ingreso en la cuenta seleccionada.
+            Solo se actualiza el estado del pendiente. No se crea ninguna transacción (para evitar duplicados al importar tu estado de cuenta).
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -485,32 +477,6 @@ const PayPendingDialog = ({ pending, accounts, categories, onCancel, onConfirm }
             <div className="text-xs text-muted-foreground">
               Esperado: {formatNumber(pending.monto_esperado)} {pending.divisa} · Restante: {formatNumber(restante)}
             </div>
-          </div>
-
-          <div>
-            <Label>Cuenta destino</Label>
-            <Select value={cuentaId} onValueChange={setCuentaId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {accounts.map((a: any) => (
-                  <SelectItem key={a.id} value={a.id}>{a.nombre}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Categoría de ingreso</Label>
-            <Select value={subcatId} onValueChange={setSubcatId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                {ingresoCats.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.categoria} / {c.subcategoria}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -522,11 +488,6 @@ const PayPendingDialog = ({ pending, accounts, categories, onCancel, onConfirm }
               <Label>Fecha</Label>
               <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
             </div>
-          </div>
-
-          <div>
-            <Label>Comentario (opcional)</Label>
-            <Input value={comentario} onChange={(e) => setComentario(e.target.value)} placeholder={`Cobro pendiente: ${pending.concepto}`} />
           </div>
         </div>
         <DialogFooter>
@@ -541,3 +502,4 @@ const PayPendingDialog = ({ pending, accounts, categories, onCancel, onConfirm }
 };
 
 export default Pendientes;
+

@@ -103,40 +103,16 @@ export const usePendings = () => {
   };
 
   /**
-   * Marca un pendiente como cobrado: crea la transacción real de ingreso
-   * en la cuenta indicada y actualiza el pendiente vinculándolo.
+   * Marca un pendiente como cobrado SIN crear una transacción.
+   * La transacción real llegará al importar el estado de cuenta y podrá vincularse.
    */
   const markAsPaid = async (opts: {
     pending: Pending;
-    cuentaId: string;
-    subcategoriaId: string;
     fechaCobro: Date;
     montoCobrado: number;
-    comentario?: string;
   }) => {
     if (!user) return { error: new Error('No auth') };
-    const { pending, cuentaId, subcategoriaId, fechaCobro, montoCobrado, comentario } = opts;
-
-    const insertTx = {
-      cuenta_id: cuentaId,
-      fecha: fechaCobro.toISOString().split('T')[0],
-      comentario: comentario ?? `Cobro pendiente: ${pending.concepto}`,
-      ingreso: montoCobrado,
-      gasto: 0,
-      subcategoria_id: subcategoriaId,
-      divisa: pending.divisa,
-      user_id: user.id,
-    };
-    const { data: txData, error: txError } = await supabase
-      .from('transacciones')
-      .insert([insertTx])
-      .select('id')
-      .single();
-
-    if (txError || !txData) {
-      toast({ title: 'Error', description: txError?.message ?? 'No se pudo crear la transacción', variant: 'destructive' });
-      return { error: txError };
-    }
+    const { pending, fechaCobro, montoCobrado } = opts;
 
     const totalCobrado = (pending.monto_cobrado ?? 0) + montoCobrado;
     const nuevoEstado: PendingEstado = totalCobrado >= pending.monto_esperado ? 'cobrado' : 'cobrado_parcial';
@@ -144,7 +120,6 @@ export const usePendings = () => {
     const { error: updError } = await supabase
       .from('transaction_pendings')
       .update({
-        transaccion_cobro_id: txData.id,
         monto_cobrado: totalCobrado,
         fecha_cobro: fechaCobro.toISOString().split('T')[0],
         estado: nuevoEstado,
@@ -156,8 +131,9 @@ export const usePendings = () => {
       return { error: updError };
     }
     await load();
-    return { error: null, transactionId: txData.id };
+    return { error: null };
   };
+
 
   const overdueCount = useMemo(() => {
     const today = new Date();
