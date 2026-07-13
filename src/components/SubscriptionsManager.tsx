@@ -796,15 +796,26 @@ export const SubscriptionsManager = () => {
                               {service.serviceName}
                             </h3>
                             {service.id && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => startEditingName(service.id!, service.serviceName)}
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Editar nombre"
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => startEditingName(service.id!, service.serviceName)}
+                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Editar nombre"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => { setMergeSourceId(service.id!); setMergeTargetId(''); }}
+                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Fusionar con otra suscripción"
+                                >
+                                  <Merge className="h-3 w-3" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         )}
