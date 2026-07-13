@@ -263,7 +263,6 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
   const [divisa, setDivisa] = useState(initial?.divisa ?? defaultCurrency);
   const [fecha, setFecha] = useState(initial?.fecha_esperada ?? '');
   const [notas, setNotas] = useState(initial?.notas ?? '');
-  const [transaccionId, setTransaccionId] = useState<string>(initial?.transaccion_id ?? 'none');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,9 +274,10 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
       divisa,
       fecha_esperada: fecha || null,
       notas: notas || null,
-      transaccion_id: transaccionId === 'none' ? null : transaccionId,
+      transaccion_id: initial?.transaccion_id ?? null,
     });
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -329,14 +329,8 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
             </div>
           </div>
 
-          <div className="min-w-0">
-            <Label>Transacción vinculada (opcional)</Label>
-            <TransactionCombobox
-              transactions={transactions}
-              value={transaccionId}
-              onChange={setTransaccionId}
-            />
-          </div>
+
+
 
 
 
