@@ -25,6 +25,32 @@ const MATCH_TYPE_LABELS: Record<string, string> = {
 
 type SortKey = 'priority' | 'matches' | 'name' | 'keywords' | 'match_type' | 'cuenta' | 'category' | 'active';
 type SortDir = 'asc' | 'desc';
+
+interface SortableHeadProps {
+  label: string;
+  k: SortKey;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+  align?: 'left' | 'center' | 'right';
+}
+const SortableHead = ({ label, k, sortKey, sortDir, onSort, align = 'left' }: SortableHeadProps) => {
+  const active = sortKey === k;
+  const Icon = !active ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown;
+  const alignClass = align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start';
+  return (
+    <TableHead className={align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : ''}>
+      <button
+        type="button"
+        onClick={() => onSort(k)}
+        className={`flex items-center gap-1 w-full ${alignClass} hover:text-foreground ${active ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5 opacity-70" />
+      </button>
+    </TableHead>
+  );
+};
 type StatusFilter = 'all' | 'used' | 'unused' | 'inactive';
 
 const ReglasClasificacion = () => {
