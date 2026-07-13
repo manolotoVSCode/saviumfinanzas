@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter, X, ArrowUpDown, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
@@ -23,7 +23,34 @@ const MATCH_TYPE_LABELS: Record<string, string> = {
   starts_with: 'Empieza con',
 };
 
-type SortKey = 'priority' | 'matches' | 'name';
+type SortKey = 'priority' | 'matches' | 'name' | 'keywords' | 'match_type' | 'cuenta' | 'category' | 'active';
+type SortDir = 'asc' | 'desc';
+
+interface SortableHeadProps {
+  label: string;
+  k: SortKey;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+  align?: 'left' | 'center' | 'right';
+}
+const SortableHead = ({ label, k, sortKey, sortDir, onSort, align = 'left' }: SortableHeadProps) => {
+  const active = sortKey === k;
+  const Icon = !active ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown;
+  const alignClass = align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start';
+  return (
+    <TableHead className={align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : ''}>
+      <button
+        type="button"
+        onClick={() => onSort(k)}
+        className={`flex items-center gap-1 w-full ${alignClass} hover:text-foreground ${active ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5 opacity-70" />
+      </button>
+    </TableHead>
+  );
+};
 type StatusFilter = 'all' | 'used' | 'unused' | 'inactive';
 
 const ReglasClasificacion = () => {
@@ -36,7 +63,17 @@ const ReglasClasificacion = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [matchesDialogRule, setMatchesDialogRule] = useState<ClassificationRule | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('priority');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'name' || key === 'keywords' || key === 'match_type' || key === 'cuenta' || key === 'category' ? 'asc' : 'desc');
+    }
+  }
 
   // Form state
   const [ruleName, setRuleName] = useState('');
@@ -130,13 +167,38 @@ const ReglasClasificacion = () => {
     }
 
     list.sort((a, b) => {
-      if (sortKey === 'matches') return (matchCounts[b.id] || 0) - (matchCounts[a.id] || 0);
-      if (sortKey === 'name') return (a.name || a.keyword).localeCompare(b.name || b.keyword);
-      return b.priority - a.priority;
+      let cmp = 0;
+      switch (sortKey) {
+        case 'matches':
+          cmp = (matchCounts[a.id] || 0) - (matchCounts[b.id] || 0);
+          break;
+        case 'name':
+          cmp = (a.name || a.keyword).localeCompare(b.name || b.keyword);
+          break;
+        case 'keywords':
+          cmp = splitClassificationKeywords(a.keyword).length - splitClassificationKeywords(b.keyword).length;
+          break;
+        case 'match_type':
+          cmp = (MATCH_TYPE_LABELS[a.match_type] || '').localeCompare(MATCH_TYPE_LABELS[b.match_type] || '');
+          break;
+        case 'cuenta':
+          cmp = (a.cuenta_id ? getAccountName(a.cuenta_id) : 'Todas').localeCompare(b.cuenta_id ? getAccountName(b.cuenta_id) : 'Todas');
+          break;
+        case 'category':
+          cmp = getCategoryLabel(a.category_id).localeCompare(getCategoryLabel(b.category_id));
+          break;
+        case 'active':
+          cmp = Number(a.active) - Number(b.active);
+          break;
+        case 'priority':
+        default:
+          cmp = a.priority - b.priority;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
     });
 
     return list;
-  }, [rules, searchQuery, statusFilter, sortKey, matchCounts, categories]);
+  }, [rules, searchQuery, statusFilter, sortKey, sortDir, matchCounts, categories, accounts]);
 
   function getCategoryLabel(catId: string) {
     const cat = categories.find(c => c.id === catId);
@@ -361,14 +423,14 @@ const ReglasClasificacion = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Keywords</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Cuenta</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead className="text-center">Coincidencias</TableHead>
-                      <TableHead className="text-center">Prioridad</TableHead>
-                      <TableHead className="text-center">Activa</TableHead>
+                      <SortableHead label="Nombre" k="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Keywords" k="keywords" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Tipo" k="match_type" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Cuenta" k="cuenta" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Categoría" k="category" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Coincidencias" k="matches" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
+                      <SortableHead label="Prioridad" k="priority" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
+                      <SortableHead label="Activa" k="active" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -380,17 +442,17 @@ const ReglasClasificacion = () => {
                       const overlaps = overlappingRules[rule.id];
                       return (
                         <TableRow key={rule.id} className={!rule.active ? 'opacity-50' : ''}>
-                          <TableCell className="font-medium">
+                          <TableCell className="font-medium max-w-[200px]" title={rule.name || rule.keyword}>
                             <div className="flex items-center gap-1">
-                              <span>{rule.name || '—'}</span>
+                              <span className="truncate">{rule.name || '—'}</span>
                               {overlaps && (
                                 <span title={`Solapa con ${overlaps.length} regla(s)`}>
-                                  <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
+                                  <AlertTriangle className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                                 </span>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="max-w-[260px]">
+                          <TableCell className="max-w-[260px]" title={kws.join(', ')}>
                             <div className="flex flex-wrap gap-1">
                               {shown.map(kw => (
                                 <Badge key={kw} variant="secondary" className="text-[10px] font-mono">{kw}</Badge>
@@ -400,11 +462,11 @@ const ReglasClasificacion = () => {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell title={MATCH_TYPE_LABELS[rule.match_type]}>
                             <Badge variant="outline">{MATCH_TYPE_LABELS[rule.match_type]}</Badge>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{rule.cuenta_id ? getAccountName(rule.cuenta_id) : 'Todas'}</TableCell>
-                          <TableCell className="max-w-[200px] truncate">{getCategoryLabel(rule.category_id)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap max-w-[160px] truncate" title={rule.cuenta_id ? getAccountName(rule.cuenta_id) : 'Todas'}>{rule.cuenta_id ? getAccountName(rule.cuenta_id) : 'Todas'}</TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={getCategoryLabel(rule.category_id)}>{getCategoryLabel(rule.category_id)}</TableCell>
                           <TableCell className="text-center">
                             <Badge
                               variant={matchCounts[rule.id] > 0 ? 'default' : 'secondary'}
