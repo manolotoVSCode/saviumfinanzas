@@ -23,7 +23,8 @@ const MATCH_TYPE_LABELS: Record<string, string> = {
   starts_with: 'Empieza con',
 };
 
-type SortKey = 'priority' | 'matches' | 'name';
+type SortKey = 'priority' | 'matches' | 'name' | 'keywords' | 'match_type' | 'cuenta' | 'category' | 'active';
+type SortDir = 'asc' | 'desc';
 type StatusFilter = 'all' | 'used' | 'unused' | 'inactive';
 
 const ReglasClasificacion = () => {
