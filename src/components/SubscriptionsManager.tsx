@@ -3,10 +3,12 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Calendar, Clock, Repeat, RefreshCw, Edit2, Check, X, TrendingUp, TrendingDown } from 'lucide-react';
+import { CreditCard, Calendar, Clock, Repeat, RefreshCw, Edit2, Check, X, TrendingUp, TrendingDown, Merge } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -102,12 +104,13 @@ const SUBSCRIPTION_PATTERNS: SubscriptionPattern[] = [
     tipoServicio: 'Desarrollo de software',
     keywords: ['github'],
   },
-  {
-    id: 'microsoft',
-    serviceName: 'Microsoft',
-    tipoServicio: 'Software y servicios',
-    keywords: ['msbill'],
-  },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['msbill'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['microsoft'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['msft'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['xbox'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['office365'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['office 365'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['onedrive'] },
 ];
 
 type SubscriptionFrequency = 'Mensual' | 'Bimestral' | 'Semestral' | 'Anual' | 'Irregular';
@@ -147,6 +150,43 @@ export const SubscriptionsManager = () => {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [editingFrequencyId, setEditingFrequencyId] = useState<string | null>(null);
+  const [mergeSourceId, setMergeSourceId] = useState<string | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState<string>('');
+
+  const performMerge = async () => {
+    if (!mergeSourceId || !mergeTargetId || mergeSourceId === mergeTargetId) return;
+    const source = services.find(s => s.id === mergeSourceId);
+    const target = services.find(s => s.id === mergeTargetId);
+    if (!source || !target) return;
+    try {
+      const { data: targetRow } = await supabase
+        .from('subscription_services')
+        .select('aliases')
+        .eq('id', target.id!)
+        .maybeSingle();
+      const existingAliases: string[] = (targetRow?.aliases as any) || [];
+      const newAliases = Array.from(new Set([
+        ...existingAliases,
+        ...source.originalComments.map(c => (c || '').toLowerCase().trim()).filter(Boolean),
+      ]));
+      const { error: updErr } = await supabase
+        .from('subscription_services')
+        .update({ aliases: newAliases })
+        .eq('id', target.id!);
+      if (updErr) throw updErr;
+      const { error: delErr } = await supabase
+        .from('subscription_services')
+        .delete()
+        .eq('id', source.id!);
+      if (delErr) throw delErr;
+      setMergeSourceId(null);
+      setMergeTargetId('');
+      await processSubscriptions();
+    } catch (e) {
+      console.error('Error merging subscriptions:', e);
+      toast.error('Error al fusionar las suscripciones');
+    }
+  };
 
   // Load saved subscriptions from database
   const loadSavedSubscriptions = async () => {
@@ -398,14 +438,30 @@ export const SubscriptionsManager = () => {
     return true;
   };
 
-  // Buscar el nombre de servicio usando los patrones embebidos
-  const resolveServiceName = (comentario: string, monto: number): { serviceName: string; tipoServicio: string; patternId: string } => {
+  // User-defined aliases from previous merges (canon_key -> {serviceName, tipoServicio, aliases[]})
+  type AliasEntry = { canonKey: string; serviceName: string; tipoServicio: string; aliases: string[] };
+
+  const resolveServiceName = (
+    comentario: string,
+    monto: number,
+    userAliases: AliasEntry[] = [],
+  ): { serviceName: string; tipoServicio: string; patternId: string } => {
+    const lower = comentario.toLowerCase();
+    // 1) User-defined aliases win
+    for (const entry of userAliases) {
+      for (const alias of entry.aliases) {
+        const a = (alias || '').toLowerCase().trim();
+        if (a && lower.includes(a)) {
+          return { serviceName: entry.serviceName, tipoServicio: entry.tipoServicio, patternId: entry.canonKey };
+        }
+      }
+    }
+    // 2) Built-in patterns
     for (const pattern of SUBSCRIPTION_PATTERNS) {
       if (matchTransactionToPattern(comentario, monto, pattern)) {
         return { serviceName: pattern.serviceName, tipoServicio: pattern.tipoServicio, patternId: pattern.id };
       }
     }
-    // Sin coincidencia: usar el comentario limpio como nombre
     const cleanName = comentario.replace(/[*#\d]/g, '').trim().split(/\s+/).slice(0, 3).join(' ') || comentario.substring(0, 20);
     const patternId = `custom-${comentario.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20)}`;
     return { serviceName: cleanName, tipoServicio: 'Suscripción', patternId };
@@ -443,11 +499,25 @@ export const SubscriptionsManager = () => {
         new Date(t.fecha) >= twentyFourMonthsAgo
       );
 
+      // Cargar alias definidos por el usuario (fusiones manuales previas)
+      const { data: aliasRows } = await supabase
+        .from('subscription_services')
+        .select('canon_key, service_name, tipo_servicio, aliases')
+        .eq('user_id', user.id);
+      const userAliases: AliasEntry[] = (aliasRows || [])
+        .filter((r: any) => r.canon_key && Array.isArray(r.aliases) && r.aliases.length > 0)
+        .map((r: any) => ({
+          canonKey: r.canon_key,
+          serviceName: r.service_name,
+          tipoServicio: r.tipo_servicio,
+          aliases: r.aliases,
+        }));
+
       // Agrupar transacciones por patternId resuelto
       const groupedByPattern = new Map<string, { serviceName: string; tipoServicio: string; transactions: typeof subscriptionTransactions }>();
 
       for (const t of subscriptionTransactions) {
-        const { serviceName, tipoServicio, patternId } = resolveServiceName(t.comentario, t.gasto);
+        const { serviceName, tipoServicio, patternId } = resolveServiceName(t.comentario, t.gasto, userAliases);
         if (!groupedByPattern.has(patternId)) {
           groupedByPattern.set(patternId, { serviceName, tipoServicio, transactions: [] });
         }
@@ -726,15 +796,26 @@ export const SubscriptionsManager = () => {
                               {service.serviceName}
                             </h3>
                             {service.id && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => startEditingName(service.id!, service.serviceName)}
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Editar nombre"
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => startEditingName(service.id!, service.serviceName)}
+                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Editar nombre"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => { setMergeSourceId(service.id!); setMergeTargetId(''); }}
+                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Fusionar con otra suscripción"
+                                >
+                                  <Merge className="h-3 w-3" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         )}
@@ -836,6 +917,36 @@ export const SubscriptionsManager = () => {
           </div>
         )}
       </CardContent>
+
+      <Dialog open={!!mergeSourceId} onOpenChange={(open) => { if (!open) { setMergeSourceId(null); setMergeTargetId(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Fusionar suscripción</DialogTitle>
+            <DialogDescription>
+              Une <strong>{services.find(s => s.id === mergeSourceId)?.serviceName}</strong> con otra suscripción. Los cargos actuales y futuros se agruparán bajo la suscripción destino.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Fusionar en:</label>
+            <Select value={mergeTargetId} onValueChange={setMergeTargetId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona la suscripción destino" />
+              </SelectTrigger>
+              <SelectContent>
+                {services
+                  .filter(s => s.id && s.id !== mergeSourceId)
+                  .map(s => (
+                    <SelectItem key={s.id} value={s.id!}>{s.serviceName}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setMergeSourceId(null); setMergeTargetId(''); }}>Cancelar</Button>
+            <Button onClick={performMerge} disabled={!mergeTargetId}>Fusionar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
