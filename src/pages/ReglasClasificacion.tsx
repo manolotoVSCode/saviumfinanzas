@@ -141,13 +141,38 @@ const ReglasClasificacion = () => {
     }
 
     list.sort((a, b) => {
-      if (sortKey === 'matches') return (matchCounts[b.id] || 0) - (matchCounts[a.id] || 0);
-      if (sortKey === 'name') return (a.name || a.keyword).localeCompare(b.name || b.keyword);
-      return b.priority - a.priority;
+      let cmp = 0;
+      switch (sortKey) {
+        case 'matches':
+          cmp = (matchCounts[a.id] || 0) - (matchCounts[b.id] || 0);
+          break;
+        case 'name':
+          cmp = (a.name || a.keyword).localeCompare(b.name || b.keyword);
+          break;
+        case 'keywords':
+          cmp = splitClassificationKeywords(a.keyword).length - splitClassificationKeywords(b.keyword).length;
+          break;
+        case 'match_type':
+          cmp = (MATCH_TYPE_LABELS[a.match_type] || '').localeCompare(MATCH_TYPE_LABELS[b.match_type] || '');
+          break;
+        case 'cuenta':
+          cmp = (a.cuenta_id ? getAccountName(a.cuenta_id) : 'Todas').localeCompare(b.cuenta_id ? getAccountName(b.cuenta_id) : 'Todas');
+          break;
+        case 'category':
+          cmp = getCategoryLabel(a.category_id).localeCompare(getCategoryLabel(b.category_id));
+          break;
+        case 'active':
+          cmp = Number(a.active) - Number(b.active);
+          break;
+        case 'priority':
+        default:
+          cmp = a.priority - b.priority;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
     });
 
     return list;
-  }, [rules, searchQuery, statusFilter, sortKey, matchCounts, categories]);
+  }, [rules, searchQuery, statusFilter, sortKey, sortDir, matchCounts, categories, accounts]);
 
   function getCategoryLabel(catId: string) {
     const cat = categories.find(c => c.id === catId);
