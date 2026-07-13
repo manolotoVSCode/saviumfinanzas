@@ -917,6 +917,36 @@ export const SubscriptionsManager = () => {
           </div>
         )}
       </CardContent>
+
+      <Dialog open={!!mergeSourceId} onOpenChange={(open) => { if (!open) { setMergeSourceId(null); setMergeTargetId(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Fusionar suscripción</DialogTitle>
+            <DialogDescription>
+              Une <strong>{services.find(s => s.id === mergeSourceId)?.serviceName}</strong> con otra suscripción. Los cargos actuales y futuros se agruparán bajo la suscripción destino.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Fusionar en:</label>
+            <Select value={mergeTargetId} onValueChange={setMergeTargetId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona la suscripción destino" />
+              </SelectTrigger>
+              <SelectContent>
+                {services
+                  .filter(s => s.id && s.id !== mergeSourceId)
+                  .map(s => (
+                    <SelectItem key={s.id} value={s.id!}>{s.serviceName}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setMergeSourceId(null); setMergeTargetId(''); }}>Cancelar</Button>
+            <Button onClick={performMerge} disabled={!mergeTargetId}>Fusionar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
