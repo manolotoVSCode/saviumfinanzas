@@ -442,17 +442,17 @@ const ReglasClasificacion = () => {
                       const overlaps = overlappingRules[rule.id];
                       return (
                         <TableRow key={rule.id} className={!rule.active ? 'opacity-50' : ''}>
-                          <TableCell className="font-medium">
+                          <TableCell className="font-medium max-w-[200px]" title={rule.name || rule.keyword}>
                             <div className="flex items-center gap-1">
-                              <span>{rule.name || '—'}</span>
+                              <span className="truncate">{rule.name || '—'}</span>
                               {overlaps && (
                                 <span title={`Solapa con ${overlaps.length} regla(s)`}>
-                                  <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
+                                  <AlertTriangle className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                                 </span>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="max-w-[260px]">
+                          <TableCell className="max-w-[260px]" title={kws.join(', ')}>
                             <div className="flex flex-wrap gap-1">
                               {shown.map(kw => (
                                 <Badge key={kw} variant="secondary" className="text-[10px] font-mono">{kw}</Badge>
@@ -462,11 +462,11 @@ const ReglasClasificacion = () => {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell title={MATCH_TYPE_LABELS[rule.match_type]}>
                             <Badge variant="outline">{MATCH_TYPE_LABELS[rule.match_type]}</Badge>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{rule.cuenta_id ? getAccountName(rule.cuenta_id) : 'Todas'}</TableCell>
-                          <TableCell className="max-w-[200px] truncate">{getCategoryLabel(rule.category_id)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap max-w-[160px] truncate" title={rule.cuenta_id ? getAccountName(rule.cuenta_id) : 'Todas'}>{rule.cuenta_id ? getAccountName(rule.cuenta_id) : 'Todas'}</TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={getCategoryLabel(rule.category_id)}>{getCategoryLabel(rule.category_id)}</TableCell>
                           <TableCell className="text-center">
                             <Badge
                               variant={matchCounts[rule.id] > 0 ? 'default' : 'secondary'}
