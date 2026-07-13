@@ -397,14 +397,14 @@ const ReglasClasificacion = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Keywords</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Cuenta</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead className="text-center">Coincidencias</TableHead>
-                      <TableHead className="text-center">Prioridad</TableHead>
-                      <TableHead className="text-center">Activa</TableHead>
+                      <SortableHead label="Nombre" k="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Keywords" k="keywords" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Tipo" k="match_type" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Cuenta" k="cuenta" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Categoría" k="category" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                      <SortableHead label="Coincidencias" k="matches" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
+                      <SortableHead label="Prioridad" k="priority" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
+                      <SortableHead label="Activa" k="active" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
