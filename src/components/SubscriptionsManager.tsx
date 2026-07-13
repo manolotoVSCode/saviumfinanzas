@@ -401,14 +401,30 @@ export const SubscriptionsManager = () => {
     return true;
   };
 
-  // Buscar el nombre de servicio usando los patrones embebidos
-  const resolveServiceName = (comentario: string, monto: number): { serviceName: string; tipoServicio: string; patternId: string } => {
+  // User-defined aliases from previous merges (canon_key -> {serviceName, tipoServicio, aliases[]})
+  type AliasEntry = { canonKey: string; serviceName: string; tipoServicio: string; aliases: string[] };
+
+  const resolveServiceName = (
+    comentario: string,
+    monto: number,
+    userAliases: AliasEntry[] = [],
+  ): { serviceName: string; tipoServicio: string; patternId: string } => {
+    const lower = comentario.toLowerCase();
+    // 1) User-defined aliases win
+    for (const entry of userAliases) {
+      for (const alias of entry.aliases) {
+        const a = (alias || '').toLowerCase().trim();
+        if (a && lower.includes(a)) {
+          return { serviceName: entry.serviceName, tipoServicio: entry.tipoServicio, patternId: entry.canonKey };
+        }
+      }
+    }
+    // 2) Built-in patterns
     for (const pattern of SUBSCRIPTION_PATTERNS) {
       if (matchTransactionToPattern(comentario, monto, pattern)) {
         return { serviceName: pattern.serviceName, tipoServicio: pattern.tipoServicio, patternId: pattern.id };
       }
     }
-    // Sin coincidencia: usar el comentario limpio como nombre
     const cleanName = comentario.replace(/[*#\d]/g, '').trim().split(/\s+/).slice(0, 3).join(' ') || comentario.substring(0, 20);
     const patternId = `custom-${comentario.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20)}`;
     return { serviceName: cleanName, tipoServicio: 'Suscripción', patternId };
