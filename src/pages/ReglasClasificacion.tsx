@@ -445,11 +445,19 @@ const ReglasClasificacion = () => {
                           <TableCell className="font-medium max-w-[200px]" title={rule.name || rule.keyword}>
                             <div className="flex items-center gap-1">
                               <span className="truncate">{rule.name || '—'}</span>
-                              {overlaps && (
-                                <span title={`Solapa con ${overlaps.length} regla(s)`}>
-                                  <AlertTriangle className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                                </span>
-                              )}
+                              {overlaps && (() => {
+                                const names = overlaps
+                                  .map(id => {
+                                    const r = rules.find(x => x.id === id);
+                                    return r ? (r.name || r.keyword || '—') : null;
+                                  })
+                                  .filter(Boolean) as string[];
+                                return (
+                                  <span title={`Solapa con: ${names.join(', ')}`}>
+                                    <AlertTriangle className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </TableCell>
                           <TableCell className="max-w-[260px]" title={kws.join(', ')}>
