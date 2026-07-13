@@ -462,11 +462,25 @@ export const SubscriptionsManager = () => {
         new Date(t.fecha) >= twentyFourMonthsAgo
       );
 
+      // Cargar alias definidos por el usuario (fusiones manuales previas)
+      const { data: aliasRows } = await supabase
+        .from('subscription_services')
+        .select('canon_key, service_name, tipo_servicio, aliases')
+        .eq('user_id', user.id);
+      const userAliases: AliasEntry[] = (aliasRows || [])
+        .filter((r: any) => r.canon_key && Array.isArray(r.aliases) && r.aliases.length > 0)
+        .map((r: any) => ({
+          canonKey: r.canon_key,
+          serviceName: r.service_name,
+          tipoServicio: r.tipo_servicio,
+          aliases: r.aliases,
+        }));
+
       // Agrupar transacciones por patternId resuelto
       const groupedByPattern = new Map<string, { serviceName: string; tipoServicio: string; transactions: typeof subscriptionTransactions }>();
 
       for (const t of subscriptionTransactions) {
-        const { serviceName, tipoServicio, patternId } = resolveServiceName(t.comentario, t.gasto);
+        const { serviceName, tipoServicio, patternId } = resolveServiceName(t.comentario, t.gasto, userAliases);
         if (!groupedByPattern.has(patternId)) {
           groupedByPattern.set(patternId, { serviceName, tipoServicio, transactions: [] });
         }
