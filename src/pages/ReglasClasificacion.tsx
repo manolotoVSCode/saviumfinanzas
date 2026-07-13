@@ -37,7 +37,17 @@ const ReglasClasificacion = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [matchesDialogRule, setMatchesDialogRule] = useState<ClassificationRule | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('priority');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'name' || key === 'keywords' || key === 'match_type' || key === 'cuenta' || key === 'category' ? 'asc' : 'desc');
+    }
+  }
 
   // Form state
   const [ruleName, setRuleName] = useState('');
