@@ -329,14 +329,8 @@ const PendingForm = ({ open, onOpenChange, initial, defaultCurrency, transaction
             </div>
           </div>
 
-          <div className="min-w-0">
-            <Label>Transacción vinculada (opcional)</Label>
-            <TransactionCombobox
-              transactions={transactions}
-              value={transaccionId}
-              onChange={setTransaccionId}
-            />
-          </div>
+
+
 
 
 
