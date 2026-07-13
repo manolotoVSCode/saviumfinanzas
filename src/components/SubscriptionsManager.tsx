@@ -150,6 +150,43 @@ export const SubscriptionsManager = () => {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [editingFrequencyId, setEditingFrequencyId] = useState<string | null>(null);
+  const [mergeSourceId, setMergeSourceId] = useState<string | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState<string>('');
+
+  const performMerge = async () => {
+    if (!mergeSourceId || !mergeTargetId || mergeSourceId === mergeTargetId) return;
+    const source = services.find(s => s.id === mergeSourceId);
+    const target = services.find(s => s.id === mergeTargetId);
+    if (!source || !target) return;
+    try {
+      const { data: targetRow } = await supabase
+        .from('subscription_services')
+        .select('aliases')
+        .eq('id', target.id!)
+        .maybeSingle();
+      const existingAliases: string[] = (targetRow?.aliases as any) || [];
+      const newAliases = Array.from(new Set([
+        ...existingAliases,
+        ...source.originalComments.map(c => (c || '').toLowerCase().trim()).filter(Boolean),
+      ]));
+      const { error: updErr } = await supabase
+        .from('subscription_services')
+        .update({ aliases: newAliases })
+        .eq('id', target.id!);
+      if (updErr) throw updErr;
+      const { error: delErr } = await supabase
+        .from('subscription_services')
+        .delete()
+        .eq('id', source.id!);
+      if (delErr) throw delErr;
+      setMergeSourceId(null);
+      setMergeTargetId('');
+      await processSubscriptions();
+    } catch (e) {
+      console.error('Error merging subscriptions:', e);
+      toast.error('Error al fusionar las suscripciones');
+    }
+  };
 
   // Load saved subscriptions from database
   const loadSavedSubscriptions = async () => {
