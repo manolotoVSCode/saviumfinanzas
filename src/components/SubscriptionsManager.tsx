@@ -102,12 +102,13 @@ const SUBSCRIPTION_PATTERNS: SubscriptionPattern[] = [
     tipoServicio: 'Desarrollo de software',
     keywords: ['github'],
   },
-  {
-    id: 'microsoft',
-    serviceName: 'Microsoft',
-    tipoServicio: 'Software y servicios',
-    keywords: ['msbill'],
-  },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['msbill'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['microsoft'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['msft'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['xbox'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['office365'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['office 365'] },
+  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['onedrive'] },
 ];
 
 type SubscriptionFrequency = 'Mensual' | 'Bimestral' | 'Semestral' | 'Anual' | 'Irregular';

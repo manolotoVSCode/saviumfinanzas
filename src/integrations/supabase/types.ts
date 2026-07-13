@@ -386,6 +386,7 @@ export type Database = {
       subscription_services: {
         Row: {
           active: boolean
+          aliases: string[]
           canon_key: string | null
           created_at: string
           frecuencia: string
@@ -402,6 +403,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          aliases?: string[]
           canon_key?: string | null
           created_at?: string
           frecuencia: string
@@ -418,6 +420,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          aliases?: string[]
           canon_key?: string | null
           created_at?: string
           frecuencia?: string
