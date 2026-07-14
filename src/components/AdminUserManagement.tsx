@@ -291,7 +291,7 @@ export const AdminUserManagement = () => {
                 <TableRow>
                   <TableHead>Usuario</TableHead>
                   <TableHead className="hidden sm:table-cell">Divisa</TableHead>
-                  <TableHead className="hidden md:table-cell">Registro</TableHead>
+                  <TableHead className="hidden md:table-cell">Último movimiento</TableHead>
                   <TableHead>Trans.</TableHead>
                   <TableHead>Cat.</TableHead>
                   <TableHead>Cuentas</TableHead>
@@ -317,11 +317,13 @@ export const AdminUserManagement = () => {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <div className="text-sm">
-                        {new Date(user.created_at).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
+                        {user.last_transaction_at
+                          ? new Date(user.last_transaction_at).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })
+                          : '—'}
                       </div>
                     </TableCell>
                     <TableCell>
