@@ -24,6 +24,7 @@ interface UserStats {
   apellidos: string;
   divisa_preferida: string;
   created_at: string;
+  last_transaction_at: string | null;
   transactionCount: number;
   categoryCount: number;
   accountCount: number;
@@ -83,6 +84,7 @@ export const AdminUserManagement = () => {
         apellidos: user.apellidos,
         divisa_preferida: user.divisa_preferida,
         created_at: user.created_at || new Date().toISOString(),
+        last_transaction_at: user.last_transaction_at || null,
         transactionCount: Number(user.transacciones_count),
         categoryCount: Number(user.categorias_count),
         accountCount: Number(user.cuentas_count),
@@ -289,7 +291,7 @@ export const AdminUserManagement = () => {
                 <TableRow>
                   <TableHead>Usuario</TableHead>
                   <TableHead className="hidden sm:table-cell">Divisa</TableHead>
-                  <TableHead className="hidden md:table-cell">Registro</TableHead>
+                  <TableHead className="hidden md:table-cell">Último movimiento</TableHead>
                   <TableHead>Trans.</TableHead>
                   <TableHead>Cat.</TableHead>
                   <TableHead>Cuentas</TableHead>
@@ -315,11 +317,13 @@ export const AdminUserManagement = () => {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <div className="text-sm">
-                        {new Date(user.created_at).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
+                        {user.last_transaction_at
+                          ? new Date(user.last_transaction_at).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })
+                          : '—'}
                       </div>
                     </TableCell>
                     <TableCell>
