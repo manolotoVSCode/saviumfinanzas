@@ -24,6 +24,7 @@ interface UserStats {
   apellidos: string;
   divisa_preferida: string;
   created_at: string;
+  last_transaction_at: string | null;
   transactionCount: number;
   categoryCount: number;
   accountCount: number;
