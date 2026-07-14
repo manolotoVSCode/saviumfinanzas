@@ -619,6 +619,7 @@ export type Database = {
           divisa_preferida: string
           email: string
           inversiones_count: number
+          last_transaction_at: string
           nombre: string
           transacciones_count: number
           user_id: string
