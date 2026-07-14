@@ -84,6 +84,7 @@ export const AdminUserManagement = () => {
         apellidos: user.apellidos,
         divisa_preferida: user.divisa_preferida,
         created_at: user.created_at || new Date().toISOString(),
+        last_transaction_at: user.last_transaction_at || null,
         transactionCount: Number(user.transacciones_count),
         categoryCount: Number(user.categorias_count),
         accountCount: Number(user.cuentas_count),
