@@ -27,19 +27,22 @@ interface PaymentData {
   categoria: string;
   pagos: {
     mes: string;
+    year: number;
+    monthNum: number; // 1-12
     fecha: Date | null;
     monto: number;
     hayPago: boolean;
-    esMesAnterior: boolean; // Marcar si es el mes anterior al actual
+    esMesAnterior: boolean;
   }[];
   ultimoMonto: number;
   montoPrevio: number;
   hayChangio: boolean;
-  sinPagoMesAnterior: boolean; // Indicador si falta pago en mes anterior
+  sinPagoMesAnterior: boolean;
   promedioPago: number;
   totalAnio: number;
-  variacion: number; // Porcentaje de variación respecto al promedio
+  variacion: number;
 }
+
 
 
 interface MonthlyPaymentsControlProps {
