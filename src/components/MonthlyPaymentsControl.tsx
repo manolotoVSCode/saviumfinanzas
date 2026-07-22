@@ -300,20 +300,26 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
                     <div className="flex items-center gap-4">
                       {/* Indicadores visuales compactos */}
                       <div className="flex gap-1">
-                        {categoryData.pagos.slice(-6).map((pago, index) => (
-                          <div
-                            key={index}
-                            className={`w-2 h-6 rounded-sm ${
-                              pago.esMesAnterior && !pago.hayPago
-                                ? 'bg-destructive/70'
-                                : pago.hayPago 
-                                  ? 'bg-success/70' 
-                                  : 'bg-muted/40'
-                            }`}
-                            title={`${pago.mes}: ${pago.hayPago ? formatCurrency(pago.monto) : 'Sin pago'}${pago.esMesAnterior ? ' (Mes anterior)' : ''}`}
-                          />
-                        ))}
+                        {categoryData.pagos.slice(-6).map((pago, index) => {
+                          const skip = findSkip(categoryData.id, pago.year, pago.monthNum);
+                          return (
+                            <div
+                              key={index}
+                              className={`w-2 h-6 rounded-sm ${
+                                pago.hayPago
+                                  ? 'bg-success/70'
+                                  : skip
+                                    ? 'bg-warning/60'
+                                    : pago.esMesAnterior
+                                      ? 'bg-destructive/70'
+                                      : 'bg-muted/40'
+                              }`}
+                              title={`${pago.mes}: ${pago.hayPago ? formatCurrency(pago.monto) : skip ? `Omitido${skip.razon ? ' – ' + skip.razon : ''}` : 'Sin pago'}${pago.esMesAnterior ? ' (Mes anterior)' : ''}`}
+                            />
+                          );
+                        })}
                       </div>
+
                       
                       {/* Icono de tendencia */}
                       <div className="w-5 flex justify-center">
