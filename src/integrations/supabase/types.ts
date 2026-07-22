@@ -350,6 +350,47 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_skips: {
+        Row: {
+          categoria_id: string
+          created_at: string
+          id: string
+          month: number
+          razon: string | null
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          categoria_id: string
+          created_at?: string
+          id?: string
+          month: number
+          razon?: string | null
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          categoria_id?: string
+          created_at?: string
+          id?: string
+          month?: number
+          razon?: string | null
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_skips_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           apellidos: string

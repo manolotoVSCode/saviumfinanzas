@@ -2,8 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { CalendarDays, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Calculator, DollarSign, Calendar, TrendingUp as TrendIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { CalendarDays, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Calculator, DollarSign, Calendar, TrendingUp as TrendIcon, Ban, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePaymentSkips } from '@/hooks/usePaymentSkips';
+
 
 interface Transaction {
   id: string;
@@ -21,19 +27,22 @@ interface PaymentData {
   categoria: string;
   pagos: {
     mes: string;
+    year: number;
+    monthNum: number; // 1-12
     fecha: Date | null;
     monto: number;
     hayPago: boolean;
-    esMesAnterior: boolean; // Marcar si es el mes anterior al actual
+    esMesAnterior: boolean;
   }[];
   ultimoMonto: number;
   montoPrevio: number;
   hayChangio: boolean;
-  sinPagoMesAnterior: boolean; // Indicador si falta pago en mes anterior
+  sinPagoMesAnterior: boolean;
   promedioPago: number;
   totalAnio: number;
-  variacion: number; // Porcentaje de variación respecto al promedio
+  variacion: number;
 }
+
 
 
 interface MonthlyPaymentsControlProps {
@@ -45,6 +54,11 @@ interface MonthlyPaymentsControlProps {
 export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categories = [] }: MonthlyPaymentsControlProps) => {
   const [paymentsData, setPaymentsData] = useState<PaymentData[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const { skips, addSkip, removeSkip, findSkip } = usePaymentSkips();
+  const [skipDialog, setSkipDialog] = useState<{ categoriaId: string; year: number; month: number; mesLabel: string } | null>(null);
+  const [skipReason, setSkipReason] = useState('');
+
+
 
   // Obtener categorías marcadas para seguimiento de pago
   const getTrackedCategories = () => {
@@ -145,12 +159,15 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
           
           pagos.push({
             mes: mesLabel,
+            year: targetDate.getFullYear(),
+            monthNum: targetDate.getMonth() + 1,
             fecha: latestPayment ? new Date(latestPayment.fecha) : null,
             monto: totalMonto,
             hayPago: totalMonto > 0,
             esMesAnterior
           });
         }
+
 
         // Calcular estadísticas adicionales
         const pagosConMonto = pagos.filter(p => p.hayPago && p.monto > 0);
@@ -171,9 +188,11 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
           ? ((ultimoMonto - promedioPago) / promedioPago) * 100 
           : 0;
 
-        // Verificar si no hay pago en el mes anterior
+        // Verificar si no hay pago en el mes anterior (ignorar si está marcado como omitido)
         const pagoMesAnterior = pagos.find(p => p.esMesAnterior);
-        const sinPagoMesAnterior = !pagoMesAnterior?.hayPago;
+        const skipMesAnterior = pagoMesAnterior ? findSkip(categoriaId, pagoMesAnterior.year, pagoMesAnterior.monthNum) : undefined;
+        const sinPagoMesAnterior = !pagoMesAnterior?.hayPago && !skipMesAnterior;
+
 
         data.push({
           id: categoriaId,
@@ -198,7 +217,7 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
     };
 
     analyzePayments();
-  }, [transactions, categories]); // Agregamos categories como dependencia
+  }, [transactions, categories, skips]);
 
   const getChangeIcon = (current: number, previous: number) => {
     if (previous === 0) return null;
@@ -281,20 +300,26 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
                     <div className="flex items-center gap-4">
                       {/* Indicadores visuales compactos */}
                       <div className="flex gap-1">
-                        {categoryData.pagos.slice(-6).map((pago, index) => (
-                          <div
-                            key={index}
-                            className={`w-2 h-6 rounded-sm ${
-                              pago.esMesAnterior && !pago.hayPago
-                                ? 'bg-destructive/70'
-                                : pago.hayPago 
-                                  ? 'bg-success/70' 
-                                  : 'bg-muted/40'
-                            }`}
-                            title={`${pago.mes}: ${pago.hayPago ? formatCurrency(pago.monto) : 'Sin pago'}${pago.esMesAnterior ? ' (Mes anterior)' : ''}`}
-                          />
-                        ))}
+                        {categoryData.pagos.slice(-6).map((pago, index) => {
+                          const skip = findSkip(categoryData.id, pago.year, pago.monthNum);
+                          return (
+                            <div
+                              key={index}
+                              className={`w-2 h-6 rounded-sm ${
+                                pago.hayPago
+                                  ? 'bg-success/70'
+                                  : skip
+                                    ? 'bg-warning/60'
+                                    : pago.esMesAnterior
+                                      ? 'bg-destructive/70'
+                                      : 'bg-muted/40'
+                              }`}
+                              title={`${pago.mes}: ${pago.hayPago ? formatCurrency(pago.monto) : skip ? `Omitido${skip.razon ? ' – ' + skip.razon : ''}` : 'Sin pago'}${pago.esMesAnterior ? ' (Mes anterior)' : ''}`}
+                            />
+                          );
+                        })}
                       </div>
+
                       
                       {/* Icono de tendencia */}
                       <div className="w-5 flex justify-center">
@@ -356,45 +381,82 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
                         Historial (últimos 12 meses)
                       </h4>
                       <div className="max-h-48 overflow-y-auto space-y-1">
-                        {categoryData.pagos.slice().reverse().map((pago, index) => (
-                          <div key={index} className={`flex justify-between items-center py-2 px-3 rounded text-sm ${
-                            pago.hayPago ? 'bg-success/10' : 'bg-muted/20'
-                          } ${pago.esMesAnterior && !pago.hayPago ? 'bg-destructive/10 border border-destructive/20' : ''}`}>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-medium ${
-                                pago.esMesAnterior && !pago.hayPago ? 'text-destructive' : ''
-                              }`}>
-                                {pago.mes}
-                              </span>
-                              {pago.esMesAnterior && !pago.hayPago && (
-                                <Badge variant="outline" className="text-xs h-4 px-1 border-destructive/50 text-destructive">
-                                  Faltante
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {pago.hayPago ? (
-                                <>
-                                  <span className="font-semibold">{formatCurrency(pago.monto)}</span>
-                                   {pago.fecha && (
-                                     <span className="text-xs text-muted-foreground">
-                                       {String(pago.fecha.getUTCDate()).padStart(2, '0')}-{
-                                         ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 
-                                          'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][pago.fecha.getUTCMonth()]
-                                       }
-                                     </span>
-                                   )}
-                                </>
-                              ) : (
-                                <span className={`text-sm ${
-                                  pago.esMesAnterior ? 'text-destructive' : 'text-muted-foreground'
-                                }`}>
-                                  Sin pago
+                        {categoryData.pagos.slice().reverse().map((pago, index) => {
+                          const skip = findSkip(categoryData.id, pago.year, pago.monthNum);
+                          const missingHighlight = pago.esMesAnterior && !pago.hayPago && !skip;
+                          return (
+                            <div key={index} className={`flex justify-between items-center py-2 px-3 rounded text-sm ${
+                              pago.hayPago ? 'bg-success/10' : skip ? 'bg-warning/10 border border-warning/30' : 'bg-muted/20'
+                            } ${missingHighlight ? 'bg-destructive/10 border border-destructive/20' : ''}`}>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`font-medium ${missingHighlight ? 'text-destructive' : ''}`}>
+                                  {pago.mes}
                                 </span>
-                              )}
+                                {missingHighlight && (
+                                  <Badge variant="outline" className="text-xs h-4 px-1 border-destructive/50 text-destructive">
+                                    Faltante
+                                  </Badge>
+                                )}
+                                {skip && (
+                                  <Badge variant="outline" className="text-xs h-4 px-1 border-warning/60 text-warning" title={skip.razon || 'Marcado como omitido'}>
+                                    Omitido
+                                  </Badge>
+                                )}
+                                {skip?.razon && (
+                                  <span className="text-xs text-muted-foreground truncate max-w-[160px]" title={skip.razon}>
+                                    {skip.razon}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {pago.hayPago ? (
+                                  <>
+                                    <span className="font-semibold">{formatCurrency(pago.monto)}</span>
+                                    {pago.fecha && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {String(pago.fecha.getUTCDate()).padStart(2, '0')}-{
+                                          ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
+                                           'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][pago.fecha.getUTCMonth()]
+                                        }
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className={`text-sm ${missingHighlight ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                    {skip ? 'Omitido' : 'Sin pago'}
+                                  </span>
+                                )}
+                                {!pago.hayPago && (
+                                  skip ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      title="Quitar omisión"
+                                      onClick={() => removeSkip(categoryData.id, pago.year, pago.monthNum)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      title="Marcar mes como omitido"
+                                      onClick={() => {
+                                        setSkipReason('');
+                                        setSkipDialog({ categoriaId: categoryData.id, year: pago.year, month: pago.monthNum, mesLabel: pago.mes });
+                                      }}
+                                    >
+                                      <Ban className="h-3 w-3" />
+                                    </Button>
+                                  )
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
+
                       </div>
                     </div>
                   </div>
@@ -414,7 +476,43 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
             </p>
           </div>
         )}
+
+        <Dialog open={!!skipDialog} onOpenChange={(open) => { if (!open) setSkipDialog(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Marcar mes como omitido</DialogTitle>
+              <DialogDescription>
+                {skipDialog && <>Se omitirá el seguimiento de <strong>{skipDialog.mesLabel}</strong>. Este mes no se contará como faltante.</>}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="skip-reason">Razón (opcional)</Label>
+              <Textarea
+                id="skip-reason"
+                placeholder="Ej: vacaciones, sin actividad, cliente pausó pagos..."
+                value={skipReason}
+                onChange={(e) => setSkipReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSkipDialog(null)}>Cancelar</Button>
+              <Button
+                onClick={async () => {
+                  if (skipDialog) {
+                    await addSkip(skipDialog.categoriaId, skipDialog.year, skipDialog.month, skipReason.trim() || undefined);
+                    setSkipDialog(null);
+                    setSkipReason('');
+                  }
+                }}
+              >
+                Confirmar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
+
 };
