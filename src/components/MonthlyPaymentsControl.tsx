@@ -188,9 +188,11 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
           ? ((ultimoMonto - promedioPago) / promedioPago) * 100 
           : 0;
 
-        // Verificar si no hay pago en el mes anterior
+        // Verificar si no hay pago en el mes anterior (ignorar si está marcado como omitido)
         const pagoMesAnterior = pagos.find(p => p.esMesAnterior);
-        const sinPagoMesAnterior = !pagoMesAnterior?.hayPago;
+        const skipMesAnterior = pagoMesAnterior ? findSkip(categoriaId, pagoMesAnterior.year, pagoMesAnterior.monthNum) : undefined;
+        const sinPagoMesAnterior = !pagoMesAnterior?.hayPago && !skipMesAnterior;
+
 
         data.push({
           id: categoriaId,
