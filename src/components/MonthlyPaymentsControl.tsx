@@ -217,7 +217,7 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
     };
 
     analyzePayments();
-  }, [transactions, categories]); // Agregamos categories como dependencia
+  }, [transactions, categories, skips]);
 
   const getChangeIcon = (current: number, previous: number) => {
     if (previous === 0) return null;
