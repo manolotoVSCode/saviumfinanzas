@@ -476,7 +476,43 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
             </p>
           </div>
         )}
+
+        <Dialog open={!!skipDialog} onOpenChange={(open) => { if (!open) setSkipDialog(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Marcar mes como omitido</DialogTitle>
+              <DialogDescription>
+                {skipDialog && <>Se omitirá el seguimiento de <strong>{skipDialog.mesLabel}</strong>. Este mes no se contará como faltante.</>}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="skip-reason">Razón (opcional)</Label>
+              <Textarea
+                id="skip-reason"
+                placeholder="Ej: vacaciones, sin actividad, cliente pausó pagos..."
+                value={skipReason}
+                onChange={(e) => setSkipReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSkipDialog(null)}>Cancelar</Button>
+              <Button
+                onClick={async () => {
+                  if (skipDialog) {
+                    await addSkip(skipDialog.categoriaId, skipDialog.year, skipDialog.month, skipReason.trim() || undefined);
+                    setSkipDialog(null);
+                    setSkipReason('');
+                  }
+                }}
+              >
+                Confirmar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
+
 };
