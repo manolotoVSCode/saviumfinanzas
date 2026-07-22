@@ -381,45 +381,82 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
                         Historial (últimos 12 meses)
                       </h4>
                       <div className="max-h-48 overflow-y-auto space-y-1">
-                        {categoryData.pagos.slice().reverse().map((pago, index) => (
-                          <div key={index} className={`flex justify-between items-center py-2 px-3 rounded text-sm ${
-                            pago.hayPago ? 'bg-success/10' : 'bg-muted/20'
-                          } ${pago.esMesAnterior && !pago.hayPago ? 'bg-destructive/10 border border-destructive/20' : ''}`}>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-medium ${
-                                pago.esMesAnterior && !pago.hayPago ? 'text-destructive' : ''
-                              }`}>
-                                {pago.mes}
-                              </span>
-                              {pago.esMesAnterior && !pago.hayPago && (
-                                <Badge variant="outline" className="text-xs h-4 px-1 border-destructive/50 text-destructive">
-                                  Faltante
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {pago.hayPago ? (
-                                <>
-                                  <span className="font-semibold">{formatCurrency(pago.monto)}</span>
-                                   {pago.fecha && (
-                                     <span className="text-xs text-muted-foreground">
-                                       {String(pago.fecha.getUTCDate()).padStart(2, '0')}-{
-                                         ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 
-                                          'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][pago.fecha.getUTCMonth()]
-                                       }
-                                     </span>
-                                   )}
-                                </>
-                              ) : (
-                                <span className={`text-sm ${
-                                  pago.esMesAnterior ? 'text-destructive' : 'text-muted-foreground'
-                                }`}>
-                                  Sin pago
+                        {categoryData.pagos.slice().reverse().map((pago, index) => {
+                          const skip = findSkip(categoryData.id, pago.year, pago.monthNum);
+                          const missingHighlight = pago.esMesAnterior && !pago.hayPago && !skip;
+                          return (
+                            <div key={index} className={`flex justify-between items-center py-2 px-3 rounded text-sm ${
+                              pago.hayPago ? 'bg-success/10' : skip ? 'bg-warning/10 border border-warning/30' : 'bg-muted/20'
+                            } ${missingHighlight ? 'bg-destructive/10 border border-destructive/20' : ''}`}>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`font-medium ${missingHighlight ? 'text-destructive' : ''}`}>
+                                  {pago.mes}
                                 </span>
-                              )}
+                                {missingHighlight && (
+                                  <Badge variant="outline" className="text-xs h-4 px-1 border-destructive/50 text-destructive">
+                                    Faltante
+                                  </Badge>
+                                )}
+                                {skip && (
+                                  <Badge variant="outline" className="text-xs h-4 px-1 border-warning/60 text-warning" title={skip.razon || 'Marcado como omitido'}>
+                                    Omitido
+                                  </Badge>
+                                )}
+                                {skip?.razon && (
+                                  <span className="text-xs text-muted-foreground truncate max-w-[160px]" title={skip.razon}>
+                                    {skip.razon}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {pago.hayPago ? (
+                                  <>
+                                    <span className="font-semibold">{formatCurrency(pago.monto)}</span>
+                                    {pago.fecha && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {String(pago.fecha.getUTCDate()).padStart(2, '0')}-{
+                                          ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
+                                           'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][pago.fecha.getUTCMonth()]
+                                        }
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className={`text-sm ${missingHighlight ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                    {skip ? 'Omitido' : 'Sin pago'}
+                                  </span>
+                                )}
+                                {!pago.hayPago && (
+                                  skip ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      title="Quitar omisión"
+                                      onClick={() => removeSkip(categoryData.id, pago.year, pago.monthNum)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      title="Marcar mes como omitido"
+                                      onClick={() => {
+                                        setSkipReason('');
+                                        setSkipDialog({ categoriaId: categoryData.id, year: pago.year, month: pago.monthNum, mesLabel: pago.mes });
+                                      }}
+                                    >
+                                      <Ban className="h-3 w-3" />
+                                    </Button>
+                                  )
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
+
                       </div>
                     </div>
                   </div>
