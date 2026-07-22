@@ -54,6 +54,11 @@ interface MonthlyPaymentsControlProps {
 export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categories = [] }: MonthlyPaymentsControlProps) => {
   const [paymentsData, setPaymentsData] = useState<PaymentData[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const { skips, addSkip, removeSkip, findSkip } = usePaymentSkips();
+  const [skipDialog, setSkipDialog] = useState<{ categoriaId: string; year: number; month: number; mesLabel: string } | null>(null);
+  const [skipReason, setSkipReason] = useState('');
+
+
 
   // Obtener categorías marcadas para seguimiento de pago
   const getTrackedCategories = () => {
