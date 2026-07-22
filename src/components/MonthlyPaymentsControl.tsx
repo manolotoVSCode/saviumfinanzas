@@ -159,12 +159,15 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
           
           pagos.push({
             mes: mesLabel,
+            year: targetDate.getFullYear(),
+            monthNum: targetDate.getMonth() + 1,
             fecha: latestPayment ? new Date(latestPayment.fecha) : null,
             monto: totalMonto,
             hayPago: totalMonto > 0,
             esMesAnterior
           });
         }
+
 
         // Calcular estadísticas adicionales
         const pagosConMonto = pagos.filter(p => p.hayPago && p.monto > 0);
