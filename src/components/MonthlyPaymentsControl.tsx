@@ -2,8 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { CalendarDays, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Calculator, DollarSign, Calendar, TrendingUp as TrendIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { CalendarDays, TrendingUp, TrendingDown, AlertTriangle, ChevronDown, Calculator, DollarSign, Calendar, TrendingUp as TrendIcon, Ban, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePaymentSkips } from '@/hooks/usePaymentSkips';
+
 
 interface Transaction {
   id: string;
