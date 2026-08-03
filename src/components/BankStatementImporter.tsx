@@ -576,7 +576,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     console.log('First 5 rows:', JSON.stringify(jsonData.slice(0, 5)));
     
     // Convert to string arrays, filtering out completely empty/undefined rows
-    const rows: string[][] = jsonData
+    const rows: string[][] = stripPreamble(jsonData
       .filter(row => row != null && Array.isArray(row) && row.length > 0)
       .map(row => 
         Array.from({ length: row.length }, (_, i) => {
@@ -602,7 +602,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
           }
           return String(cell);
         })
-      );
+      ));
     
     console.log('Converted rows (first 5):', JSON.stringify(rows.slice(0, 5)));
     
