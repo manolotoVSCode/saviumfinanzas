@@ -255,6 +255,25 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return false;
   }
 
+  // Some banks (e.g. BBVA México) add title/metadata rows before the real header
+  // ("Cuenta: 123", "DETALLE DE MOVIMIENTOS", empty row, then FECHA | DESCRIPCIÓN | CARGO | ABONO | SALDO).
+  // Drop everything above the header row so column detection works.
+  function stripPreamble(rows: string[][]): string[][] {
+    const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const limit = Math.min(rows.length, 15);
+    for (let i = 0; i < limit; i++) {
+      const cells = rows[i].map(norm);
+      const hasDate = cells.some(c => c === 'fecha' || c === 'date' || c.startsWith('fecha '));
+      const hasOther = cells.some(c =>
+        ['descripcion', 'description', 'concepto', 'detalle', 'importe', 'amount', 'monto', 'cargo', 'abono', 'debe', 'haber', 'credito', 'debito', 'retiro', 'deposito'].includes(c)
+      );
+      if (hasDate && hasOther) {
+        return i === 0 ? rows : rows.slice(i);
+      }
+    }
+    return rows;
+  }
+
   function detectFormat(lines: string[][]): { dateCol: number; descCol: number; amountCol: number; hasHeader: boolean } {
     let dateCol = 0;
     let descCol = 1;
