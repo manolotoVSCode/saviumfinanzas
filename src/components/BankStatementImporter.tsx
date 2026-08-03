@@ -385,9 +385,15 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       // Detect amount column - prefer columns with decimal values
       if (amountCol === -1) {
         const amountCandidates: { col: number; hasDecimal: boolean; count: number }[] = [];
-        
+        const headerNames = hasHeader
+          ? lines[0].map(h => (h || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim())
+          : [];
+        const isBalanceCol = (i: number) =>
+          ['saldo', 'balance', 'saldo disponible', 'saldo contable', 'disponible'].includes(headerNames[i] || '');
+
         for (let colIdx = 0; colIdx < (dataRows[0]?.length || 0); colIdx++) {
           if (colIdx === dateCol) continue;
+          if (isBalanceCol(colIdx)) continue; // never use the running balance as amount
           
           let validCount = 0;
           let hasDecimal = false;
