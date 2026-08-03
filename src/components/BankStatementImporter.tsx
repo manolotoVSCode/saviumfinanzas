@@ -456,9 +456,11 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       console.warn('CSV parse errors (showing first 3):', parsedCsv.errors.slice(0, 3));
     }
 
-    const rows: string[][] = (parsedCsv.data || [])
-      .map((row) => (row || []).map((cell) => (cell ?? '').toString().trim()))
-      .filter((row) => row.some((c) => c.length > 0));
+    const rows: string[][] = stripPreamble(
+      (parsedCsv.data || [])
+        .map((row) => (row || []).map((cell) => (cell ?? '').toString().trim()))
+        .filter((row) => row.some((c) => c.length > 0))
+    );
 
     if (rows.length === 0) return { rows: [], ambiguous: false };
 
