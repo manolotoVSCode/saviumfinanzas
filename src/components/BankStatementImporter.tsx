@@ -1379,6 +1379,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                                 variant="outline"
                                 role="combobox"
                                 size="sm"
+                                title={category ? `${category.categoria} - ${category.subcategoria}` : 'Sin Asignar'}
                                 className={cn(
                                   "w-48 justify-between text-left font-normal text-xs h-7",
                                   isSinAsignar && "border-yellow-500"
