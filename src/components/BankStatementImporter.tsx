@@ -255,6 +255,25 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return false;
   }
 
+  // Some banks (e.g. BBVA México) add title/metadata rows before the real header
+  // ("Cuenta: 123", "DETALLE DE MOVIMIENTOS", empty row, then FECHA | DESCRIPCIÓN | CARGO | ABONO | SALDO).
+  // Drop everything above the header row so column detection works.
+  function stripPreamble(rows: string[][]): string[][] {
+    const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const limit = Math.min(rows.length, 15);
+    for (let i = 0; i < limit; i++) {
+      const cells = rows[i].map(norm);
+      const hasDate = cells.some(c => c === 'fecha' || c === 'date' || c.startsWith('fecha '));
+      const hasOther = cells.some(c =>
+        ['descripcion', 'description', 'concepto', 'detalle', 'importe', 'amount', 'monto', 'cargo', 'abono', 'debe', 'haber', 'credito', 'debito', 'retiro', 'deposito'].includes(c)
+      );
+      if (hasDate && hasOther) {
+        return i === 0 ? rows : rows.slice(i);
+      }
+    }
+    return rows;
+  }
+
   function detectFormat(lines: string[][]): { dateCol: number; descCol: number; amountCol: number; hasHeader: boolean } {
     let dateCol = 0;
     let descCol = 1;
@@ -366,9 +385,15 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       // Detect amount column - prefer columns with decimal values
       if (amountCol === -1) {
         const amountCandidates: { col: number; hasDecimal: boolean; count: number }[] = [];
-        
+        const headerNames = hasHeader
+          ? lines[0].map(h => (h || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim())
+          : [];
+        const isBalanceCol = (i: number) =>
+          ['saldo', 'balance', 'saldo disponible', 'saldo contable', 'disponible'].includes(headerNames[i] || '');
+
         for (let colIdx = 0; colIdx < (dataRows[0]?.length || 0); colIdx++) {
           if (colIdx === dateCol) continue;
+          if (isBalanceCol(colIdx)) continue; // never use the running balance as amount
           
           let validCount = 0;
           let hasDecimal = false;
@@ -437,9 +462,11 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       console.warn('CSV parse errors (showing first 3):', parsedCsv.errors.slice(0, 3));
     }
 
-    const rows: string[][] = (parsedCsv.data || [])
-      .map((row) => (row || []).map((cell) => (cell ?? '').toString().trim()))
-      .filter((row) => row.some((c) => c.length > 0));
+    const rows: string[][] = stripPreamble(
+      (parsedCsv.data || [])
+        .map((row) => (row || []).map((cell) => (cell ?? '').toString().trim()))
+        .filter((row) => row.some((c) => c.length > 0))
+    );
 
     if (rows.length === 0) return { rows: [], ambiguous: false };
 
@@ -555,7 +582,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     console.log('First 5 rows:', JSON.stringify(jsonData.slice(0, 5)));
     
     // Convert to string arrays, filtering out completely empty/undefined rows
-    const rows: string[][] = jsonData
+    const rows: string[][] = stripPreamble(jsonData
       .filter(row => row != null && Array.isArray(row) && row.length > 0)
       .map(row => 
         Array.from({ length: row.length }, (_, i) => {
@@ -581,7 +608,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
           }
           return String(cell);
         })
-      );
+      ));
     
     console.log('Converted rows (first 5):', JSON.stringify(rows.slice(0, 5)));
     
