@@ -182,6 +182,8 @@ const Inversiones = (): JSX.Element => {
                     const delta = valor - (i.monto_invertido || 0);
                     const pct = i.monto_invertido ? (delta / i.monto_invertido) * 100 : 0;
                     const ultima = valuations.filter((v) => v.inversion_id === i.id).slice(-1)[0];
+                    const tipo = types.find((t) => t.id === i.tipo_id);
+                    const esManual = tipo?.comportamiento === 'valuacion_manual';
                     return (
                       <div key={i.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-4">
                         <div className="min-w-0">
@@ -193,7 +195,11 @@ const Inversiones = (): JSX.Element => {
                           <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
                             <div>Inicio: {fmtDate(i.fecha_inicio)}{i.fecha_vencimiento ? ` · Vence: ${fmtDate(i.fecha_vencimiento)}` : ''}</div>
                             {i.tasa_anual ? <div>Tasa anual: {i.tasa_anual}%</div> : null}
-                            {ultima ? <div>Última valuación: {fmtDate(ultima.fecha)}</div> : null}
+                            {ultima ? (
+                              <div>Última valuación: {fmtDate(ultima.fecha)}</div>
+                            ) : i.saldo_cuenta !== null && i.saldo_cuenta !== undefined ? (
+                              <div>Valor según movimientos de la cuenta vinculada</div>
+                            ) : null}
                             {i.beneficio_estimado ? <div>Beneficio estimado: {formatNumber(i.beneficio_estimado)}</div> : null}
                           </div>
                         </div>
@@ -206,9 +212,15 @@ const Inversiones = (): JSX.Element => {
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" title="Seguimiento" onClick={() => setTracking(i)}>
-                              <LineChart className="h-4 w-4" />
-                            </Button>
+                            {esManual ? (
+                              <Button variant="outline" size="sm" onClick={() => setTracking(i)}>
+                                <LineChart className="h-4 w-4 mr-1" /> Actualizar valor
+                              </Button>
+                            ) : (
+                              <Button variant="ghost" size="icon" title="Seguimiento" onClick={() => setTracking(i)}>
+                                <LineChart className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" title="Editar" onClick={() => openEdit(i)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
