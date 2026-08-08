@@ -40,6 +40,10 @@ const Inversiones = (): JSX.Element => {
   const [editing, setEditing] = useState<Investment | null>(null);
   const [tracking, setTracking] = useState<Investment | null>(null);
   const [toDelete, setToDelete] = useState<Investment | null>(null);
+  const [viewCurrency, setViewCurrency] = useState<'MXN' | 'USD' | 'EUR'>(
+    (config.currency as 'MXN' | 'USD' | 'EUR') || 'MXN',
+  );
+
 
   const activas = useMemo(() => investments.filter((i) => i.activa !== false), [investments]);
 
@@ -80,10 +84,14 @@ const Inversiones = (): JSX.Element => {
     return Array.from(map.values());
   }, [activas, types]);
 
+  const toView = (amount: number, divisa: string) =>
+    divisa === viewCurrency ? amount : convertCurrency(amount, divisa as 'MXN' | 'USD' | 'EUR', viewCurrency);
+
   const pieData = grupos.map((g) => ({
     name: g.nombre,
-    value: Math.abs(g.items.reduce((s, i) => s + toPref(i.valor_actual || i.monto_invertido || 0, i.moneda), 0)),
+    value: Math.abs(g.items.reduce((s, i) => s + toView(i.valor_actual || i.monto_invertido || 0, i.moneda), 0)),
   }));
+
 
   const openNew = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (i: Investment) => { setEditing(i); setDialogOpen(true); };
