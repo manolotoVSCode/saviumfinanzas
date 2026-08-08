@@ -81,7 +81,14 @@ const Inversiones = (): JSX.Element => {
       if (!map.has(key)) map.set(key, { nombre: t?.nombre || 'Sin tipo asignado', items: [] });
       map.get(key)!.items.push(i);
     });
-    return Array.from(map.values());
+    // Empresas al final, bienes raíces penúltimo
+    const rank = (nombre: string) => {
+      const n = nombre.toLowerCase();
+      if (n.includes('empresa')) return 2;
+      if (n.includes('raíz') || n.includes('raiz') || n.includes('inmueble')) return 1;
+      return 0;
+    };
+    return Array.from(map.values()).sort((a, b) => rank(a.nombre) - rank(b.nombre));
   }, [activas, types]);
 
   const toView = (amount: number, divisa: string) =>
