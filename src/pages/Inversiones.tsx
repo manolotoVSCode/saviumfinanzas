@@ -276,6 +276,16 @@ const Inversiones = (): JSX.Element => {
                                 {esPatrimonial ? 'Plusvalía ' : ''}{delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
                               </div>
                             )}
+                            {previa && (
+                              <div className={`text-xs ${deltaVal >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                                vs. valuación anterior: {deltaVal >= 0 ? '+' : '-'}{formatNumber(Math.abs(deltaVal))} ({pctVal.toFixed(2)}%)
+                              </div>
+                            )}
+                            {valsInv.length > 2 && (
+                              <div className={`text-xs ${deltaHist >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                                desde 1ª valuación: {deltaHist >= 0 ? '+' : '-'}{formatNumber(Math.abs(deltaHist))} ({pctHist.toFixed(2)}%)
+                              </div>
+                            )}
 
                           </div>
 
