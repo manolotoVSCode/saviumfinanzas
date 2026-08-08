@@ -1,4 +1,8 @@
-export type InvestmentBehavior = 'valuacion_manual' | 'interes_fijo' | 'reparto_variable';
+export type InvestmentBehavior =
+  | 'valuacion_manual'
+  | 'interes_fijo'
+  | 'reparto_variable'
+  | 'activo_patrimonial';
 
 export const INVESTMENT_BEHAVIORS: { value: InvestmentBehavior; label: string; help: string }[] = [
   {
@@ -16,7 +20,13 @@ export const INVESTMENT_BEHAVIORS: { value: InvestmentBehavior; label: string; h
     label: 'Reparto variable a plazo',
     help: 'El beneficio se conoce al vencimiento (fideicomisos, participaciones).',
   },
+  {
+    value: 'activo_patrimonial',
+    label: 'Activo patrimonial (sin retorno esperado)',
+    help: 'Empresas propias, bienes raíces u otros activos: sin rendimiento fijo, solo valor estimado y plusvalía.',
+  },
 ];
+
 
 export type PayoutMode = 'Reinversión' | 'Pago mensual' | 'Pago trimestral' | 'Pago anual' | 'Al vencimiento';
 

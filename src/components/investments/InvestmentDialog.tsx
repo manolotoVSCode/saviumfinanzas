@@ -93,9 +93,9 @@ export const InvestmentDialog = ({ open, onOpenChange, types, investment, onSave
             </div>
           </div>
 
-          {behavior === 'valuacion_manual' && (
+          {(behavior === 'valuacion_manual' || behavior === 'activo_patrimonial') && (
             <div>
-              <Label>Valor actual</Label>
+              <Label>{behavior === 'activo_patrimonial' ? 'Valor estimado actual' : 'Valor actual'}</Label>
               <Input
                 type="number"
                 value={form.valor_actual ?? 0}
@@ -106,6 +106,7 @@ export const InvestmentDialog = ({ open, onOpenChange, types, investment, onSave
               </p>
             </div>
           )}
+
 
           {behavior === 'interes_fijo' && (
             <div className="grid grid-cols-2 gap-3">
