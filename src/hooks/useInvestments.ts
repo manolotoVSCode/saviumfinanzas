@@ -23,11 +23,47 @@ export const useInvestments = () => {
 
     if (inv.error || val.error || pay.error) {
       toast({ title: 'Error', description: 'No se pudieron cargar las inversiones', variant: 'destructive' });
-    } else {
-      setInvestments((inv.data || []) as unknown as Investment[]);
-      setValuations((val.data || []) as unknown as InvestmentValuation[]);
-      setPayouts((pay.data || []) as unknown as InvestmentPayout[]);
+      setLoading(false);
+      return;
     }
+
+    const rawInvestments = (inv.data || []) as unknown as Investment[];
+    const valuationsData = (val.data || []) as unknown as InvestmentValuation[];
+
+    // Saldo real de las cuentas vinculadas: saldo inicial + movimientos registrados
+    const cuentaIds = Array.from(
+      new Set(rawInvestments.map((i) => i.cuenta_id).filter((id): id is string => !!id)),
+    );
+    const saldoPorCuenta: Record<string, number> = {};
+    if (cuentaIds.length > 0) {
+      const [cuentasRes, txRes] = await Promise.all([
+        supabase.from('cuentas').select('id, saldo_inicial').in('id', cuentaIds),
+        supabase.from('transacciones').select('cuenta_id, ingreso, gasto').in('cuenta_id', cuentaIds),
+      ]);
+      (cuentasRes.data || []).forEach((c: { id: string; saldo_inicial: number }) => {
+        saldoPorCuenta[c.id] = Number(c.saldo_inicial) || 0;
+      });
+      (txRes.data || []).forEach((t: { cuenta_id: string; ingreso: number; gasto: number }) => {
+        saldoPorCuenta[t.cuenta_id] =
+          (saldoPorCuenta[t.cuenta_id] || 0) + (Number(t.ingreso) || 0) - (Number(t.gasto) || 0);
+      });
+    }
+
+    const enriched = rawInvestments.map((i) => {
+      const lastVal = valuationsData
+        .filter((v) => v.inversion_id === i.id)
+        .sort((a, b) => a.fecha.localeCompare(b.fecha))
+        .slice(-1)[0];
+      const saldoCuenta = i.cuenta_id ? saldoPorCuenta[i.cuenta_id] : undefined;
+      const valor =
+        lastVal?.valor ??
+        (saldoCuenta !== undefined ? saldoCuenta : i.valor_actual || i.monto_invertido || 0);
+      return { ...i, saldo_cuenta: saldoCuenta ?? null, valor_actual: valor } as Investment;
+    });
+
+    setInvestments(enriched);
+    setValuations(valuationsData);
+    setPayouts((pay.data || []) as unknown as InvestmentPayout[]);
     setLoading(false);
   }, [user, toast]);
 

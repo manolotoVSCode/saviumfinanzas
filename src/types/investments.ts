@@ -61,6 +61,8 @@ export interface Investment {
   beneficio_estimado: number | null;
   notas: string | null;
   activa: boolean;
+  /** Saldo calculado de la cuenta vinculada (saldo inicial + movimientos). */
+  saldo_cuenta?: number | null;
 }
 
 export interface InvestmentValuation {
