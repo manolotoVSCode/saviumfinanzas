@@ -81,7 +81,14 @@ const Inversiones = (): JSX.Element => {
       if (!map.has(key)) map.set(key, { nombre: t?.nombre || 'Sin tipo asignado', items: [] });
       map.get(key)!.items.push(i);
     });
-    return Array.from(map.values());
+    // Empresas al final, bienes raíces penúltimo
+    const rank = (nombre: string) => {
+      const n = nombre.toLowerCase();
+      if (n.includes('empresa')) return 2;
+      if (n.includes('raíz') || n.includes('raiz') || n.includes('inmueble')) return 1;
+      return 0;
+    };
+    return Array.from(map.values()).sort((a, b) => rank(a.nombre) - rank(b.nombre));
   }, [activas, types]);
 
   const toView = (amount: number, divisa: string) =>
@@ -199,12 +206,19 @@ const Inversiones = (): JSX.Element => {
                     const valor = i.valor_actual || i.monto_invertido || 0;
                     const delta = valor - (i.monto_invertido || 0);
                     const pct = i.monto_invertido ? (delta / i.monto_invertido) * 100 : 0;
-                    const ultima = valuations.filter((v) => v.inversion_id === i.id).slice(-1)[0];
+                    const valsInv = valuations
+                      .filter((v) => v.inversion_id === i.id)
+                      .sort((a, b) => a.fecha.localeCompare(b.fecha));
+                    const ultima = valsInv[valsInv.length - 1];
+                    const previa = valsInv[valsInv.length - 2];
+                    const deltaVal = previa ? ultima.valor - previa.valor - ((ultima.aportacion || 0) - (ultima.retiro || 0)) : 0;
+                    const pctVal = previa && previa.valor ? (deltaVal / previa.valor) * 100 : 0;
+                    const primera = valsInv[0];
+                    const deltaHist = primera && ultima && valsInv.length > 1 ? ultima.valor - primera.valor : 0;
+                    const pctHist = primera && primera.valor ? (deltaHist / primera.valor) * 100 : 0;
                     const tipo = types.find((t) => t.id === i.tipo_id);
                     const esPatrimonial = tipo?.comportamiento === 'activo_patrimonial';
                     const esManual = tipo?.comportamiento === 'valuacion_manual' || esPatrimonial;
-
-                    // Interés fijo con cobro periódico: el capital no crece, lo que rinde son los intereses
                     const cobraIntereses =
                       tipo?.comportamiento === 'interes_fijo' && i.modalidad_pago !== 'Reinversión';
                     const tasaMensual = i.rendimiento_neto ?? (i.tasa_anual ? i.tasa_anual / 12 : null);
@@ -260,6 +274,16 @@ const Inversiones = (): JSX.Element => {
                             ) : (
                               <div className={`text-xs font-medium ${delta >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
                                 {esPatrimonial ? 'Plusvalía ' : ''}{delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
+                              </div>
+                            )}
+                            {previa && (
+                              <div className={`text-xs ${deltaVal >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                                vs. valuación anterior: {deltaVal >= 0 ? '+' : '-'}{formatNumber(Math.abs(deltaVal))} ({pctVal.toFixed(2)}%)
+                              </div>
+                            )}
+                            {valsInv.length > 2 && (
+                              <div className={`text-xs ${deltaHist >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                                desde 1ª valuación: {deltaHist >= 0 ? '+' : '-'}{formatNumber(Math.abs(deltaHist))} ({pctHist.toFixed(2)}%)
                               </div>
                             )}
 
