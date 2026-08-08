@@ -1,5 +1,6 @@
 # Project Memory
 
+
 ## Core
 Number format: 1,234.56 (comma for thousands, dot for decimals).
 No success toasts — display error notifications only.
