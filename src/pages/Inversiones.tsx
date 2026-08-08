@@ -150,7 +150,16 @@ const Inversiones = (): JSX.Element => {
           <TabsContent value="portafolio" className="space-y-6">
             {pieData.length > 0 && (
               <Card>
-                <CardHeader><CardTitle>Distribución por tipo</CardTitle></CardHeader>
+                <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+                  <CardTitle>Distribución por tipo</CardTitle>
+                  <Tabs value={viewCurrency} onValueChange={(v) => setViewCurrency(v as 'MXN' | 'USD' | 'EUR')}>
+                    <TabsList>
+                      {(['MXN', 'USD', 'EUR'] as const).map((c) => (
+                        <TabsTrigger key={c} value={c}>{c}</TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
+                </CardHeader>
                 <CardContent>
                   <div className="flex flex-col lg:flex-row items-center gap-6">
                     <div className="h-64 w-full max-w-sm">
@@ -160,7 +169,7 @@ const Inversiones = (): JSX.Element => {
                             label={({ percent }) => `${(percent * 100).toFixed(1)}%`} labelLine={false} fontSize={12}>
                             {pieData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                           </Pie>
-                          <Tooltip formatter={(v: number) => [`${prefCurrency} ${formatNumber(v)}`, 'Valor actual']} />
+                          <Tooltip formatter={(v: number) => [`${viewCurrency} ${formatNumber(v)}`, 'Valor actual']} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -169,10 +178,11 @@ const Inversiones = (): JSX.Element => {
                         <div key={entry.name} className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                           <span className="text-sm truncate">{entry.name}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">{prefCurrency} {formatNumber(entry.value)}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">{viewCurrency} {formatNumber(entry.value)}</span>
                         </div>
                       ))}
                     </div>
+
                   </div>
                 </CardContent>
               </Card>
