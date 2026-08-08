@@ -8,6 +8,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { Investment, InvestmentPayout, InvestmentValuation } from '@/types/investments';
 import { formatNumber } from '@/lib/formatters';
+import {
+  CartesianGrid,
+  Line,
+  LineChart as RLineChart,
+  ResponsiveContainer,
+  Tooltip as RTooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 interface Props {
   open: boolean;
@@ -108,6 +117,21 @@ export const InvestmentTrackingDialog = ({
               </div>
             </div>
             <Button size="sm" onClick={submitValuation}>Registrar valuación</Button>
+
+            {invValuations.length > 1 && (
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RLineChart data={[...invValuations].reverse().map((v) => ({ fecha: fmtDate(v.fecha), valor: v.valor }))}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="fecha" fontSize={11} />
+                    <YAxis fontSize={11} tickFormatter={(v: number) => formatNumber(v)} width={80} />
+                    <RTooltip formatter={(v: number) => [`${investment.moneda} ${formatNumber(v)}`, 'Valor']} />
+                    <Line type="monotone" dataKey="valor" stroke="hsl(var(--primary))" strokeWidth={2} dot />
+                  </RLineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
 
             <div className="space-y-2">
               {invValuations.map((v, idx) => {
