@@ -685,21 +685,29 @@ const CategoryItem = ({
     });
 
     // Descontar reembolsos de las categorías correspondientes
+    // (creando la entrada si el reembolso llega en un periodo sin gasto de esa categoría)
     reembolsoTrans.forEach(t => {
       const categoria = t.categoria || 'Sin categoría';
       const subcategoria = t.subcategoria || 'Sin subcategoría';
       const reembolsoAmount = Math.abs(t.ingreso);
-      
-      if (categoryData[categoria]) {
-        categoryData[categoria].total -= reembolsoAmount;
-        if (categoryData[categoria].subcategories[subcategoria]) {
-          categoryData[categoria].subcategories[subcategoria].total -= reembolsoAmount;
-        }
+
+      if (!categoryData[categoria]) {
+        categoryData[categoria] = { total: 0, transactions: [], subcategories: {} };
       }
+      categoryData[categoria].total -= reembolsoAmount;
+      categoryData[categoria].transactions.push(t);
+
+      if (!categoryData[categoria].subcategories[subcategoria]) {
+        categoryData[categoria].subcategories[subcategoria] = { total: 0, transactions: [] };
+      }
+      categoryData[categoria].subcategories[subcategoria].total -= reembolsoAmount;
+      categoryData[categoria].subcategories[subcategoria].transactions.push(t);
     });
     
     // Convertir a array, ordenar y tomar top 10
+    // Se excluyen categorías con neto <= 0 (reembolsos iguales o mayores al gasto)
     const sortedCategories = Object.entries(categoryData)
+      .filter(([, data]) => data.total > 0)
       .map(([name, data], index) => ({
         name,
         total: data.total,
@@ -715,6 +723,7 @@ const CategoryItem = ({
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
+
     
     return { categories: sortedCategories, months: last12Months, filteredTransactions: filteredTrans };
   };
