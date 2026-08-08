@@ -13,6 +13,8 @@ import { useInvestments } from '@/hooks/useInvestments';
 import { useInvestmentTypes } from '@/hooks/useInvestmentTypes';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useCriptomonedas } from '@/hooks/useCriptomonedas';
+
 import { formatNumber } from '@/lib/formatters';
 import { Investment } from '@/types/investments';
 import { LineChart, Pencil, Plus, RefreshCw, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
