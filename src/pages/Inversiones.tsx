@@ -206,19 +206,18 @@ const Inversiones = (): JSX.Element => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {g.items.map((i) => {
-                    const valor = i.valor_actual || i.monto_invertido || 0;
-                    const delta = valor - (i.monto_invertido || 0);
-                    const pct = i.monto_invertido ? (delta / i.monto_invertido) * 100 : 0;
                     const valsInv = valuations
                       .filter((v) => v.inversion_id === i.id)
                       .sort((a, b) => a.fecha.localeCompare(b.fecha));
                     const ultima = valsInv[valsInv.length - 1];
-                    const previa = valsInv[valsInv.length - 2];
-                    const deltaVal = previa ? ultima.valor - previa.valor - ((ultima.aportacion || 0) - (ultima.retiro || 0)) : 0;
-                    const pctVal = previa && previa.valor ? (deltaVal / previa.valor) * 100 : 0;
                     const primera = valsInv[0];
-                    const deltaHist = primera && ultima && valsInv.length > 1 ? ultima.valor - primera.valor : 0;
-                    const pctHist = primera && primera.valor ? (deltaHist / primera.valor) * 100 : 0;
+                    const invertido =
+                      i.monto_invertido || (primera ? primera.valor : i.saldo_cuenta ?? 0);
+                    const valor = i.valor_actual || invertido || 0;
+                    // Base de comparación: la primera valuación registrada si existe, si no el monto invertido
+                    const base = primera && valsInv.length > 1 ? primera.valor : invertido;
+                    const delta = valor - base;
+                    const pct = base ? (delta / base) * 100 : 0;
                     const tipo = types.find((t) => t.id === i.tipo_id);
                     const esPatrimonial = tipo?.comportamiento === 'activo_patrimonial';
                     const esManual = tipo?.comportamiento === 'valuacion_manual' || esPatrimonial;
@@ -263,7 +262,7 @@ const Inversiones = (): JSX.Element => {
                         </div>
                         <div className="flex items-center gap-3 sm:justify-end">
                           <div className="text-left sm:text-right">
-                            <div className="text-xs text-muted-foreground">Invertido: {formatNumber(i.monto_invertido || 0)}</div>
+                            <div className="text-xs text-muted-foreground">Invertido: {formatNumber(invertido)}</div>
                             <div className="font-bold">{i.moneda} {formatNumber(valor)}</div>
                             {cobraIntereses ? (
                               <div className="text-xs font-medium text-emerald-600">
@@ -272,23 +271,12 @@ const Inversiones = (): JSX.Element => {
                                   <span className="text-muted-foreground font-normal"> / {formatNumber(devengado)} devengado</span>
                                 )}
                               </div>
-                            ) : esPatrimonial && !i.monto_invertido ? (
-                              <div className="text-xs text-muted-foreground">Valor patrimonial estimado</div>
                             ) : (
                               <div className={`text-xs font-medium ${delta >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
                                 {esPatrimonial ? 'Plusvalía ' : ''}{delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
                               </div>
                             )}
-                            {previa && (
-                              <div className={`text-xs ${deltaVal >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
-                                vs. valuación anterior: {deltaVal >= 0 ? '+' : '-'}{formatNumber(Math.abs(deltaVal))} ({pctVal.toFixed(2)}%)
-                              </div>
-                            )}
-                            {valsInv.length > 2 && (
-                              <div className={`text-xs ${deltaHist >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
-                                desde 1ª valuación: {deltaHist >= 0 ? '+' : '-'}{formatNumber(Math.abs(deltaHist))} ({pctHist.toFixed(2)}%)
-                              </div>
-                            )}
+
 
                           </div>
 
