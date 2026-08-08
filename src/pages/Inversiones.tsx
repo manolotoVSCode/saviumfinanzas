@@ -44,7 +44,7 @@ const Inversiones = (): JSX.Element => {
   const activas = useMemo(() => investments.filter((i) => i.activa !== false), [investments]);
 
   const toPref = (amount: number, divisa: string) =>
-    divisa === prefCurrency ? amount : convertCurrency(amount, divisa, prefCurrency);
+    divisa === prefCurrency ? amount : convertCurrency(amount, divisa as 'MXN' | 'USD' | 'EUR', prefCurrency);
 
   const totals = activas.reduce(
     (acc, i) => {
