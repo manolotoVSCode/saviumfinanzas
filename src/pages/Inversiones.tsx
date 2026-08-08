@@ -272,6 +272,9 @@ const Inversiones = (): JSX.Element => {
           <TabsList>
             <TabsTrigger value="portafolio">Portafolio</TabsTrigger>
             <TabsTrigger value="cripto">Criptomonedas</TabsTrigger>
+            <TabsTrigger value="raices">Bienes raíces</TabsTrigger>
+            <TabsTrigger value="empresas">Empresas</TabsTrigger>
+
             <TabsTrigger value="tipos">Tipos</TabsTrigger>
           </TabsList>
 
