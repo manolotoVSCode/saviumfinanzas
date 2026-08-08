@@ -286,54 +286,229 @@ export type Database = {
       }
       inversiones: {
         Row: {
+          activa: boolean
+          beneficio_estimado: number | null
           created_at: string
+          cuenta_id: string | null
           fecha_inicio: string
+          fecha_vencimiento: string | null
           id: string
           modalidad: string
+          modalidad_pago: string | null
           moneda: string
           monto_invertido: number
           nombre: string
+          notas: string | null
           rendimiento_bruto: number | null
           rendimiento_neto: number | null
+          tasa_anual: number | null
           tipo: string
+          tipo_id: string | null
           ultimo_pago: string | null
           updated_at: string
           user_id: string
           valor_actual: number
         }
         Insert: {
+          activa?: boolean
+          beneficio_estimado?: number | null
           created_at?: string
+          cuenta_id?: string | null
           fecha_inicio: string
+          fecha_vencimiento?: string | null
           id?: string
           modalidad: string
+          modalidad_pago?: string | null
           moneda?: string
           monto_invertido?: number
           nombre: string
+          notas?: string | null
           rendimiento_bruto?: number | null
           rendimiento_neto?: number | null
+          tasa_anual?: number | null
           tipo: string
+          tipo_id?: string | null
           ultimo_pago?: string | null
           updated_at?: string
           user_id: string
           valor_actual?: number
         }
         Update: {
+          activa?: boolean
+          beneficio_estimado?: number | null
           created_at?: string
+          cuenta_id?: string | null
           fecha_inicio?: string
+          fecha_vencimiento?: string | null
           id?: string
           modalidad?: string
+          modalidad_pago?: string | null
           moneda?: string
           monto_invertido?: number
           nombre?: string
+          notas?: string | null
           rendimiento_bruto?: number | null
           rendimiento_neto?: number | null
+          tasa_anual?: number | null
           tipo?: string
+          tipo_id?: string | null
           ultimo_pago?: string | null
           updated_at?: string
           user_id?: string
           valor_actual?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: "inversiones_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inversiones_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "investment_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_payouts: {
+        Row: {
+          created_at: string
+          divisa: string
+          fecha: string
+          id: string
+          inversion_id: string
+          monto: number
+          notas: string | null
+          reinvertido: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          divisa?: string
+          fecha: string
+          id?: string
+          inversion_id: string
+          monto?: number
+          notas?: string | null
+          reinvertido?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          divisa?: string
+          fecha?: string
+          id?: string
+          inversion_id?: string
+          monto?: number
+          notas?: string | null
+          reinvertido?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_payouts_inversion_id_fkey"
+            columns: ["inversion_id"]
+            isOneToOne: false
+            referencedRelation: "inversiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_types: {
+        Row: {
+          active: boolean
+          color: string | null
+          comportamiento: string
+          created_at: string
+          id: string
+          nombre: string
+          orden: number
+          permite_reinversion: boolean
+          requiere_vencimiento: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string | null
+          comportamiento?: string
+          created_at?: string
+          id?: string
+          nombre: string
+          orden?: number
+          permite_reinversion?: boolean
+          requiere_vencimiento?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          color?: string | null
+          comportamiento?: string
+          created_at?: string
+          id?: string
+          nombre?: string
+          orden?: number
+          permite_reinversion?: boolean
+          requiere_vencimiento?: boolean
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: []
+      }
+      investment_valuations: {
+        Row: {
+          aportacion: number
+          created_at: string
+          fecha: string
+          id: string
+          inversion_id: string
+          notas: string | null
+          retiro: number
+          updated_at: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          aportacion?: number
+          created_at?: string
+          fecha: string
+          id?: string
+          inversion_id: string
+          notas?: string | null
+          retiro?: number
+          updated_at?: string
+          user_id: string
+          valor?: number
+        }
+        Update: {
+          aportacion?: number
+          created_at?: string
+          fecha?: string
+          id?: string
+          inversion_id?: string
+          notas?: string | null
+          retiro?: number
+          updated_at?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_valuations_inversion_id_fkey"
+            columns: ["inversion_id"]
+            isOneToOne: false
+            referencedRelation: "inversiones"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       keepalive_pings: {
         Row: {
@@ -642,6 +817,10 @@ export type Database = {
       }
       clear_sample_data: { Args: { user_uuid: string }; Returns: undefined }
       create_default_classification_rules: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
+      create_default_investment_types: {
         Args: { target_user_id: string }
         Returns: undefined
       }
