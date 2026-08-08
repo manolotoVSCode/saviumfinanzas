@@ -1,159 +1,97 @@
-
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AccountsManager } from '@/components/AccountsManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import CriptomonedasManager from '@/components/CriptomonedasManager';
-import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
+import { InvestmentTypesManager } from '@/components/investments/InvestmentTypesManager';
+import { InvestmentDialog } from '@/components/investments/InvestmentDialog';
+import { InvestmentTrackingDialog } from '@/components/investments/InvestmentTrackingDialog';
+import { useInvestments } from '@/hooks/useInvestments';
+import { useInvestmentTypes } from '@/hooks/useInvestmentTypes';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
-import { useCriptomonedas } from '@/hooks/useCriptomonedas';
-import { Account } from '@/types/finance';
-import { TrendingUp, TrendingDown, DollarSign, Target, Settings, RefreshCw, AlertTriangle, Plus } from 'lucide-react';
+import { formatNumber } from '@/lib/formatters';
+import { Investment } from '@/types/investments';
+import { LineChart, Pencil, Plus, RefreshCw, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = ['hsl(var(--primary))', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#0088FE'];
+
+const fmtDate = (iso?: string | null) => {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-MX');
+};
 
 const Inversiones = (): JSX.Element => {
-  const { accounts, loading, refreshData, accountTypes, addAccount, updateAccount, deleteAccount } = useFinanceDataSupabase();
-  const { criptomonedas } = useCriptomonedas();
-  
-  // Debug: verificar datos
-  console.log('=== DEBUG INVERSIONES ===');
-  console.log('Todas las cuentas:', accounts);
-  console.log('Loading:', loading);
-  
-  const { formatCurrency, config } = useAppConfig();
+  const {
+    investments, valuations, payouts, loading,
+    saveInvestment, deleteInvestment, addValuation, deleteValuation, addPayout, deletePayout,
+  } = useInvestments();
+  const { types } = useInvestmentTypes();
+  const { config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
   const prefCurrency = config.currency;
 
-  // Filtrar solo cuentas de inversión (excluir las que tienen valor 0)
-  const cuentasInversion = accounts.filter(account => account.tipo === 'Inversiones' && account.saldoActual !== 0);
-  
-  // Filtrar cuentas de empresas propias
-  const cuentasEmpresasPropias = accounts.filter(account => account.tipo === 'Empresa Propia');
-  
-  // Identificar cuentas que necesitan completar información
-  const cuentasSinCompleter = cuentasInversion.filter(cuenta => 
-    !cuenta.tipo_inversion || !cuenta.modalidad || !cuenta.fecha_inicio
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Investment | null>(null);
+  const [tracking, setTracking] = useState<Investment | null>(null);
+  const [toDelete, setToDelete] = useState<Investment | null>(null);
+
+  const activas = useMemo(() => investments.filter((i) => i.activa !== false), [investments]);
+
+  const toPref = (amount: number, divisa: string) =>
+    divisa === prefCurrency ? amount : convertCurrency(amount, divisa as 'MXN' | 'USD' | 'EUR', prefCurrency);
+
+  const totals = activas.reduce(
+    (acc, i) => {
+      acc.invertido += toPref(i.monto_invertido || 0, i.moneda);
+      acc.valor += toPref(i.valor_actual || i.monto_invertido || 0, i.moneda);
+      return acc;
+    },
+    { invertido: 0, valor: 0 },
   );
+  const rendimiento = totals.valor - totals.invertido;
+  const rendimientoPct = totals.invertido ? (rendimiento / totals.invertido) * 100 : 0;
 
-  const cuentasCompletas = cuentasInversion.filter(cuenta => 
-    cuenta.tipo_inversion && cuenta.modalidad && cuenta.fecha_inicio
-  );
+  const cobrosAnio = payouts
+    .filter((p) => p.fecha.startsWith(String(new Date().getFullYear())))
+    .reduce((sum, p) => sum + toPref(p.monto, p.divisa), 0);
 
-  const calcularValorActualReinversion = (cuenta: Account): number => {
-    // Siempre usar saldoActual (saldoInicial + transacciones)
-    return cuenta.saldoActual;
-  };
-
-  const calcularRendimientoAnualizado = (cuenta: Account): number => {
-    // Si tiene rendimiento neto mensual definido, simplemente multiplicarlo por 12
-    if (cuenta.rendimiento_neto) {
-      return cuenta.rendimiento_neto * 12;
-    }
-    
-    // Fallback: cálculo basado en fecha y valor actual
-    if (!cuenta.fecha_inicio) return 0;
-    
-    const fechaInicio = new Date(cuenta.fecha_inicio);
-    const fechaActual = new Date();
-    const diasTranscurridos = Math.floor((fechaActual.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24));
-    const aniosTranscurridos = diasTranscurridos / 365.25;
-    
-    if (aniosTranscurridos <= 0) return 0;
-    
-    const valorActual = calcularValorActualReinversion(cuenta);
-    const rendimientoTotal = ((valorActual - cuenta.saldoInicial) / cuenta.saldoInicial) * 100;
-    return rendimientoTotal / aniosTranscurridos;
-  };
-
-  // Calcular rendimiento total de criptomonedas
-  const calcularRendimientoCriptomonedas = () => {
-    const totalInvertidoUSD = criptomonedas.reduce((sum, cripto) => 
-      sum + (cripto.valor_compra_usd || 0), 0
-    );
-
-    const totalActualUSD = criptomonedas.reduce((sum, cripto) => 
-      sum + (cripto.valor_actual_usd || 0), 0
-    );
-
-    return totalActualUSD >= totalInvertidoUSD;
-  };
-
-  // Calcular resumen solo de cuentas completas - manteniendo moneda original
-  const resumenPorTipo = cuentasCompletas.reduce((acc, cuenta) => {
-    const valorActual = calcularValorActualReinversion(cuenta);
-    const tipo = cuenta.tipo_inversion || 'Sin clasificar';
-    
-    if (!acc[tipo]) {
-      acc[tipo] = { cuentas: [] };
-    }
-    
-    acc[tipo].cuentas.push({
-      ...cuenta,
-      valorActual,
-      rendimiento: valorActual - cuenta.saldoInicial,
-      porcentaje: ((valorActual - cuenta.saldoInicial) / cuenta.saldoInicial) * 100
+  const usageCount = useMemo(() => {
+    const map: Record<string, number> = {};
+    investments.forEach((i) => {
+      if (i.tipo_id) map[i.tipo_id] = (map[i.tipo_id] || 0) + 1;
     });
-    
-    return acc;
-  }, {} as Record<string, { cuentas: Array<typeof cuentasCompletas[0] & { valorActual: number, rendimiento: number, porcentaje: number }> }>);
+    return map;
+  }, [investments]);
 
-  // Calcular totales en divisa preferida para resumen general
-  const totalGeneral = Object.values(resumenPorTipo).reduce((acc, item) => {
-    const valorActualConvertido = item.cuentas.reduce((sum, cuenta) => {
-      const valor = cuenta.divisa === prefCurrency 
-        ? cuenta.valorActual
-        : convertCurrency(cuenta.valorActual, cuenta.divisa, prefCurrency);
-      return sum + valor;
-    }, 0);
-    
-    const montoInvertidoConvertido = item.cuentas.reduce((sum, cuenta) => {
-      const monto = cuenta.divisa === prefCurrency 
-        ? cuenta.saldoInicial
-        : convertCurrency(cuenta.saldoInicial, cuenta.divisa, prefCurrency);
-      return sum + monto;
-    }, 0);
-    
-    return {
-      valorActual: acc.valorActual + valorActualConvertido,
-      montoInvertido: acc.montoInvertido + montoInvertidoConvertido,
-    };
-  }, { valorActual: 0, montoInvertido: 0 });
+  const grupos = useMemo(() => {
+    const map = new Map<string, { nombre: string; items: Investment[] }>();
+    activas.forEach((i) => {
+      const t = types.find((x) => x.id === i.tipo_id);
+      const key = t?.id || 'sin-tipo';
+      if (!map.has(key)) map.set(key, { nombre: t?.nombre || 'Sin tipo asignado', items: [] });
+      map.get(key)!.items.push(i);
+    });
+    return Array.from(map.values());
+  }, [activas, types]);
 
-  // Datos para el gráfico de pie - por cuenta individual y saldo actual
-  const pieData = cuentasCompletas.map((cuenta) => {
-    const valorActual = calcularValorActualReinversion(cuenta);
-    const valorConvertido = cuenta.divisa === prefCurrency 
-      ? valorActual
-      : convertCurrency(valorActual, cuenta.divisa, prefCurrency);
-    
-    return {
-      name: cuenta.nombre,
-      value: Math.abs(valorConvertido),
-    };
-  });
+  const pieData = grupos.map((g) => ({
+    name: g.nombre,
+    value: Math.abs(g.items.reduce((s, i) => s + toPref(i.valor_actual || i.monto_invertido || 0, i.moneda), 0)),
+  }));
 
-
-  const getRendimientoColor = (rendimiento: number): string => {
-    if (rendimiento > 0) return 'text-green-600';
-    if (rendimiento < 0) return 'text-red-600';
-    return 'text-gray-600';
-  };
-
-  const getRendimientoIcon = (rendimiento: number) => {
-    if (rendimiento > 0) return <TrendingUp className="h-4 w-4" />;
-    if (rendimiento < 0) return <TrendingDown className="h-4 w-4" />;
-    return <DollarSign className="h-4 w-4" />;
-  };
+  const openNew = () => { setEditing(null); setDialogOpen(true); };
+  const openEdit = (i: Investment) => { setEditing(i); setDialogOpen(true); };
 
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2" />
             <p>Cargando inversiones...</p>
@@ -166,57 +104,64 @@ const Inversiones = (): JSX.Element => {
   return (
     <Layout>
       <div className="container mx-auto p-4 sm:p-6 space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-wrap justify-between items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Inversiones</h1>
+          <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nueva inversión</Button>
         </div>
 
-        {/* Solo mostrar estadísticas si hay cuentas completas */}
-        {cuentasCompletas.length > 0 && (
-          <>
-            {/* 1. Distribución del Portafolio */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2"><CardDescription>Invertido</CardDescription></CardHeader>
+            <CardContent className="text-2xl font-bold">{prefCurrency} {formatNumber(totals.invertido)}</CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardDescription>Valor actual</CardDescription></CardHeader>
+            <CardContent className="text-2xl font-bold">{prefCurrency} {formatNumber(totals.valor)}</CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardDescription>Rendimiento</CardDescription></CardHeader>
+            <CardContent className={`text-2xl font-bold flex items-center gap-2 ${rendimiento >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+              {rendimiento >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+              {formatNumber(rendimiento)}
+              <span className="text-sm font-normal">({rendimientoPct.toFixed(2)}%)</span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardDescription>Cobrado este año</CardDescription></CardHeader>
+            <CardContent className="text-2xl font-bold">{prefCurrency} {formatNumber(cobrosAnio)}</CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="portafolio">
+          <TabsList>
+            <TabsTrigger value="portafolio">Portafolio</TabsTrigger>
+            <TabsTrigger value="cripto">Criptomonedas</TabsTrigger>
+            <TabsTrigger value="tipos">Tipos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="portafolio" className="space-y-6">
             {pieData.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Distribución del Portafolio</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Distribución por tipo</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="flex flex-col lg:flex-row items-center justify-center gap-6">
-                    <div className="h-64 w-full max-w-sm lg:flex-shrink-0">
+                  <div className="flex flex-col lg:flex-row items-center gap-6">
+                    <div className="h-64 w-full max-w-sm">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ percent }) => `${(percent * 100).toFixed(2)}%`}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                            fontSize={12}
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
+                          <Pie data={pieData} cx="50%" cy="50%" outerRadius={80} dataKey="value"
+                            label={({ percent }) => `${(percent * 100).toFixed(1)}%`} labelLine={false} fontSize={12}>
+                            {pieData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                           </Pie>
-                          <Tooltip formatter={(value: number) => [`$${formatCurrency(value)}`, 'Saldo Actual']} />
+                          <Tooltip formatter={(v: number) => [`${prefCurrency} ${formatNumber(v)}`, 'Valor actual']} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                    
-                    {/* Leyenda */}
                     <div className="w-full lg:flex-1 space-y-2">
-                      <h4 className="font-semibold text-sm text-muted-foreground mb-3">Leyenda</h4>
                       {pieData.map((entry, index) => (
                         <div key={entry.name} className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full flex-shrink-0" 
-                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                          />
+                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                           <span className="text-sm truncate">{entry.name}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">
-                            ${formatCurrency(entry.value)}
-                          </span>
+                          <span className="text-xs text-muted-foreground ml-auto">{prefCurrency} {formatNumber(entry.value)}</span>
                         </div>
                       ))}
                     </div>
@@ -225,173 +170,121 @@ const Inversiones = (): JSX.Element => {
               </Card>
             )}
 
-            {/* 2. Detalle de Inversiones */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Detalle de Inversiones</CardTitle>
-                <CardDescription>
-                  {cuentasCompletas.length} inversión{cuentasCompletas.length !== 1 ? 'es' : ''} con información completa
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                    {cuentasCompletas.map((cuenta) => {
-                      const valorActual = calcularValorActualReinversion(cuenta);
-                      const rendimiento = valorActual - cuenta.saldoInicial;
-                      const porcentaje = (rendimiento / cuenta.saldoInicial) * 100;
-                      const rendimientoAnualizado = calcularRendimientoAnualizado(cuenta);
-                      
-                      const importeMensualNeto = cuenta.rendimiento_neto 
-                        ? (valorActual * cuenta.rendimiento_neto) / 100 
-                        : 0;
-                      const importeAnualNeto = importeMensualNeto * 12;
-
-                      return (
-                        <div key={cuenta.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                              <h3 className="font-semibold text-sm sm:text-base truncate">{cuenta.nombre}</h3>
-                              <Badge variant="outline" className="text-xs">{cuenta.divisa}</Badge>
-                              <Badge variant="secondary" className="text-xs hidden sm:inline-flex">{cuenta.tipo_inversion}</Badge>
-                              <Badge variant="outline" className="text-xs hidden sm:inline-flex">{cuenta.modalidad}</Badge>
-                            </div>
-                            <div className="text-xs sm:text-sm text-muted-foreground">
-                              <div className="sm:hidden mb-1">
-                                {cuenta.tipo_inversion} • {cuenta.modalidad}
-                              </div>
-                              <div>
-                                Inicio: {cuenta.fecha_inicio ? new Date(cuenta.fecha_inicio).toLocaleDateString() : 'No definido'}
-                              </div>
-                              {cuenta.ultimo_pago && (
-                                <div className="hidden sm:block">
-                                  Último pago: {new Date(cuenta.ultimo_pago).toLocaleDateString()}
-                                </div>
-                              )}
-                            </div>
+            {grupos.map((g) => (
+              <Card key={g.nombre}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{g.nombre}</CardTitle>
+                  <CardDescription>{g.items.length} inversión{g.items.length !== 1 ? 'es' : ''}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {g.items.map((i) => {
+                    const valor = i.valor_actual || i.monto_invertido || 0;
+                    const delta = valor - (i.monto_invertido || 0);
+                    const pct = i.monto_invertido ? (delta / i.monto_invertido) * 100 : 0;
+                    const ultima = valuations.filter((v) => v.inversion_id === i.id).slice(-1)[0];
+                    return (
+                      <div key={i.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-4">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold truncate">{i.nombre}</h3>
+                            <Badge variant="outline" className="text-xs">{i.moneda}</Badge>
+                            {i.modalidad_pago && <Badge variant="secondary" className="text-xs">{i.modalidad_pago}</Badge>}
                           </div>
-                          <div className="text-left sm:text-right flex-shrink-0">
-                            <div className="space-y-1">
-                              <div className="text-xs text-muted-foreground">
-                                Inicial: {cuenta.divisa} {formatCurrency(cuenta.saldoInicial)}
-                              </div>
-                              <div className="font-bold text-base sm:text-lg">
-                                {cuenta.divisa} {formatCurrency(valorActual)}
-                              </div>
-                              <div className={`text-xs font-medium flex items-center gap-1 ${getRendimientoColor(rendimiento)}`}>
-                                {getRendimientoIcon(rendimiento)}
-                                {rendimiento >= 0 ? '+' : ''}{formatCurrency(Math.abs(rendimiento))} ({porcentaje >= 0 ? '+' : ''}{porcentaje.toFixed(2)}%)
-                              </div>
-                            </div>
-                            {cuenta.rendimiento_neto ? (
-                              <div className="text-xs text-muted-foreground space-y-1 mt-2">
-                                <div className="hidden sm:block">
-                                  {cuenta.rendimiento_neto}% mensual NETO | {rendimientoAnualizado.toFixed(2)}% anual
-                                </div>
-                                <div className="sm:hidden">
-                                  {cuenta.rendimiento_neto}% mensual NETO
-                                </div>
-                                <div className="font-medium text-green-600">
-                                  <div className="sm:hidden">
-                                    {cuenta.divisa} {formatCurrency(importeMensualNeto)}/mes
-                                  </div>
-                                  <div className="hidden sm:block">
-                                    {cuenta.divisa} {formatCurrency(importeMensualNeto)}/mes | {cuenta.divisa} {formatCurrency(importeAnualNeto)}/año
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-xs text-muted-foreground mt-2">
-                                {rendimientoAnualizado.toFixed(2)}% anual
-                              </div>
-                            )}
+                          <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                            <div>Inicio: {fmtDate(i.fecha_inicio)}{i.fecha_vencimiento ? ` · Vence: ${fmtDate(i.fecha_vencimiento)}` : ''}</div>
+                            {i.tasa_anual ? <div>Tasa anual: {i.tasa_anual}%</div> : null}
+                            {ultima ? <div>Última valuación: {fmtDate(ultima.fecha)}</div> : null}
+                            {i.beneficio_estimado ? <div>Beneficio estimado: {formatNumber(i.beneficio_estimado)}</div> : null}
                           </div>
                         </div>
-                      );
-                    })}
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {/* 3. Criptomonedas con flecha de rendimiento */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-              <CardTitle className="flex items-center gap-2">
-                Criptomonedas
-                {criptomonedas.length > 0 && (
-                  calcularRendimientoCriptomonedas() ? (
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <TrendingDown className="h-5 w-5 text-red-600" />
-                  )
-                )}
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <CriptomonedasManager />
-          </CardContent>
-        </Card>
-
-        {/* 4. Empresas Propias */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Empresas Propias</CardTitle>
-            <CardDescription>
-              {cuentasEmpresasPropias.length} empresa{cuentasEmpresasPropias.length !== 1 ? 's' : ''}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {cuentasEmpresasPropias.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="text-4xl mb-4">🏢</div>
-                <p>No tienes empresas propias registradas</p>
-                <p className="text-sm">Agrega tu primera empresa para comenzar el seguimiento</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {cuentasEmpresasPropias.map((cuenta) => (
-                  <div key={cuenta.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-sm sm:text-base truncate">{cuenta.nombre}</h3>
-                        <Badge variant="outline" className="text-xs">{cuenta.divisa}</Badge>
-                        <Badge variant="secondary" className="text-xs">{cuenta.tipo}</Badge>
-                      </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">
-                        <div>
-                          Fecha de registro: {new Date().toLocaleDateString()}
+                        <div className="flex items-center gap-3 sm:justify-end">
+                          <div className="text-left sm:text-right">
+                            <div className="text-xs text-muted-foreground">Invertido: {formatNumber(i.monto_invertido || 0)}</div>
+                            <div className="font-bold">{i.moneda} {formatNumber(valor)}</div>
+                            <div className={`text-xs font-medium ${delta >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                              {delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" title="Seguimiento" onClick={() => setTracking(i)}>
+                              <LineChart className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Editar" onClick={() => openEdit(i)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Eliminar" onClick={() => setToDelete(i)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-left sm:text-right flex-shrink-0">
-                      <div className="font-bold text-sm sm:text-base">
-                        {cuenta.divisa} {formatCurrency(cuenta.saldoActual)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Saldo actual
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            ))}
+
+            {activas.length === 0 && (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <p>Aún no tienes inversiones registradas.</p>
+                  <Button className="mt-4" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Agregar la primera</Button>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        {/* 5. Cuentas - Manager de cuentas de inversión */}
-        <AccountsManager
-          accounts={cuentasInversion}
-          accountTypes={['Inversiones']} // Solo permitir crear cuentas de inversión
-          onAddAccount={addAccount}
-          onUpdateAccount={updateAccount}
-          onDeleteAccount={deleteAccount}
-        />
+          <TabsContent value="cripto">
+            <Card>
+              <CardHeader><CardTitle>Criptomonedas</CardTitle></CardHeader>
+              <CardContent><CriptomonedasManager /></CardContent>
+            </Card>
+          </TabsContent>
 
-
+          <TabsContent value="tipos">
+            <InvestmentTypesManager usageCount={usageCount} />
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <InvestmentDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        types={types}
+        investment={editing}
+        onSave={saveInvestment}
+      />
+
+      <InvestmentTrackingDialog
+        open={!!tracking}
+        onOpenChange={(v) => !v && setTracking(null)}
+        investment={tracking}
+        valuations={valuations}
+        payouts={payouts}
+        onAddValuation={addValuation}
+        onDeleteValuation={deleteValuation}
+        onAddPayout={addPayout}
+        onDeletePayout={deletePayout}
+      />
+
+      <AlertDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar inversión?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará "{toDelete?.nombre}" junto con sus valuaciones y cobros registrados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => { if (toDelete) await deleteInvestment(toDelete.id); setToDelete(null); }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };
