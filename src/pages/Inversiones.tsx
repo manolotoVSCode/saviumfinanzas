@@ -206,14 +206,19 @@ const Inversiones = (): JSX.Element => {
                     const valor = i.valor_actual || i.monto_invertido || 0;
                     const delta = valor - (i.monto_invertido || 0);
                     const pct = i.monto_invertido ? (delta / i.monto_invertido) * 100 : 0;
-                    const ultima = valuations.filter((v) => v.inversion_id === i.id).slice(-1)[0];
+                    const valsInv = valuations
+                      .filter((v) => v.inversion_id === i.id)
+                      .sort((a, b) => a.fecha.localeCompare(b.fecha));
+                    const ultima = valsInv[valsInv.length - 1];
+                    const previa = valsInv[valsInv.length - 2];
+                    const deltaVal = previa ? ultima.valor - previa.valor - ((ultima.aportacion || 0) - (ultima.retiro || 0)) : 0;
+                    const pctVal = previa && previa.valor ? (deltaVal / previa.valor) * 100 : 0;
+                    const primera = valsInv[0];
+                    const deltaHist = primera && ultima && valsInv.length > 1 ? ultima.valor - primera.valor : 0;
+                    const pctHist = primera && primera.valor ? (deltaHist / primera.valor) * 100 : 0;
                     const tipo = types.find((t) => t.id === i.tipo_id);
                     const esPatrimonial = tipo?.comportamiento === 'activo_patrimonial';
                     const esManual = tipo?.comportamiento === 'valuacion_manual' || esPatrimonial;
-
-                    // Interés fijo con cobro periódico: el capital no crece, lo que rinde son los intereses
-                    const cobraIntereses =
-                      tipo?.comportamiento === 'interes_fijo' && i.modalidad_pago !== 'Reinversión';
                     const tasaMensual = i.rendimiento_neto ?? (i.tasa_anual ? i.tasa_anual / 12 : null);
                     const interesMensual = tasaMensual ? (i.monto_invertido || 0) * (tasaMensual / 100) : 0;
                     const mesesTranscurridos = (() => {
