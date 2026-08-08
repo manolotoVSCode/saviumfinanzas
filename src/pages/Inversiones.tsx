@@ -219,6 +219,8 @@ const Inversiones = (): JSX.Element => {
                     const tipo = types.find((t) => t.id === i.tipo_id);
                     const esPatrimonial = tipo?.comportamiento === 'activo_patrimonial';
                     const esManual = tipo?.comportamiento === 'valuacion_manual' || esPatrimonial;
+                    const cobraIntereses =
+                      tipo?.comportamiento === 'interes_fijo' && i.modalidad_pago !== 'Reinversión';
                     const tasaMensual = i.rendimiento_neto ?? (i.tasa_anual ? i.tasa_anual / 12 : null);
                     const interesMensual = tasaMensual ? (i.monto_invertido || 0) * (tasaMensual / 100) : 0;
                     const mesesTranscurridos = (() => {
