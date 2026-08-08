@@ -13,6 +13,8 @@ import { useInvestments } from '@/hooks/useInvestments';
 import { useInvestmentTypes } from '@/hooks/useInvestmentTypes';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useCriptomonedas } from '@/hooks/useCriptomonedas';
+
 import { formatNumber } from '@/lib/formatters';
 import { Investment } from '@/types/investments';
 import { LineChart, Pencil, Plus, RefreshCw, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
@@ -34,6 +36,8 @@ const Inversiones = (): JSX.Element => {
   const { types } = useInvestmentTypes();
   const { config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
+  const { criptomonedas } = useCriptomonedas();
+
   const prefCurrency = config.currency;
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -91,20 +95,138 @@ const Inversiones = (): JSX.Element => {
     return Array.from(map.values()).sort((a, b) => rank(a.nombre) - rank(b.nombre));
   }, [activas, types]);
 
-  const pieData = grupos
-    .map((g) => ({
+  const kind = (nombre: string) => {
+    const n = nombre.toLowerCase();
+    if (n.includes('empresa')) return 'empresas' as const;
+    if (n.includes('raíz') || n.includes('raiz') || n.includes('inmueble')) return 'raices' as const;
+    return 'general' as const;
+  };
+  const gruposPortafolio = grupos.filter((g) => kind(g.nombre) === 'general');
+  const gruposRaices = grupos.filter((g) => kind(g.nombre) === 'raices');
+  const gruposEmpresas = grupos.filter((g) => kind(g.nombre) === 'empresas');
+
+  const cryptoValue = criptomonedas.reduce((s, c) => s + (c.valor_actual_usd ?? c.valor_compra_usd ?? 0), 0);
+  const cryptoEnVista = viewCurrency === 'USD' ? cryptoValue : convertCurrency(cryptoValue, 'USD', viewCurrency);
+
+  const pieData = [
+    ...grupos.map((g) => ({
       name: g.nombre,
       value: Math.abs(
         g.items
           .filter((i) => (i.moneda || 'MXN') === viewCurrency)
           .reduce((s, i) => s + (i.valor_actual || i.monto_invertido || 0), 0),
       ),
-    }))
-    .filter((d) => d.value > 0);
+    })),
+    { name: 'Criptomonedas', value: Math.abs(cryptoEnVista) },
+  ].filter((d) => d.value > 0);
 
 
   const openNew = () => { setEditing(null); setDialogOpen(true); };
   const openEdit = (i: Investment) => { setEditing(i); setDialogOpen(true); };
+
+  const renderGrupo = (g: { nombre: string; items: Investment[] }) => (
+    <Card key={g.nombre}>
+      <CardHeader>
+        <CardTitle className="text-lg">{g.nombre}</CardTitle>
+        <CardDescription>{g.items.length} inversión{g.items.length !== 1 ? 'es' : ''}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {g.items.map((i) => {
+          const valsInv = valuations
+            .filter((v) => v.inversion_id === i.id)
+            .sort((a, b) => a.fecha.localeCompare(b.fecha));
+          const ultima = valsInv[valsInv.length - 1];
+          const primera = valsInv[0];
+          const invertido = i.monto_invertido || (primera ? primera.valor : i.saldo_cuenta ?? 0);
+          const valor = i.valor_actual || invertido || 0;
+          const base = primera && valsInv.length > 1 ? primera.valor : invertido;
+          const delta = valor - base;
+          const pct = base ? (delta / base) * 100 : 0;
+          const tipo = types.find((t) => t.id === i.tipo_id);
+          const esPatrimonial = tipo?.comportamiento === 'activo_patrimonial';
+          const esManual = tipo?.comportamiento === 'valuacion_manual' || esPatrimonial;
+          const cobraIntereses =
+            tipo?.comportamiento === 'interes_fijo' && i.modalidad_pago !== 'Reinversión';
+          const tasaMensual = i.rendimiento_neto ?? (i.tasa_anual ? i.tasa_anual / 12 : null);
+          const interesMensual = tasaMensual ? (i.monto_invertido || 0) * (tasaMensual / 100) : 0;
+          const mesesTranscurridos = (() => {
+            if (!i.fecha_inicio) return 0;
+            const [y, m] = i.fecha_inicio.split('-').map(Number);
+            const hoy = new Date();
+            return Math.max(0, (hoy.getFullYear() - y) * 12 + (hoy.getMonth() + 1 - m));
+          })();
+          const devengado = interesMensual * mesesTranscurridos;
+          const cobrado = payouts
+            .filter((p) => p.inversion_id === i.id)
+            .reduce((s, p) => s + p.monto, 0);
+          return (
+            <div key={i.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-semibold truncate">{i.nombre}</h3>
+                  <Badge variant="outline" className="text-xs">{i.moneda}</Badge>
+                  {i.modalidad_pago && !esPatrimonial && <Badge variant="secondary" className="text-xs">{i.modalidad_pago}</Badge>}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                  <div>Inicio: {fmtDate(i.fecha_inicio)}{i.fecha_vencimiento ? ` · Vence: ${fmtDate(i.fecha_vencimiento)}` : ''}</div>
+                  {i.tasa_anual ? <div>Tasa anual: {i.tasa_anual}%</div> : null}
+                  {cobraIntereses && tasaMensual ? (
+                    <div>
+                      Interés mensual ({tasaMensual}%): {i.moneda} {formatNumber(interesMensual)} · devengado estimado{' '}
+                      {formatNumber(devengado)} en {mesesTranscurridos} meses
+                    </div>
+                  ) : null}
+                  {ultima ? (
+                    <div>Última valuación: {fmtDate(ultima.fecha)}</div>
+                  ) : i.saldo_cuenta !== null && i.saldo_cuenta !== undefined ? (
+                    <div>Valor según movimientos de la cuenta vinculada</div>
+                  ) : null}
+                  {i.beneficio_estimado ? <div>Beneficio estimado: {formatNumber(i.beneficio_estimado)}</div> : null}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 sm:justify-end">
+                <div className="text-left sm:text-right">
+                  <div className="text-xs text-muted-foreground">Invertido: {formatNumber(invertido)}</div>
+                  <div className="font-bold">{i.moneda} {formatNumber(valor)}</div>
+                  {cobraIntereses ? (
+                    <div className="text-xs font-medium text-emerald-600">
+                      Cobrado: {formatNumber(cobrado)}
+                      {devengado > 0 && (
+                        <span className="text-muted-foreground font-normal"> / {formatNumber(devengado)} devengado</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={`text-xs font-medium ${delta >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                      {esPatrimonial ? 'Plusvalía ' : ''}{delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-1">
+                  {esManual ? (
+                    <Button variant="outline" size="sm" onClick={() => setTracking(i)}>
+                      <LineChart className="h-4 w-4 mr-1" /> Actualizar valor
+                    </Button>
+                  ) : (
+                    <Button variant="ghost" size="icon" title="Seguimiento" onClick={() => setTracking(i)}>
+                      <LineChart className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" title="Editar" onClick={() => openEdit(i)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" title="Eliminar" onClick={() => setToDelete(i)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+
 
   if (loading) {
     return (
@@ -154,6 +276,9 @@ const Inversiones = (): JSX.Element => {
           <TabsList>
             <TabsTrigger value="portafolio">Portafolio</TabsTrigger>
             <TabsTrigger value="cripto">Criptomonedas</TabsTrigger>
+            <TabsTrigger value="raices">Bienes raíces</TabsTrigger>
+            <TabsTrigger value="empresas">Empresas</TabsTrigger>
+
             <TabsTrigger value="tipos">Tipos</TabsTrigger>
           </TabsList>
 
@@ -198,112 +323,8 @@ const Inversiones = (): JSX.Element => {
               </Card>
             )}
 
-            {grupos.map((g) => (
-              <Card key={g.nombre}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{g.nombre}</CardTitle>
-                  <CardDescription>{g.items.length} inversión{g.items.length !== 1 ? 'es' : ''}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {g.items.map((i) => {
-                    const valsInv = valuations
-                      .filter((v) => v.inversion_id === i.id)
-                      .sort((a, b) => a.fecha.localeCompare(b.fecha));
-                    const ultima = valsInv[valsInv.length - 1];
-                    const primera = valsInv[0];
-                    const invertido =
-                      i.monto_invertido || (primera ? primera.valor : i.saldo_cuenta ?? 0);
-                    const valor = i.valor_actual || invertido || 0;
-                    // Base de comparación: la primera valuación registrada si existe, si no el monto invertido
-                    const base = primera && valsInv.length > 1 ? primera.valor : invertido;
-                    const delta = valor - base;
-                    const pct = base ? (delta / base) * 100 : 0;
-                    const tipo = types.find((t) => t.id === i.tipo_id);
-                    const esPatrimonial = tipo?.comportamiento === 'activo_patrimonial';
-                    const esManual = tipo?.comportamiento === 'valuacion_manual' || esPatrimonial;
-                    const cobraIntereses =
-                      tipo?.comportamiento === 'interes_fijo' && i.modalidad_pago !== 'Reinversión';
-                    const tasaMensual = i.rendimiento_neto ?? (i.tasa_anual ? i.tasa_anual / 12 : null);
-                    const interesMensual = tasaMensual ? (i.monto_invertido || 0) * (tasaMensual / 100) : 0;
-                    const mesesTranscurridos = (() => {
-                      if (!i.fecha_inicio) return 0;
-                      const [y, m] = i.fecha_inicio.split('-').map(Number);
-                      const hoy = new Date();
-                      return Math.max(0, (hoy.getFullYear() - y) * 12 + (hoy.getMonth() + 1 - m));
-                    })();
-                    const devengado = interesMensual * mesesTranscurridos;
-                    const cobrado = payouts
-                      .filter((p) => p.inversion_id === i.id)
-                      .reduce((s, p) => s + p.monto, 0);
-                    return (
-                      <div key={i.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-4">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="font-semibold truncate">{i.nombre}</h3>
-                            <Badge variant="outline" className="text-xs">{i.moneda}</Badge>
-                            {i.modalidad_pago && !esPatrimonial && <Badge variant="secondary" className="text-xs">{i.modalidad_pago}</Badge>}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                            <div>Inicio: {fmtDate(i.fecha_inicio)}{i.fecha_vencimiento ? ` · Vence: ${fmtDate(i.fecha_vencimiento)}` : ''}</div>
-                            {i.tasa_anual ? <div>Tasa anual: {i.tasa_anual}%</div> : null}
-                            {cobraIntereses && tasaMensual ? (
-                              <div>
-                                Interés mensual ({tasaMensual}%): {i.moneda} {formatNumber(interesMensual)} · devengado estimado{' '}
-                                {formatNumber(devengado)} en {mesesTranscurridos} meses
-                              </div>
-                            ) : null}
-                            {ultima ? (
-                              <div>Última valuación: {fmtDate(ultima.fecha)}</div>
-                            ) : i.saldo_cuenta !== null && i.saldo_cuenta !== undefined ? (
-                              <div>Valor según movimientos de la cuenta vinculada</div>
-                            ) : null}
-                            {i.beneficio_estimado ? <div>Beneficio estimado: {formatNumber(i.beneficio_estimado)}</div> : null}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 sm:justify-end">
-                          <div className="text-left sm:text-right">
-                            <div className="text-xs text-muted-foreground">Invertido: {formatNumber(invertido)}</div>
-                            <div className="font-bold">{i.moneda} {formatNumber(valor)}</div>
-                            {cobraIntereses ? (
-                              <div className="text-xs font-medium text-emerald-600">
-                                Cobrado: {formatNumber(cobrado)}
-                                {devengado > 0 && (
-                                  <span className="text-muted-foreground font-normal"> / {formatNumber(devengado)} devengado</span>
-                                )}
-                              </div>
-                            ) : (
-                              <div className={`text-xs font-medium ${delta >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
-                                {esPatrimonial ? 'Plusvalía ' : ''}{delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
-                              </div>
-                            )}
+            {gruposPortafolio.map(renderGrupo)}
 
-
-                          </div>
-
-                          <div className="flex gap-1">
-                            {esManual ? (
-                              <Button variant="outline" size="sm" onClick={() => setTracking(i)}>
-                                <LineChart className="h-4 w-4 mr-1" /> Actualizar valor
-                              </Button>
-                            ) : (
-                              <Button variant="ghost" size="icon" title="Seguimiento" onClick={() => setTracking(i)}>
-                                <LineChart className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button variant="ghost" size="icon" title="Editar" onClick={() => openEdit(i)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" title="Eliminar" onClick={() => setToDelete(i)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            ))}
 
             {activas.length === 0 && (
               <Card>
@@ -322,9 +343,24 @@ const Inversiones = (): JSX.Element => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="raices" className="space-y-6">
+            {gruposRaices.map(renderGrupo)}
+            {gruposRaices.length === 0 && (
+              <Card><CardContent className="py-12 text-center text-muted-foreground">Sin bienes raíces registrados.</CardContent></Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="empresas" className="space-y-6">
+            {gruposEmpresas.map(renderGrupo)}
+            {gruposEmpresas.length === 0 && (
+              <Card><CardContent className="py-12 text-center text-muted-foreground">Sin participaciones en empresas registradas.</CardContent></Card>
+            )}
+          </TabsContent>
+
           <TabsContent value="tipos">
             <InvestmentTypesManager usageCount={usageCount} />
           </TabsContent>
+
         </Tabs>
       </div>
 
