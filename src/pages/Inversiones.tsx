@@ -218,9 +218,24 @@ const Inversiones = (): JSX.Element => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="raices" className="space-y-6">
+            {gruposRaices.map(renderGrupo)}
+            {gruposRaices.length === 0 && (
+              <Card><CardContent className="py-12 text-center text-muted-foreground">Sin bienes raíces registrados.</CardContent></Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="empresas" className="space-y-6">
+            {gruposEmpresas.map(renderGrupo)}
+            {gruposEmpresas.length === 0 && (
+              <Card><CardContent className="py-12 text-center text-muted-foreground">Sin participaciones en empresas registradas.</CardContent></Card>
+            )}
+          </TabsContent>
+
           <TabsContent value="tipos">
             <InvestmentTypesManager usageCount={usageCount} />
           </TabsContent>
+
         </Tabs>
       </div>
 
