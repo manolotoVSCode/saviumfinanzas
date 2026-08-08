@@ -1,5 +1,6 @@
 # Project Memory
 
+
 ## Core
 Number format: 1,234.56 (comma for thousands, dot for decimals).
 No success toasts — display error notifications only.
@@ -30,3 +31,4 @@ Admin email is manoloto@gmail.com — protected from deletion. SIN ASIGNAR categ
 - [Investments Chart Data](mem://ui/investments-chart-data) — Pie chart uses 'Saldo Actual' converted to preferred currency
 - [Classification Rules](mem://features/classification-rules) — Auto-classification rules engine with exact/contains matching and drill-down UI
 - [Preferred Currency](mem://features/preferred-currency) — useAppConfig reads divisa_preferida, all calculations convert to it
+- [Investments Module](mem://finance/investments-module) — Editable investment types catalog, separate inversiones table, valuations & payouts
