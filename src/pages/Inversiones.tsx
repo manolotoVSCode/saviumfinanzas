@@ -183,7 +183,9 @@ const Inversiones = (): JSX.Element => {
                     const pct = i.monto_invertido ? (delta / i.monto_invertido) * 100 : 0;
                     const ultima = valuations.filter((v) => v.inversion_id === i.id).slice(-1)[0];
                     const tipo = types.find((t) => t.id === i.tipo_id);
-                    const esManual = tipo?.comportamiento === 'valuacion_manual';
+                    const esPatrimonial = tipo?.comportamiento === 'activo_patrimonial';
+                    const esManual = tipo?.comportamiento === 'valuacion_manual' || esPatrimonial;
+
                     // Interés fijo con cobro periódico: el capital no crece, lo que rinde son los intereses
                     const cobraIntereses =
                       tipo?.comportamiento === 'interes_fijo' && i.modalidad_pago !== 'Reinversión';
