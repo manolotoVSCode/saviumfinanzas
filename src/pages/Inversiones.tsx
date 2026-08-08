@@ -184,6 +184,21 @@ const Inversiones = (): JSX.Element => {
                     const ultima = valuations.filter((v) => v.inversion_id === i.id).slice(-1)[0];
                     const tipo = types.find((t) => t.id === i.tipo_id);
                     const esManual = tipo?.comportamiento === 'valuacion_manual';
+                    // Interés fijo con cobro periódico: el capital no crece, lo que rinde son los intereses
+                    const cobraIntereses =
+                      tipo?.comportamiento === 'interes_fijo' && i.modalidad_pago !== 'Reinversión';
+                    const tasaMensual = i.rendimiento_neto ?? (i.tasa_anual ? i.tasa_anual / 12 : null);
+                    const interesMensual = tasaMensual ? (i.monto_invertido || 0) * (tasaMensual / 100) : 0;
+                    const mesesTranscurridos = (() => {
+                      if (!i.fecha_inicio) return 0;
+                      const [y, m] = i.fecha_inicio.split('-').map(Number);
+                      const hoy = new Date();
+                      return Math.max(0, (hoy.getFullYear() - y) * 12 + (hoy.getMonth() + 1 - m));
+                    })();
+                    const devengado = interesMensual * mesesTranscurridos;
+                    const cobrado = payouts
+                      .filter((p) => p.inversion_id === i.id)
+                      .reduce((s, p) => s + p.monto, 0);
                     return (
                       <div key={i.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-4">
                         <div className="min-w-0">
@@ -195,6 +210,12 @@ const Inversiones = (): JSX.Element => {
                           <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
                             <div>Inicio: {fmtDate(i.fecha_inicio)}{i.fecha_vencimiento ? ` · Vence: ${fmtDate(i.fecha_vencimiento)}` : ''}</div>
                             {i.tasa_anual ? <div>Tasa anual: {i.tasa_anual}%</div> : null}
+                            {cobraIntereses && tasaMensual ? (
+                              <div>
+                                Interés mensual ({tasaMensual}%): {i.moneda} {formatNumber(interesMensual)} · devengado estimado{' '}
+                                {formatNumber(devengado)} en {mesesTranscurridos} meses
+                              </div>
+                            ) : null}
                             {ultima ? (
                               <div>Última valuación: {fmtDate(ultima.fecha)}</div>
                             ) : i.saldo_cuenta !== null && i.saldo_cuenta !== undefined ? (
@@ -207,10 +228,20 @@ const Inversiones = (): JSX.Element => {
                           <div className="text-left sm:text-right">
                             <div className="text-xs text-muted-foreground">Invertido: {formatNumber(i.monto_invertido || 0)}</div>
                             <div className="font-bold">{i.moneda} {formatNumber(valor)}</div>
-                            <div className={`text-xs font-medium ${delta >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
-                              {delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
-                            </div>
+                            {cobraIntereses ? (
+                              <div className="text-xs font-medium text-emerald-600">
+                                Cobrado: {formatNumber(cobrado)}
+                                {devengado > 0 && (
+                                  <span className="text-muted-foreground font-normal"> / {formatNumber(devengado)} devengado</span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className={`text-xs font-medium ${delta >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                                {delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
+                              </div>
+                            )}
                           </div>
+
                           <div className="flex gap-1">
                             {esManual ? (
                               <Button variant="outline" size="sm" onClick={() => setTracking(i)}>
