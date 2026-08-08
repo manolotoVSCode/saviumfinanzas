@@ -91,13 +91,16 @@ const Inversiones = (): JSX.Element => {
     return Array.from(map.values()).sort((a, b) => rank(a.nombre) - rank(b.nombre));
   }, [activas, types]);
 
-  const toView = (amount: number, divisa: string) =>
-    divisa === viewCurrency ? amount : convertCurrency(amount, divisa as 'MXN' | 'USD' | 'EUR', viewCurrency);
-
-  const pieData = grupos.map((g) => ({
-    name: g.nombre,
-    value: Math.abs(g.items.reduce((s, i) => s + toView(i.valor_actual || i.monto_invertido || 0, i.moneda), 0)),
-  }));
+  const pieData = grupos
+    .map((g) => ({
+      name: g.nombre,
+      value: Math.abs(
+        g.items
+          .filter((i) => (i.moneda || 'MXN') === viewCurrency)
+          .reduce((s, i) => s + (i.valor_actual || i.monto_invertido || 0), 0),
+      ),
+    }))
+    .filter((d) => d.value > 0);
 
 
   const openNew = () => { setEditing(null); setDialogOpen(true); };
