@@ -183,7 +183,9 @@ const Inversiones = (): JSX.Element => {
                     const pct = i.monto_invertido ? (delta / i.monto_invertido) * 100 : 0;
                     const ultima = valuations.filter((v) => v.inversion_id === i.id).slice(-1)[0];
                     const tipo = types.find((t) => t.id === i.tipo_id);
-                    const esManual = tipo?.comportamiento === 'valuacion_manual';
+                    const esPatrimonial = tipo?.comportamiento === 'activo_patrimonial';
+                    const esManual = tipo?.comportamiento === 'valuacion_manual' || esPatrimonial;
+
                     // Interés fijo con cobro periódico: el capital no crece, lo que rinde son los intereses
                     const cobraIntereses =
                       tipo?.comportamiento === 'interes_fijo' && i.modalidad_pago !== 'Reinversión';
@@ -205,7 +207,7 @@ const Inversiones = (): JSX.Element => {
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="font-semibold truncate">{i.nombre}</h3>
                             <Badge variant="outline" className="text-xs">{i.moneda}</Badge>
-                            {i.modalidad_pago && <Badge variant="secondary" className="text-xs">{i.modalidad_pago}</Badge>}
+                            {i.modalidad_pago && !esPatrimonial && <Badge variant="secondary" className="text-xs">{i.modalidad_pago}</Badge>}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
                             <div>Inicio: {fmtDate(i.fecha_inicio)}{i.fecha_vencimiento ? ` · Vence: ${fmtDate(i.fecha_vencimiento)}` : ''}</div>
@@ -235,11 +237,14 @@ const Inversiones = (): JSX.Element => {
                                   <span className="text-muted-foreground font-normal"> / {formatNumber(devengado)} devengado</span>
                                 )}
                               </div>
+                            ) : esPatrimonial && !i.monto_invertido ? (
+                              <div className="text-xs text-muted-foreground">Valor patrimonial estimado</div>
                             ) : (
                               <div className={`text-xs font-medium ${delta >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
-                                {delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
+                                {esPatrimonial ? 'Plusvalía ' : ''}{delta >= 0 ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
                               </div>
                             )}
+
                           </div>
 
                           <div className="flex gap-1">
