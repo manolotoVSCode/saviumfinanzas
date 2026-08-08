@@ -34,6 +34,8 @@ const Inversiones = (): JSX.Element => {
   const { types } = useInvestmentTypes();
   const { config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
+  const { criptomonedas } = useCriptomonedas();
+
   const prefCurrency = config.currency;
 
   const [dialogOpen, setDialogOpen] = useState(false);
