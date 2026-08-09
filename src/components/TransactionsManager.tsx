@@ -210,10 +210,15 @@ export const TransactionsManager = ({
       if (transactionMonth !== filters.mes) return false;
     }
     
-    // Filtro por comentario (mínimo 3 caracteres)
-    if (filters.comentario && filters.comentario.length >= 3) {
-      if (!transaction.comentario.toLowerCase().includes(filters.comentario.toLowerCase())) return false;
+    // Filtro por comentario (mínimo 2 caracteres, tolerante: palabras en cualquier orden y sin acentos)
+    if (filters.comentario && filters.comentario.trim().length >= 2) {
+      const normalize = (s: string) =>
+        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9ñ]+/g, ' ').trim();
+      const haystack = normalize(transaction.comentario);
+      const terms = normalize(filters.comentario).split(' ').filter(Boolean);
+      if (!terms.every(term => haystack.includes(term))) return false;
     }
+
     
     // Filtro por monto mínimo
     if (filters.minAmount && filters.minAmount !== '') {
@@ -1341,13 +1346,13 @@ export const TransactionsManager = ({
               <Input
                 id="filter-comentario"
                 type="text"
-                placeholder="Buscar por comentario (min. 3 letras)"
+                placeholder="Buscar por comentario (min. 2 letras)"
                 value={filters.comentario}
                 onChange={(e) => setFilters(prev => ({ ...prev, comentario: e.target.value }))}
               />
-              {filters.comentario.length > 0 && filters.comentario.length < 3 && (
+              {filters.comentario.trim().length > 0 && filters.comentario.trim().length < 2 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Mínimo 3 caracteres para filtrar
+                  Mínimo 2 caracteres para filtrar
                 </p>
               )}
             </div>
