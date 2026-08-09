@@ -1,0 +1,2 @@
+ALTER TABLE public.subscription_services DROP CONSTRAINT IF EXISTS subscription_services_frecuencia_check;
+ALTER TABLE public.subscription_services ADD CONSTRAINT subscription_services_frecuencia_check CHECK (frecuencia = ANY (ARRAY['Semanal'::text,'Mensual'::text,'Bimestral'::text,'Trimestral'::text,'Semestral'::text,'Anual'::text,'Irregular'::text]));
