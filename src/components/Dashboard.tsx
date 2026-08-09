@@ -9,8 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { DashboardMetrics } from '@/types/finance';
 import { TrendingUp, TrendingDown, Info, Calendar } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart, ReferenceLine } from 'recharts';
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
@@ -167,6 +167,7 @@ interface DashboardProps {
 
 export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', transactions = [], accounts = [] }: DashboardProps) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>(currencyCode as 'MXN' | 'USD' | 'EUR');
   const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
   const { t } = useLanguage();
@@ -323,6 +324,23 @@ const CategoryItem = ({
   const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth);
   const [selectedMonthYear, setSelectedMonthYear] = useState<number>(defaultMonthYear);
   const [selectedCategoryMonth, setSelectedCategoryMonth] = useState<number | null>(null); // null = todos los 12 meses
+
+  // Restaurar vista del Top 10 al volver desde el detalle de transacciones
+  useEffect(() => {
+    const expandCat = searchParams.get('expandCat');
+    if (!expandCat) return;
+    const mes = searchParams.get('mes');
+    setSelectedCategoryMonth(mes !== null && mes !== '' ? parseInt(mes) : null);
+    const divisa = searchParams.get('divisa');
+    if (divisa === 'MXN' || divisa === 'USD' || divisa === 'EUR') setSelectedCurrency(divisa);
+    setOpenCollapsibles(prev => ({ ...prev, [`cat-${expandCat}`]: true }));
+    const timer = setTimeout(() => {
+      document.getElementById('top10-categorias')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchParams]);
+
+
 
   // Años disponibles
   const availableYears = useMemo(() => {
@@ -952,7 +970,7 @@ const CategoryItem = ({
       </div>
 
       {/* 2. TOP 10 CATEGORÍAS - ÚLTIMOS 12 MESES */}
-      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+      <Card id="top10-categorias" className="border-primary/20 hover:border-primary/40 transition-all duration-300 scroll-mt-20">
         <CardHeader>
           <div className="flex flex-col gap-4">
             <CardTitle className="text-center">Top 10 Categorías de Gastos</CardTitle>

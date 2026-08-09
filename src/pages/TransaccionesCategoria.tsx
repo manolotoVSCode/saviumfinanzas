@@ -154,6 +154,14 @@ const TransaccionesCategoria = () => {
     ? `${categoria} > ${subcategoria}` 
     : categoria;
 
+  const goToDashboard = () => {
+    const params = new URLSearchParams();
+    if (categoria) params.set('expandCat', categoria);
+    params.set('divisa', divisa);
+    if (mesIndex) params.set('mes', mesIndex);
+    navigate(`/dashboard?${params.toString()}`);
+  };
+
   const goToCategoria = () => {
     const params = new URLSearchParams();
     params.set('categoria', categoria);
@@ -174,7 +182,7 @@ const TransaccionesCategoria = () => {
           <Button 
             variant="outline" 
             size="icon"
-            onClick={() => (subcategoria ? goToCategoria() : navigate('/dashboard'))}
+            onClick={() => (subcategoria ? goToCategoria() : goToDashboard())}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -182,7 +190,7 @@ const TransaccionesCategoria = () => {
           <div className="flex-1">
             {/* Breadcrumb */}
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-              <button onClick={() => navigate('/dashboard')} className="hover:text-foreground transition-colors">
+              <button onClick={() => goToDashboard()} className="hover:text-foreground transition-colors">
                 Dashboard
               </button>
               <span>/</span>
@@ -314,7 +322,7 @@ const TransaccionesCategoria = () => {
         <div className="flex justify-center pb-6">
           <Button 
             variant="outline" 
-            onClick={() => (subcategoria ? goToCategoria() : navigate('/dashboard'))}
+            onClick={() => (subcategoria ? goToCategoria() : goToDashboard())}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
