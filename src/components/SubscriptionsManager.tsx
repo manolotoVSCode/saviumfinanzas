@@ -322,18 +322,29 @@ export const SubscriptionsManager = () => {
 
   const saveEditedName = async () => {
     if (!editingServiceId || !editingName.trim()) return;
-    
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('subscription_services')
         .update({ service_name: editingName.trim() })
-        .eq('id', editingServiceId);
+        .eq('id', editingServiceId)
+        .select('id');
 
       if (error) {
         console.error('Error updating service name:', error);
-        toast.error('Error al actualizar el nombre de la suscripción');
+        toast.error(
+          error.code === '23505'
+            ? 'Ya existe otra suscripción con ese nombre'
+            : `Error al actualizar el nombre: ${error.message}`
+        );
         return;
       }
+
+      if (!data || data.length === 0) {
+        toast.error('No se encontró la suscripción a renombrar. Vuelve a analizar las suscripciones.');
+        return;
+      }
+
 
       setServices(prev => prev.map(service => 
         service.id === editingServiceId 
