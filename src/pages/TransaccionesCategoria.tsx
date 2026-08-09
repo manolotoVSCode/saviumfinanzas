@@ -154,6 +154,14 @@ const TransaccionesCategoria = () => {
     ? `${categoria} > ${subcategoria}` 
     : categoria;
 
+  const goToDashboard = () => {
+    const params = new URLSearchParams();
+    if (categoria) params.set('expandCat', categoria);
+    params.set('divisa', divisa);
+    if (mesIndex) params.set('mes', mesIndex);
+    navigate(`/dashboard?${params.toString()}`);
+  };
+
   const goToCategoria = () => {
     const params = new URLSearchParams();
     params.set('categoria', categoria);
