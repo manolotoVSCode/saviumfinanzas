@@ -154,6 +154,18 @@ const TransaccionesCategoria = () => {
     ? `${categoria} > ${subcategoria}` 
     : categoria;
 
+  const goToCategoria = () => {
+    const params = new URLSearchParams();
+    params.set('categoria', categoria);
+    params.set('divisa', divisa);
+    params.set('periodo', periodo);
+    if (mesIndex) params.set('mes', mesIndex);
+    if (monthNum) params.set('monthNum', monthNum);
+    if (yearNum) params.set('yearNum', yearNum);
+    params.set('tipo', tipo);
+    navigate(`/transacciones-categoria?${params.toString()}`);
+  };
+
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
@@ -162,12 +174,30 @@ const TransaccionesCategoria = () => {
           <Button 
             variant="outline" 
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => (subcategoria ? goToCategoria() : navigate('/dashboard'))}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+              <button onClick={() => navigate('/dashboard')} className="hover:text-foreground transition-colors">
+                Dashboard
+              </button>
+              <span>/</span>
+              {subcategoria ? (
+                <>
+                  <button onClick={goToCategoria} className="hover:text-foreground transition-colors">
+                    {categoria}
+                  </button>
+                  <span>/</span>
+                  <span className="text-foreground">{subcategoria}</span>
+                </>
+              ) : (
+                <span className="text-foreground">{categoria}</span>
+              )}
+            </div>
             <h1 className="text-2xl font-bold">{title}</h1>
             <div className="flex items-center gap-2 text-muted-foreground text-sm mt-1">
               <Badge variant="outline">{divisa}</Badge>
