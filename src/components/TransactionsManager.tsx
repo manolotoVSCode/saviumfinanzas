@@ -1346,13 +1346,13 @@ export const TransactionsManager = ({
               <Input
                 id="filter-comentario"
                 type="text"
-                placeholder="Buscar por comentario (min. 3 letras)"
+                placeholder="Buscar por comentario (min. 2 letras)"
                 value={filters.comentario}
                 onChange={(e) => setFilters(prev => ({ ...prev, comentario: e.target.value }))}
               />
-              {filters.comentario.length > 0 && filters.comentario.length < 3 && (
+              {filters.comentario.trim().length > 0 && filters.comentario.trim().length < 2 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Mínimo 3 caracteres para filtrar
+                  Mínimo 2 caracteres para filtrar
                 </p>
               )}
             </div>
