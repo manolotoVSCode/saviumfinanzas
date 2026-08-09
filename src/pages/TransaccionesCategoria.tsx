@@ -314,11 +314,11 @@ const TransaccionesCategoria = () => {
         <div className="flex justify-center pb-6">
           <Button 
             variant="outline" 
-            onClick={() => navigate(-1)}
+            onClick={() => (subcategoria ? goToCategoria() : navigate('/dashboard'))}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Volver al Dashboard
+            {subcategoria ? `Volver a ${categoria}` : 'Volver al Dashboard'}
           </Button>
         </div>
 
