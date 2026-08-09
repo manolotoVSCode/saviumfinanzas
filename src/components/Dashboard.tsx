@@ -325,6 +325,23 @@ const CategoryItem = ({
   const [selectedMonthYear, setSelectedMonthYear] = useState<number>(defaultMonthYear);
   const [selectedCategoryMonth, setSelectedCategoryMonth] = useState<number | null>(null); // null = todos los 12 meses
 
+  // Restaurar vista del Top 10 al volver desde el detalle de transacciones
+  useEffect(() => {
+    const expandCat = searchParams.get('expandCat');
+    if (!expandCat) return;
+    const mes = searchParams.get('mes');
+    setSelectedCategoryMonth(mes !== null && mes !== '' ? parseInt(mes) : null);
+    const divisa = searchParams.get('divisa');
+    if (divisa === 'MXN' || divisa === 'USD' || divisa === 'EUR') setSelectedCurrency(divisa);
+    setOpenCollapsibles(prev => ({ ...prev, [`cat-${expandCat}`]: true }));
+    const timer = setTimeout(() => {
+      document.getElementById('top10-categorias')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchParams]);
+
+
+
   // Años disponibles
   const availableYears = useMemo(() => {
     const years = new Set<number>();
