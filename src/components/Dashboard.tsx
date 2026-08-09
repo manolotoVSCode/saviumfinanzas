@@ -970,7 +970,7 @@ const CategoryItem = ({
       </div>
 
       {/* 2. TOP 10 CATEGORÍAS - ÚLTIMOS 12 MESES */}
-      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+      <Card id="top10-categorias" className="border-primary/20 hover:border-primary/40 transition-all duration-300 scroll-mt-20">
         <CardHeader>
           <div className="flex flex-col gap-4">
             <CardTitle className="text-center">Top 10 Categorías de Gastos</CardTitle>
