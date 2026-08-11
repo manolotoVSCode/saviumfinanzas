@@ -916,6 +916,12 @@ const CategoryItem = ({
                     strokeDasharray="5 5" 
                     strokeWidth={2}
                   />
+                  <ReferenceLine 
+                    y={filteredMetrics.avgBalance} 
+                    stroke="hsl(var(--primary))" 
+                    strokeDasharray="5 5" 
+                    strokeWidth={2}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
