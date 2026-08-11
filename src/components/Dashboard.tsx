@@ -562,7 +562,8 @@ const CategoryItem = ({
       
       tendenciaMensual,
       avgIngresos,
-      avgGastos
+      avgGastos,
+      avgBalance
     };
   };
 
