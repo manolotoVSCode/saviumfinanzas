@@ -535,6 +535,7 @@ const CategoryItem = ({
     const avgGastos = tendenciaMensual.length > 0 
       ? tendenciaMensual.reduce((sum, m) => sum + m.gastos, 0) / tendenciaMensual.length 
       : 0;
+    const avgBalance = avgIngresos - avgGastos;
     
     return {
       // Datos del mes (ingresos sin ajustar porque ya excluyen reembolsos, gastos ajustados)
@@ -561,7 +562,8 @@ const CategoryItem = ({
       
       tendenciaMensual,
       avgIngresos,
-      avgGastos
+      avgGastos,
+      avgBalance
     };
   };
 
@@ -914,6 +916,12 @@ const CategoryItem = ({
                     strokeDasharray="5 5" 
                     strokeWidth={2}
                   />
+                  <ReferenceLine 
+                    y={filteredMetrics.avgBalance} 
+                    stroke="hsl(var(--primary))" 
+                    strokeDasharray="5 5" 
+                    strokeWidth={2}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
@@ -925,6 +933,10 @@ const CategoryItem = ({
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
                 <span>{t('transactions.expense')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--primary))' }}></div>
+                <span>Balance <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgBalance, selectedCurrency)})</span></span>
               </div>
             </div>
           </CardContent>
