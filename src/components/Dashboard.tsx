@@ -934,6 +934,10 @@ const CategoryItem = ({
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
                 <span>{t('transactions.expense')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--primary))' }}></div>
+                <span>Balance <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgBalance, selectedCurrency)})</span></span>
+              </div>
             </div>
           </CardContent>
         </Card>
