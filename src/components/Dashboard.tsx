@@ -535,6 +535,7 @@ const CategoryItem = ({
     const avgGastos = tendenciaMensual.length > 0 
       ? tendenciaMensual.reduce((sum, m) => sum + m.gastos, 0) / tendenciaMensual.length 
       : 0;
+    const avgBalance = avgIngresos - avgGastos;
     
     return {
       // Datos del mes (ingresos sin ajustar porque ya excluyen reembolsos, gastos ajustados)
