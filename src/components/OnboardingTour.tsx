@@ -123,27 +123,61 @@ export const OnboardingTour = ({ active, onComplete }: OnboardingTourProps) => {
   const steps = isMobile ? MOBILE_STEPS : TOUR_STEPS;
   const step = steps[currentStep];
 
-  // Find and measure target element
-  const measureTarget = useCallback(() => {
-    if (!step) return;
+  // Referencia estable a onComplete para no reiniciar los efectos en cada render del padre
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  // Find and measure target element. Returns whether it was found.
+  const measureTarget = useCallback((): boolean => {
+    if (!step) return false;
     const el = document.querySelector(`[data-tour="${step.target}"]`);
     if (el) {
       const rect = el.getBoundingClientRect();
       setTargetRect(rect);
+      return true;
     }
+    return false;
   }, [step]);
 
   useEffect(() => {
     if (!active) return;
-    measureTarget();
+
+    // Si el objetivo no aparece tras varios intentos, cerrar el tour en vez
+    // de dejar la pantalla bloqueada con el fondo oscuro.
+    let attempts = 0;
+    let retryTimer: number | undefined;
+    const tryMeasure = () => {
+      if (measureTarget()) return;
+      attempts += 1;
+      if (attempts >= 5) {
+        onCompleteRef.current();
+        return;
+      }
+      retryTimer = window.setTimeout(tryMeasure, 300);
+    };
+    tryMeasure();
+
     const handleResize = () => measureTarget();
     window.addEventListener('resize', handleResize);
     window.addEventListener('scroll', handleResize, true);
     return () => {
+      if (retryTimer) window.clearTimeout(retryTimer);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleResize, true);
     };
   }, [active, currentStep, measureTarget]);
+
+  // Esc cierra el tour
+  useEffect(() => {
+    if (!active) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCompleteRef.current();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [active]);
 
   // Position tooltip
   useEffect(() => {
