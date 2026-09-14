@@ -62,7 +62,7 @@ const TransactionImporter = ({ accounts, categories, onImportTransactions }: Tra
   const parseAmount = (amountStr: string): number => {
     if (!amountStr || amountStr.trim() === '' || amountStr.trim() === '0') return 0;
     // Remove quotes, spaces, and handle thousands separator (.) and decimal separator (,)
-    let cleanAmount = amountStr
+    const cleanAmount = amountStr
       .replace(/"/g, '')           // Remove quotes
       .replace(/\s/g, '')          // Remove spaces
       .replace(/\./g, '')          // Remove thousands separator (.)

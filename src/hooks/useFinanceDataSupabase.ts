@@ -177,7 +177,7 @@ export const useFinanceDataSupabase = () => {
     gastosPromedioMensual: number
   ) => {
     let score = 0;
-    let detalles: any = {};
+    const detalles: any = {};
     
     // 1. Liquidez (20 puntos)
     const ratioLiquidez = gastosPromedioMensual > 0 ? activos.efectivoBancos / gastosPromedioMensual : 0;

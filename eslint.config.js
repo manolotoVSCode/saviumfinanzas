@@ -24,6 +24,8 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // Código heredado con muchos `any`; se van tipando progresivamente.
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   }
 );

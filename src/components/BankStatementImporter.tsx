@@ -203,7 +203,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     const cleaned = dateStr.trim();
 
     // Numeric DD/MM/YYYY or MM/DD/YYYY (also '-' or '.')
-    const numeric = cleaned.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    const numeric = cleaned.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
     if (numeric) {
       const a = parseInt(numeric[1]);
       const b = parseInt(numeric[2]);
@@ -234,7 +234,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     }
 
     // YYYY-MM-DD or YYYY/MM/DD
-    const yyyymmdd = cleaned.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    const yyyymmdd = cleaned.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
     if (yyyymmdd) {
       return new Date(parseInt(yyyymmdd[1]), parseInt(yyyymmdd[2]) - 1, parseInt(yyyymmdd[3]));
     }
@@ -248,7 +248,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     for (const row of rows) {
       const cell = row?.[dateCol];
       if (!cell) continue;
-      const m = String(cell).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{4}$/);
+      const m = String(cell).trim().match(/^(\d{1,2})[/.-](\d{1,2})[/.-]\d{4}$/);
       if (!m) continue;
       if (parseInt(m[1]) <= 12 && parseInt(m[2]) <= 12) return true;
     }

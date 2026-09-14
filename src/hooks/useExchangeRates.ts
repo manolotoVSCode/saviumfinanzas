@@ -85,7 +85,7 @@ export const useExchangeRates = () => {
   const convertCurrency = useCallback(
     (amount: number, fromCurrency: 'MXN' | 'USD' | 'EUR', toCurrency: 'MXN' | 'USD' | 'EUR'): number => {
       if (fromCurrency === toCurrency) return amount;
-      let amountInMXN = fromCurrency !== 'MXN' ? amount * rates[fromCurrency] : amount;
+      const amountInMXN = fromCurrency !== 'MXN' ? amount * rates[fromCurrency] : amount;
       return toCurrency === 'MXN' ? amountInMXN : amountInMXN / rates[toCurrency];
     },
     [rates]

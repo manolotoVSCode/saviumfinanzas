@@ -403,7 +403,7 @@ export const TransactionsManager = ({
 
   // Ordenar transacciones filtradas
   const getSortedTransactions = () => {
-    let sorted = [...filteredTransactions];
+    const sorted = [...filteredTransactions];
     
     if (sortDirection && sortField) {
       sorted.sort((a, b) => {
@@ -419,12 +419,13 @@ export const TransactionsManager = ({
             valueA = getAccountName(a.cuentaId).toLowerCase();
             valueB = getAccountName(b.cuentaId).toLowerCase();
             break;
-          case 'categoria':
+          case 'categoria': {
             const catA = categories.find(c => c.id === a.subcategoriaId);
             const catB = categories.find(c => c.id === b.subcategoriaId);
             valueA = catA ? `${catA.categoria} - ${catA.subcategoria}`.toLowerCase() : 'zzz';
             valueB = catB ? `${catB.categoria} - ${catB.subcategoria}`.toLowerCase() : 'zzz';
             break;
+          }
           case 'comentario':
             valueA = a.comentario.toLowerCase();
             valueB = b.comentario.toLowerCase();
