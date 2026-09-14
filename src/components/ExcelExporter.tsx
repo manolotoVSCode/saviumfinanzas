@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Transaction, Account, Category } from '@/types/finance';
 import { FileDown } from 'lucide-react';
-import * as XLSX from 'xlsx';
 
 interface ExcelExporterProps {
   transactions: Transaction[];
@@ -66,7 +65,9 @@ export const ExcelExporter = ({ transactions, accounts, categories }: ExcelExpor
     }
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    // xlsx pesa ~400 KB; se carga solo al exportar.
+    const XLSX = await import('xlsx');
     let filteredTransactions = [...transactions];
 
     // Filtrar según el tipo de exportación

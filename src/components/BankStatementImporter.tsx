@@ -17,7 +17,6 @@ import { useClassificationRules } from '@/hooks/useClassificationRules';
 import { usePendings, Pending } from '@/hooks/usePendings';
 import { cn } from '@/lib/utils';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import { Badge } from '@/components/ui/badge';
 
 
@@ -571,7 +570,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     return d;
   }
 
-  function parseExcelContent(data: ArrayBuffer, formatHint: 'auto' | 'DMY' | 'MDY' = 'auto'): { rows: ParsedRow[]; ambiguous: boolean } {
+  async function parseExcelContent(data: ArrayBuffer, formatHint: 'auto' | 'DMY' | 'MDY' = 'auto'): Promise<{ rows: ParsedRow[]; ambiguous: boolean }> {
+    // xlsx pesa ~400 KB; se carga solo cuando se importa un Excel.
+    const XLSX = await import('xlsx');
     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, dateNF: 'dd/mm/yyyy' }) as unknown[][];
@@ -753,7 +754,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     let result: { rows: ParsedRow[]; ambiguous: boolean };
     if (isExcel) {
       const buffer = await file.arrayBuffer();
-      result = parseExcelContent(buffer, hint);
+      result = await parseExcelContent(buffer, hint);
     } else {
       const text = await file.text();
       result = parseCSVContent(text, hint);
