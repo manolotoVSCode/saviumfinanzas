@@ -59,4 +59,4 @@ npx cap open ios      # o android
 
 ## Notas de diseño
 
-En `.lovable/memory/` se conservan las decisiones de negocio y de UI del proyecto (formato de números, lógica de reembolsos, reglas de visibilidad de inversiones, etc.). Consúltalas antes de modificar cálculos financieros.
+En `docs/` se conservan las decisiones de negocio y de UI del proyecto (formato de números, lógica de reembolsos, reglas de visibilidad de inversiones, etc.). Consúltalas antes de modificar cálculos financieros.

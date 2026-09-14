@@ -109,7 +109,7 @@ const Auth = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-center gap-4">
               <img 
-                src="/lovable-uploads/b1b386d1-090e-4ac6-8e0d-e1487fce2a5a.png" 
+                src="/images/logo-auth.png" 
                 alt="Savium"
                 className="h-14 w-14"
               />
@@ -188,7 +188,7 @@ const Auth = () => {
               <div className="flex justify-center lg:hidden">
                 <div className="flex items-center gap-3">
                   <img 
-                    src="/lovable-uploads/b1b386d1-090e-4ac6-8e0d-e1487fce2a5a.png" 
+                    src="/images/logo-auth.png" 
                     alt="Savium"
                     className="h-11 w-11"
                   />
