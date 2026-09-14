@@ -31,7 +31,7 @@ Otros scripts:
 
 ## Configuración
 
-El cliente de Supabase está en `src/integrations/supabase/client.ts`. Las variables de `.env` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`) usan la clave *publishable* (anon), que es pública por diseño; la seguridad se apoya en las políticas RLS de la base de datos.
+El cliente de Supabase (`src/integrations/supabase/client.ts`) lee `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` de `.env`. Ese archivo se versiona a propósito: la clave *publishable* (anon) es pública por diseño y el build de GitHub Pages la necesita; la seguridad se apoya en las políticas RLS de la base de datos. Para sobrescribir valores en local usa `.env.local` (ignorado por git).
 
 ## Backend (Supabase)
 
