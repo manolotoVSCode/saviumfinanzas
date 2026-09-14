@@ -1,73 +1,62 @@
-# Welcome to your Lovable project
+# Savium · Finanzas personales
 
-## Project info
+Aplicación web de finanzas personales: cuentas, transacciones, categorías, inversiones, criptomonedas, pendientes (CxP/CxC), suscripciones, reglas de clasificación e importación de extractos bancarios.
 
-**URL**: https://lovable.dev/projects/8fc59cc6-444d-4d62-a0eb-07a2d8e07310
+## Stack
 
-## How can I edit this code?
+- [Vite](https://vitejs.dev) + [React 18](https://react.dev) + TypeScript
+- [shadcn/ui](https://ui.shadcn.com) + [Tailwind CSS](https://tailwindcss.com)
+- [Supabase](https://supabase.com) (Postgres, Auth, Edge Functions)
+- [TanStack Query](https://tanstack.com/query) para datos remotos
+- [Capacitor](https://capacitorjs.com) para empaquetar como app iOS/Android
 
-There are several ways of editing your application.
+## Desarrollo local
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/8fc59cc6-444d-4d62-a0eb-07a2d8e07310) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Requisitos: Node.js 20+ y npm.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+La app arranca en `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Otros scripts:
 
-**Use GitHub Codespaces**
+| Comando           | Descripción                          |
+| ----------------- | ------------------------------------ |
+| `npm run build`   | Build de producción en `dist/`       |
+| `npm run preview` | Sirve el build de producción         |
+| `npm run lint`    | ESLint sobre todo el proyecto        |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Configuración
 
-## What technologies are used for this project?
+El cliente de Supabase está en `src/integrations/supabase/client.ts`. Las variables de `.env` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`) usan la clave *publishable* (anon), que es pública por diseño; la seguridad se apoya en las políticas RLS de la base de datos.
 
-This project is built with:
+## Backend (Supabase)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- `supabase/migrations/` — esquema de la base de datos y políticas RLS.
+- `supabase/functions/` — Edge Functions (Deno):
+  - `admin-create-user` — alta de usuarios desde el panel de administración.
+  - `analyze-subscriptions` — detección de suscripciones recurrentes.
+  - `crypto-prices` — precios de criptomonedas.
+  - `send-welcome-email` — email de bienvenida (requiere `RESEND_API_KEY`).
+  - `keepalive` — ping diario para evitar que el proyecto se pause.
 
-## How can I deploy this project?
+Los secretos de las funciones (`SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, etc.) se configuran en el dashboard de Supabase.
 
-Simply open [Lovable](https://lovable.dev/projects/8fc59cc6-444d-4d62-a0eb-07a2d8e07310) and click on Share -> Publish.
+## Despliegue
 
-## Can I connect a custom domain to my Lovable project?
+Cada push a `main` ejecuta `.github/workflows/static.yml`, que compila el proyecto y lo publica en GitHub Pages. La app usa `HashRouter`, por lo que no necesita reglas de reescritura en el servidor.
 
-Yes, you can!
+## App móvil
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```sh
+npm run build
+npx cap sync
+npx cap open ios      # o android
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Notas de diseño
+
+En `.lovable/memory/` se conservan las decisiones de negocio y de UI del proyecto (formato de números, lógica de reembolsos, reglas de visibilidad de inversiones, etc.). Consúltalas antes de modificar cálculos financieros.
