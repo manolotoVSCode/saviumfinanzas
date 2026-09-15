@@ -12,6 +12,7 @@ const changelog: ChangelogEntry[] = [
     version: '7.0',
     date: 'Septiembre 2026',
     changes: [
+      { icon: <BarChart3 className="h-4 w-4" />, text: 'Informe de Patrimonio Neto: evolución mensual de activos, pasivos y patrimonio reconstruida desde los movimientos', type: 'feature' },
       { icon: <Zap className="h-4 w-4" />, text: 'Una sola caché de datos compartida por todas las pantallas: cambiar de página ya no vuelve a descargar todo', type: 'improvement' },
       { icon: <Shield className="h-4 w-4" />, text: 'Tests automáticos de los cálculos financieros (saldos, reembolsos, divisas, activos y pasivos)', type: 'improvement' },
       { icon: <Users className="h-4 w-4" />, text: 'App de un solo usuario: fuera gestión de usuarios, datos de muestra, tour de bienvenida, términos y "Acerca de"', type: 'improvement' },

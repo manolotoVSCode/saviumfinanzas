@@ -3,6 +3,7 @@ import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { MonthlyIncomeComparison } from '@/components/MonthlyIncomeComparison';
 import { MonthlyExpenseComparison } from '@/components/MonthlyExpenseComparison';
+import { NetWorthHistoryReport } from '@/components/NetWorthHistoryReport';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Informes = () => {
@@ -39,6 +40,9 @@ const Informes = () => {
             <TabsTrigger value="comparativo-gastos" className="flex-1 min-w-[160px] text-xs sm:text-sm px-3 py-2">
               Comparativo de Gastos
             </TabsTrigger>
+            <TabsTrigger value="patrimonio" className="flex-1 min-w-[160px] text-xs sm:text-sm px-3 py-2">
+              Patrimonio Neto
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="comparativo-ingresos" className="space-y-4">
@@ -53,6 +57,14 @@ const Informes = () => {
             <MonthlyExpenseComparison
               transactions={financeData.transactions}
               categories={financeData.categories}
+              formatCurrency={formatCurrency}
+            />
+          </TabsContent>
+
+          <TabsContent value="patrimonio" className="space-y-4">
+            <NetWorthHistoryReport
+              accounts={financeData.accounts}
+              transactions={financeData.transactions}
               formatCurrency={formatCurrency}
             />
           </TabsContent>
