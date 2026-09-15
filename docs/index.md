@@ -11,7 +11,11 @@ Supabase keep-alive daily cron 'keepalive-edge-ping' via pg_net prevents project
 Dark mode disabled — user rejected it. Do not re-add.
 Desktop: sidebar nav. Mobile: bottom bar nav.
 All currency conversions use user's divisa_preferida (from profile), never hardcoded MXN.
-Single-user app: no user management, sample data, onboarding tour or terms page (removed 2026-09-14). SIN ASIGNAR category is locked.
+Single-user app: no user management, sample data, onboarding tour, terms, "about" or language selector (removed 2026-09-14; Spanish only). SIN ASIGNAR category is locked.
+No budgets: the user explicitly does not want budgeting features. CxP covers upcoming large expenses.
+Data layer: useFinanceDataSupabase is backed by TanStack Query (one shared cache per session, keys prefixed by user id, 5-min staleTime). Pure calculations live in src/lib/finance and are covered by vitest (`npm test`).
+App version shown in the sidebar = first entry of src/components/Changelog.tsx; add a changelog entry (and bump) with every push that changes behavior.
+PWA via vite-plugin-pwa: precache app shell only, autoUpdate, disabled in dev.
 
 ## Memories
 - **Sold Property Logic** — Sets balance to 0, disables form, hides from reports
@@ -31,4 +35,5 @@ Single-user app: no user management, sample data, onboarding tour or terms page 
 - **Investments Chart Data** — Pie chart uses 'Saldo Actual' converted to preferred currency
 - **Classification Rules** — Auto-classification rules engine with exact/contains matching and drill-down UI
 - **Preferred Currency** — useAppConfig reads divisa_preferida, all calculations convert to it
+- **Net Worth History** — Informes › Patrimonio Neto reconstructs monthly activos/pasivos/patrimonio from saldoInicial + transactions (src/lib/finance/netWorthHistory.ts); same account classification as the dashboard, current FX rates. Not shown on the dashboard by user request. Table financial_health_history is unused.
 - [Investments Module](finance/investments-module.md) — Editable investment types catalog, separate inversiones table, valuations & payouts
