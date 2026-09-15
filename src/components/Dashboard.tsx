@@ -11,7 +11,6 @@ import { TrendingUp, TrendingDown, Info, Calendar } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart, ReferenceLine } from 'recharts';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
 import { DashboardDonutChart } from '@/components/dashboard/DashboardDonutChart';
@@ -170,7 +169,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   const [searchParams] = useSearchParams();
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>(currencyCode as 'MXN' | 'USD' | 'EUR');
   const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
-  const { t } = useLanguage();
   const isMobile = useIsMobile();
 
 // Componente para subcategoría con hover state
@@ -801,17 +799,17 @@ const CategoryItem = ({
   const getFinancialAdvice = (nivel: string, score: number) => {
     switch (nivel) {
       case 'Excelente':
-        return t('dashboard.advice.excellent');
+        return 'Mantén tu disciplina financiera y considera diversificar más tus inversiones para optimizar el rendimiento a largo plazo.';
       case 'Buena':
-        return t('dashboard.advice.good');
+        return 'Aumenta tu fondo de emergencia a 6 meses de gastos y considera incrementar tus inversiones mensuales en un 10%.';
       case 'Regular':
-        return t('dashboard.advice.regular');
+        return 'Enfócate en reducir gastos innecesarios y destina al menos 20% de tus ingresos al ahorro e inversión.';
       case 'Mejorable':
-        return t('dashboard.advice.improvable');
+        return 'Prioriza pagar deudas de alta tasa de interés y crea un presupuesto detallado para controlar mejor tus gastos.';
       case 'Crítica':
-        return t('dashboard.advice.critical');
+        return 'Busca asesoría financiera profesional, consolida tus deudas y considera fuentes adicionales de ingresos.';
       default:
-        return t('dashboard.advice.default');
+        return 'Evalúa tu situación financiera y establece metas claras de ahorro e inversión.';
     }
   };
 
@@ -852,7 +850,7 @@ const CategoryItem = ({
       {!isMobile ? (
         <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-center">{t('dashboard.income_vs_expenses')} - Últimos 12 Meses<br className="sm:hidden" /><strong className="block sm:inline"> {selectedCurrency}</strong></CardTitle>
+            <CardTitle className="text-center">Ingresos vs Gastos - Últimos 12 Meses<br className="sm:hidden" /><strong className="block sm:inline"> {selectedCurrency}</strong></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -875,7 +873,7 @@ const CategoryItem = ({
                   <Tooltip 
                     formatter={(value: any, name: string) => [
                       formatCurrencyConsistent(Number(value), selectedCurrency), 
-                      name === 'ingresos' ? t('transactions.income') : name === 'gastos' ? t('transactions.expense') : 'Balance'
+                      name === 'ingresos' ? 'Ingreso' : name === 'gastos' ? 'Gasto' : 'Balance'
                     ]}
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                     contentStyle={{ 
@@ -928,11 +926,11 @@ const CategoryItem = ({
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-4 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
-                <span>{t('transactions.income')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)})</span></span>
+                <span>Ingreso <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)})</span></span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
-                <span>{t('transactions.expense')} <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
+                <span>Gasto <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--primary))' }}></div>
@@ -950,12 +948,12 @@ const CategoryItem = ({
             <div className="flex justify-around text-sm">
               <div className="text-center">
                 <div className="w-3 h-3 rounded mx-auto mb-1" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
-                <p className="text-muted-foreground text-xs">{t('transactions.income')}</p>
+                <p className="text-muted-foreground text-xs">Ingreso</p>
                 <p className="font-bold text-success">{formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)}</p>
               </div>
               <div className="text-center">
                 <div className="w-3 h-3 rounded mx-auto mb-1" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
-                <p className="text-muted-foreground text-xs">{t('transactions.expense')}</p>
+                <p className="text-muted-foreground text-xs">Gasto</p>
                 <p className="font-bold text-destructive">{formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)}</p>
               </div>
             </div>
@@ -1041,7 +1039,7 @@ const CategoryItem = ({
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
             <CardTitle className="text-success">
-              {t('dashboard.assets')}
+              ACTIVOS
             </CardTitle>
             <span className="text-2xl font-bold text-success">{formatCurrencyTotals(metrics.activos.total, 'MXN')}</span>
           </div>
@@ -1129,7 +1127,7 @@ const CategoryItem = ({
                                 <div className="flex justify-between items-center cursor-pointer">
                                   <div className="flex items-center gap-2">
                                     <ChevronDown className="h-4 w-4 text-success transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                    <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.cash_banks')}</span>
+                                    <span className="text-sm font-semibold text-muted-foreground">Efectivo y Bancos</span>
                                   </div>
                                   <span className="font-bold text-success">{formatNumberOnly(activos.efectivoBancos)} {moneda}</span>
                                 </div>
@@ -1162,7 +1160,7 @@ const CategoryItem = ({
                                 <div className="flex justify-between items-center cursor-pointer">
                                   <div className="flex items-center gap-2">
                                     <ChevronDown className="h-4 w-4 text-primary transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                    <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.investments_label')}</span>
+                                    <span className="text-sm font-semibold text-muted-foreground">Inversiones</span>
                                   </div>
                                   <span className="font-bold text-primary">{formatNumberOnly(activos.inversiones)} {moneda}</span>
                                 </div>
@@ -1263,7 +1261,7 @@ const CategoryItem = ({
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
             <CardTitle className="text-destructive">
-              {t('dashboard.liabilities')}
+              PASIVOS
             </CardTitle>
             <span className="text-2xl font-bold text-destructive">{formatCurrencyTotals(metrics.pasivos.total, 'MXN')}</span>
           </div>
@@ -1335,7 +1333,7 @@ const CategoryItem = ({
                                 <div className="flex justify-between items-center cursor-pointer">
                                   <div className="flex items-center gap-2">
                                     <ChevronDown className="h-4 w-4 text-destructive transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                    <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.credit_cards')}</span>
+                                    <span className="text-sm font-semibold text-muted-foreground">Tarjetas de Crédito</span>
                                   </div>
                                   <span className="font-bold text-destructive">{formatNumberOnly(pasivos.tarjetasCredito)} {moneda}</span>
                                 </div>
@@ -1368,7 +1366,7 @@ const CategoryItem = ({
                                 <div className="flex justify-between items-center cursor-pointer">
                                   <div className="flex items-center gap-2">
                                     <ChevronDown className="h-4 w-4 text-warning transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                    <span className="text-sm font-semibold text-muted-foreground">{t('dashboard.mortgage')}</span>
+                                    <span className="text-sm font-semibold text-muted-foreground">Hipoteca</span>
                                   </div>
                                   <span className="font-bold text-warning">{formatNumberOnly(pasivos.hipoteca)} {moneda}</span>
                                 </div>

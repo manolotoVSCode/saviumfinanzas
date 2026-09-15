@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { LanguageProvider } from "@/contexts/LanguageContext";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
@@ -44,111 +43,109 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <LanguageProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <HashRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={
-                  <ProtectedRoute fallbackPath="/auth">
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/transacciones" element={
-                  <ProtectedRoute>
-                    <Transacciones />
-                  </ProtectedRoute>
-                } />
-                <Route path="/inversiones" element={
-                  <ProtectedRoute>
-                    <Inversiones />
-                  </ProtectedRoute>
-                } />
-                <Route path="/informes" element={
-                  <ProtectedRoute>
-                    <Informes />
-                  </ProtectedRoute>
-                } />
-                <Route path="/configuracion" element={
-                  <ProtectedRoute>
-                    <Configuracion />
-                  </ProtectedRoute>
-                } />
-                <Route path="/transacciones-categoria" element={
-                  <ProtectedRoute>
-                    <TransaccionesCategoria />
-                  </ProtectedRoute>
-                } />
-                <Route path="/reglas-clasificacion" element={
-                  <ProtectedRoute>
-                    <ReglasClasificacion />
-                  </ProtectedRoute>
-                } />
-                <Route path="/cuentas" element={
-                  <ProtectedRoute>
-                    <Cuentas />
-                  </ProtectedRoute>
-                } />
-                <Route path="/categorias" element={
-                  <ProtectedRoute>
-                    <Categorias />
-                  </ProtectedRoute>
-                } />
-                <Route path="/seguimiento-gastos" element={
-                  <ProtectedRoute>
-                    <SeguimientoGastos />
-                  </ProtectedRoute>
-                } />
-                <Route path="/seguimiento-ingresos" element={
-                  <ProtectedRoute>
-                    <SeguimientoIngresos />
-                  </ProtectedRoute>
-                } />
-                <Route path="/pendientes" element={
-                  <ProtectedRoute>
-                    <Pendientes />
-                  </ProtectedRoute>
-                } />
-                <Route path="/suscripciones" element={
-                  <ProtectedRoute>
-                    <Suscripciones />
-                  </ProtectedRoute>
-                } />
-                <Route path="/ingresos-recurrentes" element={
-                  <ProtectedRoute>
-                    <IngresosRecurrentes />
-                  </ProtectedRoute>
-                } />
-                <Route path="/pagos-anuales" element={
-                  <ProtectedRoute>
-                    <PagosAnuales />
-                  </ProtectedRoute>
-                } />
-                <Route path="/cxp" element={
-                  <ProtectedRoute>
-                    <CxP />
-                  </ProtectedRoute>
-                } />
-                <Route path="/changelog" element={
-                  <ProtectedRoute>
-                    <ChangelogPage />
-                  </ProtectedRoute>
-                } />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </HashRouter>
-        </TooltipProvider>
-      </LanguageProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <HashRouter>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={
+                <ProtectedRoute fallbackPath="/auth">
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/transacciones" element={
+                <ProtectedRoute>
+                  <Transacciones />
+                </ProtectedRoute>
+              } />
+              <Route path="/inversiones" element={
+                <ProtectedRoute>
+                  <Inversiones />
+                </ProtectedRoute>
+              } />
+              <Route path="/informes" element={
+                <ProtectedRoute>
+                  <Informes />
+                </ProtectedRoute>
+              } />
+              <Route path="/configuracion" element={
+                <ProtectedRoute>
+                  <Configuracion />
+                </ProtectedRoute>
+              } />
+              <Route path="/transacciones-categoria" element={
+                <ProtectedRoute>
+                  <TransaccionesCategoria />
+                </ProtectedRoute>
+              } />
+              <Route path="/reglas-clasificacion" element={
+                <ProtectedRoute>
+                  <ReglasClasificacion />
+                </ProtectedRoute>
+              } />
+              <Route path="/cuentas" element={
+                <ProtectedRoute>
+                  <Cuentas />
+                </ProtectedRoute>
+              } />
+              <Route path="/categorias" element={
+                <ProtectedRoute>
+                  <Categorias />
+                </ProtectedRoute>
+              } />
+              <Route path="/seguimiento-gastos" element={
+                <ProtectedRoute>
+                  <SeguimientoGastos />
+                </ProtectedRoute>
+              } />
+              <Route path="/seguimiento-ingresos" element={
+                <ProtectedRoute>
+                  <SeguimientoIngresos />
+                </ProtectedRoute>
+              } />
+              <Route path="/pendientes" element={
+                <ProtectedRoute>
+                  <Pendientes />
+                </ProtectedRoute>
+              } />
+              <Route path="/suscripciones" element={
+                <ProtectedRoute>
+                  <Suscripciones />
+                </ProtectedRoute>
+              } />
+              <Route path="/ingresos-recurrentes" element={
+                <ProtectedRoute>
+                  <IngresosRecurrentes />
+                </ProtectedRoute>
+              } />
+              <Route path="/pagos-anuales" element={
+                <ProtectedRoute>
+                  <PagosAnuales />
+                </ProtectedRoute>
+              } />
+              <Route path="/cxp" element={
+                <ProtectedRoute>
+                  <CxP />
+                </ProtectedRoute>
+              } />
+              <Route path="/changelog" element={
+                <ProtectedRoute>
+                  <ChangelogPage />
+                </ProtectedRoute>
+              } />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </HashRouter>
+      </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

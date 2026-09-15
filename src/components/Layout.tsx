@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt } from 'lucide-react';
 import { usePendings } from '@/hooks/usePendings';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { profile } = useUserProfile();
-  const { t } = useLanguage();
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
   const { activeCount, overdueCount } = usePendings();
@@ -40,30 +38,30 @@ const Layout = ({ children }: LayoutProps) => {
   }, []);
 
   const mainNavItems = [
-    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
-    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions') },
-    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments') },
+    { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
+    { path: '/transacciones', icon: ArrowUpDown, label: 'Transacciones' },
+    { path: '/inversiones', icon: TrendingUp, label: 'Inversiones' },
     { path: '/pendientes', icon: Clock, label: 'Cuentas x Cobrar', badge: overdueCount || undefined, dotCount: activeCount },
     { path: '/cxp', icon: Receipt, label: 'Cuentas x Pagar' },
     { path: '/suscripciones', icon: CreditCard, label: 'Suscripciones' },
     { path: '/ingresos-recurrentes', icon: Repeat, label: 'Ingresos Recurrentes' },
     { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales' },
-    { path: '/informes', icon: FileText, label: t('nav.reports') },
+    { path: '/informes', icon: FileText, label: 'Informes Financieros' },
   ];
 
   const configNavItems = [
     { path: '/cuentas', icon: Wallet, label: 'Cuentas' },
     { path: '/categorias', icon: Tag, label: 'Categorías' },
     { path: '/reglas-clasificacion', icon: Filter, label: 'Reglas' },
-    { path: '/configuracion', icon: Settings, label: t('nav.settings') },
+    { path: '/configuracion', icon: Settings, label: 'Configuración' },
   ];
 
   const mobileNavItems = [
-    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
-    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions') },
-    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments') },
-    { path: '/informes', icon: FileText, label: t('nav.reports') },
-    { path: '/configuracion', icon: Settings, label: t('nav.settings') },
+    { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
+    { path: '/transacciones', icon: ArrowUpDown, label: 'Transacciones' },
+    { path: '/inversiones', icon: TrendingUp, label: 'Inversiones' },
+    { path: '/informes', icon: FileText, label: 'Informes Financieros' },
+    { path: '/configuracion', icon: Settings, label: 'Configuración' },
   ];
 
   // Desktop layout with sidebar
@@ -156,7 +154,7 @@ const Layout = ({ children }: LayoutProps) => {
               className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
             >
               <LogOut className="h-4 w-4" />
-              {t('settings.logout')}
+              Cerrar Sesión
             </Button>
           </div>
         </aside>
