@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
+import { APP_VERSION } from '@/components/Changelog';
 import { GlobalSearch, GlobalSearchTrigger } from '@/components/GlobalSearch';
 
 interface LayoutProps {
@@ -136,7 +137,7 @@ const Layout = ({ children }: LayoutProps) => {
                 <p className="text-sm font-medium truncate">
                   {profile.nombre} {profile.apellidos}
                 </p>
-                <p className="text-xs text-muted-foreground">v6.6 · Proyecto personal de MT</p>
+                <p className="text-xs text-muted-foreground">v{APP_VERSION} · Proyecto personal de MT</p>
               </div>
             )}
             <div className="flex items-center gap-3 px-3">

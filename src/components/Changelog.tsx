@@ -9,6 +9,18 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '7.0',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Zap className="h-4 w-4" />, text: 'Una sola caché de datos compartida por todas las pantallas: cambiar de página ya no vuelve a descargar todo', type: 'improvement' },
+      { icon: <Shield className="h-4 w-4" />, text: 'Tests automáticos de los cálculos financieros (saldos, reembolsos, divisas, activos y pasivos)', type: 'improvement' },
+      { icon: <Users className="h-4 w-4" />, text: 'App de un solo usuario: fuera gestión de usuarios, datos de muestra, tour de bienvenida, términos y "Acerca de"', type: 'improvement' },
+      { icon: <Globe className="h-4 w-4" />, text: 'Solo en español; pantalla de acceso reducida al formulario', type: 'improvement' },
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Limpieza de ~4.000 líneas de código sin uso', type: 'improvement' },
+      { icon: <Bug className="h-4 w-4" />, text: 'El título "Ingresos vs Gastos" repetía "Últimos 12 Meses"', type: 'fix' },
+    ],
+  },
+  {
     version: '6.6',
     date: 'Abril 2026',
     changes: [
@@ -129,6 +141,9 @@ const typeBadge = (type: 'feature' | 'fix' | 'improvement') => {
     case 'improvement': return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">Mejora</Badge>;
   }
 };
+
+/** Versión mostrada en la app: siempre la de la entrada más reciente del changelog. */
+export const APP_VERSION = changelog[0].version;
 
 export const Changelog = () => {
   return (
