@@ -4,7 +4,6 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { MonthlyIncomeComparison } from '@/components/MonthlyIncomeComparison';
 import { MonthlyExpenseComparison } from '@/components/MonthlyExpenseComparison';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SampleDataBanner } from '@/components/SampleDataBanner';
 
 const Informes = () => {
   const financeData = useFinanceDataSupabase();
@@ -26,7 +25,6 @@ const Informes = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <SampleDataBanner />
 
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">Informes Financieros</h1>

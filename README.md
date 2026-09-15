@@ -1,6 +1,6 @@
 # Savium · Finanzas personales
 
-Aplicación web de finanzas personales: cuentas, transacciones, categorías, inversiones, criptomonedas, pendientes (CxP/CxC), suscripciones, reglas de clasificación e importación de extractos bancarios.
+Aplicación web de finanzas personales de un solo usuario: cuentas, transacciones, categorías, inversiones, criptomonedas, pendientes (CxP/CxC), suscripciones, reglas de clasificación e importación de extractos bancarios.
 
 ## Stack
 
@@ -37,13 +37,11 @@ El cliente de Supabase (`src/integrations/supabase/client.ts`) lee `VITE_SUPABAS
 
 - `supabase/migrations/` — esquema de la base de datos y políticas RLS.
 - `supabase/functions/` — Edge Functions (Deno):
-  - `admin-create-user` — alta de usuarios desde el panel de administración.
   - `analyze-subscriptions` — detección de suscripciones recurrentes.
   - `crypto-prices` — precios de criptomonedas.
-  - `send-welcome-email` — email de bienvenida (requiere `RESEND_API_KEY`).
   - `keepalive` — ping diario para evitar que el proyecto se pause.
 
-Los secretos de las funciones (`SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, etc.) se configuran en el dashboard de Supabase.
+Los secretos de las funciones se configuran en el dashboard de Supabase.
 
 ## Despliegue
 

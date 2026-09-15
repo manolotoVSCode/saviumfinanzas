@@ -40,30 +40,30 @@ const Layout = ({ children }: LayoutProps) => {
   }, []);
 
   const mainNavItems = [
-    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard'), tourId: 'nav-dashboard' },
-    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions'), tourId: 'nav-transacciones' },
-    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments'), tourId: 'nav-inversiones' },
-    { path: '/pendientes', icon: Clock, label: 'Cuentas x Cobrar', tourId: 'nav-pendientes', badge: overdueCount || undefined, dotCount: activeCount },
-    { path: '/cxp', icon: Receipt, label: 'Cuentas x Pagar', tourId: 'nav-cxp' },
-    { path: '/suscripciones', icon: CreditCard, label: 'Suscripciones', tourId: 'nav-suscripciones' },
-    { path: '/ingresos-recurrentes', icon: Repeat, label: 'Ingresos Recurrentes', tourId: 'nav-ingresos-recurrentes' },
-    { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales', tourId: 'nav-pagos-anuales' },
-    { path: '/informes', icon: FileText, label: t('nav.reports'), tourId: 'nav-informes' },
+    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
+    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions') },
+    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments') },
+    { path: '/pendientes', icon: Clock, label: 'Cuentas x Cobrar', badge: overdueCount || undefined, dotCount: activeCount },
+    { path: '/cxp', icon: Receipt, label: 'Cuentas x Pagar' },
+    { path: '/suscripciones', icon: CreditCard, label: 'Suscripciones' },
+    { path: '/ingresos-recurrentes', icon: Repeat, label: 'Ingresos Recurrentes' },
+    { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales' },
+    { path: '/informes', icon: FileText, label: t('nav.reports') },
   ];
 
   const configNavItems = [
-    { path: '/cuentas', icon: Wallet, label: 'Cuentas', tourId: 'nav-cuentas' },
-    { path: '/categorias', icon: Tag, label: 'Categorías', tourId: 'nav-categorias' },
-    { path: '/reglas-clasificacion', icon: Filter, label: 'Reglas', tourId: 'nav-reglas' },
-    { path: '/configuracion', icon: Settings, label: t('nav.settings'), tourId: 'nav-configuracion' },
+    { path: '/cuentas', icon: Wallet, label: 'Cuentas' },
+    { path: '/categorias', icon: Tag, label: 'Categorías' },
+    { path: '/reglas-clasificacion', icon: Filter, label: 'Reglas' },
+    { path: '/configuracion', icon: Settings, label: t('nav.settings') },
   ];
 
   const mobileNavItems = [
-    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard'), tourId: 'mobile-nav-dashboard' },
-    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions'), tourId: 'mobile-nav-transacciones' },
-    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments'), tourId: 'mobile-nav-inversiones' },
-    { path: '/informes', icon: FileText, label: t('nav.reports'), tourId: 'mobile-nav-informes' },
-    { path: '/configuracion', icon: Settings, label: t('nav.settings'), tourId: 'mobile-nav-configuracion' },
+    { path: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
+    { path: '/transacciones', icon: ArrowUpDown, label: t('nav.transactions') },
+    { path: '/inversiones', icon: TrendingUp, label: t('nav.investments') },
+    { path: '/informes', icon: FileText, label: t('nav.reports') },
+    { path: '/configuracion', icon: Settings, label: t('nav.settings') },
   ];
 
   // Desktop layout with sidebar
@@ -89,10 +89,9 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
 
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {mainNavItems.map(({ path, icon: Icon, label, tourId, badge }: any) => (
+            {mainNavItems.map(({ path, icon: Icon, label, badge }: any) => (
               <button
                 key={path}
-                data-tour={tourId}
                 onClick={() => navigate(path)}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative',
@@ -115,10 +114,9 @@ const Layout = ({ children }: LayoutProps) => {
               <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Configuración
               </p>
-              {configNavItems.map(({ path, icon: Icon, label, tourId }) => (
+              {configNavItems.map(({ path, icon: Icon, label }) => (
                 <button
                   key={path}
-                  data-tour={tourId}
                   onClick={() => navigate(path)}
                   className={cn(
                     'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
@@ -149,13 +147,6 @@ const Layout = ({ children }: LayoutProps) => {
                 className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
               >
                 Changelog
-              </button>
-              <span className="text-[10px] text-muted-foreground/30">·</span>
-              <button
-                onClick={() => navigate('/terminos')}
-                className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-              >
-                Términos
               </button>
             </div>
             <Button
@@ -213,10 +204,9 @@ const Layout = ({ children }: LayoutProps) => {
         {/* BOTTOM NAV */}
         <nav className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
           <div className="grid grid-cols-5 h-full">
-            {mobileNavItems.map(({ path, icon: Icon, label, tourId }) => (
+            {mobileNavItems.map(({ path, icon: Icon, label }) => (
               <button
                 key={path}
-                data-tour={tourId}
                 onClick={() => navigate(path)}
                 className={cn(
                   'flex flex-col items-center justify-center space-y-1 h-full transition-colors',

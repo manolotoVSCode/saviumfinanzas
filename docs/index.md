@@ -11,7 +11,7 @@ Supabase keep-alive daily cron 'keepalive-edge-ping' via pg_net prevents project
 Dark mode disabled — user rejected it. Do not re-add.
 Desktop: sidebar nav. Mobile: bottom bar nav.
 All currency conversions use user's divisa_preferida (from profile), never hardcoded MXN.
-Admin email is manoloto@gmail.com — protected from deletion. SIN ASIGNAR category is locked.
+Single-user app: no user management, sample data, onboarding tour or terms page (removed 2026-09-14). SIN ASIGNAR category is locked.
 
 ## Memories
 - **Sold Property Logic** — Sets balance to 0, disables form, hides from reports
@@ -26,7 +26,7 @@ Admin email is manoloto@gmail.com — protected from deletion. SIN ASIGNAR categ
 - **Investment Visibility** — Hides accounts with zero balance from the Investments tab
 - **Subscription Detection** — Hardcoded pattern list (no AI), dynamic frequency calculation
 - **Income Comparison Report** — Excludes current month, excludes Real Estate sales
-- **Security & Auth Config** — RBAC via user_roles, magic links, JWT for Edge Functions, 10MB limits, is_sample flag
+- **Security & Auth Config** — magic links, JWT for Edge Functions, 10MB limits
 - **Transactions Filter Logic** — Month filter dynamic, uses local dates
 - **Investments Chart Data** — Pie chart uses 'Saldo Actual' converted to preferred currency
 - **Classification Rules** — Auto-classification rules engine with exact/contains matching and drill-down UI

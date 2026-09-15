@@ -2,7 +2,6 @@ import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { MonthlyPaymentsControl } from '@/components/MonthlyPaymentsControl';
-import { SampleDataBanner } from '@/components/SampleDataBanner';
 
 const IngresosRecurrentes = () => {
   const financeData = useFinanceDataSupabase();
@@ -24,7 +23,6 @@ const IngresosRecurrentes = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <SampleDataBanner />
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">Ingresos Recurrentes</h1>
           <p className="text-muted-foreground">Control de pagos e ingresos recurrentes mes a mes</p>

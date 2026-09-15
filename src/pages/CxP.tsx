@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, CreditCard, Repeat, CalendarClock, Landmark, TrendingDown, Wallet } from 'lucide-react';
-import { SampleDataBanner } from '@/components/SampleDataBanner';
 
 type CxPRow = {
   id: string;
@@ -332,7 +331,6 @@ const CxP = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <SampleDataBanner />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>

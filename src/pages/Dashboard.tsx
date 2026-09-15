@@ -2,31 +2,11 @@ import { Dashboard as DashboardComponent } from '@/components/Dashboard';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
-import { SampleDataBanner } from '@/components/SampleDataBanner';
-import { WelcomeGuide } from '@/components/WelcomeGuide';
-import { OnboardingTour, useOnboardingTour } from '@/components/OnboardingTour';
 import { PendingsWidget } from '@/components/dashboard/PendingsWidget';
-import { useEffect, useState } from 'react';
 
 const Dashboard = () => {
   const financeData = useFinanceDataSupabase();
   const { formatCurrency, config } = useAppConfig();
-  const { isCompleted, markCompleted } = useOnboardingTour();
-  const [tourActive, setTourActive] = useState(false);
-
-  // Auto-start tour for new users (first visit)
-  useEffect(() => {
-    if (!financeData.loading && !isCompleted) {
-      // Small delay to let the layout render and measure elements
-      const timer = setTimeout(() => setTourActive(true), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [financeData.loading, isCompleted]);
-
-  const handleTourComplete = () => {
-    setTourActive(false);
-    markCompleted();
-  };
 
   if (financeData.loading) {
     return (
@@ -44,8 +24,6 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="animate-fade-in">
-        <SampleDataBanner />
-        <WelcomeGuide />
         <PendingsWidget />
         <DashboardComponent 
           metrics={financeData.dashboardMetrics} 
@@ -55,7 +33,6 @@ const Dashboard = () => {
           accounts={financeData.accounts}
         />
       </div>
-      <OnboardingTour active={tourActive} onComplete={handleTourComplete} />
     </Layout>
   );
 };

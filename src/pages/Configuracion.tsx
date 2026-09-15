@@ -5,38 +5,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import Layout from '@/components/Layout';
 import { ProfileEditor } from '@/components/ProfileEditor';
-import { AdminUserManagement } from '@/components/AdminUserManagement';
 import { DataAudit } from '@/components/DataAudit';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Settings, LogOut, Trash2, Globe, Search, Wallet, Tag, Filter, Sparkles } from 'lucide-react';
-import { useOnboardingTour, StartTourButton } from '@/components/OnboardingTour';
+import { Settings, LogOut, Trash2, Globe, Search, Wallet, Tag, Filter } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Configuracion = () => {
   const financeData = useFinanceDataSupabase();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
-  const { reset: resetTour } = useOnboardingTour();
-
-  // UI-only admin check — actual access control is enforced server-side via user_roles table
-  const [showAdminUI, setShowAdminUI] = useState(false);
-
-  useEffect(() => {
-    const checkAdminRole = async () => {
-      if (!user) return;
-      const { data, error } = await (await import('@/integrations/supabase/client')).supabase
-        .rpc('is_admin');
-      if (!error) setShowAdminUI(!!data);
-    };
-    checkAdminRole();
-  }, [user]);
   if (financeData.loading) {
     return (
       <Layout>
@@ -71,10 +54,6 @@ const Configuracion = () => {
               <Filter className="h-4 w-4 mr-1" />
               Reglas de Clasificación
             </Button>
-            <StartTourButton onClick={() => {
-              resetTour();
-              navigate('/dashboard');
-            }} />
           </div>
         </div>
 
@@ -141,18 +120,6 @@ const Configuracion = () => {
             />
           </CardContent>
         </Card>
-
-        {/* ADMINISTRACIÓN DE USUARIOS */}
-        {showAdminUI && (
-          <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
-            <CardHeader>
-              <CardTitle>Administrar Usuarios</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminUserManagement />
-            </CardContent>
-          </Card>
-        )}
 
         {/* INFORMACIÓN DE LA APP */}
         <Card className="border-muted/20 hover:border-muted/40 transition-all duration-300">
