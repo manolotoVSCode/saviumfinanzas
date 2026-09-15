@@ -46,6 +46,10 @@ Los secretos de las funciones se configuran en el dashboard de Supabase.
 
 Cada push a `main` ejecuta `.github/workflows/static.yml`, que compila el proyecto y lo publica en GitHub Pages. La app usa `HashRouter`, por lo que no necesita reglas de reescritura en el servidor.
 
+## PWA
+
+La app se sirve como PWA (`vite-plugin-pwa`): manifest en `vite.config.ts`, iconos en `public/icons/`, y un service worker que cachea solo el cascarón de la app (JS/CSS/HTML/iconos) y se actualiza solo con cada despliegue. Los datos siempre van a Supabase. En desarrollo el service worker está desactivado.
+
 ## Notas de diseño
 
 En `docs/` se conservan las decisiones de negocio y de UI del proyecto (formato de números, lógica de reembolsos, reglas de visibilidad de inversiones, etc.). Consúltalas antes de modificar cálculos financieros.
