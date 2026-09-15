@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Layout from '@/components/Layout';
 import { ProfileEditor } from '@/components/ProfileEditor';
@@ -84,36 +83,6 @@ const Configuracion = () => {
               accounts={financeData.accounts}
               categories={financeData.categories}
             />
-          </CardContent>
-        </Card>
-
-        {/* INFORMACIÓN DE LA APP */}
-        <Card className="border-muted/20 hover:border-muted/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Acerca de Savium
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              <span className="text-green-600 font-semibold">Savium</span> es tu aplicación de finanzas personales diseñada para ayudarte a tomar control de tu dinero.
-            </p>
-            
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">Gestión de Transacciones</Badge>
-              <Badge variant="secondary">Gestión de Inversiones</Badge>
-              <Badge variant="secondary">Dashboard Financiero</Badge>
-              <Badge variant="secondary">Gestión de Cuentas</Badge>
-            </div>
-
-            <div className="pt-4 border-t flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Versión 6.6 · Desarrollado por Manuel de la Torre · 2025
-              </p>
-              <Button variant="link" size="sm" className="text-xs" onClick={() => navigate('/changelog')}>
-                Ver changelog →
-              </Button>
-            </div>
           </CardContent>
         </Card>
 

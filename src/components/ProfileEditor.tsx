@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Trash2, Key, Mail } from 'lucide-react';
+import { User, Key, Mail } from 'lucide-react';
 import { DatabaseBackup } from './DatabaseBackup';
 
 const currencies = [
@@ -42,10 +41,9 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const ProfileEditor = () => {
   const { profile, loading, refetch } = useUserProfile();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [updating, setUpdating] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
 
@@ -145,39 +143,6 @@ export const ProfileEditor = () => {
       });
     } finally {
       setChangingPassword(false);
-    }
-  };
-
-  const deleteAccount = async () => {
-    if (!profile) return;
-
-    try {
-      setDeleting(true);
-
-      // Delete all user data
-      await Promise.all([
-        supabase.from('transacciones').delete().eq('user_id', profile.user_id),
-        supabase.from('cuentas').delete().eq('user_id', profile.user_id),
-        supabase.from('categorias').delete().eq('user_id', profile.user_id),
-        supabase.from('profiles').delete().eq('user_id', profile.user_id),
-      ]);
-
-      toast({
-        title: "Cuenta eliminada",
-        description: "Tu cuenta y todos tus datos han sido eliminados",
-      });
-
-      // Sign out user
-      await signOut();
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la cuenta",
-        variant: "destructive"
-      });
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -283,33 +248,6 @@ export const ProfileEditor = () => {
                 Cambiar Contraseña
               </Button>
 
-              {user?.email?.toLowerCase() !== 'manoloto@gmail.com' && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="icon" disabled={deleting}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Eliminar cuenta?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta acción eliminará permanentemente tu cuenta y todos tus datos (transacciones, cuentas, categorías). 
-                      Esta acción no se puede deshacer.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={deleteAccount}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Eliminar Cuenta
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-                </AlertDialog>
-              )}
             </div>
           </form>
         </Form>
