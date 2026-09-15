@@ -8,7 +8,6 @@ Aplicación web de finanzas personales de un solo usuario: cuentas, transaccione
 - [shadcn/ui](https://ui.shadcn.com) + [Tailwind CSS](https://tailwindcss.com)
 - [Supabase](https://supabase.com) (Postgres, Auth, Edge Functions)
 - [TanStack Query](https://tanstack.com/query) para datos remotos
-- [Capacitor](https://capacitorjs.com) para empaquetar como app iOS/Android
 
 ## Desarrollo local
 
@@ -46,14 +45,6 @@ Los secretos de las funciones se configuran en el dashboard de Supabase.
 ## Despliegue
 
 Cada push a `main` ejecuta `.github/workflows/static.yml`, que compila el proyecto y lo publica en GitHub Pages. La app usa `HashRouter`, por lo que no necesita reglas de reescritura en el servidor.
-
-## App móvil
-
-```sh
-npm run build
-npx cap sync
-npx cap open ios      # o android
-```
 
 ## Notas de diseño
 
