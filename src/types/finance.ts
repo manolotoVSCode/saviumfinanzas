@@ -45,6 +45,7 @@ export interface Transaction {
   tarjetahabiente?: string; // Tarjetahabiente para cuentas de tarjeta de crédito
   // campos calculados
   categoria?: string;
+  subcategoria?: string;
   monto: number; // ingreso - gasto
   tipo?: TransactionType;
 }
