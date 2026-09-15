@@ -20,7 +20,6 @@ export type Database = {
           created_at: string
           frecuencia_seguimiento: string | null
           id: string
-          is_sample: boolean | null
           seguimiento_pago: boolean
           subcategoria: string
           tipo: string | null
@@ -32,7 +31,6 @@ export type Database = {
           created_at?: string
           frecuencia_seguimiento?: string | null
           id?: string
-          is_sample?: boolean | null
           seguimiento_pago?: boolean
           subcategoria: string
           tipo?: string | null
@@ -44,7 +42,6 @@ export type Database = {
           created_at?: string
           frecuencia_seguimiento?: string | null
           id?: string
-          is_sample?: boolean | null
           seguimiento_pago?: boolean
           subcategoria?: string
           tipo?: string | null
@@ -164,7 +161,6 @@ export type Database = {
           divisa: string
           fecha_inicio: string | null
           id: string
-          is_sample: boolean | null
           modalidad: string | null
           nombre: string
           rendimiento_bruto: number | null
@@ -184,7 +180,6 @@ export type Database = {
           divisa?: string
           fecha_inicio?: string | null
           id?: string
-          is_sample?: boolean | null
           modalidad?: string | null
           nombre: string
           rendimiento_bruto?: number | null
@@ -204,7 +199,6 @@ export type Database = {
           divisa?: string
           fecha_inicio?: string | null
           id?: string
-          is_sample?: boolean | null
           modalidad?: string | null
           nombre?: string
           rendimiento_bruto?: number | null
@@ -785,37 +779,11 @@ export type Database = {
           },
         ]
       }
-      user_roles: {
-        Row: {
-          created_at: string | null
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      admin_delete_user: {
-        Args: { target_user_id: string }
-        Returns: undefined
-      }
-      clear_sample_data: { Args: { user_uuid: string }; Returns: undefined }
       create_default_classification_rules: {
         Args: { target_user_id: string }
         Returns: undefined
@@ -828,28 +796,8 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
-      get_admin_user_stats: {
-        Args: never
-        Returns: {
-          apellidos: string
-          categorias_count: number
-          created_at: string
-          criptomonedas_count: number
-          cuentas_count: number
-          divisa_preferida: string
-          email: string
-          inversiones_count: number
-          last_transaction_at: string
-          nombre: string
-          transacciones_count: number
-          user_id: string
-        }[]
-      }
-      is_admin: { Args: never; Returns: boolean }
-      user_has_sample_data: { Args: { user_uuid: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user"
       pending_estado: "pendiente" | "cobrado_parcial" | "cobrado" | "cancelado"
       pending_tipo: "reembolso_gasto" | "ingreso_esperado"
     }
@@ -979,7 +927,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
       pending_estado: ["pendiente", "cobrado_parcial", "cobrado", "cancelado"],
       pending_tipo: ["reembolso_gasto", "ingreso_esperado"],
     },
