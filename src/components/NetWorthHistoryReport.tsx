@@ -34,12 +34,14 @@ const Variation = ({ value, percent }: { value: number; percent: number | null }
   const trend = Math.abs(value) < 0.005 ? 'flat' : value > 0 ? 'up' : 'down';
   const color = trend === 'up' ? 'text-success' : trend === 'down' ? 'text-destructive' : 'text-muted-foreground';
   return (
-    <span className={`inline-flex items-center gap-1 ${color}`}>
-      {trend === 'up' && <TrendingUp className="h-4 w-4" />}
-      {trend === 'down' && <TrendingDown className="h-4 w-4" />}
-      {trend === 'flat' && <Minus className="h-4 w-4" />}
-      {value > 0 ? '+' : ''}{formatNumber(value, 0)}
-      {percent !== null && <span className="text-xs">({percent > 0 ? '+' : ''}{formatNumber(percent, 1)}%)</span>}
+    <span className={`inline-flex flex-wrap items-baseline gap-x-1 ${color}`}>
+      <span className="inline-flex items-center gap-1 tabular-nums">
+        {trend === 'up' && <TrendingUp className="h-4 w-4 shrink-0" />}
+        {trend === 'down' && <TrendingDown className="h-4 w-4 shrink-0" />}
+        {trend === 'flat' && <Minus className="h-4 w-4 shrink-0" />}
+        {value > 0 ? '+' : ''}{formatNumber(value, 0)}
+      </span>
+      {percent !== null && <span className="text-xs font-normal">{percent > 0 ? '+' : ''}{formatNumber(percent, 1)}%</span>}
     </span>
   );
 };
@@ -106,13 +108,13 @@ export const NetWorthHistoryReport = ({ accounts, transactions, formatCurrency }
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Patrimonio neto actual</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${formatCurrency(summary.actual.patrimonio)}</p>
+            <p className="text-xl font-bold tabular-nums whitespace-nowrap">${formatCurrency(summary.actual.patrimonio)}</p>
             <p className="text-xs text-muted-foreground">{summary.actual.label}</p>
           </CardContent>
         </Card>
@@ -121,7 +123,7 @@ export const NetWorthHistoryReport = ({ accounts, transactions, formatCurrency }
             <CardTitle className="text-sm font-medium text-muted-foreground">vs mes anterior</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
+            <p className="text-xl font-bold">
               {summary.vsMesAnterior ? <Variation {...summary.vsMesAnterior} /> : '—'}
             </p>
           </CardContent>
@@ -131,7 +133,7 @@ export const NetWorthHistoryReport = ({ accounts, transactions, formatCurrency }
             <CardTitle className="text-sm font-medium text-muted-foreground">vs hace 12 meses</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
+            <p className="text-xl font-bold">
               {summary.vs12Meses ? <Variation {...summary.vs12Meses} /> : '—'}
             </p>
           </CardContent>
@@ -141,7 +143,7 @@ export const NetWorthHistoryReport = ({ accounts, transactions, formatCurrency }
             <CardTitle className="text-sm font-medium text-muted-foreground">Mejor mes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-primary">${formatCurrency(summary.best.patrimonio)}</p>
+            <p className="text-xl font-bold text-primary tabular-nums whitespace-nowrap">${formatCurrency(summary.best.patrimonio)}</p>
             <p className="text-xs text-muted-foreground">{summary.best.label}</p>
           </CardContent>
         </Card>
