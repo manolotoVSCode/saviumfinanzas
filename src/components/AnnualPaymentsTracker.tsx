@@ -9,6 +9,7 @@ import { Shield, Calendar, Clock, TrendingUp, ChevronDown, ArrowUp, ArrowDown } 
 import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { groupAnnualPayments, isAnnualCategory } from '@/lib/finance/annualPayments';
 
 interface TrackedPayment {
   id: string;
@@ -54,106 +55,22 @@ export const AnnualPaymentsTracker = () => {
     }
   }, []);
 
-  // Get categories with annual tracking (frecuencia_seguimiento = 'anual')
-  const annualCategories = useMemo(() => {
-    return categories.filter(c => 
-      c.tipo === 'Gastos' && 
-      (c as any).frecuencia_seguimiento === 'anual'
-    );
-  }, [categories]);
-
   // Process transactions for annual tracked categories - group by similar concept
   useEffect(() => {
-    if (!transactions || !annualCategories || annualCategories.length === 0) {
-      setTrackedPayments([]);
-      return;
-    }
+    const formatDate = (d: Date) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 
-    const payments: TrackedPayment[] = [];
-
-    // Normalize comment for grouping similar payments
-    const normalizeComment = (comment: string): string => {
-      return comment
-        .toLowerCase()
-        .replace(/\d{4}/g, '') // Remove years
-        .replace(/\d{1,2}\/\d{1,2}/g, '') // Remove dates
-        .replace(/[^\w\sáéíóúñ]/g, '') // Remove special chars
-        .replace(/\s+/g, ' ')
-        .trim()
-        .substring(0, 30); // Take first 30 chars for grouping
-    };
-
-    annualCategories.forEach(category => {
-      // Get all transactions for this category
-      const categoryTransactions = transactions
-        .filter(t => t.subcategoriaId === category.id && t.gasto > 0)
-        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-
-      if (categoryTransactions.length === 0) return;
-
-      // Group transactions by normalized comment to detect different payments
-      const groupedByComment: { [key: string]: typeof categoryTransactions } = {};
-      
-      categoryTransactions.forEach(t => {
-        const key = normalizeComment(t.comentario);
-        if (!groupedByComment[key]) {
-          groupedByComment[key] = [];
-        }
-        groupedByComment[key].push(t);
-      });
-
-      // Create a tracked payment for each unique group
-      Object.entries(groupedByComment).forEach(([normalizedKey, groupTransactions]) => {
-        const lastTransaction = groupTransactions[0];
-        const lastPaymentDate = new Date(lastTransaction.fecha);
-        
-        // Calculate next payment (1 year from last payment)
-        const nextPayment = new Date(lastPaymentDate);
-        nextPayment.setFullYear(nextPayment.getFullYear() + 1);
-
-        // Build payment history with comments
-        const paymentHistory = groupTransactions.map(t => ({
-          date: new Date(t.fecha),
-          amount: t.gasto,
-          formattedDate: new Date(t.fecha).toLocaleDateString('es-ES', { 
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric' 
-          }),
-          comment: t.comentario
-        }));
-
-        // Calculate total paid
-        const totalPaid = groupTransactions.reduce((sum, t) => sum + t.gasto, 0);
-
-        // Use the most recent comment as the concept display
-        const concept = lastTransaction.comentario;
-        
-        // Generate unique ID for this payment group
-        const uniqueId = `${category.id}-${normalizedKey}`;
-
-        payments.push({
-          id: uniqueId,
-          categoryId: category.id,
-          categoryName: category.categoria,
-          subcategoryName: category.subcategoria,
-          concept,
-          lastPayment: {
-            amount: lastTransaction.gasto,
-            date: lastPaymentDate,
-            formattedDate: lastPaymentDate.toLocaleDateString('es-ES', { 
-              day: 'numeric', 
-              month: 'long', 
-              year: 'numeric' 
-            })
-          },
-          nextPayment,
-          paymentHistory,
-          totalPaid,
-          active: !inactivePayments.has(uniqueId)
-        });
-      });
-    });
+    const payments: TrackedPayment[] = groupAnnualPayments(categories, transactions).map(g => ({
+      id: g.id,
+      categoryId: g.categoryId,
+      categoryName: g.categoryName,
+      subcategoryName: g.subcategoryName,
+      concept: g.concept,
+      lastPayment: { amount: g.lastAmount, date: g.lastDate, formattedDate: formatDate(g.lastDate) },
+      nextPayment: g.nextPayment,
+      paymentHistory: g.history.map(h => ({ ...h, formattedDate: formatDate(h.date) })),
+      totalPaid: g.totalPaid,
+      active: !inactivePayments.has(g.id),
+    }));
 
     // Apply custom order if available, otherwise sort by next payment date
     if (customOrder.length > 0) {
@@ -170,7 +87,7 @@ export const AnnualPaymentsTracker = () => {
     }
 
     setTrackedPayments(payments);
-  }, [transactions, annualCategories, inactivePayments, customOrder]);
+  }, [transactions, categories, inactivePayments, customOrder]);
 
   const toggleActive = (paymentId: string) => {
     const newInactive = new Set(inactivePayments);
@@ -237,7 +154,7 @@ export const AnnualPaymentsTracker = () => {
     return { label: `En ${Math.floor(days / 30)} meses`, variant: 'outline' as const, days };
   };
 
-  if (annualCategories.length === 0) {
+  if (!categories.some(isAnnualCategory)) {
     return (
       <Card className="border-primary/20">
         <CardHeader>

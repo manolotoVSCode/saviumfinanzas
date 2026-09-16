@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell } from 'lucide-react';
 import { usePendings } from '@/hooks/usePendings';
+import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -23,6 +24,7 @@ const Layout = ({ children }: LayoutProps) => {
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
   const { activeCount, overdueCount } = usePendings();
+  const { count: alertCount } = useAlerts();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -55,6 +57,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/categorias', icon: Tag, label: 'Categorías' },
     { path: '/reglas-clasificacion', icon: Filter, label: 'Reglas' },
     { path: '/configuracion', icon: Settings, label: 'Configuración' },
+    { path: '/alertas', icon: Bell, label: 'Alertas', badge: alertCount || undefined },
   ];
 
   const mobileNavItems = [
@@ -113,7 +116,7 @@ const Layout = ({ children }: LayoutProps) => {
               <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Configuración
               </p>
-              {configNavItems.map(({ path, icon: Icon, label }) => (
+              {configNavItems.map(({ path, icon: Icon, label, badge }) => (
                 <button
                   key={path}
                   onClick={() => navigate(path)}
@@ -125,7 +128,12 @@ const Layout = ({ children }: LayoutProps) => {
                   )}
                 >
                   <Icon className="h-4 w-4 flex-shrink-0" />
-                  <span>{label}</span>
+                  <span className="flex-1 text-left">{label}</span>
+                  {badge ? (
+                    <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-semibold rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center">
+                      {badge}
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>

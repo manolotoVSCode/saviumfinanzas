@@ -28,6 +28,7 @@ const IngresosRecurrentes = lazy(() => import("./pages/IngresosRecurrentes"));
 const PagosAnuales = lazy(() => import("./pages/PagosAnuales"));
 const CxP = lazy(() => import("./pages/CxP"));
 const ChangelogPage = lazy(() => import("./pages/ChangelogPage"));
+const Alertas = lazy(() => import("./pages/Alertas"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -133,6 +134,11 @@ const App = () => (
               <Route path="/cxp" element={
                 <ProtectedRoute>
                   <CxP />
+                </ProtectedRoute>
+              } />
+              <Route path="/alertas" element={
+                <ProtectedRoute>
+                  <Alertas />
                 </ProtectedRoute>
               } />
               <Route path="/changelog" element={
