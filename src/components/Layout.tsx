@@ -50,6 +50,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/ingresos-recurrentes', icon: Repeat, label: 'Ingresos Recurrentes' },
     { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales' },
     { path: '/informes', icon: FileText, label: 'Informes Financieros' },
+    { path: '/alertas', icon: Bell, label: 'Alertas', badge: alertCount || undefined },
   ];
 
   const configNavItems = [
@@ -57,7 +58,6 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/categorias', icon: Tag, label: 'Categorías' },
     { path: '/reglas-clasificacion', icon: Filter, label: 'Reglas' },
     { path: '/configuracion', icon: Settings, label: 'Configuración' },
-    { path: '/alertas', icon: Bell, label: 'Alertas', badge: alertCount || undefined },
   ];
 
   const mobileNavItems = [
@@ -116,7 +116,7 @@ const Layout = ({ children }: LayoutProps) => {
               <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Configuración
               </p>
-              {configNavItems.map(({ path, icon: Icon, label, badge }) => (
+              {configNavItems.map(({ path, icon: Icon, label }) => (
                 <button
                   key={path}
                   onClick={() => navigate(path)}
@@ -128,12 +128,7 @@ const Layout = ({ children }: LayoutProps) => {
                   )}
                 >
                   <Icon className="h-4 w-4 flex-shrink-0" />
-                  <span className="flex-1 text-left">{label}</span>
-                  {badge ? (
-                    <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-semibold rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center">
-                      {badge}
-                    </span>
-                  ) : null}
+                  <span>{label}</span>
                 </button>
               ))}
             </div>

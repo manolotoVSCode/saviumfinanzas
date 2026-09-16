@@ -785,33 +785,7 @@ const CategoryItem = ({
     ((filteredMetrics.balanceAnio - filteredMetrics.balanceAnioAnterior) / Math.abs(filteredMetrics.balanceAnioAnterior)) * 100 : 0;
 
 
-  const getSaludColor = (nivel: string) => {
-    switch (nivel) {
-      case 'Excelente': return 'text-success';
-      case 'Buena': return 'text-primary';
-      case 'Regular': return 'text-warning';
-      case 'Mejorable': return 'text-destructive';
-      case 'Crítica': return 'text-destructive';
-      default: return 'text-muted-foreground';
-    }
-  };
 
-  const getFinancialAdvice = (nivel: string, score: number) => {
-    switch (nivel) {
-      case 'Excelente':
-        return 'Mantén tu disciplina financiera y considera diversificar más tus inversiones para optimizar el rendimiento a largo plazo.';
-      case 'Buena':
-        return 'Aumenta tu fondo de emergencia a 6 meses de gastos y considera incrementar tus inversiones mensuales en un 10%.';
-      case 'Regular':
-        return 'Enfócate en reducir gastos innecesarios y destina al menos 20% de tus ingresos al ahorro e inversión.';
-      case 'Mejorable':
-        return 'Prioriza pagar deudas de alta tasa de interés y crea un presupuesto detallado para controlar mejor tus gastos.';
-      case 'Crítica':
-        return 'Busca asesoría financiera profesional, consolida tus deudas y considera fuentes adicionales de ingresos.';
-      default:
-        return 'Evalúa tu situación financiera y establece metas claras de ahorro e inversión.';
-    }
-  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -1394,21 +1368,6 @@ const CategoryItem = ({
             </AccordionItem>
           </Accordion>
         </CardContent>
-      </Card>
-
-      {/* SALUD FINANCIERA - Módulo inhabilitado */}
-      <Card className="border-muted/40 opacity-50 pointer-events-none select-none">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-muted-foreground">
-              🏥 Salud Financiera
-            </CardTitle>
-            <Badge variant="outline" className="text-xs text-muted-foreground border-muted">
-              En mantenimiento
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">Este módulo está temporalmente inhabilitado.</p>
-        </CardHeader>
       </Card>
 
     </div>

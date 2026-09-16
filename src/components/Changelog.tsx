@@ -12,7 +12,7 @@ const changelog: ChangelogEntry[] = [
     version: '7.0',
     date: 'Septiembre 2026',
     changes: [
-      { icon: <Zap className="h-4 w-4" />, text: 'Alertas (en el menú, bajo Configuración): pagos anuales a ≤15 días, suscripciones que suben de precio y categorías un 40% por encima de su media; se pueden descartar', type: 'feature' },
+      { icon: <Zap className="h-4 w-4" />, text: 'Alertas (en el menú, bajo Informes): pagos anuales a ≤15 días, suscripciones que suben de precio y categorías un 40% por encima de su media; se pueden descartar', type: 'feature' },
       { icon: <Sparkles className="h-4 w-4" />, text: 'Instalable como app (PWA): "Añadir a pantalla de inicio" en el móvil, con icono propio y arranque a pantalla completa', type: 'feature' },
       { icon: <BarChart3 className="h-4 w-4" />, text: 'Informe de Patrimonio Neto: evolución mensual de activos, pasivos y patrimonio reconstruida desde los movimientos', type: 'feature' },
       { icon: <Zap className="h-4 w-4" />, text: 'Una sola caché de datos compartida por todas las pantallas: cambiar de página ya no vuelve a descargar todo', type: 'improvement' },
