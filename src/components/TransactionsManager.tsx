@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +41,6 @@ export const TransactionsManager = ({
   onDeleteTransaction,
   onClearAllTransactions
 }: TransactionsManagerProps) => {
-  const isMobile = useIsMobile();
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { pendings, addPending } = usePendings();
@@ -1286,7 +1284,7 @@ export const TransactionsManager = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-            {!isMobile && (<div>
+            <div>
               <Label htmlFor="filter-cuenta">Cuenta</Label>
               <Select 
                 value={filters.cuentaId} 
@@ -1304,9 +1302,9 @@ export const TransactionsManager = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>)}
+            </div>
 
-            {!isMobile && (() => {
+            {(() => {
               const selectedFilterAccount = accounts.find(a => a.id === filters.cuentaId);
               const isCreditCardSelected = selectedFilterAccount?.tipo === 'Tarjeta de Crédito';
               
@@ -1358,7 +1356,7 @@ export const TransactionsManager = ({
               )}
             </div>
             
-            {!isMobile && (<div>
+            <div>
               <Label htmlFor="filter-mes">Mes</Label>
               <Select 
                 value={filters.mes} 
@@ -1382,7 +1380,7 @@ export const TransactionsManager = ({
                   })}
                 </SelectContent>
               </Select>
-            </div>)}{!isMobile && (
+            </div>
             <div>
               <Label htmlFor="filter-categoria">Categoría</Label>
               <Popover open={categoryFilterOpen} onOpenChange={setCategoryFilterOpen}>
@@ -1467,8 +1465,7 @@ export const TransactionsManager = ({
                   </Command>
                 </PopoverContent>
               </Popover>
-            </div>)}
-            {!isMobile && (<>
+            </div>
             <div>
               <Label htmlFor="filter-tipo">Tipo</Label>
               <Select 
@@ -1582,7 +1579,6 @@ export const TransactionsManager = ({
                 </SelectContent>
               </Select>
             </div>
-            </>)}
           </div>
         </CardContent>
       </Card>

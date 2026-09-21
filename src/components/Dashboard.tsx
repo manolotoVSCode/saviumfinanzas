@@ -11,7 +11,6 @@ import { TrendingUp, TrendingDown, Info, Calendar } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, ComposedChart, ReferenceLine } from 'recharts';
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { DashboardKPIs } from '@/components/dashboard/DashboardKPIs';
 import { DashboardDonutChart } from '@/components/dashboard/DashboardDonutChart';
 import { DashboardSavingsRate } from '@/components/dashboard/DashboardSavingsRate';
@@ -169,7 +168,6 @@ export const Dashboard = ({ metrics, formatCurrency, currencyCode = 'MXN', trans
   const [searchParams] = useSearchParams();
   const [selectedCurrency, setSelectedCurrency] = useState<'MXN' | 'USD' | 'EUR'>(currencyCode as 'MXN' | 'USD' | 'EUR');
   const [openCollapsibles, setOpenCollapsibles] = useState<Record<string, boolean>>({});
-  const isMobile = useIsMobile();
 
 // Componente para subcategoría con hover state
 const SubcategoryItem = ({ 
@@ -821,7 +819,6 @@ const CategoryItem = ({
       />
 
       {/* 1. GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES CON MEDIAS */}
-      {!isMobile ? (
         <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-center">Ingresos vs Gastos - Últimos 12 Meses<br className="sm:hidden" /><strong className="block sm:inline"> {selectedCurrency}</strong></CardTitle>
@@ -913,29 +910,7 @@ const CategoryItem = ({
             </div>
           </CardContent>
         </Card>
-      ) : (
-        <Card className="border-primary/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-center text-base">Media últimos 12 meses · {selectedCurrency}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-around text-sm">
-              <div className="text-center">
-                <div className="w-3 h-3 rounded mx-auto mb-1" style={{ backgroundColor: 'hsl(var(--success))' }}></div>
-                <p className="text-muted-foreground text-xs">Ingreso</p>
-                <p className="font-bold text-success">{formatCurrencyTotals(filteredMetrics.avgIngresos, selectedCurrency)}</p>
-              </div>
-              <div className="text-center">
-                <div className="w-3 h-3 rounded mx-auto mb-1" style={{ backgroundColor: 'hsl(var(--destructive))' }}></div>
-                <p className="text-muted-foreground text-xs">Gasto</p>
-                <p className="font-bold text-destructive">{formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {!isMobile && <>
       {/* DONUT CHART + SAVINGS RATE */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DashboardDonutChart
@@ -1006,7 +981,6 @@ const CategoryItem = ({
           )}
         </CardContent>
       </Card>
-      </>}
 
       {/* 4. ACTIVOS */}
       <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
