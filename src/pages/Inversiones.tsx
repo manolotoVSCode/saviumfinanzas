@@ -17,6 +17,7 @@ import { useCriptomonedas } from '@/hooks/useCriptomonedas';
 
 import { formatNumber } from '@/lib/formatters';
 import { Investment } from '@/types/investments';
+import { investmentReturn } from '@/lib/finance/investmentReturn';
 import { LineChart, Pencil, Plus, RefreshCw, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -132,16 +133,7 @@ const Inversiones = (): JSX.Element => {
       </CardHeader>
       <CardContent className="space-y-3">
         {g.items.map((i) => {
-          const valsInv = valuations
-            .filter((v) => v.inversion_id === i.id)
-            .sort((a, b) => a.fecha.localeCompare(b.fecha));
-          const ultima = valsInv[valsInv.length - 1];
-          const primera = valsInv[0];
-          const invertido = i.monto_invertido || (primera ? primera.valor : i.saldo_cuenta ?? 0);
-          const valor = i.valor_actual || invertido || 0;
-          const base = primera && valsInv.length > 1 ? primera.valor : invertido;
-          const delta = valor - base;
-          const pct = base ? (delta / base) * 100 : 0;
+          const { invertido, valor, delta, pct, ultima } = investmentReturn(i, valuations);
           const tipo = types.find((t) => t.id === i.tipo_id);
           const esPatrimonial = tipo?.comportamiento === 'activo_patrimonial';
           const esManual = tipo?.comportamiento === 'valuacion_manual' || esPatrimonial;
