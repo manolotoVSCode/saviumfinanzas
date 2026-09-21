@@ -1,3 +1,5 @@
+import { diasHasta, finMesAnterior, parseFechaLocal } from './fechas';
+
 /** Valores admitidos por el CHECK de subscription_services.frecuencia (migración 20260809033858). */
 export type SubscriptionFrequency = 'Semanal' | 'Mensual' | 'Bimestral' | 'Trimestral' | 'Semestral' | 'Anual' | 'Irregular';
 
@@ -47,4 +49,22 @@ export const computeSubscriptionsSummary = (subs: SubscriptionForSummary[]): Sub
     }
   });
   return { estimadoMensual, estimadas, sinEstimar };
+};
+
+export type EstadoSuscripcion = 'sin_cargo' | 'este_mes' | 'proxima';
+
+/**
+ * Cómo leer la fecha del próximo pago sabiendo que el mes en curso aún no está
+ * importado:
+ * - `sin_cargo`: caía en un mes ya importado y no apareció el cargo (aviso real).
+ * - `este_mes`: cae en el mes en curso; haya pasado el día o no, falta importar.
+ * - `proxima`: cae en un mes futuro; `dias` es lo que falta.
+ */
+export const estadoSuscripcion = (proximoPago: string, now: Date = new Date()): { estado: EstadoSuscripcion; dias: number } => {
+  const dias = diasHasta(proximoPago, now);
+  const px = parseFechaLocal(proximoPago);
+  if (px <= finMesAnterior(now)) return { estado: 'sin_cargo', dias };
+  const finMesActual = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  if (px <= finMesActual) return { estado: 'este_mes', dias };
+  return { estado: 'proxima', dias };
 };

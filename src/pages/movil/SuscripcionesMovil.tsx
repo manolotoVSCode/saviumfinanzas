@@ -2,18 +2,24 @@ import { useMemo } from 'react';
 import { useSubscriptionServices } from '@/hooks/useSubscriptionServices';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useMobileCurrency } from '@/contexts/MobileCurrencyContext';
-import { computeSubscriptionsSummary } from '@/lib/finance/subscriptionsSummary';
-import { diasHasta, formatFechaCorta, parseFechaLocal } from '@/lib/finance/fechas';
+import { computeSubscriptionsSummary, estadoSuscripcion } from '@/lib/finance/subscriptionsSummary';
+import { formatFechaCorta, parseFechaLocal } from '@/lib/finance/fechas';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Cargando, Importe, Seccion } from '@/components/movil/ui';
 import { cn } from '@/lib/utils';
 
-const etiquetaVencimiento = (dias: number) => {
-  if (dias < 0) return 'Vencida';
-  if (dias === 0) return 'Hoy';
-  if (dias === 1) return 'Mañana';
-  return `En ${dias} días`;
+/**
+ * Texto y color según el estado. El mes en curso no está importado, así que una
+ * fecha pasada solo es un aviso si cae en un mes ya cerrado ("sin cargo").
+ */
+const presentarFecha = (proximoPago: string, now: Date) => {
+  const { estado, dias } = estadoSuscripcion(proximoPago, now);
+  const fecha = formatFechaCorta(parseFechaLocal(proximoPago));
+  if (estado === 'sin_cargo') return { texto: `Sin cargo desde el ${fecha}`, aviso: 'sin_cargo' as const };
+  if (estado === 'este_mes') return { texto: `Este mes · ${fecha}`, aviso: null };
+  if (dias <= 7) return { texto: `${fecha} · en ${dias} día${dias !== 1 ? 's' : ''}`, aviso: 'pronto' as const };
+  return { texto: fecha, aviso: null };
 };
 
 const SuscripcionesMovil = () => {
@@ -51,18 +57,16 @@ const SuscripcionesMovil = () => {
       <Seccion titulo={`Activas (${ordenadas.length})`}>
         {ordenadas.length === 0 && <p className="text-base text-muted-foreground px-1">Sin suscripciones activas.</p>}
         {ordenadas.map((s) => {
-          const dias = diasHasta(s.proximo_pago, now);
-          const pronto = dias <= 7;
+          const { texto, aviso } = presentarFecha(s.proximo_pago, now);
           return (
-            <Card key={s.id} className={cn(pronto && 'border-destructive')}>
+            <Card key={s.id} className={cn(aviso === 'sin_cargo' && 'border-amber-500', aviso === 'pronto' && 'border-destructive')}>
               <CardContent className="p-4 flex items-center justify-between gap-3 min-h-[72px]">
                 <div className="min-w-0">
                   <p className="text-base font-semibold truncate">{s.service_name}</p>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge variant="secondary" className="text-sm font-normal">{s.frecuencia}</Badge>
-                    <span className={cn('text-sm', pronto ? 'text-destructive font-medium' : 'text-muted-foreground')}>
-                      {formatFechaCorta(parseFechaLocal(s.proximo_pago))}
-                      {pronto && ` · ${etiquetaVencimiento(dias)}`}
+                    <span className={cn('text-sm', aviso === 'sin_cargo' && 'text-amber-600 font-medium', aviso === 'pronto' && 'text-destructive font-medium', !aviso && 'text-muted-foreground')}>
+                      {texto}
                     </span>
                   </div>
                 </div>
