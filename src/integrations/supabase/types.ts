@@ -558,6 +558,7 @@ export type Database = {
           canon_key: string | null
           created_at: string
           frecuencia: string
+          frecuencia_manual: boolean
           id: string
           numero_pagos: number
           original_comments: string[]
@@ -575,6 +576,7 @@ export type Database = {
           canon_key?: string | null
           created_at?: string
           frecuencia: string
+          frecuencia_manual?: boolean
           id?: string
           numero_pagos?: number
           original_comments?: string[]
@@ -592,6 +594,7 @@ export type Database = {
           canon_key?: string | null
           created_at?: string
           frecuencia?: string
+          frecuencia_manual?: boolean
           id?: string
           numero_pagos?: number
           original_comments?: string[]
