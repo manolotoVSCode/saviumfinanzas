@@ -24,3 +24,15 @@ export const formatFechaCorta = (d: Date): string =>
  */
 export const finMesAnterior = (now: Date = new Date()): Date =>
   new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** Date local → 'YYYY-MM-DD' con getters locales (parser de importación, próximos pagos, "hoy"). */
+export const toFechaISO = (d: Date): string =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+/**
+ * Transaction.fecha se crea con new Date('YYYY-MM-DD') (medianoche UTC, queries.ts:44);
+ * este es su inverso exacto para escribirla de vuelta a BD. No usar con fechas locales.
+ */
+export const fechaTxISO = (d: Date): string => d.toISOString().slice(0, 10);

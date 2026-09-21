@@ -1,5 +1,6 @@
 import { Category, Transaction } from '@/types/finance';
 import { groupAnnualPayments, isAnnualCategory } from './annualPayments';
+import { toFechaISO } from './fechas';
 
 export type AlertType = 'pago_anual' | 'suscripcion_sube' | 'categoria_disparada';
 
@@ -52,7 +53,6 @@ export const ALERT_RULES = {
 
 const MONTH_NAMES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const dayMs = 24 * 60 * 60 * 1000;
-const isoDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const sameMonth = (d: Date, y: number, m: number) => d.getFullYear() === y && d.getMonth() === m;
 
 export const annualPaymentAlerts = (categories: Category[], transactions: Transaction[], inactive: Set<string>, now: Date): Alert[] => {
@@ -66,7 +66,7 @@ export const annualPaymentAlerts = (categories: Category[], transactions: Transa
       const when = days < 0 ? `venció hace ${-days} día${days === -1 ? '' : 's'}` : days === 0 ? 'vence hoy' : `vence en ${days} día${days === 1 ? '' : 's'}`;
       const currency = g.history[0] ? transactions.find(t => t.comentario === g.history[0].comment && t.subcategoriaId === g.categoryId)?.divisa ?? 'MXN' : 'MXN';
       return [{
-        key: `pago_anual:${g.id}:${isoDay(due)}`,
+        key: `pago_anual:${g.id}:${toFechaISO(due)}`,
         type: 'pago_anual' as const,
         title: g.concept,
         detail: `${g.subcategoryName} · ${when} (último pago ${g.lastDate.getDate()} de ${MONTH_NAMES[g.lastDate.getMonth()]} de ${g.lastDate.getFullYear()})`,
