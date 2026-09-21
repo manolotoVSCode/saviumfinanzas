@@ -37,6 +37,7 @@ const ResumenMovil = lazy(() => import("./pages/movil/ResumenMovil"));
 const InversionesMovil = lazy(() => import("./pages/movil/InversionesMovil"));
 const SuscripcionesMovil = lazy(() => import("./pages/movil/SuscripcionesMovil"));
 const PorCobrarMovil = lazy(() => import("./pages/movil/PorCobrarMovil"));
+const PorPagarMovil = lazy(() => import("./pages/movil/PorPagarMovil"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -141,7 +142,7 @@ const App = () => (
               } />
               <Route path="/cxp" element={
                 <ProtectedRoute>
-                  <Responsive desktop={CxP} mobile={SoloEscritorio} />
+                  <Responsive desktop={CxP} mobile={PorPagarMovil} />
                 </ProtectedRoute>
               } />
               <Route path="/alertas" element={
