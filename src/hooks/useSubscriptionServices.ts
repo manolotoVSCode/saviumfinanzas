@@ -9,14 +9,14 @@ export type SubscriptionService = Database['public']['Tables']['subscription_ser
 const EMPTY: SubscriptionService[] = [];
 
 const fetchSubscriptionServices = async (): Promise<SubscriptionService[]> => {
-  const { data, error } = await supabase.from('subscription_services').select('*').eq('active', true);
+  const { data, error } = await supabase.from('subscription_services').select('*');
   if (error) throw error;
   return data ?? [];
 };
 
 /**
- * Suscripciones activas (tabla completa). staleTime 0 porque SubscriptionsManager
- * escribe en la tabla sin invalidar nada: cada montaje vuelve a pedirlas.
+ * Todas las suscripciones (activas e inactivas): cada consumidor filtra `active`.
+ * staleTime 0 hasta que SubscriptionsManager invalide al escribir (Task 2.5).
  */
 export const useSubscriptionServices = () => {
   const { user } = useAuth();

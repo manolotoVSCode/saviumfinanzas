@@ -30,13 +30,15 @@ const SuscripcionesMovil = () => {
   // La tabla no guarda divisa: todo importe es config.currency (igual que CxP)
   const divisaTabla = profileCurrency;
 
-  const resumen = useMemo(() => computeSubscriptionsSummary(subscriptions), [subscriptions]);
+  // El hook devuelve también las inactivas; aquí solo cuentan las activas.
+  const activas = useMemo(() => subscriptions.filter((s) => s.active), [subscriptions]);
+  const resumen = useMemo(() => computeSubscriptionsSummary(activas), [activas]);
   const estimadoElegida =
     divisaTabla === currency ? resumen.estimadoMensual : convertCurrency(resumen.estimadoMensual, divisaTabla, currency);
 
   const ordenadas = useMemo(
-    () => [...subscriptions].sort((a, b) => a.proximo_pago.localeCompare(b.proximo_pago)),
-    [subscriptions],
+    () => [...activas].sort((a, b) => a.proximo_pago.localeCompare(b.proximo_pago)),
+    [activas],
   );
 
   if (loading) return <Cargando texto="Cargando suscripciones..." />;
