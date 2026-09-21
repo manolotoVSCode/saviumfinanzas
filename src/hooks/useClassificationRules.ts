@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ClassificationMatchType, matchesClassificationRule } from '@/lib/classificationRules';
+import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 
 export interface ClassificationRule {
   id: string;
@@ -19,40 +20,42 @@ export interface ClassificationRule {
   updated_at: string;
 }
 
+const EMPTY: ClassificationRule[] = [];
+
+const fetchRules = async (userId: string): Promise<ClassificationRule[]> => {
+  const { data, error } = await supabase
+    .from('classification_rules' as any)
+    .select('*')
+    .eq('user_id', userId)
+    .order('priority', { ascending: false });
+  if (error) {
+    console.error('[ClassificationRules] Error:', error);
+    throw error;
+  }
+  return (data ?? []) as any as ClassificationRule[];
+};
+
 export function useClassificationRules() {
   const { user } = useAuth();
-  const [rules, setRules] = useState<ClassificationRule[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const QK = financeQueryKeys(user?.id);
 
-  const loadRules = useCallback(async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('classification_rules' as any)
-      .select('*')
-      .eq('user_id', user.id)
-      .order('priority', { ascending: false });
-    
-    if (error) {
-      console.error('[ClassificationRules] Error:', error);
-    }
-    if (data) {
-      setRules(data as any as ClassificationRule[]);
-    }
-    setLoading(false);
-  }, [user]);
+  const query = useQuery({
+    queryKey: QK.reglas,
+    queryFn: () => fetchRules(user!.id),
+    staleTime: STALE_TIME,
+    enabled: !!user,
+  });
+  const rules = query.data ?? EMPTY;
 
-  useEffect(() => { loadRules(); }, [loadRules]);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: QK.reglas });
 
   const addRule = async (rule: Omit<ClassificationRule, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
     const { error } = await supabase
       .from('classification_rules' as any)
       .insert({ ...rule, user_id: user.id } as any);
-    if (!error) await loadRules();
+    if (!error) await invalidate();
     return error;
   };
 
@@ -62,7 +65,7 @@ export function useClassificationRules() {
       .from('classification_rules' as any)
       .update(updates as any)
       .eq('id', id);
-    if (!error) await loadRules();
+    if (!error) await invalidate();
     return error;
   };
 
@@ -72,7 +75,7 @@ export function useClassificationRules() {
       .from('classification_rules' as any)
       .delete()
       .eq('id', id);
-    if (!error) await loadRules();
+    if (!error) await invalidate();
     return error;
   };
 
@@ -98,5 +101,5 @@ export function useClassificationRules() {
     return null;
   };
 
-  return { rules, loading, addRule, updateRule, deleteRule, findMatchingRule, refreshRules: loadRules };
+  return { rules, loading: !!user && query.isPending, addRule, updateRule, deleteRule, findMatchingRule, refreshRules: invalidate };
 }
