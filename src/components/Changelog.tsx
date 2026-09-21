@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '7.4',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Zap className="h-4 w-4" />, text: 'Perfil, pendientes, inversiones, tipos, reglas, criptomonedas, omisiones de pago, tipos de cambio y alertas pasan por la misma caché que cuentas y transacciones: muchas menos peticiones y listas que se actualizan solas al guardar', type: 'improvement' },
+      { icon: <Bug className="h-4 w-4" />, text: 'Cambiar la divisa preferida se refleja en toda la app sin recargar', type: 'fix' },
+      { icon: <Bug className="h-4 w-4" />, text: 'El saldo de las cuentas vinculadas a inversiones se refresca al importar movimientos', type: 'fix' },
+    ],
+  },
+  {
     version: '7.3',
     date: 'Septiembre 2026',
     changes: [
