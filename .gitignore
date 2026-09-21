@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Espacio de trabajo de subagent-driven-development
+.superpowers/
