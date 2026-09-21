@@ -36,6 +36,7 @@ Tras la versión móvil (7.2) quedan cinco frentes abiertos que la spec `docs/su
 1. **Mutaciones de hooks simples** (`usePendings`, `useInvestments`, `useInvestmentTypes`, `useClassificationRules`, `useCriptomonedas`, `usePaymentSkips`): siguen siendo funciones `async` planas que hacen la escritura y luego `queryClient.invalidateQueries` — conservan sus valores de retorno (`{ error }`, `boolean`, `PostgrestError | undefined`, `data`). `useMutation` solo donde la spec lo pide: `ProfileEditor`, `useAlerts`, `useSubscriptionSync` y las ediciones de `SubscriptionsManager`.
 2. `useAppConfig` se implementa **componiendo** `useUserProfile()` (una sola `useQuery` con clave `perfil`): `currency = profile?.divisa_preferida ?? 'MXN'`, `configLoaded = !!user && !loading`. `useUserProfile` usa `retry: 1` para que un perfil ausente no deje el loader 7 s.
 3. La clave de precios cripto lleva la lista de símbolos como último elemento (`[...QK.criptoPrecios, 'BTC,ETH']`) para que añadir una cripto vuelva a pedir precios; sigue siendo prefijo de `criptoPrecios`.
+4b. Cambios visibles añadidos al planificar (fase 4): `parseAmount('129,00 EUR')` pasa a dar 129 (hoy 12900) porque el código de divisa se quita antes que los espacios; `detectFormat` respeta la columna de descripción indicada por la cabecera (hoy la pisa el "texto más largo"). (Fase 2): el texto del gestor de suscripciones pasa de "últimos 12 meses" a "últimos 24 meses" (es lo que analiza); `previousPaymentAmount` se calcula sobre las transacciones de la subcategoría Suscripciones de los últimos 24 meses (mismo subconjunto que la detección), no sobre todas.
 4. `useSubscriptionSync.sync()` sin argumentos lee transacciones y categorías **de la caché** (`queryClient.getQueryData`) en el momento de ejecutarse, no del closure: tras `await invalidate(transacciones)` siempre ve los datos nuevos. La guarda "una vez por identidad del array" es una variable **a nivel de módulo** (`ultimoSincronizado`) que sobrevive a los montajes de `SubscriptionsManager` y se limpia si la mutación falla.
 5. `calculateNextPayment` recibe siempre una fecha **local**. `detectSubscriptions` y `mergeWithStored` convierten `Transaction.fecha` (UTC) con `parseFechaLocal(fechaTxISO(d))` antes de llamarla; así `cargo '2026-08-08' → proximo_pago '2026-09-08'` en cualquier zona horaria. Fin de mes: se conserva el desbordamiento de JS de hoy (`31 ene + 1 mes = 3 mar`), documentado por test.
 6. `mergeWithStored` solo devuelve `updates` para filas que **cambian de verdad** (compara los siete campos escritos): un sync sin datos nuevos hace 0 escrituras.
@@ -66,7 +67,7 @@ Tras la versión móvil (7.2) quedan cinco frentes abiertos que la spec `docs/su
   ```
 
 - [ ] Crear rama: `git checkout -b consolidacion-datos`.
-- [ ] Copiar este plan al repo: guardar como `docs/superpowers/plans/2026-09-21-consolidacion-datos.md` y `git add docs/superpowers/plans && git commit -m "Plan de implementación de la consolidación de datos" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"`.
+- [ ] El plan ya está en el repo (`docs/superpowers/plans/2026-09-21-consolidacion-datos.md`, commit 630c537); si se corrige durante la ejecución, commit "Ajustar el plan de consolidación".
 - [ ] En `src/lib/finance/fechas.test.ts`, sustituir la línea de import por:
 
 ```ts
@@ -180,7 +181,7 @@ export const fechaTxISO = (d: Date): string => d.toISOString().slice(0, 10);
 - [ ] **Esperar confirmación del usuario** de que ejecutó `supabase/migrations/20260921120000_drop_financial_health_history.sql` en el SQL Editor. No continuar sin ella.
 - [ ] En `src/integrations/supabase/types.ts` borrar el bloque completo que empieza en `      financial_health_history: {` y termina en la línea `      }` que sigue a `        Relationships: []` de ese bloque (los tres sub-bloques `Row`, `Insert`, `Update` contienen `ahorro_score`, `liquidez_score`, `rendimiento_inversiones_score`…). El bloque siguiente (`inversiones:` o el que corresponda) queda intacto.
 - [ ] En `docs/index.md`, en la línea que empieza por `- **Net Worth History**`, borrar la frase final ` Table financial_health_history is unused.` (dejando el punto tras "user request").
-- [ ] `grep -rn "financial_health_history" src docs` → sin resultados. `npx tsc --noEmit -p tsconfig.app.json` → sin errores.
+- [ ] `grep -rn "financial_health_history" src docs/index.md` → sin resultados (la spec, el plan y el changelog sí la mencionan; es esperado). `npx tsc --noEmit -p tsconfig.app.json` → sin errores.
 - [ ] Commit: `git add src/integrations/supabase/types.ts docs/index.md && git commit -m "Borrar los tipos de la tabla financial_health_history" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"`.
 
 ---
@@ -277,11 +278,10 @@ const STALE_TIME = 5 * 60 * 1000;
 ```
   por
 ```ts
-import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
-
 // Re-export: los hooks que ya importaban las claves desde aquí siguen funcionando.
 export { financeQueryKeys };
 ```
+  y añadir `import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';` **arriba, junto a los demás imports** (no en mitad del archivo).
 
 - [ ] `npx tsc --noEmit -p tsconfig.app.json` → sin errores. `npx vitest run` → verde.
 - [ ] Commit: `git add src/lib/finance/queryKeys.ts src/hooks/useFinanceDataSupabase.ts && git commit -m "Claves de caché en un único módulo queryKeys" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"`.
@@ -1426,7 +1426,8 @@ export const useExchangeRates = () => {
     queryKey: EXCHANGE_RATES_KEY,
     queryFn: fetchRatesFromAPI,
     staleTime: STALE_TIME,
-    refetchInterval: STALE_TIME,
+    // Sin refetchInterval: cada observador (11 archivos + useFinanceDataSupabase) crearía su propio
+    // intervalo. staleTime + refetchOnWindowFocus (por defecto) ya refresca al volver a la pestaña.
     retry: false,
   });
   const rates = query.data ?? DEFAULT_RATES;
@@ -1619,7 +1620,7 @@ export const useAlerts = () => {
   },
 ```
 
-- [ ] `grep -rn "useState<.*\[\]>\|useEffect" src/hooks/*.ts` → ningún hook carga datos remotos con `useState+useEffect` (los `useEffect` restantes solo muestran toasts de error).
+- [ ] `grep -rn "useState<.*\[\]>\|useEffect" src/hooks/*.ts` → solo `use-toast.ts` (estado local de toasts, esperado); ningún hook carga datos remotos con `useState+useEffect` (los `useEffect` restantes solo muestran toasts de error).
 - [ ] `npx vitest run` → verde. `npx tsc --noEmit -p tsconfig.app.json` → sin errores. `npm run build` → sin errores.
 - [ ] Verificación manual completa (spec fase 1): login en escritorio → Red: `profiles` ×1, `transaction_pendings` ×1, `alert_dismissals` ×1, `exchangerate-api` ×1; entrar a Inversiones → `inversiones` ×1; navegar Dashboard → Transacciones → Informes → Inversiones no repite ninguna. Móvil 390×844: las cinco pantallas cargan; `#/dashboard` sin loader infinito.
 - [ ] Commit: `git add src/components/Changelog.tsx && git commit -m "Changelog 7.4" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"`.
@@ -1816,7 +1817,7 @@ describe('resolveServiceName', () => {
   });
   it('sin patrón genera custom-<sin acentos ni símbolos> y un nombre de hasta 3 palabras', () => {
     const r = resolveServiceName('CAFÉ *ÚNICO 12 SUSCRIPCIÓN MENSUAL', 50, []);
-    expect(r.canonKey).toBe('custom-cafnicosuscripcinm');
+    expect(r.canonKey).toBe('custom-cafnico12suscripcinm'); // los dígitos se conservan (misma clave que hoy)
     expect(r.serviceName).toBe('CAFÉ ÚNICO SUSCRIPCIÓN');
     expect(r.tipoServicio).toBe('Suscripción');
   });
@@ -1936,14 +1937,23 @@ describe('mergeWithStored', () => {
     expect(mergeWithStored(detectada, [igual]).updates).toEqual([]);
   });
 
-  it('inserta las nuevas con sufijo si el nombre ya existe, y marca huérfanas', () => {
+  it('marca huérfanas y no las cuenta como nombre ocupado (se borran en el mismo sync)', () => {
     const { inserts, orphanIds } = mergeWithStored(detectada, [
       row({ id: 'viejo', canon_key: 'spotify', service_name: 'Netflix' }),
       row({ id: 'sin-clave', canon_key: null, service_name: 'Manual' }),
     ]);
     expect(inserts).toHaveLength(1);
-    expect(inserts[0]).toMatchObject({ service_name: 'Netflix (2)', canon_key: 'netflix', active: true, frecuencia_manual: false, frecuencia: 'Mensual' });
+    expect(inserts[0]).toMatchObject({ service_name: 'Netflix', canon_key: 'netflix', active: true, frecuencia_manual: false, frecuencia: 'Mensual' });
     expect(orphanIds).toEqual(['viejo', 'sin-clave']);
+  });
+
+  it('inserta con sufijo si el nombre ya lo usa una fila que sigue viva', () => {
+    const otra = { ...detectada[0], canonKey: 'spotify', serviceName: 'Netflix' };
+    const { inserts } = mergeWithStored([...detectada, otra], [
+      row({ id: 'viva', canon_key: 'spotify', service_name: 'Netflix' }),
+    ]);
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0]).toMatchObject({ service_name: 'Netflix (2)', canon_key: 'netflix' });
   });
 
   it('dos inserts con el mismo nombre reciben (2) y (3)', () => {
@@ -2156,7 +2166,9 @@ export const mergeWithStored = (
   stored: SubscriptionRow[],
 ): { updates: SubscriptionUpdate[]; inserts: SubscriptionInsert[]; orphanIds: string[] } => {
   const porCanon = new Map(stored.filter(s => s.canon_key).map(s => [s.canon_key as string, s]));
-  const ocupados = new Set(stored.map(s => s.service_name));
+  const canonDetectados = new Set(detected.map(d => d.canonKey));
+  // Nombres ocupados: solo por filas que van a seguir existiendo (las huérfanas se borran en el mismo sync)
+  const ocupados = new Set(stored.filter(s => s.canon_key && canonDetectados.has(s.canon_key)).map(s => s.service_name));
   const vistos = new Set<string>();
   const updates: SubscriptionUpdate[] = [];
   const inserts: SubscriptionInsert[] = [];
@@ -2374,6 +2386,11 @@ export const useSubscriptionSync = () => {
         }
         updated++;
       }
+      // Borrar huérfanas ANTES de insertar: liberan nombres (UNIQUE user_id+service_name).
+      if (orphanIds.length > 0) {
+        const { error: e } = await supabase.from('subscription_services').delete().in('id', orphanIds);
+        if (e) throw e;
+      }
       for (const i of inserts) {
         const { error: e } = await supabase.from('subscription_services').insert({ ...i, user_id: userId });
         if (e) {
@@ -2381,10 +2398,6 @@ export const useSubscriptionSync = () => {
           throw e;
         }
         inserted++;
-      }
-      if (orphanIds.length > 0) {
-        const { error: e } = await supabase.from('subscription_services').delete().in('id', orphanIds);
-        if (e) throw e;
       }
 
       ultimoSincronizado = transactions;
@@ -2625,8 +2638,9 @@ export const SubscriptionsManager = () => {
       setMergeSourceId(null);
       setMergeTargetId('');
       await invalidar();
-      // Los alias nuevos cambian la detección: sincronización explícita.
-      await sync();
+      // Los alias nuevos cambian la detección: sincronización explícita, sin await:
+      // un fallo del sync tiene su propio toast y no debe marcar la fusión (ya hecha) como error.
+      sync().catch(() => undefined);
     },
     onError: (e) => {
       console.error('Error merging subscriptions:', e);
@@ -3278,7 +3292,7 @@ export const AlertasResumen = () => {
 ```
 
 - [ ] `npx tsc --noEmit -p tsconfig.app.json` → sin errores.
-- [ ] Verificación manual (móvil 390×844, `#/dashboard`): si hay alertas activas, aparece arriba del patrimonio la sección "ALERTAS (N)" con icono, título, detalle a 14px e importe con divisa, sin botón de descartar; en escritorio `#/alertas` descartar una y volver al móvil: N baja sin recargar. Sin alertas: la sección no aparece. Red: sin peticiones nuevas más allá de `alert_dismissals` (ya cacheada).
+- [ ] Verificación manual (móvil 390×844, `#/dashboard`): si hay alertas activas, aparece arriba del patrimonio la sección "ALERTAS (N)" con icono, título, detalle a 14px e importe con divisa, sin botón de descartar; en escritorio `#/alertas` descartar una y volver al móvil: N baja sin recargar. Sin alertas: la sección no aparece. Red: sin peticiones nuevas más allá de `alert_dismissals` y, si aún no se visitó Suscripciones, `subscription_services` (ya cacheada).
 - [ ] Commit: `git add src/components/movil/AlertasResumen.tsx src/pages/movil/ResumenMovil.tsx && git commit -m "Tarjeta de alertas activas en el Resumen móvil" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"`.
 
 ---
@@ -3326,7 +3340,7 @@ export const AlertasResumen = () => {
 
 ## Fase 4 — Importación: parser robusto y categorización explicable (versión 7.7)
 
-> Antes de la Task 4.1, guardar en `$TMPDIR` los fixtures de verificación manual (se reutilizan en 4.6): `es.csv` (separador `;`, `1.234,56`), `latin1.csv` (guardado en Windows-1252 con acentos), `importe_saldo.xlsx` (columnas Fecha, Concepto, Importe, Saldo) y `sin_fecha.csv` (una fila sin fecha). Importar `es.csv` en 7.6 y anotar las filas/categorías resultantes: es la red "antes/después".
+> Antes de la Task 4.1, guardar en `$TMPDIR` los fixtures de verificación manual (se reutilizan en 4.6): `coma.csv` (separador `,`, formato que el importador actual ya lee: es el ÚNICO válido para la red "antes/después", porque hoy un CSV con `;` no produce filas), `es.csv` (separador `;`, `1.234,56`; solo "después"), `latin1.csv` (guardado en Windows-1252 con acentos), `importe_saldo.xlsx` (columnas Fecha, Concepto, Importe, Saldo) y `sin_fecha.csv` (una fila sin fecha). Importar `coma.csv` con la versión actual y anotar las filas resultantes (fecha, descripción, monto, categoría sugerida). Importar `es.csv` en 7.6 y anotar las filas/categorías resultantes: es la red "antes/después".
 
 ### Task 4.1: `findMatchingRuleDetailed` en `src/lib/classificationRules.ts` con tests; el hook envuelve
 
@@ -3579,7 +3593,7 @@ describe('parseCsvText', () => {
 });
 
 describe('parseRows', () => {
-  it('sin columna de importe detectable usa el primer numérico de derecha a izquierda', () => {
+  it('sin cabecera, la única columna numérica que no es fecha se toma como importe', () => {
     const r = parseRows([['05/08/2026', 'CONCEPTO SIN CABECERA', 'x', '250']]);
     expect(r.movements[0].montoOriginal).toBe(250);
   });
@@ -3661,7 +3675,9 @@ export interface ParseResult {
 }
 
 export function parseAmount(amountStr: string): number {
-  // ⟵ copiar tal cual el cuerpo de BankStatementImporter.tsx l.166-196
+  // ⟵ copiar el cuerpo de BankStatementImporter.tsx l.166-196 con UN cambio declarado:
+  // el `replace(/\b(MXN|USD|EUR|GBP)\b/gi, '')` va ANTES del `replace(/["'\s]/g, '')`.
+  // Hoy '129,00 EUR' se convierte en '129,00EUR' (sin \b entre 0 y E) y termina en 12900.
 }
 
 export function parseDate(dateStr: string, formatHint: DateHint = 'auto'): Date | null {
@@ -3680,7 +3696,11 @@ export function stripPreamble(rows: string[][]): string[][] {
 }
 
 export function detectFormat(lines: string[][]): { dateCol: number; descCol: number; amountCol: number; hasHeader: boolean } {
-  // ⟵ copiar tal cual el cuerpo de l.277-448, quitando la línea console.log('Detected format', …)
+  // ⟵ copiar el cuerpo de l.277-448, quitando el console.log('Detected format', …) y con UN cambio declarado:
+  // añadir `let descFromHeader = false;` junto a `let descCol = 1;`, poner `descFromHeader = true;` donde la
+  // cabecera fija descCol (l.355), y cambiar la condición de l.430 `if (!hasHeader || descCol === 1)` por
+  // `if (!descFromHeader)`. Hoy, si la cabecera dice que la descripción es la columna 1, la heurística
+  // "texto más largo de la primera fila" la pisa (Fecha,Descripción,Importe,Titular → descripción = Titular).
 }
 
 export function excelSerialToDate(serial: number): Date | null {
@@ -3851,7 +3871,9 @@ export async function parseBankStatement(bytes: ArrayBuffer, filename: string, h
 
   Al copiar los seis cuerpos "tal cual", verificar que `parseDate` y `detectFormat` no referencian nada del componente (usan solo `parseAmount`/`parseDate` del propio módulo).
 
-- [ ] `npx vitest run src/lib/import/bankStatementParser.test.ts` → verde. Si el test "preámbulo BBVA" falla por la descripción (`descCol`), comprobar que `detectFormat` recibe la muestra con la cabecera `Descripción` (normalizada a `descripcion`) y ajustar el fixture, no la función.
+- [ ] Añadir a los tests de `detectFormat`/`parseBankStatement` con cabecera las aserciones `expect(movements[0].descripcion).toBe('UBER')` (fixture `Fecha,Descripción,Importe,Titular`) y `toBe('SPOTIFY')` (XLSX `Fecha,Concepto,Importe,Saldo`), que fallan con la heurística heredada y pasan con `descFromHeader`.
+- [ ] `npx vitest run src/lib/import/bankStatementParser.test.ts` → verde.
+- [ ] Comprobar que el runner soporta Latin-1: `node -p "new TextDecoder('windows-1252').decode(new Uint8Array([0xc9]))"` → `É`.
 - [ ] `npx tsc --noEmit -p tsconfig.app.json` → sin errores.
 - [ ] Commit: `git add src/lib/import/bankStatementParser.ts src/lib/import/bankStatementParser.test.ts && git commit -m "Parser de estados de cuenta puro y testeado: separador autodetectado, Latin-1, Importe por cabecera y descartes con motivo" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"`.
 
@@ -4337,9 +4359,7 @@ export const ImportSummaryBar = ({ rows, skipped, meta, currency, importing, sel
   const totales = useMemo(() => {
     const incluidas = rows.filter(r => r.incluir);
     const gastos = incluidas.filter(r => r.esGasto && !r.esReembolso);
-    const ingresos = incluidas.filter(r => !r.esGasto || r.esReembol
-
-so);
+    const ingresos = incluidas.filter(r => !r.esGasto || r.esReembolso);
     return {
       nGastos: gastos.length,
       gastos: gastos.reduce((s, r) => s + r.monto, 0),
@@ -4421,8 +4441,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
-import { matchesClassificationRule } from '@/lib/classificationRules';
-import { normalizeDescription } from '@/lib/import/importCategorizer';
+import { matchesClassificationRule, normalizeRuleText } from '@/lib/classificationRules';
 import { ParsedRow } from '@/lib/import/toParsedRows';
 import { Category, TransactionType } from '@/types/finance';
 import { cn } from '@/lib/utils';
@@ -4468,7 +4487,9 @@ export const CreateRuleFromRowDialog = ({ row, onClose, categories, accountId, a
 
   useEffect(() => {
     if (!row) return;
-    const dosPalabras = normalizeDescription(row.descripcion).split(' ').filter(Boolean).slice(0, 2).join(' ');
+    // Misma normalización que usan las reglas al comparar (normalizeRuleText: puntuación → espacio),
+    // no la del historial (normalizeDescription: puntuación eliminada); si no, 'NETFLIX.COM' nunca coincidiría.
+    const dosPalabras = normalizeRuleText(row.descripcion).split(' ').filter(Boolean).slice(0, 2).join(' ');
     setName(dosPalabras);
     setKeyword(dosPalabras);
     setCategoryId(row.categoriaId);
@@ -4502,7 +4523,9 @@ export const CreateRuleFromRowDialog = ({ row, onClose, categories, accountId, a
     };
     const error = await onSave(rule);
     setSaving(false);
-    if (error) {
+    // addRule devuelve null si insertó, el error de Supabase si falló y undefined si no hay sesión:
+    // solo null es éxito.
+    if (error !== null) {
       toast({ title: 'Error', description: 'No se pudo crear la regla', variant: 'destructive' });
       return;
     }
@@ -4586,7 +4609,7 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -4808,15 +4831,15 @@ export const ImportPreviewTable = ({
                                 ))}
                               </CommandGroup>
                             ))}
-                            <CommandSeparator />
-                            <CommandGroup>
-                              <CommandItem value="__crear_regla__" onSelect={() => { setOpenCatRowId(null); onCreateRule(row); }}>
-                                <Plus className="mr-2 h-4 w-4 shrink-0" />
-                                <span className="text-xs">Crear regla para filas como esta…</span>
-                              </CommandItem>
-                            </CommandGroup>
                           </CommandList>
                         </Command>
+                        {/* Fuera del CommandList: cmdk oculta los ítems que no coinciden con lo escrito en el buscador */}
+                        <div className="border-t p-1">
+                          <Button variant="ghost" size="sm" className="w-full justify-start text-xs h-8" onClick={() => { setOpenCatRowId(null); onCreateRule(row); }}>
+                            <Plus className="mr-2 h-4 w-4 shrink-0" />
+                            Crear regla para filas como esta…
+                          </Button>
+                        </div>
                       </PopoverContent>
                     </Popover>
                     <FuenteIcono row={row} />
@@ -4832,7 +4855,6 @@ export const ImportPreviewTable = ({
 };
 ```
 
-  Si `CommandSeparator` no está exportado por `src/components/ui/command.tsx`, comprobar con `grep -n "CommandSeparator" src/components/ui/command.tsx`; si falta, sustituir `<CommandSeparator />` por `<div className="border-t my-1" />`.
 
 - [ ] Crear `src/components/import/BankStatementImporter.tsx` (orquestador):
 
@@ -4988,8 +5010,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
   /** Aplica una regla recién creada a las filas no manuales que coincidan; devuelve cuántas. */
   const applyRule = (rule: NewRule): number => {
+    // Se calcula sobre el estado actual, fuera del updater: React no garantiza cuándo (ni cuántas
+    // veces, en StrictMode) ejecuta el updater, así que un contador dentro daría 0 o el doble.
     let n = 0;
-    setParsedRows(prev => prev.map(row => {
+    const next = parsedRows.map(row => {
       if (row.categoriaManual) return row;
       if (rule.cuenta_id && rule.cuenta_id !== selectedAccountId) return row;
       if (!matchesClassificationRule(row.descripcion, rule.keyword, rule.match_type)) return row;
@@ -4997,9 +5021,10 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       return {
         ...row,
         categoriaId: rule.category_id,
-        suggestion: { categoriaId: rule.category_id, source: 'regla', detail: `Regla · ${rule.name || rule.keyword}`, confidence: 'alta' },
+        suggestion: { categoriaId: rule.category_id, source: 'regla' as const, detail: `Regla · ${rule.name || rule.keyword}`, confidence: 'alta' as const },
       };
-    }));
+    });
+    if (n > 0) setParsedRows(next);
     return n;
   };
 
@@ -5345,15 +5370,15 @@ export default BankStatementImporter;
 - [ ] `grep -rn "console.log" src/components/import src/lib/import` → sin resultados. `grep -rn "parseCSVLine\|getCategoriesForRow" src` → sin resultados. `wc -l src/components/import/BankStatementImporter.tsx` → ≈ 350-420.
 - [ ] `npx tsc --noEmit -p tsconfig.app.json` → sin errores. `npx vitest run` → verde.
 - [ ] Verificación manual (escritorio, `#/transacciones`, fixtures de `$TMPDIR`):
-  1. `es.csv` (`;`, `1.234,56`): montos y fechas correctas; el pie muestra `separador ";"`; las filas coinciden con la anotación "antes" salvo las diferencias de orden de categorización declaradas.
+  1. `coma.csv`: las filas coinciden con la anotación "antes" salvo las diferencias de orden de categorización declaradas. `es.csv` (`;`, `1.234,56`): montos y fechas correctas; el pie muestra `separador ";"`.
   2. `latin1.csv`: descripciones con acentos legibles; pie "Archivo leído como Latin-1".
   3. `importe_saldo.xlsx`: el monto es el de `Importe`, no `Saldo`.
   4. `sin_fecha.csv`: "1 fila descartada" → desplegar muestra fila, motivo "Sin fecha válida" y contenido.
   5. Fila con descripción idéntica a historial: icono History + tooltip "Historial · N movimientos"; fila que solo coincide con una regla: icono ListChecks + "Regla · Nombre"; sin nada: borde amarillo sin icono. Cambiar categoría a mano → icono lápiz "Manual". Filtro "Dudosas (N)" lista solo parciales.
   6. Combobox de categoría → "Crear regla para filas como esta…": diálogo prellenado, "Coincide con N filas"; guardar → toast "Regla creada · Aplicada a N filas", filas con icono Regla, y en `#/reglas-clasificacion` aparece la regla.
-  7. Fallo de insert (en DevTools › Network, bloquear `…/rest/v1/transacciones` con método POST y pulsar Importar): toast "Error al importar transacciones" y el preview sigue abierto con las filas.
+  7. Fallo de insert (en DevTools › Network, bloquear el patrón `rest/v1/transacciones` — corta también el GET de refetch, es esperado — y pulsar Importar): toast "Error al importar transacciones" y el preview sigue abierto con las filas.
   8. Importación correcta: toast "N transacciones importadas en {cuenta}"; Red muestra `POST transacciones`, `GET transacciones`, `GET subscription_services` y los `PATCH`/`POST` del sync; móvil 390×844 `#/suscripciones` refleja el cargo nuevo sin abrir el gestor de escritorio.
-- [ ] Commit: `git add src/components/import src/pages/Transacciones.tsx && git rm -q --cached src/components/BankStatementImporter.tsx 2>/dev/null; git commit -m "Dividir el importador: parser y categorización en lib, tabla con fuente de la sugerencia, reglas desde el preview y resumen con descartes" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"`.
+- [ ] Commit: `git add src/components/import src/pages/Transacciones.tsx && git commit -m "Dividir el importador: parser y categorización en lib, tabla con fuente de la sugerencia, reglas desde el preview y resumen con descartes" -m "Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"`.
 
 ---
 
