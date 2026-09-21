@@ -33,6 +33,7 @@ const Alertas = lazy(() => import("./pages/Alertas"));
 
 // Versión móvil (< 768px), solo lectura.
 const SoloEscritorio = lazy(() => import("./pages/movil/SoloEscritorio"));
+const ResumenMovil = lazy(() => import("./pages/movil/ResumenMovil"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -56,13 +57,13 @@ const App = () => (
             <Routes>
               <Route path="/" element={
                 <ProtectedRoute fallbackPath="/auth">
-                  <Responsive desktop={Dashboard} mobile={SoloEscritorio} />
+                  <Responsive desktop={Dashboard} mobile={ResumenMovil} />
                 </ProtectedRoute>
               } />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
-                  <Responsive desktop={Dashboard} mobile={SoloEscritorio} />
+                  <Responsive desktop={Dashboard} mobile={ResumenMovil} />
                 </ProtectedRoute>
               } />
               <Route path="/transacciones" element={
