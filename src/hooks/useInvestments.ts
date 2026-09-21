@@ -1,75 +1,81 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
+import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 import { Investment, InvestmentPayout, InvestmentValuation } from '@/types/investments';
+
+interface InvestmentsData {
+  investments: Investment[];
+  valuations: InvestmentValuation[];
+  payouts: InvestmentPayout[];
+}
+
+const EMPTY_INVESTMENTS: Investment[] = [];
+const EMPTY_VALUATIONS: InvestmentValuation[] = [];
+const EMPTY_PAYOUTS: InvestmentPayout[] = [];
+
+/** Las tres tablas en una sola queryFn: se invalidan juntas (clave `inversiones`). */
+const fetchInvestments = async (userId: string): Promise<InvestmentsData> => {
+  const [inv, val, pay] = await Promise.all([
+    supabase.from('inversiones').select('*').eq('user_id', userId).order('nombre'),
+    supabase.from('investment_valuations').select('*').eq('user_id', userId).order('fecha', { ascending: true }),
+    supabase.from('investment_payouts').select('*').eq('user_id', userId).order('fecha', { ascending: false }),
+  ]);
+  if (inv.error) throw inv.error;
+  if (val.error) throw val.error;
+  if (pay.error) throw pay.error;
+  return {
+    investments: (inv.data || []) as unknown as Investment[],
+    valuations: (val.data || []) as unknown as InvestmentValuation[],
+    payouts: (pay.data || []) as unknown as InvestmentPayout[],
+  };
+};
 
 export const useInvestments = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [investments, setInvestments] = useState<Investment[]>([]);
-  const [valuations, setValuations] = useState<InvestmentValuation[]>([]);
-  const [payouts, setPayouts] = useState<InvestmentPayout[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  // saldo_cuenta sale de la caché de cuentas (saldoActual), no de consultas propias:
+  // se refresca sola al importar y ahorra dos peticiones.
+  const { accounts, loading: accountsLoading } = useFinanceDataSupabase();
+  const QK = financeQueryKeys(user?.id);
 
-  const fetchAll = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    const [inv, val, pay] = await Promise.all([
-      supabase.from('inversiones').select('*').eq('user_id', user.id).order('nombre'),
-      supabase.from('investment_valuations').select('*').eq('user_id', user.id).order('fecha', { ascending: true }),
-      supabase.from('investment_payouts').select('*').eq('user_id', user.id).order('fecha', { ascending: false }),
-    ]);
+  const query = useQuery({
+    queryKey: QK.inversiones,
+    queryFn: () => fetchInvestments(user!.id),
+    staleTime: STALE_TIME,
+    enabled: !!user,
+  });
 
-    if (inv.error || val.error || pay.error) {
-      toast({ title: 'Error', description: 'No se pudieron cargar las inversiones', variant: 'destructive' });
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    if (!query.error) return;
+    console.error('Error loading investments:', query.error);
+    toast({ title: 'Error', description: 'No se pudieron cargar las inversiones', variant: 'destructive' });
+  }, [query.error, toast]);
 
-    const rawInvestments = (inv.data || []) as unknown as Investment[];
-    const valuationsData = (val.data || []) as unknown as InvestmentValuation[];
+  const valuations = query.data?.valuations ?? EMPTY_VALUATIONS;
+  const payouts = query.data?.payouts ?? EMPTY_PAYOUTS;
 
-    // Saldo real de las cuentas vinculadas: saldo inicial + movimientos registrados
-    const cuentaIds = Array.from(
-      new Set(rawInvestments.map((i) => i.cuenta_id).filter((id): id is string => !!id)),
-    );
-    const saldoPorCuenta: Record<string, number> = {};
-    if (cuentaIds.length > 0) {
-      const [cuentasRes, txRes] = await Promise.all([
-        supabase.from('cuentas').select('id, saldo_inicial').in('id', cuentaIds),
-        supabase.from('transacciones').select('cuenta_id, ingreso, gasto').in('cuenta_id', cuentaIds),
-      ]);
-      (cuentasRes.data || []).forEach((c: { id: string; saldo_inicial: number }) => {
-        saldoPorCuenta[c.id] = Number(c.saldo_inicial) || 0;
-      });
-      (txRes.data || []).forEach((t: { cuenta_id: string; ingreso: number; gasto: number }) => {
-        saldoPorCuenta[t.cuenta_id] =
-          (saldoPorCuenta[t.cuenta_id] || 0) + (Number(t.ingreso) || 0) - (Number(t.gasto) || 0);
-      });
-    }
-
-    const enriched = rawInvestments.map((i) => {
-      const lastVal = valuationsData
+  const investments = useMemo(() => {
+    const raw = query.data?.investments ?? EMPTY_INVESTMENTS;
+    const saldoPorCuenta = new Map(accounts.map((a) => [a.id, a.saldoActual]));
+    return raw.map((i) => {
+      const lastVal = valuations
         .filter((v) => v.inversion_id === i.id)
         .sort((a, b) => a.fecha.localeCompare(b.fecha))
         .slice(-1)[0];
-      const saldoCuenta = i.cuenta_id ? saldoPorCuenta[i.cuenta_id] : undefined;
+      const saldoCuenta = i.cuenta_id ? saldoPorCuenta.get(i.cuenta_id) : undefined;
       const valor =
         lastVal?.valor ??
         (saldoCuenta !== undefined ? saldoCuenta : i.valor_actual || i.monto_invertido || 0);
       return { ...i, saldo_cuenta: saldoCuenta ?? null, valor_actual: valor } as Investment;
     });
+  }, [query.data, accounts, valuations]);
 
-    setInvestments(enriched);
-    setValuations(valuationsData);
-    setPayouts((pay.data || []) as unknown as InvestmentPayout[]);
-    setLoading(false);
-  }, [user, toast]);
-
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: QK.inversiones });
 
   const saveInvestment = async (values: Partial<Investment>, id?: string) => {
     if (!user) return false;
@@ -102,7 +108,7 @@ export const useInvestments = () => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
       return false;
     }
-    await fetchAll();
+    await invalidate();
     return true;
   };
 
@@ -112,7 +118,7 @@ export const useInvestments = () => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
       return false;
     }
-    await fetchAll();
+    await invalidate();
     return true;
   };
 
@@ -138,7 +144,7 @@ export const useInvestments = () => {
       return false;
     }
     await supabase.from('inversiones').update({ valor_actual: values.valor }).eq('id', inversionId);
-    await fetchAll();
+    await invalidate();
     return true;
   };
 
@@ -148,7 +154,7 @@ export const useInvestments = () => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
       return false;
     }
-    await fetchAll();
+    await invalidate();
     return true;
   };
 
@@ -171,7 +177,7 @@ export const useInvestments = () => {
       return false;
     }
     await supabase.from('inversiones').update({ ultimo_pago: values.fecha }).eq('id', inversionId);
-    await fetchAll();
+    await invalidate();
     return true;
   };
 
@@ -181,7 +187,7 @@ export const useInvestments = () => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
       return false;
     }
-    await fetchAll();
+    await invalidate();
     return true;
   };
 
@@ -189,13 +195,13 @@ export const useInvestments = () => {
     investments,
     valuations,
     payouts,
-    loading,
+    loading: (!!user && query.isPending) || accountsLoading,
     saveInvestment,
     deleteInvestment,
     addValuation,
     deleteValuation,
     addPayout,
     deletePayout,
-    refresh: fetchAll,
+    refresh: invalidate,
   };
 };
