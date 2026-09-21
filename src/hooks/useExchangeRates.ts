@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { EXCHANGE_RATES_KEY, STALE_TIME } from '@/lib/finance/queryKeys';
 
 export interface ExchangeRates {
   USD: number;
@@ -6,14 +8,9 @@ export interface ExchangeRates {
   MXN: number;
 }
 
-// Singleton cache to avoid multiple API calls across components
-let cachedRates: ExchangeRates | null = null;
-let cacheTimestamp = 0;
-let fetchPromise: Promise<ExchangeRates> | null = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 const DEFAULT_RATES: ExchangeRates = { USD: 20, EUR: 22, MXN: 1 };
 
+/** Devuelve DEFAULT_RATES si la API falla: la app nunca se queda sin tasas. */
 async function fetchRatesFromAPI(): Promise<ExchangeRates> {
   try {
     const response = await fetch('https://api.exchangerate-api.com/v4/latest/MXN');
@@ -27,61 +24,25 @@ async function fetchRatesFromAPI(): Promise<ExchangeRates> {
   } catch {
     return DEFAULT_RATES;
   }
+
 }
 
-async function getOrFetchRates(): Promise<ExchangeRates> {
-  const now = Date.now();
-  if (cachedRates && now - cacheTimestamp < CACHE_TTL) {
-    return cachedRates;
-  }
-  // Deduplicate concurrent calls
-  if (!fetchPromise) {
-    fetchPromise = fetchRatesFromAPI().then(rates => {
-      cachedRates = rates;
-      cacheTimestamp = Date.now();
-      fetchPromise = null;
-      return rates;
-    });
-  }
-  return fetchPromise;
-}
-
+/**
+ * Tasas MXN↔USD/EUR en la caché de TanStack Query (clave sin usuario): una sola
+ * petición para toda la app, fresca 5 min y refrescada cada 5 min mientras haya
+ * algún componente montado. Sustituye al singleton cachedRates/fetchPromise.
+ */
 export const useExchangeRates = () => {
-  const [rates, setRates] = useState<ExchangeRates>(cachedRates || DEFAULT_RATES);
-  const [loading, setLoading] = useState(!cachedRates);
-  const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const query = useQuery({
+    queryKey: EXCHANGE_RATES_KEY,
+    queryFn: fetchRatesFromAPI,
+    staleTime: STALE_TIME,
+    // Sin refetchInterval: cada observador (11 archivos + useFinanceDataSupabase) crearía su propio
+    // intervalo. staleTime + refetchOnWindowFocus (por defecto) ya refresca al volver a la pestaña.
+    retry: false,
+  });
+  const rates = query.data ?? DEFAULT_RATES;
 
-  useEffect(() => {
-    let mounted = true;
-
-    const load = async () => {
-      try {
-        const newRates = await getOrFetchRates();
-        if (mounted) {
-          setRates(newRates);
-          setError(null);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Error desconocido');
-          setLoading(false);
-        }
-      }
-    };
-
-    load();
-
-    // Refresh every 5 minutes
-    intervalRef.current = setInterval(load, CACHE_TTL);
-    return () => {
-      mounted = false;
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  // Stable convertCurrency function
   const convertCurrency = useCallback(
     (amount: number, fromCurrency: 'MXN' | 'USD' | 'EUR', toCurrency: 'MXN' | 'USD' | 'EUR'): number => {
       if (fromCurrency === toCurrency) return amount;
@@ -92,10 +53,14 @@ export const useExchangeRates = () => {
   );
 
   const refreshRates = useCallback(async () => {
-    cachedRates = null; // Force refresh
-    const newRates = await getOrFetchRates();
-    setRates(newRates);
-  }, []);
+    await query.refetch();
+  }, [query.refetch]);
 
-  return { rates, loading, error, convertCurrency, refreshRates };
+  return {
+    rates,
+    loading: query.isPending,
+    error: query.error ? (query.error instanceof Error ? query.error.message : 'Error desconocido') : null,
+    convertCurrency,
+    refreshRates,
+  };
 };
