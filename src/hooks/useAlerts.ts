@@ -1,12 +1,12 @@
-import { useCallback, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinanceDataSupabase } from './useFinanceDataSupabase';
+import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 import { Alert, computeAlerts, SubscriptionForAlerts } from '@/lib/finance/alerts';
 
-const STALE_TIME = 5 * 60 * 1000;
-
+// Temporal hasta la fase 2: useSubscriptionServices aún filtra active y tiene staleTime 0.
 const fetchSubscriptions = async (): Promise<SubscriptionForAlerts[]> => {
   const { data, error } = await supabase
     .from('subscription_services')
@@ -43,6 +43,7 @@ const readInactiveAnnual = (): Set<string> => {
 export const useAlerts = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const QK = financeQueryKeys(user?.id);
   const { categories, transactions, loading: financeLoading } = useFinanceDataSupabase();
   const [inactiveAnnual] = useState(readInactiveAnnual);
 
@@ -52,9 +53,8 @@ export const useAlerts = () => {
     staleTime: STALE_TIME,
     enabled: !!user,
   });
-  const dismissalsKey = ['finance', user?.id, 'alert-dismissals'];
   const dismissalsQuery = useQuery({
-    queryKey: dismissalsKey,
+    queryKey: QK.alertDismissals,
     queryFn: fetchDismissals,
     staleTime: STALE_TIME,
     enabled: !!user,
@@ -70,35 +70,50 @@ export const useAlerts = () => {
   const alerts = useMemo(() => allAlerts.filter(a => !dismissed.has(a.key)), [allAlerts, dismissed]);
   const dismissedAlerts = useMemo(() => allAlerts.filter(a => dismissed.has(a.key)), [allAlerts, dismissed]);
 
-  const dismiss = useCallback(async (alert: Alert) => {
-    if (!user) return;
-    // Optimista: desaparece al instante y se confirma en segundo plano
-    queryClient.setQueryData<string[]>(dismissalsKey, prev => [...(prev ?? []), alert.key]);
-    const { error } = await supabase.from('alert_dismissals').upsert({ user_id: user.id, alert_key: alert.key }, { onConflict: 'user_id,alert_key' });
-    if (error) {
+  // Optimista: la alerta desaparece/reaparece al instante y se confirma en segundo plano;
+  // si falla, se recarga la lista de descartes.
+  const dismissMutation = useMutation({
+    mutationFn: async (alert: Alert) => {
+      if (!user) return;
+      const { error } = await supabase
+        .from('alert_dismissals')
+        .upsert({ user_id: user.id, alert_key: alert.key }, { onConflict: 'user_id,alert_key' });
+      if (error) throw error;
+    },
+    onMutate: (alert) => {
+      queryClient.setQueryData<string[]>(QK.alertDismissals, prev => [...(prev ?? []), alert.key]);
+    },
+    onError: (error) => {
       console.error('Error dismissing alert:', error);
-      queryClient.invalidateQueries({ queryKey: dismissalsKey });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, queryClient]);
+      queryClient.invalidateQueries({ queryKey: QK.alertDismissals });
+    },
+  });
 
-  const restore = useCallback(async (alert: Alert) => {
-    if (!user) return;
-    queryClient.setQueryData<string[]>(dismissalsKey, prev => (prev ?? []).filter(k => k !== alert.key));
-    const { error } = await supabase.from('alert_dismissals').delete().eq('user_id', user.id).eq('alert_key', alert.key);
-    if (error) {
+  const restoreMutation = useMutation({
+    mutationFn: async (alert: Alert) => {
+      if (!user) return;
+      const { error } = await supabase
+        .from('alert_dismissals')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('alert_key', alert.key);
+      if (error) throw error;
+    },
+    onMutate: (alert) => {
+      queryClient.setQueryData<string[]>(QK.alertDismissals, prev => (prev ?? []).filter(k => k !== alert.key));
+    },
+    onError: (error) => {
       console.error('Error restoring alert:', error);
-      queryClient.invalidateQueries({ queryKey: dismissalsKey });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, queryClient]);
+      queryClient.invalidateQueries({ queryKey: QK.alertDismissals });
+    },
+  });
 
   return {
     alerts,
     dismissedAlerts,
     count: alerts.length,
     loading: financeLoading || subscriptionsQuery.isPending || dismissalsQuery.isPending,
-    dismiss,
-    restore,
+    dismiss: dismissMutation.mutate,
+    restore: restoreMutation.mutate,
   };
 };
