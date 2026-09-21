@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 
 export interface UserProfile {
   id: string;
@@ -13,45 +14,35 @@ export interface UserProfile {
   updated_at: string;
 }
 
+export const fetchProfile = async (userId: string): Promise<UserProfile> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+  if (error) throw error;
+  return data as UserProfile;
+};
+
+/**
+ * Perfil del usuario (tabla profiles). Una sola query `perfil` compartida con
+ * useAppConfig; ProfileEditor la invalida al guardar, así la divisa preferida
+ * se refleja en toda la app sin recargar.
+ */
 export const useUserProfile = () => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-    } else {
-      setProfile(null);
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error('Error in fetchProfile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const query = useQuery({
+    queryKey: financeQueryKeys(user?.id).perfil,
+    queryFn: () => fetchProfile(user!.id),
+    staleTime: STALE_TIME,
+    enabled: !!user,
+    retry: 1,
+  });
 
   return {
-    profile,
-    loading,
-    refetch: fetchProfile
+    profile: query.data ?? null,
+    /** true solo durante la primera carga con sesión (sin sesión, false como antes). */
+    loading: !!user && query.isPending,
+    refetch: query.refetch,
   };
 };

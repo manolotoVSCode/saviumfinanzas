@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/contexts/AuthContext';
+import { financeQueryKeys } from '@/lib/finance/queryKeys';
 import { User, Key, Mail } from 'lucide-react';
 import { DatabaseBackup } from './DatabaseBackup';
 
@@ -40,10 +42,9 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const ProfileEditor = () => {
-  const { profile, loading, refetch } = useUserProfile();
+  const { profile, loading } = useUserProfile();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [updating, setUpdating] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
 
@@ -76,12 +77,10 @@ export const ProfileEditor = () => {
     }
   }, [profile, form]);
 
-  const onSubmit = async (data: ProfileFormData) => {
-    if (!profile) return;
+  const queryClient = useQueryClient();
 
-    try {
-      setUpdating(true);
-
+  const updateProfile = useMutation({
+    mutationFn: async (data: ProfileFormData) => {
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -89,21 +88,25 @@ export const ProfileEditor = () => {
           apellidos: data.apellidos,
           divisa_preferida: data.divisa_preferida,
         })
-        .eq('user_id', profile.user_id);
-
+        .eq('user_id', profile!.user_id);
       if (error) throw error;
-
-      await refetch();
-    } catch (error) {
+    },
+    // Invalida `perfil`: useAppConfig (dashboard, informes…) ve la nueva divisa sin recargar.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: financeQueryKeys(user?.id).perfil }),
+    onError: (error) => {
       console.error('Error updating profile:', error);
       toast({
         title: "Error",
         description: "No se pudo actualizar el perfil",
         variant: "destructive"
       });
-    } finally {
-      setUpdating(false);
-    }
+    },
+  });
+  const updating = updateProfile.isPending;
+
+  const onSubmit = (data: ProfileFormData) => {
+    if (!profile) return;
+    updateProfile.mutate(data);
   };
 
   const onPasswordSubmit = async (data: PasswordFormData) => {

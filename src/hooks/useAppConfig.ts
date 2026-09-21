@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from './useUserProfile';
 
 export type CurrencyCode = 'MXN' | 'USD' | 'EUR';
 
@@ -27,35 +27,20 @@ export const formatPercent = (value: number, decimals: number = 2): string => {
   return `${formatNumber(value, decimals)}%`;
 };
 
+/**
+ * Divisa preferida y formateadores. Lee la misma query `perfil` que useUserProfile:
+ * una sola petición a profiles por sesión aunque lo monten 18 componentes.
+ */
 export const useAppConfig = () => {
   const { user } = useAuth();
-  const [currency, setCurrency] = useState<CurrencyCode>('MXN');
-  const [loaded, setLoaded] = useState(false);
+  const { profile, loading } = useUserProfile();
 
-  useEffect(() => {
-    if (!user) {
-      setCurrency('MXN');
-      setLoaded(false);
-      return;
-    }
-
-    const fetchCurrency = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('divisa_preferida')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!error && data) {
-        setCurrency(data.divisa_preferida as CurrencyCode);
-      }
-      setLoaded(true);
-    };
-
-    fetchCurrency();
-  }, [user]);
-
+  const currency = (profile?.divisa_preferida as CurrencyCode | undefined) ?? 'MXN';
   const config: AppConfig = useMemo(() => ({ currency }), [currency]);
+
+  // true cuando la query terminó (con fila o con error: un perfil ausente no
+  // debe dejar el móvil en loader infinito); false sin sesión.
+  const configLoaded = !!user && !loading;
 
   const formatCurrency = useCallback(
     (amount: number): string => formatNumber(amount, 2),
@@ -64,9 +49,9 @@ export const useAppConfig = () => {
 
   return useMemo(() => ({
     config,
-    configLoaded: loaded,
+    configLoaded,
     formatCurrency,
     formatNumber,
     formatPercent,
-  }), [config, loaded, formatCurrency]);
+  }), [config, configLoaded, formatCurrency]);
 };
