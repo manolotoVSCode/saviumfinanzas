@@ -35,5 +35,5 @@ PWA via vite-plugin-pwa: precache app shell only, autoUpdate, disabled in dev.
 - **Investments Chart Data** — Pie chart uses 'Saldo Actual' converted to preferred currency
 - **Classification Rules** — Auto-classification rules engine with exact/contains matching and drill-down UI
 - **Preferred Currency** — useAppConfig reads divisa_preferida, all calculations convert to it
-- **Net Worth History** — Informes › Patrimonio Neto reconstructs monthly activos/pasivos/patrimonio from saldoInicial + transactions (src/lib/finance/netWorthHistory.ts); same account classification as the dashboard, current FX rates. Not shown on the dashboard by user request. Table financial_health_history is unused.
+- **Net Worth History** — Informes › Patrimonio Neto reconstructs monthly activos/pasivos/patrimonio from saldoInicial + transactions (src/lib/finance/netWorthHistory.ts); same account classification as the dashboard, current FX rates. Not shown on the dashboard by user request.
 - [Investments Module](finance/investments-module.md) — Editable investment types catalog, separate inversiones table, valuations & payouts
