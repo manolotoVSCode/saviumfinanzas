@@ -48,7 +48,7 @@ const Shell = ({ children }: { children: ReactNode }) => {
     <div className="min-h-screen bg-background text-foreground">
       {/* CABECERA */}
       {/* min-h (no h fija): en PWA de iPhone el safe-area-inset-top vale 44-59px y una altura fija dejaría los chips fuera de la cabecera */}
-      <header className="sticky top-0 z-40 min-h-14 bg-background border-b flex items-center justify-between px-4 pt-[env(safe-area-inset-top)]">
+      <header className="sticky top-0 z-40 min-h-14 bg-background border-b flex items-center justify-between pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)]">
         <button type="button" onClick={() => navigate('/dashboard')} aria-label="Ir a Resumen">
           <img src="/images/logo.png" alt="Savium" className="h-8 w-auto" />
         </button>
@@ -66,12 +66,12 @@ const Shell = ({ children }: { children: ReactNode }) => {
       </header>
 
       {/* CONTENIDO: no se monta ninguna pantalla hasta saber la divisa (evita calcular con el MXN provisional) */}
-      <main className="px-4 py-4 pb-[calc(5rem_+_env(safe-area-inset-bottom))]">
+      <main className="pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-4 pb-[calc(5rem_+_env(safe-area-inset-bottom))]">
         {ready ? <Suspense fallback={<Cargando />}>{children}</Suspense> : <Cargando />}
       </main>
 
       {/* NAV INFERIOR: 64px + zona segura */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 bg-background border-t h-[calc(4rem_+_env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 inset-x-0 z-50 bg-background border-t h-[calc(4rem_+_env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <div className="grid grid-cols-5 h-16">
           {TABS.map(({ path, icon: Icon, label, matches }) => {
             const active = matches.includes(location.pathname);
