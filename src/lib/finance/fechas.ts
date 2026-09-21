@@ -16,3 +16,11 @@ export const diasHasta = (iso: string, now: Date = new Date()): number => {
 /** '20 sept 2026'. */
 export const formatFechaCorta = (d: Date): string =>
   d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+/**
+ * Corte de datos: último instante del mes anterior. Los movimientos del mes en
+ * curso no se importan hasta que cierra, así que el libro solo está completo
+ * hasta aquí; lo que "falta" después de esta fecha no es un cargo perdido.
+ */
+export const finMesAnterior = (now: Date = new Date()): Date =>
+  new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);

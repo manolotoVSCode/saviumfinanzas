@@ -35,7 +35,13 @@ describe('computeCxP · suscripciones', () => {
     ] });
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ id: 'sub-s1', concepto: 'Netflix', tipo: 'Suscripción', monto: 199, divisa: 'MXN', detalle: 'Mensual' });
-    expect(rows[0].fechaEstimada.getTime()).toBe(new Date('2026-09-20').getTime());
+    expect(rows[0].fechaEstimada).toEqual(new Date(2026, 8, 20)); // medianoche local, no UTC
+  });
+
+  it('una suscripción cuyo próximo pago es hoy entra en el horizonte', () => {
+    // aunque `now` lleve hora: se compara contra el inicio del día
+    const rows = computeCxP({ ...base, now: new Date(2026, 8, 15, 14, 30), subscriptions: [sub({ proximo_pago: '2026-09-15' })] });
+    expect(rows).toHaveLength(1);
   });
 
   it('una fila sin divisa propia (suscripción) cae en baseCurrency', () => {
@@ -114,9 +120,19 @@ describe('computeCxP · recurrentes', () => {
     expect(rows[0].fechaEstimada).toEqual(new Date(2026, 11, 1));
   });
 
-  it('un recurrente mensual sin pagos en más de 45 días se considera inactivo', () => {
+  it('la tolerancia se mide desde el corte de datos (fin del mes anterior), no desde hoy', () => {
+    // 26 sep: el último pago (10 ago) tiene 47 días desde hoy pero solo 21 desde el corte (31 ago)
+    const rows = computeCxP({ ...base, now: new Date(2026, 8, 26), categories: [luz], transactions: [
+      tx({ id: 'a', subcategoriaId: 'luz', gasto: 500, fecha: new Date(2026, 7, 10) }),
+      tx({ id: 'b', subcategoriaId: 'luz', gasto: 500, fecha: new Date(2026, 6, 10) }),
+    ] });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].fechaEstimada).toEqual(new Date(2026, 9, 10));
+  });
+
+  it('un recurrente mensual sin pagos en más de 45 días desde el corte se considera inactivo', () => {
     const rows = computeCxP({ ...base, categories: [luz], transactions: [
-      tx({ id: 'a', subcategoriaId: 'luz', gasto: 500, fecha: new Date(2026, 6, 10) }), // 10 jul → 67 días
+      tx({ id: 'a', subcategoriaId: 'luz', gasto: 500, fecha: new Date(2026, 6, 10) }), // 10 jul → 52 días desde el corte (31 ago)
       tx({ id: 'b', subcategoriaId: 'luz', gasto: 500, fecha: new Date(2026, 5, 10) }),
     ] });
     expect(rows).toHaveLength(0);
@@ -148,7 +164,15 @@ describe('computeCxP · préstamos', () => {
     expect(rows[0].fechaEstimada).toEqual(new Date(2026, 8, 20));
   });
 
-  it('préstamo sin pagos en 45 días se considera saldado', () => {
+  it('préstamo pagado el mes anterior sigue vigente aunque hoy hayan pasado más de 45 días', () => {
+    const rows = computeCxP({ ...base, now: new Date(2026, 8, 28), categories: [prestamo], transactions: [
+      tx({ subcategoriaId: 'loan', gasto: 4000, fecha: new Date(2026, 7, 5) }), // 5 ago: 54 días desde hoy, 26 desde el corte
+    ] });
+    expect(rows).toHaveLength(1);
+    expect(rows[0].fechaEstimada).toEqual(new Date(2026, 9, 5));
+  });
+
+  it('préstamo sin pagos en 45 días desde el corte se considera saldado', () => {
     const rows = computeCxP({ ...base, categories: [prestamo], transactions: [
       tx({ subcategoriaId: 'loan', gasto: 4000, fecha: new Date(2026, 5, 1) }),
     ] });

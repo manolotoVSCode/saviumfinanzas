@@ -1,5 +1,6 @@
 import { Account, Category, Transaction } from '@/types/finance';
 import { CurrencyCode } from './dashboardMetrics';
+import { finMesAnterior, parseFechaLocal } from './fechas';
 
 export type CxPTipo = 'Suscripción' | 'Pago anual' | 'Recurrente mensual' | 'Tarjeta de crédito' | 'Préstamo';
 
@@ -47,13 +48,18 @@ export const computeCxP = ({
 }: CxPInput): CxPRow[] => {
   const limite = new Date(now);
   limite.setDate(now.getDate() + horizonte);
+  // Inicio de hoy: un pago previsto para hoy sigue siendo "por pagar" aunque `now` lleve hora.
+  const hoy = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Los movimientos del mes en curso no se importan hasta que cierra: la actividad
+  // (¿sigue vivo este recurrente/préstamo?) se juzga contra el corte de datos, no contra hoy.
+  const corte = finMesAnterior(now);
 
   // 1) Suscripciones activas próximas al horizonte
   const cxpSuscripciones: CxPRow[] = subscriptions
     .filter((s) => s.active)
     .filter((s) => {
-      const px = new Date(s.proximo_pago);
-      return px >= now && px <= limite;
+      const px = parseFechaLocal(s.proximo_pago);
+      return px >= hoy && px <= limite;
     })
     .map((s) => ({
       id: `sub-${s.id}`,
@@ -61,7 +67,7 @@ export const computeCxP = ({
       tipo: 'Suscripción' as const,
       monto: Number(s.ultimo_pago_monto) || 0,
       divisa: baseCurrency, // subscription_services no guarda divisa → divisa del perfil
-      fechaEstimada: new Date(s.proximo_pago),
+      fechaEstimada: parseFechaLocal(s.proximo_pago),
       detalle: s.frecuencia,
     }));
 
@@ -166,8 +172,9 @@ export const computeCxP = ({
 
     const last = sorted[0];
     const lastDate = new Date(last.fecha);
-    const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / DIA_MS;
-    // Tolerancia: 1.5x el periodo esperado (mínimo 45 días para dar margen a mensuales)
+    const diasDesdeUltimo = (corte.getTime() - lastDate.getTime()) / DIA_MS;
+    // Tolerancia: 1.5x el periodo esperado (mínimo 45 días para dar margen a mensuales),
+    // medida desde el corte de datos
     const tolerancia = Math.max(45, periodoMeses * 30 * 1.5);
     if (diasDesdeUltimo > tolerancia) return;
 
@@ -222,8 +229,8 @@ export const computeCxP = ({
     if (!txs.length) return;
     const last = txs[0];
     const lastDate = new Date(last.fecha);
-    const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / DIA_MS;
-    // Préstamo saldado / inactivo: si el último pago es de hace >45 días, no hay compromiso vigente
+    const diasDesdeUltimo = (corte.getTime() - lastDate.getTime()) / DIA_MS;
+    // Préstamo saldado / inactivo: si al corte de datos el último pago tenía >45 días, no hay compromiso vigente
     if (diasDesdeUltimo > 45) return;
     const nextDate = new Date(lastDate);
     nextDate.setMonth(nextDate.getMonth() + 1);
