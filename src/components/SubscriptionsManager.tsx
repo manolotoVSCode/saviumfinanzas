@@ -1,3 +1,5 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -7,145 +9,78 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
+import { useAuth } from '@/contexts/AuthContext';
+import { SubscriptionService, useSubscriptionServices } from '@/hooks/useSubscriptionServices';
+import { useSubscriptionSync } from '@/hooks/useSubscriptionSync';
 import { supabase } from '@/integrations/supabase/client';
+import { financeQueryKeys } from '@/lib/finance/queryKeys';
+import { calculateNextPayment, previousPaymentAmount, SubscriptionFrequency } from '@/lib/finance/subscriptions';
+import { parseFechaLocal, toFechaISO } from '@/lib/finance/fechas';
+import { Transaction } from '@/types/finance';
 import { CreditCard, Calendar, Clock, Repeat, RefreshCw, Edit2, Check, X, TrendingUp, TrendingDown, Merge } from 'lucide-react';
-import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
-// ──────────────────────────────────────────────
-// Patrones de suscripciones embebidos en código
-// ──────────────────────────────────────────────
-interface SubscriptionPattern {
-  id: string;
-  serviceName: string;
-  tipoServicio: string;
-  /** Palabras clave que DEBE contener el comentario (todas deben coincidir) */
-  keywords: string[];
-  /** Palabras que NO debe contener el comentario (excluir falsos positivos) */
-  excludeKeywords?: string[];
-  /** Monto esperado — si se define, solo acepta transacciones con ±10% de este valor */
-  expectedAmount?: number;
-  frecuenciaDefault?: 'Mensual' | 'Anual' | 'Irregular';
-}
-
-const SUBSCRIPTION_PATTERNS: SubscriptionPattern[] = [
-  {
-    id: 'amazon-prime',
-    serviceName: 'Amazon Prime',
-    tipoServicio: 'Streaming y envíos',
-    keywords: ['amazon', 'retail'],
-    excludeKeywords: ['marketplace'],
-    expectedAmount: 99,
-  },
-  {
-    id: 'spotify',
-    serviceName: 'Spotify',
-    tipoServicio: 'Streaming de música',
-    keywords: ['spotify'],
-  },
-  {
-    id: 'rotoplas',
-    serviceName: 'Rotoplas',
-    tipoServicio: 'Servicio de agua',
-    keywords: ['rotoplas'],
-    expectedAmount: 399,
-  },
-  {
-    id: 'netflix',
-    serviceName: 'Netflix',
-    tipoServicio: 'Streaming de video',
-    keywords: ['netflix'],
-  },
-  {
-    id: 'chatgpt',
-    serviceName: 'ChatGPT',
-    tipoServicio: 'Inteligencia Artificial',
-    keywords: ['openai', 'chatgpt'],
-  },
-  {
-    id: 'apple',
-    serviceName: 'Apple',
-    tipoServicio: 'Servicios Apple',
-    keywords: ['apple', 'com/bill'],
-  },
-  {
-    id: 'google-nest',
-    serviceName: 'Google Nest',
-    tipoServicio: 'Dispositivos inteligentes',
-    keywords: ['google', 'nest'],
-  },
-  {
-    id: 'google-one',
-    serviceName: 'Google One',
-    tipoServicio: 'Almacenamiento en la nube',
-    keywords: ['google', 'one'],
-  },
-  {
-    id: 'youtube-premium',
-    serviceName: 'YouTube Premium',
-    tipoServicio: 'Streaming de video',
-    keywords: ['google', 'youtube'],
-  },
-  {
-    id: 'lovable',
-    serviceName: 'Lovable',
-    tipoServicio: 'Desarrollo de software',
-    keywords: ['lovable'],
-  },
-  {
-    id: 'opus-clip',
-    serviceName: 'Opus Clip',
-    tipoServicio: 'Edición de video',
-    keywords: ['opus'],
-  },
-  {
-    id: 'github',
-    serviceName: 'GitHub',
-    tipoServicio: 'Desarrollo de software',
-    keywords: ['github'],
-  },
-  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['msbill'] },
-  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['microsoft'] },
-  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['msft'] },
-  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['xbox'] },
-  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['office365'] },
-  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['office 365'] },
-  { id: 'microsoft', serviceName: 'Microsoft', tipoServicio: 'Software y servicios', keywords: ['onedrive'] },
-];
-
-type SubscriptionFrequency = 'Mensual' | 'Bimestral' | 'Semestral' | 'Anual' | 'Irregular';
-
 const FREQUENCY_OPTIONS: { value: SubscriptionFrequency; label: string }[] = [
+  { value: 'Semanal', label: 'Semanal' },
   { value: 'Mensual', label: 'Mensual' },
   { value: 'Bimestral', label: 'Bimestral' },
+  { value: 'Trimestral', label: 'Trimestral' },
   { value: 'Semestral', label: 'Semestral' },
   { value: 'Anual', label: 'Anual' },
 ];
 
-interface SubscriptionService {
-  id?: string;
+/** Fila de BD + datos derivados para pintar. */
+interface ServiceView {
+  id: string;
   serviceName: string;
   tipoServicio: string;
-  ultimoPago: {
-    monto: number;
-    fecha: Date;
-    mes: string;
-  };
-  previousPaymentAmount?: number | null;
   frecuencia: SubscriptionFrequency;
+  ultimoPago: { monto: number; fecha: Date; mes: string };
+  previousPaymentAmount: number | null;
   proximoPago: Date;
   numeroPagos: number;
   originalComments: string[];
-  active?: boolean;
-  patternId?: string;
+  active: boolean;
 }
+
+const toView = (row: SubscriptionService, transactions: Transaction[]): ServiceView => {
+  const fecha = parseFechaLocal(row.ultimo_pago_fecha);
+  return {
+    id: row.id,
+    serviceName: row.service_name,
+    tipoServicio: row.tipo_servicio,
+    frecuencia: row.frecuencia as SubscriptionFrequency,
+    ultimoPago: {
+      monto: Number(row.ultimo_pago_monto),
+      fecha,
+      mes: fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
+    },
+    previousPaymentAmount: previousPaymentAmount(row.original_comments ?? [], transactions),
+    proximoPago: parseFechaLocal(row.proximo_pago),
+    numeroPagos: row.numero_pagos,
+    originalComments: row.original_comments ?? [],
+    active: row.active,
+  };
+};
+
+const getFrequencyBadgeVariant = (frequency: string) => {
+  switch (frequency) {
+    case 'Mensual': return 'default';
+    case 'Bimestral': return 'default';
+    case 'Semestral': return 'secondary';
+    case 'Anual': return 'secondary';
+    default: return 'outline';
+  }
+};
 
 export const SubscriptionsManager = () => {
   const { formatCurrency } = useAppConfig();
-  const financeData = useFinanceDataSupabase();
-  const { transactions } = financeData;
-  const [services, setServices] = useState<SubscriptionService[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { transactions, loading: loadingTx } = useFinanceDataSupabase();
+  const { subscriptions, loading: loadingSubs } = useSubscriptionServices();
+  const { sync, syncIfChanged, syncing } = useSubscriptionSync();
+
   const [showInactive, setShowInactive] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -153,539 +88,149 @@ export const SubscriptionsManager = () => {
   const [mergeSourceId, setMergeSourceId] = useState<string | null>(null);
   const [mergeTargetId, setMergeTargetId] = useState<string>('');
 
-  const performMerge = async () => {
-    if (!mergeSourceId || !mergeTargetId || mergeSourceId === mergeTargetId) return;
-    const source = services.find(s => s.id === mergeSourceId);
-    const target = services.find(s => s.id === mergeTargetId);
-    if (!source || !target) return;
-    try {
+  // Disparador (a): detectar al montar, una vez por identidad del array de transacciones de la caché.
+  useEffect(() => {
+    if (!loadingTx && transactions.length > 0) syncIfChanged();
+  }, [transactions, loadingTx, syncIfChanged]);
+
+  const invalidar = () => queryClient.invalidateQueries({ queryKey: financeQueryKeys(user?.id).subscriptions });
+
+  const services = useMemo(
+    () => subscriptions
+      .map(r => toView(r, transactions))
+      .sort((a, b) => b.ultimoPago.fecha.getTime() - a.ultimoPago.fecha.getTime()),
+    [subscriptions, transactions],
+  );
+
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from('subscription_services').update({ active }).eq('id', id);
+      if (error) throw error;
+      return active;
+    },
+    onSuccess: (active) => {
+      toast.success(active ? 'Suscripción activada' : 'Suscripción desactivada');
+      invalidar();
+    },
+    onError: (e) => {
+      console.error('Error updating subscription status:', e);
+      toast.error('Error al actualizar el estado de la suscripción');
+    },
+  });
+
+  const saveName = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { data, error } = await supabase
+        .from('subscription_services')
+        .update({ service_name: name })
+        .eq('id', id)
+        .select('id');
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error('not-found');
+    },
+    onSuccess: () => {
+      toast.success('Nombre de suscripción actualizado');
+      setEditingServiceId(null);
+      setEditingName('');
+      invalidar();
+    },
+    onError: (e: { code?: string; message?: string }) => {
+      console.error('Error updating service name:', e);
+      if (e?.code === '23505') toast.error('Ya existe otra suscripción con ese nombre');
+      else if (e?.message === 'not-found') toast.error('No se encontró la suscripción a renombrar. Vuelve a analizar las suscripciones.');
+      else toast.error(`Error al actualizar el nombre: ${e?.message ?? ''}`);
+    },
+  });
+
+  const saveFrequency = useMutation({
+    mutationFn: async ({ id, frecuencia, ultimoPago }: { id: string; frecuencia: SubscriptionFrequency; ultimoPago: Date }) => {
+      const { error } = await supabase
+        .from('subscription_services')
+        .update({
+          frecuencia,
+          proximo_pago: toFechaISO(calculateNextPayment(ultimoPago, frecuencia)),
+          // Editada por el usuario: el sync ya no la vuelve a detectar.
+          frecuencia_manual: true,
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEditingFrequencyId(null);
+      invalidar();
+    },
+    onError: (e) => {
+      console.error('Error updating frequency:', e);
+      toast.error('Error al actualizar la frecuencia');
+    },
+  });
+
+  const merge = useMutation({
+    mutationFn: async ({ source, target }: { source: ServiceView; target: ServiceView }) => {
       const { data: targetRow } = await supabase
         .from('subscription_services')
         .select('aliases')
-        .eq('id', target.id!)
+        .eq('id', target.id)
         .maybeSingle();
-      const existingAliases: string[] = (targetRow?.aliases as any) || [];
+      const existingAliases: string[] = targetRow?.aliases ?? [];
       const newAliases = Array.from(new Set([
         ...existingAliases,
         ...source.originalComments.map(c => (c || '').toLowerCase().trim()).filter(Boolean),
       ]));
-      const { error: updErr } = await supabase
-        .from('subscription_services')
-        .update({ aliases: newAliases })
-        .eq('id', target.id!);
+      const { error: updErr } = await supabase.from('subscription_services').update({ aliases: newAliases }).eq('id', target.id);
       if (updErr) throw updErr;
-      const { error: delErr } = await supabase
-        .from('subscription_services')
-        .delete()
-        .eq('id', source.id!);
+      const { error: delErr } = await supabase.from('subscription_services').delete().eq('id', source.id);
       if (delErr) throw delErr;
+    },
+    onSuccess: async () => {
       setMergeSourceId(null);
       setMergeTargetId('');
-      setTimeout(() => { processSubscriptions(); }, 0);
-    } catch (e) {
+      await invalidar();
+      // Los alias nuevos cambian la detección: sincronización explícita, sin await:
+      // un fallo del sync tiene su propio toast y no debe marcar la fusión (ya hecha) como error.
+      sync().catch(() => undefined);
+    },
+    onError: (e) => {
       console.error('Error merging subscriptions:', e);
       toast.error('Error al fusionar las suscripciones');
-    }
-  };
+    },
+  });
 
-  // Load saved subscriptions from database
-  const loadSavedSubscriptions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('subscription_services')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading subscriptions:', error);
-        return;
-      }
-
-      if (data) {
-        const savedServices: SubscriptionService[] = data.map(item => ({
-          id: item.id,
-          serviceName: item.service_name,
-          tipoServicio: item.tipo_servicio,
-          ultimoPago: {
-            monto: item.ultimo_pago_monto,
-            fecha: new Date(item.ultimo_pago_fecha),
-            mes: new Date(item.ultimo_pago_fecha).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-          },
-          frecuencia: item.frecuencia as SubscriptionFrequency,
-          proximoPago: new Date(item.proximo_pago),
-          numeroPagos: item.numero_pagos,
-          originalComments: item.original_comments,
-          active: item.active,
-          patternId: item.canon_key || undefined,
-        }));
-        setServices(savedServices);
-      }
-    } catch (error) {
-      console.error('Error loading subscriptions:', error);
-    }
-  };
-
-  // Save or update subscription in database
-  const saveSubscription = async (subscription: SubscriptionService, patternId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Buscar por canon_key (patternId) para evitar duplicados
-      const { data: existing } = await supabase
-        .from('subscription_services')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('canon_key', patternId)
-        .maybeSingle();
-
-      // Preserve manually edited fields (name, frequency, active).
-      // proximo_pago se recalcula si el pago más reciente ya lo superó,
-      // para evitar próximos pagos anteriores al último pago detectado.
-      const preservedFrequency = existing?.frecuencia || subscription.frecuencia;
-      const recomputedNext = calculateNextPayment(subscription.ultimoPago.fecha, preservedFrequency as SubscriptionFrequency);
-      const storedNext = existing?.proximo_pago ? new Date(existing.proximo_pago) : null;
-      const preservedNextPayment = (storedNext && storedNext > subscription.ultimoPago.fecha)
-        ? existing!.proximo_pago
-        : recomputedNext.toISOString().split('T')[0];
-
-
-      const subscriptionData = {
-        user_id: user.id,
-        service_name: existing?.service_name || subscription.serviceName,
-        tipo_servicio: subscription.tipoServicio,
-        ultimo_pago_monto: subscription.ultimoPago.monto,
-        ultimo_pago_fecha: subscription.ultimoPago.fecha.toISOString().split('T')[0],
-        frecuencia: preservedFrequency,
-        proximo_pago: preservedNextPayment,
-        numero_pagos: subscription.numeroPagos,
-        original_comments: subscription.originalComments,
-        active: existing?.active ?? true,
-        canon_key: patternId,
-      } as any;
-
-      if (existing) {
-        await supabase
-          .from('subscription_services')
-          .update(subscriptionData)
-          .eq('id', existing.id);
-      } else {
-        await supabase
-          .from('subscription_services')
-          .insert(subscriptionData);
-      }
-    } catch (error) {
-      console.error('Error saving subscription:', error);
-    }
-  };
-
-  // Toggle subscription active status
-  const toggleSubscriptionActive = async (serviceId: string, newActiveStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('subscription_services')
-        .update({ active: newActiveStatus })
-        .eq('id', serviceId);
-
-      if (error) {
-        console.error('Error updating subscription status:', error);
-        toast.error('Error al actualizar el estado de la suscripción');
-        return;
-      }
-
-      setServices(prev => prev.map(service => 
-        service.id === serviceId 
-          ? { ...service, active: newActiveStatus }
-          : service
-      ));
-
-      toast.success(
-        newActiveStatus 
-          ? 'Suscripción activada' 
-          : 'Suscripción desactivada'
-      );
-    } catch (error) {
-      console.error('Error updating subscription status:', error);
-      toast.error('Error al actualizar el estado de la suscripción');
-    }
-  };
-
-  // Edit service name
   const startEditingName = (serviceId: string, currentName: string) => {
     setEditingServiceId(serviceId);
     setEditingName(currentName);
   };
-
-  const saveEditedName = async () => {
+  const saveEditedName = () => {
     if (!editingServiceId || !editingName.trim()) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('subscription_services')
-        .update({ service_name: editingName.trim() })
-        .eq('id', editingServiceId)
-        .select('id');
-
-      if (error) {
-        console.error('Error updating service name:', error);
-        toast.error(
-          error.code === '23505'
-            ? 'Ya existe otra suscripción con ese nombre'
-            : `Error al actualizar el nombre: ${error.message}`
-        );
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        toast.error('No se encontró la suscripción a renombrar. Vuelve a analizar las suscripciones.');
-        return;
-      }
-
-
-      setServices(prev => prev.map(service => 
-        service.id === editingServiceId 
-          ? { ...service, serviceName: editingName.trim() }
-          : service
-      ));
-
-      toast.success('Nombre de suscripción actualizado');
-      setEditingServiceId(null);
-      setEditingName('');
-    } catch (error) {
-      console.error('Error updating service name:', error);
-      toast.error('Error al actualizar el nombre de la suscripción');
-    }
+    saveName.mutate({ id: editingServiceId, name: editingName.trim() });
   };
-
   const cancelEditingName = () => {
     setEditingServiceId(null);
     setEditingName('');
   };
-
-  // Save edited frequency
-  const saveEditedFrequency = async (serviceId: string, newFrequency: SubscriptionFrequency) => {
-    try {
-      const service = services.find(s => s.id === serviceId);
-      if (!service) return;
-
-      const newNextPayment = calculateNextPayment(service.ultimoPago.fecha, newFrequency);
-
-      const { error } = await supabase
-        .from('subscription_services')
-        .update({ 
-          frecuencia: newFrequency,
-          proximo_pago: newNextPayment.toISOString().split('T')[0]
-        })
-        .eq('id', serviceId);
-
-      if (error) {
-        console.error('Error updating frequency:', error);
-        toast.error('Error al actualizar la frecuencia');
-        return;
-      }
-
-      setServices(prev => prev.map(s => 
-        s.id === serviceId 
-          ? { ...s, frecuencia: newFrequency, proximoPago: newNextPayment }
-          : s
-      ));
-
-      setEditingFrequencyId(null);
-    } catch (error) {
-      console.error('Error updating frequency:', error);
-      toast.error('Error al actualizar la frecuencia');
-    }
+  const saveEditedFrequency = (service: ServiceView, frecuencia: SubscriptionFrequency) => {
+    saveFrequency.mutate({ id: service.id, frecuencia, ultimoPago: service.ultimoPago.fecha });
+  };
+  const performMerge = () => {
+    if (!mergeSourceId || !mergeTargetId || mergeSourceId === mergeTargetId) return;
+    const source = services.find(s => s.id === mergeSourceId);
+    const target = services.find(s => s.id === mergeTargetId);
+    if (!source || !target) return;
+    merge.mutate({ source, target });
   };
 
-  // Calcular próximo pago estimado
-  const calculateNextPayment = (lastPayment: Date, frequency: SubscriptionFrequency): Date => {
-    const nextPayment = new Date(lastPayment);
-    switch (frequency) {
-      case 'Mensual':
-        nextPayment.setMonth(nextPayment.getMonth() + 1);
-        break;
-      case 'Bimestral':
-        nextPayment.setMonth(nextPayment.getMonth() + 2);
-        break;
-      case 'Semestral':
-        nextPayment.setMonth(nextPayment.getMonth() + 6);
-        break;
-      case 'Anual':
-        nextPayment.setFullYear(nextPayment.getFullYear() + 1);
-        break;
-      case 'Irregular':
-        nextPayment.setMonth(nextPayment.getMonth() + 1);
-        break;
-    }
-    return nextPayment;
-  };
+  const isLoading = syncing || loadingSubs;
 
-  // ──────────────────────────────────────────────
-  // Análisis de suscripciones por patrones
-  // ──────────────────────────────────────────────
-  const matchTransactionToPattern = (comentario: string, monto: number, pattern: SubscriptionPattern): boolean => {
-    const lower = comentario.toLowerCase();
+  const filteredServices = useMemo(
+    () => services.filter(service => (showInactive ? true : service.active)),
+    [services, showInactive],
+  );
 
-    // Todas las keywords deben estar presentes
-    const allKeywordsMatch = pattern.keywords.every(kw => lower.includes(kw.toLowerCase()));
-    if (!allKeywordsMatch) return false;
-
-    // Ninguna exclude keyword debe estar presente
-    if (pattern.excludeKeywords) {
-      const anyExcluded = pattern.excludeKeywords.some(kw => lower.includes(kw.toLowerCase()));
-      if (anyExcluded) return false;
-    }
-
-    // Si hay monto esperado, verificar ±15%
-    if (pattern.expectedAmount) {
-      const tolerance = pattern.expectedAmount * 0.15;
-      if (Math.abs(monto - pattern.expectedAmount) > tolerance) return false;
-    }
-
-    return true;
-  };
-
-  // User-defined aliases from previous merges (canon_key -> {serviceName, tipoServicio, aliases[]})
-  type AliasEntry = { canonKey: string; serviceName: string; tipoServicio: string; aliases: string[] };
-
-  const resolveServiceName = (
-    comentario: string,
-    monto: number,
-    userAliases: AliasEntry[] = [],
-  ): { serviceName: string; tipoServicio: string; patternId: string } => {
-    const lower = comentario.toLowerCase();
-    // 1) User-defined aliases win
-    for (const entry of userAliases) {
-      for (const alias of entry.aliases) {
-        const a = (alias || '').toLowerCase().trim();
-        if (a && lower.includes(a)) {
-          return { serviceName: entry.serviceName, tipoServicio: entry.tipoServicio, patternId: entry.canonKey };
-        }
-      }
-    }
-    // 2) Built-in patterns
-    for (const pattern of SUBSCRIPTION_PATTERNS) {
-      if (matchTransactionToPattern(comentario, monto, pattern)) {
-        return { serviceName: pattern.serviceName, tipoServicio: pattern.tipoServicio, patternId: pattern.id };
-      }
-    }
-    const cleanName = comentario.replace(/[*#\d]/g, '').trim().split(/\s+/).slice(0, 3).join(' ') || comentario.substring(0, 20);
-    const patternId = `custom-${comentario.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20)}`;
-    return { serviceName: cleanName, tipoServicio: 'Suscripción', patternId };
-  };
-
-  const processSubscriptions = async () => {
-    if (!transactions || transactions.length === 0) return;
-
-    setIsLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { categories } = financeData;
-
-      // Obtener IDs de subcategorías "Suscripciones"
-      const subscriptionCategoryIds = (categories || [])
-        .filter(c => c.subcategoria.toLowerCase() === 'suscripciones')
-        .map(c => c.id);
-
-      if (subscriptionCategoryIds.length === 0) {
-        // No existe la subcategoría, limpiar y salir
-        await loadSavedSubscriptions();
-        setIsLoading(false);
-        return;
-      }
-
-      const twentyFourMonthsAgo = new Date();
-      twentyFourMonthsAgo.setMonth(twentyFourMonthsAgo.getMonth() - 24);
-
-      // Filtrar transacciones de subcategoría "Suscripciones" de los últimos 24 meses con gasto > 0
-      const subscriptionTransactions = transactions.filter(t =>
-        t.gasto > 0 &&
-        subscriptionCategoryIds.includes(t.subcategoriaId) &&
-        new Date(t.fecha) >= twentyFourMonthsAgo
-      );
-
-      // Cargar alias definidos por el usuario (fusiones manuales previas)
-      const { data: aliasRows } = await supabase
-        .from('subscription_services')
-        .select('canon_key, service_name, tipo_servicio, aliases')
-        .eq('user_id', user.id);
-      const userAliases: AliasEntry[] = (aliasRows || [])
-        .filter((r: any) => r.canon_key && Array.isArray(r.aliases) && r.aliases.length > 0)
-        .map((r: any) => ({
-          canonKey: r.canon_key,
-          serviceName: r.service_name,
-          tipoServicio: r.tipo_servicio,
-          aliases: r.aliases,
-        }));
-
-      // Agrupar transacciones por patternId resuelto
-      const groupedByPattern = new Map<string, { serviceName: string; tipoServicio: string; transactions: typeof subscriptionTransactions }>();
-
-      for (const t of subscriptionTransactions) {
-        const { serviceName, tipoServicio, patternId } = resolveServiceName(t.comentario, t.gasto, userAliases);
-        if (!groupedByPattern.has(patternId)) {
-          groupedByPattern.set(patternId, { serviceName, tipoServicio, transactions: [] });
-        }
-        groupedByPattern.get(patternId)!.transactions.push(t);
-      }
-
-      // Limpiar registros que ya no tienen transacciones asociadas
-      const activePatternIds = Array.from(groupedByPattern.keys());
-      const { data: allSubs } = await supabase
-        .from('subscription_services')
-        .select('id, canon_key')
-        .eq('user_id', user.id);
-
-      if (allSubs) {
-        const toDelete = allSubs
-          .filter(s => !s.canon_key || !activePatternIds.includes(s.canon_key))
-          .map(s => s.id);
-        if (toDelete.length > 0) {
-          await supabase.from('subscription_services').delete().in('id', toDelete);
-        }
-      }
-
-      // Guardar cada grupo como suscripción y collect results
-      const processedServices: SubscriptionService[] = [];
-
-      for (const [patternId, group] of groupedByPattern) {
-        const sorted = [...group.transactions].sort((a, b) =>
-          new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-        );
-
-        const lastTransaction = sorted[0];
-        const lastPaymentDate = new Date(lastTransaction.fecha);
-
-        // Check if user has manually set the frequency — if so, keep it
-        const { data: existingSub } = await supabase
-          .from('subscription_services')
-          .select('id, frecuencia, proximo_pago, service_name, active')
-          .eq('user_id', user.id)
-          .eq('canon_key', patternId)
-          .maybeSingle();
-
-        // Detectar frecuencia solo si no hay valor manual guardado
-        let detectedFrecuencia: SubscriptionFrequency = existingSub?.frecuencia as SubscriptionFrequency || 'Irregular';
-        if (!existingSub) {
-          if (sorted.length >= 2) {
-            const sortedDates = sorted.map(t => new Date(t.fecha).getTime());
-            let totalDaysDiff = 0;
-            for (let i = 0; i < sortedDates.length - 1; i++) {
-              totalDaysDiff += (sortedDates[i] - sortedDates[i + 1]) / (1000 * 60 * 60 * 24);
-            }
-            const avgDays = totalDaysDiff / (sortedDates.length - 1);
-            if (avgDays >= 300 && avgDays <= 400) {
-              detectedFrecuencia = 'Anual';
-            } else if (avgDays >= 150 && avgDays < 300) {
-              detectedFrecuencia = 'Semestral';
-            } else if (avgDays >= 50 && avgDays < 150) {
-              detectedFrecuencia = 'Bimestral';
-            } else if (avgDays >= 20 && avgDays <= 50) {
-              detectedFrecuencia = 'Mensual';
-            }
-          }
-        }
-
-        // Get previous payment amount for trend comparison
-        const previousPaymentAmount = sorted.length >= 2 ? sorted[1].gasto : null;
-
-        const subscription: SubscriptionService = {
-          serviceName: existingSub?.service_name || group.serviceName,
-          tipoServicio: group.tipoServicio,
-          ultimoPago: {
-            monto: lastTransaction.gasto,
-            fecha: lastPaymentDate,
-            mes: lastPaymentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
-          },
-          previousPaymentAmount,
-          frecuencia: detectedFrecuencia,
-          proximoPago: (existingSub?.proximo_pago && new Date(existingSub.proximo_pago) > lastPaymentDate)
-            ? new Date(existingSub.proximo_pago)
-            : calculateNextPayment(lastPaymentDate, detectedFrecuencia),
-
-          numeroPagos: sorted.length,
-          originalComments: sorted.map(t => t.comentario),
-          patternId,
-          active: existingSub?.active ?? true,
-        };
-
-        await saveSubscription(subscription, patternId);
-
-        // Re-fetch the saved ID for the service
-        const { data: savedSub } = await supabase
-          .from('subscription_services')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('canon_key', patternId)
-          .maybeSingle();
-
-        processedServices.push({
-          ...subscription,
-          id: savedSub?.id || existingSub?.id,
-        });
-      }
-
-      // Set services directly from processed data (preserving previousPaymentAmount)
-      setServices(processedServices);
-    } catch (error) {
-      console.error('Error processing subscriptions:', error);
-      toast.error('Error al procesar las suscripciones');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Load saved subscriptions on component mount
-  useEffect(() => {
-    loadSavedSubscriptions();
-  }, []);
-
-  // Procesar cuando cambien las transacciones
-  useEffect(() => {
-    if (transactions && transactions.length > 0) {
-      processSubscriptions();
-    }
-  }, [transactions?.length]);
-
-  // Filter services based on active status
-  const filteredServices = useMemo(() => {
-    return services.filter(service => 
-      showInactive ? true : service.active !== false
-    );
-  }, [services, showInactive]);
-
-  // Calculate monthly subscription totals
   const monthlySubscriptionsTotal = useMemo(() => {
-    const activeMonthlyServices = services.filter(service => 
-      service.active !== false && service.frecuencia === 'Mensual'
-    );
-    
-    const totalAmount = activeMonthlyServices.reduce((sum, service) => 
-      sum + service.ultimoPago.monto, 0
-    );
-    
-    return {
-      count: activeMonthlyServices.length,
-      totalAmount
-    };
+    const activeMonthlyServices = services.filter(service => service.active && service.frecuencia === 'Mensual');
+    const totalAmount = activeMonthlyServices.reduce((sum, service) => sum + service.ultimoPago.monto, 0);
+    return { count: activeMonthlyServices.length, totalAmount };
   }, [services]);
-
-  // Función para obtener el color del badge de frecuencia
-  const getFrequencyBadgeVariant = (frequency: string) => {
-    switch (frequency) {
-      case 'Mensual': return 'default';
-      case 'Bimestral': return 'default';
-      case 'Semestral': return 'secondary';
-      case 'Anual': return 'secondary';
-      default: return 'outline';
-    }
-  };
 
   return (
     <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
@@ -701,19 +246,16 @@ export const SubscriptionsManager = () => {
       <CardContent className="space-y-4">
         <div className="flex justify-between items-center">
           <p className="text-muted-foreground text-sm">
-            Análisis automático de los últimos 12 meses
+            Análisis automático de los últimos 24 meses
           </p>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Checkbox 
+              <Checkbox
                 id="show-inactive"
                 checked={showInactive}
                 onCheckedChange={(checked) => setShowInactive(checked as boolean)}
               />
-              <label 
-                htmlFor="show-inactive" 
-                className="text-xs text-muted-foreground cursor-pointer"
-              >
+              <label htmlFor="show-inactive" className="text-xs text-muted-foreground cursor-pointer">
                 Mostrar inactivas
               </label>
             </div>
@@ -723,7 +265,6 @@ export const SubscriptionsManager = () => {
           </div>
         </div>
 
-        {/* Monthly Subscriptions Summary */}
         {monthlySubscriptionsTotal.count > 0 && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
             <div className="flex items-center justify-between">
@@ -754,18 +295,14 @@ export const SubscriptionsManager = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredServices.map((service, index) => (
-              <div key={service.id || index} className={`group p-4 rounded-lg border transition-colors ${service.active === false ? 'bg-muted/20 border-muted' : 'bg-card hover:bg-muted/5'}`}>
+            {filteredServices.map((service) => (
+              <div key={service.id} className={`group p-4 rounded-lg border transition-colors ${!service.active ? 'bg-muted/20 border-muted' : 'bg-card hover:bg-muted/5'}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3 flex-1">
                     <Checkbox
-                      checked={service.active !== false}
-                      onCheckedChange={(checked) => {
-                        if (service.id) {
-                          toggleSubscriptionActive(service.id, checked as boolean);
-                        }
-                      }}
-                      aria-label={`${service.active !== false ? 'Desactivar' : 'Activar'} suscripción de ${service.serviceName}`}
+                      checked={service.active}
+                      onCheckedChange={(checked) => toggleActive.mutate({ id: service.id, active: checked as boolean })}
+                      aria-label={`${service.active ? 'Desactivar' : 'Activar'} suscripción de ${service.serviceName}`}
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -776,58 +313,41 @@ export const SubscriptionsManager = () => {
                               onChange={(e) => setEditingName(e.target.value)}
                               className="h-8 text-lg font-semibold"
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  saveEditedName();
-                                } else if (e.key === 'Escape') {
-                                  cancelEditingName();
-                                }
+                                if (e.key === 'Enter') saveEditedName();
+                                else if (e.key === 'Escape') cancelEditingName();
                               }}
                               autoFocus
                             />
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={saveEditedName}
-                              className="h-8 w-8 p-0"
-                            >
+                            <Button size="sm" variant="ghost" onClick={saveEditedName} className="h-8 w-8 p-0">
                               <Check className="h-4 w-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={cancelEditingName}
-                              className="h-8 w-8 p-0"
-                            >
+                            <Button size="sm" variant="ghost" onClick={cancelEditingName} className="h-8 w-8 p-0">
                               <X className="h-4 w-4" />
                             </Button>
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <h3 className={`font-semibold text-lg ${service.active === false ? 'text-muted-foreground' : ''}`}>
+                            <h3 className={`font-semibold text-lg ${!service.active ? 'text-muted-foreground' : ''}`}>
                               {service.serviceName}
                             </h3>
-                            {service.id && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => startEditingName(service.id!, service.serviceName)}
-                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  title="Editar nombre"
-                                >
-                                  <Edit2 className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => { setMergeSourceId(service.id!); setMergeTargetId(''); }}
-                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  title="Fusionar con otra suscripción"
-                                >
-                                  <Merge className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => startEditingName(service.id, service.serviceName)}
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Editar nombre"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => { setMergeSourceId(service.id); setMergeTargetId(''); }}
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Fusionar con otra suscripción"
+                            >
+                              <Merge className="h-3 w-3" />
+                            </Button>
                           </div>
                         )}
                         {editingFrequencyId === service.id ? (
@@ -837,47 +357,40 @@ export const SubscriptionsManager = () => {
                                 key={opt.value}
                                 variant={service.frecuencia === opt.value ? 'default' : 'outline'}
                                 className="text-xs cursor-pointer hover:bg-primary/20"
-                                onClick={() => saveEditedFrequency(service.id!, opt.value)}
+                                onClick={() => saveEditedFrequency(service, opt.value)}
                               >
                                 {opt.label}
                               </Badge>
                             ))}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setEditingFrequencyId(null)}
-                              className="h-5 w-5 p-0"
-                            >
+                            <Button size="sm" variant="ghost" onClick={() => setEditingFrequencyId(null)} className="h-5 w-5 p-0">
                               <X className="h-3 w-3" />
                             </Button>
                           </div>
                         ) : (
-                          <Badge 
-                            variant={getFrequencyBadgeVariant(service.frecuencia)} 
+                          <Badge
+                            variant={getFrequencyBadgeVariant(service.frecuencia)}
                             className="text-xs cursor-pointer hover:ring-1 hover:ring-primary/50"
-                            onClick={() => service.id && setEditingFrequencyId(service.id)}
+                            onClick={() => setEditingFrequencyId(service.id)}
                             title="Clic para cambiar frecuencia"
                           >
                             {service.frecuencia}
                           </Badge>
                         )}
-                        {service.active === false && (
+                        {!service.active && (
                           <Badge variant="outline" className="text-xs text-muted-foreground">
                             Inactiva
                           </Badge>
                         )}
                       </div>
-                      <p className={`text-sm ${service.active === false ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
-                        {service.tipoServicio}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{service.tipoServicio}</p>
                     </div>
                   </div>
                   <Badge variant="secondary" className="text-xs">
                     {service.numeroPagos} pagos
                   </Badge>
                 </div>
-                
-                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 text-sm ${service.active === false ? 'opacity-60' : ''}`}>
+
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 text-sm ${!service.active ? 'opacity-60' : ''}`}>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -900,24 +413,18 @@ export const SubscriptionsManager = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <span className="text-muted-foreground">Próximo pago estimado:</span>
                         <div className="font-medium">
-                          {service.proximoPago.toLocaleDateString('es-ES', { 
-                            day: 'numeric',
-                            month: 'long', 
-                            year: 'numeric' 
-                          })}
+                          {service.proximoPago.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </div>
                         <div className="flex items-center gap-1 mt-1">
                           <Repeat className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">
-                            Frecuencia: {service.frecuencia}
-                          </span>
+                          <span className="text-xs text-muted-foreground">Frecuencia: {service.frecuencia}</span>
                         </div>
                       </div>
                     </div>
@@ -945,16 +452,16 @@ export const SubscriptionsManager = () => {
               </SelectTrigger>
               <SelectContent>
                 {services
-                  .filter(s => s.id && s.id !== mergeSourceId)
+                  .filter(s => s.id !== mergeSourceId)
                   .map(s => (
-                    <SelectItem key={s.id} value={s.id!}>{s.serviceName}</SelectItem>
+                    <SelectItem key={s.id} value={s.id}>{s.serviceName}</SelectItem>
                   ))}
               </SelectContent>
             </Select>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setMergeSourceId(null); setMergeTargetId(''); }}>Cancelar</Button>
-            <Button onClick={performMerge} disabled={!mergeTargetId}>Fusionar</Button>
+            <Button onClick={performMerge} disabled={!mergeTargetId || merge.isPending}>Fusionar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
