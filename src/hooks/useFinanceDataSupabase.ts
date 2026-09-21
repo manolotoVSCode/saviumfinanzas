@@ -19,6 +19,7 @@ export const financeQueryKeys = (userId: string | undefined) => ({
   cuentas: ['finance', userId, 'cuentas'] as const,
   categorias: ['finance', userId, 'categorias'] as const,
   transacciones: ['finance', userId, 'transacciones'] as const,
+  subscriptions: ['finance', userId, 'subscriptions'] as const,
 });
 
 // Los datos solo cambian desde esta app, así que se consideran frescos un buen rato;

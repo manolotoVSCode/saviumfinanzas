@@ -1,25 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
-import { supabase } from '@/integrations/supabase/client';
+import { useSubscriptionServices } from '@/hooks/useSubscriptionServices';
+import { computeCxP, CxPRow } from '@/lib/finance/cxp';
+import { CurrencyCode } from '@/lib/finance/dashboardMetrics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, CreditCard, Repeat, CalendarClock, Landmark, TrendingDown, Wallet } from 'lucide-react';
-
-type CxPRow = {
-  id: string;
-  concepto: string;
-  tipo: 'Suscripción' | 'Pago anual' | 'Recurrente mensual' | 'Tarjeta de crédito' | 'Préstamo';
-  monto: number;
-  divisa: 'MXN' | 'USD' | 'EUR';
-  fechaEstimada: Date;
-  detalle?: string;
-};
 
 const HORIZONTES = [30, 60, 90] as const;
 
@@ -30,253 +22,23 @@ const CxP = () => {
   const financeData = useFinanceDataSupabase();
   const { formatCurrency, config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
-  const [subscriptions, setSubscriptions] = useState<any[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from('subscription_services').select('*').eq('active', true);
-      setSubscriptions(data || []);
-    })();
-  }, []);
+  const { subscriptions } = useSubscriptionServices();
 
   const [horizonte, setHorizonte] = useState<number>(30);
 
-  const baseCurrency = (config.currency as 'MXN' | 'USD' | 'EUR') || 'MXN';
+  const baseCurrency = (config.currency as CurrencyCode) || 'MXN';
 
-  // 1) Suscripciones activas próximas al horizonte
-  const cxpSuscripciones = useMemo<CxPRow[]>(() => {
-    const now = new Date();
-    const limite = new Date();
-    limite.setDate(now.getDate() + horizonte);
-    return (subscriptions || [])
-      .filter((s: any) => s.active)
-      .filter((s: any) => {
-        const px = new Date(s.proximo_pago);
-        return px >= now && px <= limite;
-      })
-      .map((s: any) => ({
-        id: `sub-${s.id}`,
-        concepto: s.service_name,
-        tipo: 'Suscripción' as const,
-        monto: Number(s.ultimo_pago_monto) || 0,
-        divisa: 'MXN' as const, // subscription_services no guarda divisa → asumimos base
-        fechaEstimada: new Date(s.proximo_pago),
-        detalle: s.frecuencia,
-      }));
-  }, [subscriptions, horizonte]);
-
-  // 2) Pagos anuales próximos (categorías anuales, next payment = last + 1 año)
-  const cxpAnuales = useMemo<CxPRow[]>(() => {
-    const now = new Date();
-    const limite = new Date();
-    limite.setDate(now.getDate() + horizonte);
-    const rows: CxPRow[] = [];
-
-    const anualCats = financeData.categories.filter((c: any) => {
-      const s = `${c.categoria} ${c.subcategoria}`.toLowerCase();
-      const esPrestamo = s.includes('préstamo') || s.includes('prestamo') || s.includes('hipoteca');
-      return c.frecuencia_seguimiento === 'anual' && c.tipo === 'Gastos' && !esPrestamo;
-    });
-
-
-    anualCats.forEach((cat) => {
-      const txs = financeData.transactions
-        .filter((t) => t.subcategoriaId === cat.id && t.gasto > 0)
-        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-      if (!txs.length) return;
-      const last = txs[0];
-      const nextDate = new Date(last.fecha);
-      nextDate.setFullYear(nextDate.getFullYear() + 1);
-      // Si ya pasó, rodar hacia adelante en incrementos anuales
-      while (nextDate < now) nextDate.setFullYear(nextDate.getFullYear() + 1);
-      if (nextDate <= limite) {
-        rows.push({
-          id: `anual-${cat.id}`,
-          concepto: `${cat.categoria} · ${cat.subcategoria}`,
-          tipo: 'Pago anual',
-          monto: Number(last.gasto),
-          divisa: (last.divisa as any) || baseCurrency,
-          fechaEstimada: nextDate,
-          detalle: 'Estimado según último pago',
-        });
-      }
-    });
-
-    return rows;
-  }, [financeData.categories, financeData.transactions, horizonte, baseCurrency]);
-
-  // 3) Recurrentes — obligaciones fijas ineludibles agrupadas POR SUBCATEGORÍA.
-  //    Detecta periodicidad real (mensual, bimensual, trimestral) según el espaciado
-  //    entre pagos y usa el promedio de los ÚLTIMOS 2 PAGOS como monto de referencia.
-  const cxpRecurrentes = useMemo<CxPRow[]>(() => {
-    const rows: CxPRow[] = [];
-    const now = new Date();
-    const limite = new Date();
-    limite.setDate(now.getDate() + horizonte);
-    const desde = new Date();
-    desde.setDate(desde.getDate() - 240); // ventana amplia para captar bimensuales/trimestrales
-
-    const catsById = new Map(financeData.categories.map((c: any) => [c.id, c]));
-
-    // Whitelist: SOLO obligaciones fijas ineludibles.
-    const esObligacionFija = (cat: any) => {
-      const c = (cat.categoria || '').toLowerCase();
-      const s = (cat.subcategoria || '').toLowerCase();
-      if (c === 'hogar' && !s.includes('alquiler') && !s.includes('hipoteca') && !s.includes('servicios hogar') && s !== 'servicios') return true;
-      if (c === 'educación' || c === 'educacion') return true;
-      if (c === 'servicios' && (s.includes('celular') || s.includes('telefon') || s.includes('internet'))) return true;
-      if (c === 'salud' && s.includes('seguro')) return true;
-      if (c === 'transporte' && s.includes('seguro')) return true;
-      return false;
-    };
-
-    // Agrupar por subcategoría + divisa (mismo servicio en distintos países = recurrentes distintos)
-    const bySubcat = new Map<string, { txs: any[]; cat: any; divisa: string }>();
-    financeData.transactions.forEach((t) => {
-      if (!t.subcategoriaId || !(t.gasto > 0)) return;
-      const fecha = new Date(t.fecha);
-      if (fecha < desde) return;
-      const cat: any = catsById.get(t.subcategoriaId);
-      if (!cat || cat.tipo !== 'Gastos') return;
-      if (!esObligacionFija(cat)) return;
-      if (cat.frecuencia_seguimiento === 'anual') return;
-      const label = `${cat.categoria} ${cat.subcategoria}`.toLowerCase();
-      if (label.includes('suscripc')) return;
-      if (label.includes('prestamo') || label.includes('préstamo') || label.includes('hipoteca')) return;
-
-      const divisa = (t.divisa as string) || baseCurrency;
-      const key = `${t.subcategoriaId}::${divisa}`;
-      const g = bySubcat.get(key) || { txs: [], cat, divisa };
-      g.txs.push(t);
-      bySubcat.set(key, g);
-    });
-
-    bySubcat.forEach(({ txs, cat, divisa }) => {
-      const sorted = txs.sort(
-        (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-      );
-      if (sorted.length < 2) return;
-
-      // Detectar periodicidad: mediana de gaps (días) entre pagos consecutivos
-      const gaps: number[] = [];
-      for (let i = 0; i < sorted.length - 1; i++) {
-        const d1 = new Date(sorted[i].fecha).getTime();
-        const d2 = new Date(sorted[i + 1].fecha).getTime();
-        gaps.push((d1 - d2) / (1000 * 60 * 60 * 24));
-      }
-      gaps.sort((a, b) => a - b);
-      const gapMed = gaps[Math.floor(gaps.length / 2)];
-
-      // Clasificar en 1, 2 o 3 meses
-      let periodoMeses = 1;
-      let etiqueta = 'mensual';
-      if (gapMed >= 75) {
-        periodoMeses = 3;
-        etiqueta = 'trimestral';
-      } else if (gapMed >= 45) {
-        periodoMeses = 2;
-        etiqueta = 'bimensual';
-      }
-
-      const last = sorted[0];
-      const lastDate = new Date(last.fecha);
-      const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
-      // Tolerancia: 1.5x el periodo esperado (mínimo 45 días para dar margen a mensuales)
-      const tolerancia = Math.max(45, periodoMeses * 30 * 1.5);
-      if (diasDesdeUltimo > tolerancia) return;
-
-      // Monto = promedio de los últimos 2 pagos (según instrucción del usuario)
-      const ultimos = sorted.slice(0, 2);
-      const monto = ultimos.reduce((s, t) => s + Number(t.gasto), 0) / ultimos.length;
-
-      const nextDate = new Date(lastDate);
-      nextDate.setMonth(nextDate.getMonth() + periodoMeses);
-      while (nextDate < now) nextDate.setMonth(nextDate.getMonth() + periodoMeses);
-      if (nextDate > limite) return;
-
-      rows.push({
-        id: `rec-${cat.id}-${divisa}`,
-        concepto: `${cat.categoria} · ${cat.subcategoria}`,
-        tipo: 'Recurrente mensual',
-        monto,
-        divisa: divisa as any,
-        fechaEstimada: nextDate,
-        detalle: `${etiqueta} · prom. últimos 2`,
-      });
-    });
-    return rows;
-  }, [financeData.categories, financeData.transactions, horizonte, baseCurrency]);
-
-
-
-
-  // 4) Tarjetas de crédito con saldo negativo
-  const cxpTarjetas = useMemo<CxPRow[]>(() => {
-    return financeData.accounts
-      .filter((a) => a.tipo === 'Tarjeta de Crédito' && !a.vendida && a.saldoActual < 0)
-      .map((a) => {
-        // Fecha estimada: 15 días adelante como aproximación
-        const nextDate = new Date();
-        nextDate.setDate(nextDate.getDate() + 15);
-        return {
-          id: `card-${a.id}`,
-          concepto: a.nombre,
-          tipo: 'Tarjeta de crédito' as const,
-          monto: Math.abs(a.saldoActual),
-          divisa: (a.divisa as any) || baseCurrency,
-          fechaEstimada: nextDate,
-          detalle: 'Saldo pendiente actual',
-        };
-      });
-  }, [financeData.accounts, baseCurrency]);
-
-  // 5) Préstamos (subcategoría contiene "Préstamo" o "Credito Personal")
-  const cxpPrestamos = useMemo<CxPRow[]>(() => {
-    const rows: CxPRow[] = [];
-    const now = new Date();
-    const limite = new Date();
-    limite.setDate(now.getDate() + horizonte);
-
-    const prestamoCats = financeData.categories.filter((c) => {
-      const s = `${c.categoria} ${c.subcategoria}`.toLowerCase();
-      return c.tipo === 'Gastos' && (s.includes('préstamo') || s.includes('prestamo') || s.includes('hipoteca'));
-    });
-
-    prestamoCats.forEach((cat) => {
-      const txs = financeData.transactions
-        .filter((t) => t.subcategoriaId === cat.id && t.gasto > 0)
-        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-      if (!txs.length) return;
-      const last = txs[0];
-      const lastDate = new Date(last.fecha);
-      const diasDesdeUltimo = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
-      // Préstamo saldado / inactivo: si el último pago es de hace >45 días, no hay compromiso vigente
-      if (diasDesdeUltimo > 45) return;
-      const nextDate = new Date(lastDate);
-      nextDate.setMonth(nextDate.getMonth() + 1);
-      while (nextDate < now) nextDate.setMonth(nextDate.getMonth() + 1);
-      if (nextDate > limite) return;
-
-
-      rows.push({
-        id: `loan-${cat.id}`,
-        concepto: `${cat.categoria} · ${cat.subcategoria}`,
-        tipo: 'Préstamo',
-        monto: Number(last.gasto),
-        divisa: (last.divisa as any) || baseCurrency,
-        fechaEstimada: nextDate,
-        detalle: 'Cuota estimada',
-      });
-    });
-    return rows;
-  }, [financeData.categories, financeData.transactions, horizonte, baseCurrency]);
-
-  const allRows = useMemo(
+  const allRows = useMemo<CxPRow[]>(
     () =>
-      [...cxpSuscripciones, ...cxpAnuales, ...cxpRecurrentes, ...cxpTarjetas, ...cxpPrestamos].sort(
-        (a, b) => a.fechaEstimada.getTime() - b.fechaEstimada.getTime()
-      ),
-    [cxpSuscripciones, cxpAnuales, cxpRecurrentes, cxpTarjetas, cxpPrestamos]
+      computeCxP({
+        transactions: financeData.transactions,
+        categories: financeData.categories,
+        accounts: financeData.accounts,
+        subscriptions,
+        horizonte,
+        baseCurrency,
+      }),
+    [financeData.transactions, financeData.categories, financeData.accounts, subscriptions, horizonte, baseCurrency]
   );
 
   const totalEnBase = useMemo(
@@ -320,11 +82,11 @@ const CxP = () => {
   }
 
   const bloques: { key: string; label: string; icon: any; rows: CxPRow[]; tipo: CxPRow['tipo'] }[] = [
-    { key: 'susc', label: 'Suscripciones', icon: CreditCard, rows: cxpSuscripciones, tipo: 'Suscripción' },
-    { key: 'anual', label: 'Pagos Anuales', icon: CalendarClock, rows: cxpAnuales, tipo: 'Pago anual' },
-    { key: 'recur', label: 'Recurrentes', icon: Repeat, rows: cxpRecurrentes, tipo: 'Recurrente mensual' },
-    { key: 'card', label: 'Tarjetas', icon: CreditCard, rows: cxpTarjetas, tipo: 'Tarjeta de crédito' },
-    { key: 'loan', label: 'Préstamos', icon: Landmark, rows: cxpPrestamos, tipo: 'Préstamo' },
+    { key: 'susc', label: 'Suscripciones', icon: CreditCard, rows: allRows.filter((r) => r.tipo === 'Suscripción'), tipo: 'Suscripción' },
+    { key: 'anual', label: 'Pagos Anuales', icon: CalendarClock, rows: allRows.filter((r) => r.tipo === 'Pago anual'), tipo: 'Pago anual' },
+    { key: 'recur', label: 'Recurrentes', icon: Repeat, rows: allRows.filter((r) => r.tipo === 'Recurrente mensual'), tipo: 'Recurrente mensual' },
+    { key: 'card', label: 'Tarjetas', icon: CreditCard, rows: allRows.filter((r) => r.tipo === 'Tarjeta de crédito'), tipo: 'Tarjeta de crédito' },
+    { key: 'loan', label: 'Préstamos', icon: Landmark, rows: allRows.filter((r) => r.tipo === 'Préstamo'), tipo: 'Préstamo' },
   ];
 
 
