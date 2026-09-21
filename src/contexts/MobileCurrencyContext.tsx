@@ -8,6 +8,8 @@ export const MOBILE_CURRENCIES: CurrencyCode[] = ['MXN', 'USD', 'EUR'];
 interface MobileCurrencyContextValue {
   /** Divisa a usar. Mientras `ready` es false vale 'MXN' provisional: no calcular nada con ella. */
   currency: CurrencyCode;
+  /** Divisa del perfil (config.currency) una vez cargada; base de las suscripciones y de computeCxP. */
+  profileCurrency: CurrencyCode;
   /** true cuando hay elección guardada o ya llegó la divisa del perfil. */
   ready: boolean;
   setCurrency: (c: CurrencyCode) => void;
@@ -45,9 +47,9 @@ export const MobileCurrencyProvider = ({ children }: { children: React.ReactNode
   }, []);
 
   const value = useMemo<MobileCurrencyContextValue>(() => {
-    if (chosen) return { currency: chosen, ready: true, setCurrency };
-    if (configLoaded) return { currency: config.currency, ready: true, setCurrency };
-    return { currency: 'MXN', ready: false, setCurrency };
+    if (chosen) return { currency: chosen, profileCurrency: config.currency, ready: true, setCurrency };
+    if (configLoaded) return { currency: config.currency, profileCurrency: config.currency, ready: true, setCurrency };
+    return { currency: 'MXN', profileCurrency: 'MXN', ready: false, setCurrency };
   }, [chosen, configLoaded, config.currency, setCurrency]);
 
   return <MobileCurrencyContext.Provider value={value}>{children}</MobileCurrencyContext.Provider>;

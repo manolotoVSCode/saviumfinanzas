@@ -4,7 +4,7 @@ import { useInvestments } from '@/hooks/useInvestments';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useMobileCurrency } from '@/contexts/MobileCurrencyContext';
 import { investmentReturn } from '@/lib/finance/investmentReturn';
-import { CurrencyCode } from '@/lib/finance/dashboardMetrics';
+import { toCurrencyCode } from '@/lib/finance/currency';
 import { formatNumber } from '@/lib/formatters';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,7 @@ const InversionesMovil = () => {
   // Misma regla que el escritorio (toPref), pero hacia la divisa elegida en móvil
   const totals = useMemo(() => {
     const toElegida = (amount: number, divisa: string) =>
-      divisa === currency ? amount : convertCurrency(amount, divisa as CurrencyCode, currency);
+      divisa === currency ? amount : convertCurrency(amount, toCurrencyCode(divisa, currency), currency);
     return activas.reduce(
       (acc, i) => {
         acc.invertido += toElegida(i.monto_invertido || 0, i.moneda);
@@ -75,7 +75,7 @@ const InversionesMovil = () => {
                   <Importe amount={valor} currency={i.moneda} />
                   <p className={cn('text-sm font-medium flex items-center justify-end gap-1', positivo ? 'text-emerald-600' : 'text-destructive')}>
                     {positivo ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                    {positivo ? '+' : '-'}{formatNumber(Math.abs(delta))} ({pct.toFixed(2)}%)
+                    {positivo ? '+' : '-'}{formatNumber(Math.abs(delta))} {i.moneda} ({pct.toFixed(2)}%)
                   </p>
                 </div>
               </CardContent>

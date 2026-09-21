@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useSubscriptionServices } from '@/hooks/useSubscriptionServices';
-import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useMobileCurrency } from '@/contexts/MobileCurrencyContext';
 import { computeSubscriptionsSummary } from '@/lib/finance/subscriptionsSummary';
@@ -19,12 +18,11 @@ const etiquetaVencimiento = (dias: number) => {
 
 const SuscripcionesMovil = () => {
   const { subscriptions, loading } = useSubscriptionServices();
-  const { config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
-  const { currency } = useMobileCurrency();
+  const { currency, profileCurrency } = useMobileCurrency();
 
   // La tabla no guarda divisa: todo importe es config.currency (igual que CxP)
-  const divisaTabla = config.currency;
+  const divisaTabla = profileCurrency;
 
   const resumen = useMemo(() => computeSubscriptionsSummary(subscriptions), [subscriptions]);
   const estimadoElegida =

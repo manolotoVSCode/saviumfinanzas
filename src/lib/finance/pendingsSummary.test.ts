@@ -58,4 +58,9 @@ describe('computePendingsSummary', () => {
     expect(r.rows[0].vencido).toBe(true);
     expect(r.rows[2].vencido).toBe(false);
   });
+
+  it('un pendiente con divisa desconocida se suma como si estuviera en la divisa elegida', () => {
+    const r = computePendingsSummary([pending({ id: 'x', monto_esperado: 100, divisa: 'GBP' })], convert, 'MXN', NOW);
+    expect(r.total).toBe(100);
+  });
 });

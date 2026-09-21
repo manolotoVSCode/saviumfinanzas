@@ -1,4 +1,5 @@
 import { ConvertCurrency, CurrencyCode } from './dashboardMetrics';
+import { toCurrencyCode } from './currency';
 
 export interface PendingForSummary {
   id: string;
@@ -58,7 +59,7 @@ export const computePendingsSummary = <T extends PendingForSummary>(
     });
 
   const total = rows.reduce(
-    (sum, r) => sum + convertCurrency(r.restante, r.pending.divisa as CurrencyCode, currency),
+    (sum, r) => sum + convertCurrency(r.restante, toCurrencyCode(r.pending.divisa, currency), currency),
     0,
   );
 

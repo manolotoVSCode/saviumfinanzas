@@ -26,7 +26,7 @@ const CurrencyChips = () => {
           onClick={() => setCurrency(c)}
           aria-pressed={currency === c}
           className={cn(
-            'h-10 min-w-[48px] px-2 rounded-full text-sm font-semibold transition-colors',
+            'h-11 min-w-[48px] px-2 rounded-full text-sm font-semibold transition-colors',
             currency === c ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
           )}
         >

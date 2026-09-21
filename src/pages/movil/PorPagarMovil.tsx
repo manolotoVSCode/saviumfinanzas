@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useSubscriptionServices } from '@/hooks/useSubscriptionServices';
-import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useMobileCurrency } from '@/contexts/MobileCurrencyContext';
 import { computeCxP } from '@/lib/finance/cxp';
@@ -17,16 +16,15 @@ type Horizonte = (typeof HORIZONTES)[number];
 const PorPagarMovil = () => {
   const { accounts, categories, transactions, loading } = useFinanceDataSupabase();
   const { subscriptions, loading: loadingSubs } = useSubscriptionServices();
-  const { config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
-  const { currency } = useMobileCurrency();
+  const { currency, profileCurrency } = useMobileCurrency();
   const [horizonte, setHorizonte] = useState<Horizonte>(30);
 
   // baseCurrency SIEMPRE es la del perfil (fallback de filas sin divisa y clave de
   // agrupación de recurrentes); la divisa elegida solo afecta al total.
   const rows = useMemo(
-    () => computeCxP({ transactions, categories, accounts, subscriptions, horizonte, baseCurrency: config.currency }),
-    [transactions, categories, accounts, subscriptions, horizonte, config.currency],
+    () => computeCxP({ transactions, categories, accounts, subscriptions, horizonte, baseCurrency: profileCurrency }),
+    [transactions, categories, accounts, subscriptions, horizonte, profileCurrency],
   );
 
   const total = useMemo(
