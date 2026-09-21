@@ -9,22 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 import { fetchAccounts, fetchCategories, fetchTransactions } from '@/lib/finance/queries';
 import { computeAccountBalances, enrichTransactions } from '@/lib/finance/calculations';
 import { computeDashboardMetrics } from '@/lib/finance/dashboardMetrics';
+import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 
 const ACCOUNT_TYPES: AccountType[] = [
   'Efectivo', 'Banco', 'Tarjeta de Crédito', 'Ahorros', 'Inversiones', 'Hipoteca', 'Empresa Propia', 'Bien Raíz'
 ];
 
-/** Claves de caché, prefijadas por usuario para que un cambio de sesión no reutilice datos ajenos. */
-export const financeQueryKeys = (userId: string | undefined) => ({
-  cuentas: ['finance', userId, 'cuentas'] as const,
-  categorias: ['finance', userId, 'categorias'] as const,
-  transacciones: ['finance', userId, 'transacciones'] as const,
-  subscriptions: ['finance', userId, 'subscriptions'] as const,
-});
-
-// Los datos solo cambian desde esta app, así que se consideran frescos un buen rato;
-// al volver a la pestaña pasado ese tiempo se refrescan solos.
-const STALE_TIME = 5 * 60 * 1000;
+// Re-export: los hooks que ya importaban las claves desde aquí siguen funcionando.
+export { financeQueryKeys };
 
 // Referencias estables para que los useMemo no se recalculen mientras carga.
 const EMPTY_ACCOUNTS: Account[] = [];
