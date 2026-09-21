@@ -9,6 +9,16 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '7.2',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Bug className="h-4 w-4" />, text: 'Cuentas por Pagar: recurrentes y préstamos ya no desaparecen a mitad de mes; su actividad se juzga contra el cierre del último mes importado, no contra hoy', type: 'fix' },
+      { icon: <Bug className="h-4 w-4" />, text: 'Las fechas de suscripciones ya no se muestran un día antes (parseo en hora local)', type: 'fix' },
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Suscripciones en el móvil: "Sin cargo desde…" (mes cerrado sin el cargo esperado), "Este mes" (aún sin importar) o próxima', type: 'improvement' },
+      { icon: <Zap className="h-4 w-4" />, text: 'Móvil: zona segura lateral y cascarón cargado bajo demanda', type: 'improvement' },
+    ],
+  },
+  {
     version: '7.1',
     date: 'Septiembre 2026',
     changes: [
