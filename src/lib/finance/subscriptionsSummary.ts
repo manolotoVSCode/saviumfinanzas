@@ -1,7 +1,5 @@
 import { diasHasta, finMesAnterior, parseFechaLocal } from './fechas';
-
-/** Valores admitidos por el CHECK de subscription_services.frecuencia (migración 20260809033858). */
-export type SubscriptionFrequency = 'Semanal' | 'Mensual' | 'Bimestral' | 'Trimestral' | 'Semestral' | 'Anual' | 'Irregular';
+import type { SubscriptionFrequency } from './subscriptions';
 
 /** Factor para pasar un pago con esa frecuencia a su equivalente mensual. */
 const FACTOR_MENSUAL: Record<Exclude<SubscriptionFrequency, 'Irregular'>, number> = {
