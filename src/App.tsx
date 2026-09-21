@@ -36,6 +36,7 @@ const SoloEscritorio = lazy(() => import("./pages/movil/SoloEscritorio"));
 const ResumenMovil = lazy(() => import("./pages/movil/ResumenMovil"));
 const InversionesMovil = lazy(() => import("./pages/movil/InversionesMovil"));
 const SuscripcionesMovil = lazy(() => import("./pages/movil/SuscripcionesMovil"));
+const PorCobrarMovil = lazy(() => import("./pages/movil/PorCobrarMovil"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -120,7 +121,7 @@ const App = () => (
               } />
               <Route path="/pendientes" element={
                 <ProtectedRoute>
-                  <Responsive desktop={Pendientes} mobile={SoloEscritorio} />
+                  <Responsive desktop={Pendientes} mobile={PorCobrarMovil} />
                 </ProtectedRoute>
               } />
               <Route path="/suscripciones" element={
