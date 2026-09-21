@@ -39,7 +39,7 @@ describe('annualPaymentAlerts', () => {
 });
 
 describe('subscriptionIncreaseAlerts', () => {
-  const netflix = { id: 's1', serviceName: 'Netflix', active: true, originalComments: ['NETFLIX.COM'] };
+  const netflix = { id: 's1', service_name: 'Netflix', active: true, original_comments: ['NETFLIX.COM'] };
 
   it('avisa cuando el último cobro supera al anterior', () => {
     const [a] = subscriptionIncreaseAlerts([netflix], [

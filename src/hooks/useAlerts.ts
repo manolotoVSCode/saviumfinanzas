@@ -3,22 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinanceDataSupabase } from './useFinanceDataSupabase';
+import { useSubscriptionServices } from './useSubscriptionServices';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
-import { Alert, computeAlerts, SubscriptionForAlerts } from '@/lib/finance/alerts';
-
-// Temporal hasta la Task 2.6: useAlerts pasará a useSubscriptionServices (que ya devuelve todas las filas).
-const fetchSubscriptions = async (): Promise<SubscriptionForAlerts[]> => {
-  const { data, error } = await supabase
-    .from('subscription_services')
-    .select('id, service_name, active, original_comments');
-  if (error) throw error;
-  return (data ?? []).map(s => ({
-    id: s.id,
-    serviceName: s.service_name,
-    active: s.active,
-    originalComments: s.original_comments ?? [],
-  }));
-};
+import { Alert, computeAlerts } from '@/lib/finance/alerts';
 
 const fetchDismissals = async (): Promise<string[]> => {
   const { data, error } = await supabase.from('alert_dismissals').select('alert_key');
@@ -47,12 +34,7 @@ export const useAlerts = () => {
   const { categories, transactions, loading: financeLoading } = useFinanceDataSupabase();
   const [inactiveAnnual] = useState(readInactiveAnnual);
 
-  const subscriptionsQuery = useQuery({
-    queryKey: ['finance', user?.id, 'subscriptions-for-alerts'],
-    queryFn: fetchSubscriptions,
-    staleTime: STALE_TIME,
-    enabled: !!user,
-  });
+  const { subscriptions, loading: subsLoading } = useSubscriptionServices();
   const dismissalsQuery = useQuery({
     queryKey: QK.alertDismissals,
     queryFn: fetchDismissals,
@@ -62,8 +44,8 @@ export const useAlerts = () => {
   });
 
   const allAlerts = useMemo(
-    () => computeAlerts({ categories, transactions, subscriptions: subscriptionsQuery.data ?? [], inactiveAnnualIds: inactiveAnnual }),
-    [categories, transactions, subscriptionsQuery.data, inactiveAnnual]
+    () => computeAlerts({ categories, transactions, subscriptions, inactiveAnnualIds: inactiveAnnual }),
+    [categories, transactions, subscriptions, inactiveAnnual]
   );
 
   const dismissed = useMemo(() => new Set(dismissalsQuery.data ?? []), [dismissalsQuery.data]);
@@ -114,7 +96,7 @@ export const useAlerts = () => {
     alerts,
     dismissedAlerts,
     count: alerts.length,
-    loading: financeLoading || subscriptionsQuery.isPending || dismissalsQuery.isPending,
+    loading: financeLoading || subsLoading || dismissalsQuery.isPending,
     dismiss: dismissMutation.mutate,
     restore: restoreMutation.mutate,
   };

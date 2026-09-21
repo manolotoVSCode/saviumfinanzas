@@ -20,11 +20,12 @@ export interface Alert {
   severity: 'alta' | 'media';
 }
 
+/** Subconjunto de subscription_services que usan las alertas (la fila completa es asignable). */
 export interface SubscriptionForAlerts {
   id: string;
-  serviceName: string;
+  service_name: string;
   active: boolean;
-  originalComments: string[];
+  original_comments: string[];
 }
 
 export interface AlertsInput {
@@ -81,9 +82,9 @@ export const annualPaymentAlerts = (categories: Category[], transactions: Transa
 
 export const subscriptionIncreaseAlerts = (subscriptions: SubscriptionForAlerts[], transactions: Transaction[]): Alert[] => {
   return subscriptions
-    .filter(s => s.active && s.originalComments.length > 0)
+    .filter(s => s.active && s.original_comments.length > 0)
     .flatMap(s => {
-      const comments = new Set(s.originalComments);
+      const comments = new Set(s.original_comments);
       const payments = transactions
         .filter(t => t.gasto > 0 && comments.has(t.comentario))
         .sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
@@ -95,7 +96,7 @@ export const subscriptionIncreaseAlerts = (subscriptions: SubscriptionForAlerts[
       return [{
         key: `suscripcion_sube:${s.id}:${last.id}`,
         type: 'suscripcion_sube' as const,
-        title: s.serviceName,
+        title: s.service_name,
         detail: `Subió de ${prev.gasto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} a ${last.gasto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${last.divisa} (+${pct.toFixed(1)}%)`,
         amount: last.gasto,
         currency: last.divisa,
