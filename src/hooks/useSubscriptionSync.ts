@@ -51,7 +51,11 @@ export const useSubscriptionSync = () => {
       // invalidate(transacciones) ya contiene lo importado.
       const transactions = args.transactions ?? queryClient.getQueryData<Transaction[]>(QK.transacciones) ?? [];
       const categories = args.categories ?? queryClient.getQueryData<Category[]>(QK.categorias) ?? [];
-      if (transactions.length === 0) return vacio;
+      // Sin transacciones o sin categorías (p.ej. useFinanceDataSupabase aún no montó su
+      // caché) no hay nada que detectar: sin este guard, categories vacío hace que
+      // detectSubscriptions devuelva [] y mergeWithStored([], stored) marque TODAS las
+      // filas guardadas como huérfanas → se borrarían todas las suscripciones del usuario.
+      if (transactions.length === 0 || categories.length === 0) return vacio;
 
       const { data: stored, error } = await supabase
         .from('subscription_services')
@@ -61,6 +65,12 @@ export const useSubscriptionSync = () => {
       const rows = (stored ?? []) as SubscriptionRow[];
 
       const detected = detectSubscriptions(transactions, categories, toAliasEntries(rows));
+      // Mismo riesgo si no se detecta nada por otra razón (categoría "Suscripciones"
+      // renombrada, filtro de fecha, etc.): nunca se borra todo por no detectar nada.
+      if (detected.length === 0) {
+        console.warn('Sync de suscripciones omitido: nada detectado');
+        return vacio;
+      }
       const { updates, inserts, orphanIds } = mergeWithStored(detected, rows);
 
       const duplicados: string[] = [];

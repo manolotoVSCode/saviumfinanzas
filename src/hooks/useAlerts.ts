@@ -6,7 +6,7 @@ import { useFinanceDataSupabase } from './useFinanceDataSupabase';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 import { Alert, computeAlerts, SubscriptionForAlerts } from '@/lib/finance/alerts';
 
-// Temporal hasta la fase 2: useSubscriptionServices aún filtra active y tiene staleTime 0.
+// Temporal hasta la Task 2.6: useAlerts pasará a useSubscriptionServices (que ya devuelve todas las filas).
 const fetchSubscriptions = async (): Promise<SubscriptionForAlerts[]> => {
   const { data, error } = await supabase
     .from('subscription_services')
