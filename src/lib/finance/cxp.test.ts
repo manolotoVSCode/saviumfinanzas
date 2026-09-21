@@ -89,6 +89,38 @@ describe('computeCxP · recurrentes', () => {
     ] });
     expect(rows).toHaveLength(0);
   });
+
+  it('gaps de ~60 días se clasifican como bimensual y proyectan a +2 meses', () => {
+    const rows = computeCxP({ ...base, categories: [luz], transactions: [
+      tx({ id: 'a', subcategoriaId: 'luz', gasto: 400, fecha: new Date(2026, 7, 10) }), // 10 ago
+      tx({ id: 'b', subcategoriaId: 'luz', gasto: 600, fecha: new Date(2026, 5, 10) }), // 10 jun
+      tx({ id: 'c', subcategoriaId: 'luz', gasto: 900, fecha: new Date(2026, 3, 10) }), // 10 abr
+    ] });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ monto: 500, detalle: 'bimensual · prom. últimos 2' });
+    expect(rows[0].fechaEstimada).toEqual(new Date(2026, 9, 10));
+  });
+
+  it('gaps de ~90 días se clasifican como trimestral; solo entra con horizonte suficiente', () => {
+    const txs = [
+      tx({ id: 'a', subcategoriaId: 'luz', gasto: 300, fecha: new Date(2026, 8, 1) }), // 1 sep
+      tx({ id: 'b', subcategoriaId: 'luz', gasto: 300, fecha: new Date(2026, 5, 1) }), // 1 jun
+      tx({ id: 'c', subcategoriaId: 'luz', gasto: 300, fecha: new Date(2026, 2, 1) }), // 1 mar
+    ];
+    expect(computeCxP({ ...base, categories: [luz], transactions: txs, horizonte: 30 })).toHaveLength(0); // 1 dic > 15 oct
+    const rows = computeCxP({ ...base, categories: [luz], transactions: txs, horizonte: 90 });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ monto: 300, detalle: 'trimestral · prom. últimos 2' });
+    expect(rows[0].fechaEstimada).toEqual(new Date(2026, 11, 1));
+  });
+
+  it('un recurrente mensual sin pagos en más de 45 días se considera inactivo', () => {
+    const rows = computeCxP({ ...base, categories: [luz], transactions: [
+      tx({ id: 'a', subcategoriaId: 'luz', gasto: 500, fecha: new Date(2026, 6, 10) }), // 10 jul → 67 días
+      tx({ id: 'b', subcategoriaId: 'luz', gasto: 500, fecha: new Date(2026, 5, 10) }),
+    ] });
+    expect(rows).toHaveLength(0);
+  });
 });
 
 describe('computeCxP · tarjetas', () => {
