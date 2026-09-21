@@ -9,6 +9,14 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '7.3',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Limpieza interna: se retira código de la antigua detección móvil en las páginas de escritorio y la tabla financial_health_history, que nada usaba', type: 'improvement' },
+      { icon: <Shield className="h-4 w-4" />, text: 'Helpers de fecha (local y UTC) con tests para escribir fechas a la base de datos sin desfases', type: 'improvement' },
+    ],
+  },
+  {
     version: '7.2',
     date: 'Septiembre 2026',
     changes: [
