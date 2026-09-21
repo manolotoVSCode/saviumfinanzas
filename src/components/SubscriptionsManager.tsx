@@ -65,8 +65,10 @@ const toView = (row: SubscriptionService, transactions: Transaction[]): ServiceV
 
 const getFrequencyBadgeVariant = (frequency: string) => {
   switch (frequency) {
+    case 'Semanal': return 'default';
     case 'Mensual': return 'default';
     case 'Bimestral': return 'default';
+    case 'Trimestral': return 'secondary';
     case 'Semestral': return 'secondary';
     case 'Anual': return 'secondary';
     default: return 'outline';
@@ -201,7 +203,7 @@ export const SubscriptionsManager = () => {
     setEditingName(currentName);
   };
   const saveEditedName = () => {
-    if (!editingServiceId || !editingName.trim()) return;
+    if (syncing || !editingServiceId || !editingName.trim()) return;
     saveName.mutate({ id: editingServiceId, name: editingName.trim() });
   };
   const cancelEditingName = () => {
@@ -209,10 +211,11 @@ export const SubscriptionsManager = () => {
     setEditingName('');
   };
   const saveEditedFrequency = (service: ServiceView, frecuencia: SubscriptionFrequency) => {
+    if (syncing) return;
     saveFrequency.mutate({ id: service.id, frecuencia, ultimoPago: service.ultimoPago.fecha });
   };
   const performMerge = () => {
-    if (!mergeSourceId || !mergeTargetId || mergeSourceId === mergeTargetId) return;
+    if (syncing || !mergeSourceId || !mergeTargetId || mergeSourceId === mergeTargetId) return;
     const source = services.find(s => s.id === mergeSourceId);
     const target = services.find(s => s.id === mergeTargetId);
     if (!source || !target) return;
@@ -318,7 +321,7 @@ export const SubscriptionsManager = () => {
                               }}
                               autoFocus
                             />
-                            <Button size="sm" variant="ghost" onClick={saveEditedName} className="h-8 w-8 p-0">
+                            <Button size="sm" variant="ghost" onClick={saveEditedName} disabled={syncing} className="h-8 w-8 p-0">
                               <Check className="h-4 w-4" />
                             </Button>
                             <Button size="sm" variant="ghost" onClick={cancelEditingName} className="h-8 w-8 p-0">
@@ -343,6 +346,7 @@ export const SubscriptionsManager = () => {
                               size="sm"
                               variant="ghost"
                               onClick={() => { setMergeSourceId(service.id); setMergeTargetId(''); }}
+                              disabled={syncing}
                               className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                               title="Fusionar con otra suscripción"
                             >
@@ -356,7 +360,7 @@ export const SubscriptionsManager = () => {
                               <Badge
                                 key={opt.value}
                                 variant={service.frecuencia === opt.value ? 'default' : 'outline'}
-                                className="text-xs cursor-pointer hover:bg-primary/20"
+                                className={`text-xs cursor-pointer hover:bg-primary/20 ${syncing ? 'pointer-events-none opacity-60' : ''}`}
                                 onClick={() => saveEditedFrequency(service, opt.value)}
                               >
                                 {opt.label}
@@ -461,7 +465,7 @@ export const SubscriptionsManager = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setMergeSourceId(null); setMergeTargetId(''); }}>Cancelar</Button>
-            <Button onClick={performMerge} disabled={!mergeTargetId || merge.isPending}>Fusionar</Button>
+            <Button onClick={performMerge} disabled={syncing || !mergeTargetId || merge.isPending}>Fusionar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

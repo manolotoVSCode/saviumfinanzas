@@ -55,7 +55,10 @@ export const useSubscriptionSync = () => {
       // caché) no hay nada que detectar: sin este guard, categories vacío hace que
       // detectSubscriptions devuelva [] y mergeWithStored([], stored) marque TODAS las
       // filas guardadas como huérfanas → se borrarían todas las suscripciones del usuario.
-      if (transactions.length === 0 || categories.length === 0) return vacio;
+      if (transactions.length === 0 || categories.length === 0) {
+        ultimoSincronizado = null;
+        return vacio;
+      }
 
       const { data: stored, error } = await supabase
         .from('subscription_services')
@@ -69,6 +72,7 @@ export const useSubscriptionSync = () => {
       // renombrada, filtro de fecha, etc.): nunca se borra todo por no detectar nada.
       if (detected.length === 0) {
         console.warn('Sync de suscripciones omitido: nada detectado');
+        ultimoSincronizado = null;
         return vacio;
       }
       const { updates, inserts, orphanIds } = mergeWithStored(detected, rows);

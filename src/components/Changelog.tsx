@@ -13,7 +13,7 @@ const changelog: ChangelogEntry[] = [
     date: 'Septiembre 2026',
     changes: [
       { icon: <Sparkles className="h-4 w-4" />, text: 'Suscripciones: la frecuencia se calcula con la mediana de los intervalos y un cargo de cambio de plan ya no la vuelve "Irregular"; las frecuencias editadas a mano se respetan siempre', type: 'improvement' },
-      { icon: <Zap className="h-4 w-4" />, text: 'La detección de suscripciones es una función compartida con tests y hace una fracción de las consultas de antes; tras importar un archivo el móvil las ve al día', type: 'improvement' },
+      { icon: <Zap className="h-4 w-4" />, text: 'La detección de suscripciones es una función compartida con tests y hace una fracción de las consultas de antes', type: 'improvement' },
       { icon: <Bug className="h-4 w-4" />, text: 'El próximo pago se recalcula siempre desde el último cargo real; frecuencias Semanal y Trimestral disponibles al editar', type: 'fix' },
     ],
   },
