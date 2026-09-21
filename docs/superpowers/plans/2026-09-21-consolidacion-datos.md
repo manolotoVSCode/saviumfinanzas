@@ -1956,13 +1956,13 @@ describe('mergeWithStored', () => {
     expect(inserts[0]).toMatchObject({ service_name: 'Netflix (2)', canon_key: 'netflix' });
   });
 
-  it('dos inserts con el mismo nombre reciben (2) y (3)', () => {
+  it('dos inserts con el mismo nombre: el primero libre, el segundo con (2); la huérfana k0 no ocupa', () => {
     const dos = [
       { ...detectada[0], canonKey: 'k1' },
       { ...detectada[0], canonKey: 'k2' },
     ];
     const { inserts } = mergeWithStored(dos, [row({ canon_key: 'k0' })]);
-    expect(inserts.map(i => i.service_name)).toEqual(['Netflix (2)', 'Netflix (3)']);
+    expect(inserts.map(i => i.service_name)).toEqual(['Netflix', 'Netflix (2)']);
   });
 });
 ```
