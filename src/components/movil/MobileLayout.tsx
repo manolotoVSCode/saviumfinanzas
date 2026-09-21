@@ -90,7 +90,7 @@ const Shell = ({ children }: { children: ReactNode }) => {
                 {/* Etiquetas a 12px: cinco etiquetas de 14px no caben en 390px; es la única excepción a ≥14px */}
                 <span className={cn('text-[12px] leading-none', active && 'font-semibold')}>{label}</span>
                 {badge !== null && (
-                  <span className="absolute top-2 right-[calc(50%-22px)] min-w-5 h-5 px-1 rounded-full bg-destructive text-destructive-foreground text-[12px] font-semibold flex items-center justify-center">
+                  <span className="absolute top-1 right-[calc(50%-24px)] min-w-6 h-6 px-1.5 rounded-full bg-destructive text-destructive-foreground text-sm font-semibold flex items-center justify-center">
                     {badge}
                   </span>
                 )}
