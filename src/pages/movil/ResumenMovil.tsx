@@ -39,7 +39,8 @@ const ResumenMovil = () => {
   );
 
   const cuentasPorTipo = useMemo(() => {
-    const visibles = accounts.filter((a) => !a.vendida && a.saldoActual !== 0);
+    // Se ocultan las vendidas y las de saldo cero o residual (< 0.005)
+    const visibles = accounts.filter((a) => !a.vendida && Math.abs(a.saldoActual) >= 0.005);
     return ORDEN_TIPOS
       .map((tipo) => ({ tipo, cuentas: visibles.filter((a) => a.tipo === tipo) as Account[] }))
       .filter((g) => g.cuentas.length > 0);
