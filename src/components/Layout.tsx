@@ -5,7 +5,6 @@ import { usePendings } from '@/hooks/usePendings';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
@@ -21,7 +20,6 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { profile } = useUserProfile();
-  const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
   const { activeCount, overdueCount } = usePendings();
   const { count: alertCount } = useAlerts();
@@ -60,17 +58,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/configuracion', icon: Settings, label: 'Configuración' },
   ];
 
-  const mobileNavItems = [
-    { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
-    { path: '/transacciones', icon: ArrowUpDown, label: 'Transacciones' },
-    { path: '/inversiones', icon: TrendingUp, label: 'Inversiones' },
-    { path: '/informes', icon: FileText, label: 'Informes Financieros' },
-    { path: '/configuracion', icon: Settings, label: 'Configuración' },
-  ];
-
-  // Desktop layout with sidebar
-  if (!isMobile) {
-    return (
+  return (
       <div className="min-h-screen bg-background flex">
         <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
@@ -173,59 +161,6 @@ const Layout = ({ children }: LayoutProps) => {
         </main>
       </div>
     );
-  }
-
-  // Mobile layout with bottom nav
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
-
-      <div className="container mx-auto px-4 py-8">
-        {/* MOBILE HEADER */}
-        <div className="mb-8 flex justify-between items-center gap-4">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="hover:opacity-80 transition-opacity"
-          >
-            <Logo size={56} className="justify-start" />
-          </button>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setSearchOpen(true)} className="h-9 w-9">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            </Button>
-            <Button variant="outline" size="sm" onClick={signOut}>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          {children}
-        </div>
-
-        {/* BOTTOM NAV */}
-        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg z-50">
-          <div className="grid grid-cols-5 h-full">
-            {mobileNavItems.map(({ path, icon: Icon, label }) => (
-              <button
-                key={path}
-                onClick={() => navigate(path)}
-                className={cn(
-                  'flex flex-col items-center justify-center space-y-1 h-full transition-colors',
-                  isActive(path)
-                    ? 'text-primary bg-primary/5 border-t-2 border-primary'
-                    : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                <span className="text-xs">{label}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
-      </div>
-    </div>
-  );
 };
 
 export default Layout;

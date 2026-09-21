@@ -7,6 +7,7 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Responsive from "@/components/Responsive";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,9 @@ const CxP = lazy(() => import("./pages/CxP"));
 const ChangelogPage = lazy(() => import("./pages/ChangelogPage"));
 const Alertas = lazy(() => import("./pages/Alertas"));
 
+// Versión móvil (< 768px), solo lectura.
+const SoloEscritorio = lazy(() => import("./pages/movil/SoloEscritorio"));
+
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="text-center">
@@ -52,98 +56,98 @@ const App = () => (
             <Routes>
               <Route path="/" element={
                 <ProtectedRoute fallbackPath="/auth">
-                  <Dashboard />
+                  <Responsive desktop={Dashboard} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <Responsive desktop={Dashboard} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/transacciones" element={
                 <ProtectedRoute>
-                  <Transacciones />
+                  <Responsive desktop={Transacciones} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/inversiones" element={
                 <ProtectedRoute>
-                  <Inversiones />
+                  <Responsive desktop={Inversiones} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/informes" element={
                 <ProtectedRoute>
-                  <Informes />
+                  <Responsive desktop={Informes} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/configuracion" element={
                 <ProtectedRoute>
-                  <Configuracion />
+                  <Responsive desktop={Configuracion} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/transacciones-categoria" element={
                 <ProtectedRoute>
-                  <TransaccionesCategoria />
+                  <Responsive desktop={TransaccionesCategoria} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/reglas-clasificacion" element={
                 <ProtectedRoute>
-                  <ReglasClasificacion />
+                  <Responsive desktop={ReglasClasificacion} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/cuentas" element={
                 <ProtectedRoute>
-                  <Cuentas />
+                  <Responsive desktop={Cuentas} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/categorias" element={
                 <ProtectedRoute>
-                  <Categorias />
+                  <Responsive desktop={Categorias} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/seguimiento-gastos" element={
                 <ProtectedRoute>
-                  <SeguimientoGastos />
+                  <Responsive desktop={SeguimientoGastos} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/seguimiento-ingresos" element={
                 <ProtectedRoute>
-                  <SeguimientoIngresos />
+                  <Responsive desktop={SeguimientoIngresos} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/pendientes" element={
                 <ProtectedRoute>
-                  <Pendientes />
+                  <Responsive desktop={Pendientes} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/suscripciones" element={
                 <ProtectedRoute>
-                  <Suscripciones />
+                  <Responsive desktop={Suscripciones} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/ingresos-recurrentes" element={
                 <ProtectedRoute>
-                  <IngresosRecurrentes />
+                  <Responsive desktop={IngresosRecurrentes} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/pagos-anuales" element={
                 <ProtectedRoute>
-                  <PagosAnuales />
+                  <Responsive desktop={PagosAnuales} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/cxp" element={
                 <ProtectedRoute>
-                  <CxP />
+                  <Responsive desktop={CxP} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/alertas" element={
                 <ProtectedRoute>
-                  <Alertas />
+                  <Responsive desktop={Alertas} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/changelog" element={
                 <ProtectedRoute>
-                  <ChangelogPage />
+                  <Responsive desktop={ChangelogPage} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
