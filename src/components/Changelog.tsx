@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '7.1',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Versión móvil de solo lectura (pantallas de menos de 768px): Resumen, Inversiones, Suscripciones, Por cobrar y Por pagar con letra grande, nav inferior y selector de divisa propio', type: 'feature' },
+      { icon: <Zap className="h-4 w-4" />, text: 'Las cuentas por pagar y el rendimiento de inversiones se calculan con funciones compartidas entre escritorio y móvil, con tests automáticos', type: 'improvement' },
+      { icon: <Bug className="h-4 w-4" />, text: 'En el móvil ya no aparece un instante la versión de escritorio al abrir la app', type: 'fix' },
+    ],
+  },
+  {
     version: '7.0',
     date: 'Septiembre 2026',
     changes: [
