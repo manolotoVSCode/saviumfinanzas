@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
@@ -50,6 +50,7 @@ export const useCriptomonedas = () => {
     queryKey: [...QK.criptoPrecios, simbolos.join(',')],
     queryFn: () => fetchPrecios(simbolos),
     staleTime: STALE_TIME,
+    placeholderData: keepPreviousData,
     retry: 1,
     enabled: !!user && simbolos.length > 0,
   });

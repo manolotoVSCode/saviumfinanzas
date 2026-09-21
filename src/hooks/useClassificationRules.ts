@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,7 +30,6 @@ const fetchRules = async (userId: string): Promise<ClassificationRule[]> => {
     .eq('user_id', userId)
     .order('priority', { ascending: false });
   if (error) {
-    console.error('[ClassificationRules] Error:', error);
     throw error;
   }
   return (data ?? []) as any as ClassificationRule[];
@@ -47,6 +47,10 @@ export function useClassificationRules() {
     enabled: !!user,
   });
   const rules = query.data ?? EMPTY;
+
+  useEffect(() => {
+    if (query.error) console.error('Error loading classification rules:', query.error);
+  }, [query.error]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: QK.reglas });
 

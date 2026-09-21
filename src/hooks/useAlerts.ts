@@ -80,7 +80,8 @@ export const useAlerts = () => {
         .upsert({ user_id: user.id, alert_key: alert.key }, { onConflict: 'user_id,alert_key' });
       if (error) throw error;
     },
-    onMutate: (alert) => {
+    onMutate: async (alert) => {
+      await queryClient.cancelQueries({ queryKey: QK.alertDismissals });
       queryClient.setQueryData<string[]>(QK.alertDismissals, prev => [...(prev ?? []), alert.key]);
     },
     onError: (error) => {
@@ -99,7 +100,8 @@ export const useAlerts = () => {
         .eq('alert_key', alert.key);
       if (error) throw error;
     },
-    onMutate: (alert) => {
+    onMutate: async (alert) => {
+      await queryClient.cancelQueries({ queryKey: QK.alertDismissals });
       queryClient.setQueryData<string[]>(QK.alertDismissals, prev => (prev ?? []).filter(k => k !== alert.key));
     },
     onError: (error) => {

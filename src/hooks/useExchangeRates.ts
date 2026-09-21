@@ -29,8 +29,9 @@ async function fetchRatesFromAPI(): Promise<ExchangeRates> {
 
 /**
  * Tasas MXN↔USD/EUR en la caché de TanStack Query (clave sin usuario): una sola
- * petición para toda la app, fresca 5 min y refrescada cada 5 min mientras haya
- * algún componente montado. Sustituye al singleton cachedRates/fetchPromise.
+ * petición para toda la app. Se consideran frescos 5 min; al volver a la pestaña
+ * pasado ese tiempo se refrescan (sin refetchInterval: cada observador crearía
+ * su propio intervalo). Sustituye al singleton cachedRates/fetchPromise.
  */
 export const useExchangeRates = () => {
   const query = useQuery({
