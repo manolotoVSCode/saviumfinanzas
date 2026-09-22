@@ -150,6 +150,20 @@ describe('computeCxP · tarjetas', () => {
     expect(rows[0]).toMatchObject({ id: 'card-tc', concepto: 'Visa', tipo: 'Tarjeta de crédito', monto: 3500, divisa: 'USD', detalle: 'Saldo pendiente actual' });
     expect(rows[0].fechaEstimada).toEqual(new Date(2026, 8, 30));
   });
+
+  it('una tarjeta con un saldo de céntimos de arrastre se considera saldada', () => {
+    const rows = computeCxP({ ...base, accounts: [
+      account({ id: 'mc', nombre: 'Mastercard', tipo: 'Tarjeta de Crédito', saldoActual: -0.004 }),
+    ] });
+    expect(rows).toHaveLength(0);
+  });
+
+  it('un céntimo real sí se debe', () => {
+    const rows = computeCxP({ ...base, accounts: [
+      account({ id: 'mc', nombre: 'Mastercard', tipo: 'Tarjeta de Crédito', saldoActual: -0.01 }),
+    ] });
+    expect(rows).toHaveLength(1);
+  });
 });
 
 describe('computeCxP · préstamos', () => {

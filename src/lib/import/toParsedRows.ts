@@ -22,6 +22,18 @@ export interface ParsedRow {
   categoriaManual: boolean;
 }
 
+/**
+ * Importe con signo: negativo lo que sale, positivo lo que entra. Los reembolsos
+ * cuentan como entrada aunque su categoría sea de gasto (misma regla que el +/-
+ * de la tabla y que los totales del pie).
+ */
+export const montoConSigno = (row: Pick<ParsedRow, 'monto' | 'esGasto' | 'esReembolso'>): number =>
+  row.esGasto && !row.esReembolso ? -row.monto : row.monto;
+
+/** true para ingresos y reembolsos: lo que entra a la cuenta. */
+export const esEntrada = (row: Pick<ParsedRow, 'esGasto' | 'esReembolso'>): boolean =>
+  !row.esGasto || row.esReembolso;
+
 export type Categorizer = (descripcion: string, monto: number) => CategorySuggestion | null;
 
 /**

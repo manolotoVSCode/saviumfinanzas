@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '7.8',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Bug className="h-4 w-4" />, text: 'Las suscripciones ya no se rebarajan al entrar: van en orden alfabético fijo (antes se ordenaban por último pago, la fecha que el propio sincronizador mueve)', type: 'fix' },
+      { icon: <Upload className="h-4 w-4" />, text: 'En el preview de importación, ordenar por monto distingue gastos de ingresos, y un filtro nuevo muestra solo ingresos y reembolsos', type: 'improvement' },
+      { icon: <Wallet className="h-4 w-4" />, text: 'Una tarjeta pagada con céntimos de arrastre deja de aparecer en Cuentas por Pagar con saldo 0.00', type: 'fix' },
+    ],
+  },
+  {
     version: '7.7',
     date: 'Septiembre 2026',
     changes: [

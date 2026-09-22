@@ -14,7 +14,7 @@ import { matchesClassificationRule } from '@/lib/classificationRules';
 import { toFechaISO } from '@/lib/finance/fechas';
 import { DateHint, parseBankStatement, ParseMeta, SkippedRow } from '@/lib/import/bankStatementParser';
 import { buildHistoryIndex, suggestCategory } from '@/lib/import/importCategorizer';
-import { ParsedRow, toParsedRows } from '@/lib/import/toParsedRows';
+import { esEntrada, montoConSigno, ParsedRow, toParsedRows } from '@/lib/import/toParsedRows';
 import { Account, Category, Transaction } from '@/types/finance';
 import { CreateRuleFromRowDialog, NewRule } from './CreateRuleFromRowDialog';
 import { ImportPreviewTable, SortColumn, SortDirection } from './ImportPreviewTable';
@@ -28,7 +28,7 @@ interface BankStatementImporterProps {
 }
 
 type Step = 'select-account' | 'upload' | 'preview';
-type PreviewFilter = 'all' | 'sin_asignar' | 'dudosas';
+type PreviewFilter = 'all' | 'sin_asignar' | 'dudosas' | 'entradas';
 
 const esSinAsignar = (cat: Category | undefined) => !cat || cat.subcategoria === 'Sin Asignar' || cat.categoria === 'SIN ASIGNAR';
 
@@ -298,6 +298,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     () => parsedRows.filter(row => esSinAsignar(categories.find(c => c.id === row.categoriaId))).length,
     [parsedRows, categories],
   );
+  const entradasCount = useMemo(() => parsedRows.filter(esEntrada).length, [parsedRows]);
   const dudosasCount = useMemo(() => parsedRows.filter(r => !r.categoriaManual && r.suggestion?.confidence === 'media').length, [parsedRows]);
   const hasTarjetahabiente = useMemo(() => parsedRows.some(r => r.tarjetahabiente), [parsedRows]);
 
@@ -339,7 +340,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       case 'fecha': comparison = a.fecha.getTime() - b.fecha.getTime(); break;
       case 'descripcion': comparison = a.descripcion.localeCompare(b.descripcion); break;
       case 'tipo': comparison = a.tipo.localeCompare(b.tipo); break;
-      case 'monto': comparison = a.monto - b.monto; break;
+      // Con signo: un gasto de 500 y un ingreso de 500 no son lo mismo.
+      case 'monto': comparison = montoConSigno(a) - montoConSigno(b); break;
       case 'categoria': {
         const catA = categories.find(c => c.id === a.categoriaId);
         const catB = categories.find(c => c.id === b.categoriaId);
@@ -355,6 +357,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const filteredPreviewRows = useMemo(() => {
     if (previewFilter === 'sin_asignar') return sortedRows.filter(row => esSinAsignar(categories.find(c => c.id === row.categoriaId)));
     if (previewFilter === 'dudosas') return sortedRows.filter(r => !r.categoriaManual && r.suggestion?.confidence === 'media');
+    if (previewFilter === 'entradas') return sortedRows.filter(esEntrada);
     return sortedRows;
   }, [sortedRows, previewFilter, categories]);
 
@@ -462,6 +465,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
               </Button>
               <Button variant={previewFilter === 'dudosas' ? 'default' : 'outline'} size="sm" onClick={() => setPreviewFilter('dudosas')}>
                 Dudosas ({dudosasCount})
+              </Button>
+              <Button variant={previewFilter === 'entradas' ? 'default' : 'outline'} size="sm" onClick={() => setPreviewFilter('entradas')}>
+                Ingresos y reemb. ({entradasCount})
               </Button>
             </div>
 

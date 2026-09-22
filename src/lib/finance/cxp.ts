@@ -200,7 +200,9 @@ export const computeCxP = ({
 
   // 4) Tarjetas de crédito con saldo negativo
   const cxpTarjetas: CxPRow[] = accounts
-    .filter((a) => a.tipo === 'Tarjeta de Crédito' && !a.vendida && a.saldoActual < 0)
+    // Menos de un céntimo de saldo = tarjeta saldada: el arrastre de decimales
+    // de los movimientos dejaba tarjetas pagadas apareciendo con "0.00" por pagar.
+    .filter((a) => a.tipo === 'Tarjeta de Crédito' && !a.vendida && a.saldoActual <= -0.005)
     .map((a) => {
       // Fecha estimada: 15 días adelante como aproximación
       const nextDate = new Date(now);

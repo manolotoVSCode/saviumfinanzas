@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ParseMeta, SkippedRow, SkipReason } from '@/lib/import/bankStatementParser';
-import { ParsedRow } from '@/lib/import/toParsedRows';
+import { esEntrada, ParsedRow } from '@/lib/import/toParsedRows';
 
 const MOTIVO: Record<SkipReason, string> = {
   sin_fecha: 'Sin fecha válida',
@@ -32,8 +32,8 @@ export const ImportSummaryBar = ({ rows, skipped, meta, currency, importing, sel
 
   const totales = useMemo(() => {
     const incluidas = rows.filter(r => r.incluir);
-    const gastos = incluidas.filter(r => r.esGasto && !r.esReembolso);
-    const ingresos = incluidas.filter(r => !r.esGasto || r.esReembolso);
+    const gastos = incluidas.filter(r => !esEntrada(r));
+    const ingresos = incluidas.filter(esEntrada);
     return {
       nGastos: gastos.length,
       gastos: gastos.reduce((s, r) => s + r.monto, 0),

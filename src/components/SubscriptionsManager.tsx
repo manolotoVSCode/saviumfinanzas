@@ -100,7 +100,9 @@ export const SubscriptionsManager = () => {
   const services = useMemo(
     () => subscriptions
       .map(r => toView(r, transactions))
-      .sort((a, b) => b.ultimoPago.fecha.getTime() - a.ultimoPago.fecha.getTime()),
+      // A-Z: orden fijo. Ordenar por último pago hacía saltar las filas justo
+      // después de cada sync, que es lo que mueve esa fecha.
+      .sort((a, b) => a.serviceName.localeCompare(b.serviceName, 'es')),
     [subscriptions, transactions],
   );
 

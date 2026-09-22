@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Pending } from '@/hooks/usePendings';
-import { ParsedRow } from '@/lib/import/toParsedRows';
+import { esEntrada, ParsedRow } from '@/lib/import/toParsedRows';
 import { Category, TransactionType } from '@/types/finance';
 import { cn } from '@/lib/utils';
 
@@ -147,7 +147,7 @@ export const ImportPreviewTable = ({
           {rows.map(row => {
             const category = categories.find(c => c.id === row.categoriaId);
             const isSinAsignar = !category || category.subcategoria === 'Sin Asignar';
-            const isExpense = row.esGasto && !row.esReembolso;
+            const isExpense = !esEntrada(row);
             const matches = pendingMatches.get(row.id);
             const linkedId = pendingLinks[row.id];
             const selectedMatch = matches ? (linkedId ? matches.find(m => m.id === linkedId) : matches[0]) : undefined;

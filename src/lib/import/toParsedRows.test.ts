@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Category } from '@/types/finance';
 import { RawMovement } from './bankStatementParser';
-import { toParsedRows } from './toParsedRows';
+import { esEntrada, montoConSigno, toParsedRows } from './toParsedRows';
 
 const mov = (over: Partial<RawMovement>): RawMovement => ({ sourceRow: 0, fecha: new Date(2026, 7, 5), descripcion: 'X', montoOriginal: -100, ...over });
 const cats: Category[] = [
@@ -39,5 +39,25 @@ describe('toParsedRows', () => {
   it('conserva sourceRow y tarjetahabiente', () => {
     const [r] = toParsedRows([mov({ sourceRow: 7, tarjetahabiente: 'MANUEL' })], 'Banco', () => null, cats, 'sin');
     expect(r).toMatchObject({ sourceRow: 7, tarjetahabiente: 'MANUEL', incluir: true, esReembolso: false });
+  });
+});
+
+describe('montoConSigno y esEntrada', () => {
+  const fila = (over: { monto: number; esGasto: boolean; esReembolso: boolean }) => over;
+
+  it('el gasto va en negativo y el ingreso en positivo: no empatan al ordenar', () => {
+    const gasto = fila({ monto: 500, esGasto: true, esReembolso: false });
+    const ingreso = fila({ monto: 500, esGasto: false, esReembolso: false });
+    expect(montoConSigno(gasto)).toBe(-500);
+    expect(montoConSigno(ingreso)).toBe(500);
+    expect([gasto, ingreso].sort((a, b) => montoConSigno(a) - montoConSigno(b))).toEqual([gasto, ingreso]);
+  });
+
+  it('un reembolso cuenta como entrada aunque su categoría sea de gasto', () => {
+    const reembolso = fila({ monto: 300, esGasto: true, esReembolso: true });
+    expect(montoConSigno(reembolso)).toBe(300);
+    expect(esEntrada(reembolso)).toBe(true);
+    expect(esEntrada(fila({ monto: 300, esGasto: true, esReembolso: false }))).toBe(false);
+    expect(esEntrada(fila({ monto: 300, esGasto: false, esReembolso: false }))).toBe(true);
   });
 });

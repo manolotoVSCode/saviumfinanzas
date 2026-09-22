@@ -9,7 +9,12 @@ export type SubscriptionService = Database['public']['Tables']['subscription_ser
 const EMPTY: SubscriptionService[] = [];
 
 const fetchSubscriptionServices = async (): Promise<SubscriptionService[]> => {
-  const { data, error } = await supabase.from('subscription_services').select('*');
+  // order() explícito: sin él Postgres devuelve el orden físico de la tabla, que
+  // cambia cada vez que el sync actualiza filas → la lista se barajaba sola.
+  const { data, error } = await supabase
+    .from('subscription_services')
+    .select('*')
+    .order('service_name', { ascending: true });
   if (error) throw error;
   return data ?? [];
 };
