@@ -325,7 +325,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     const map = new Map<string, Pending[]>();
     if (!selectedAccount || activePendings.length === 0) return map;
     for (const row of parsedRows) {
-      if (row.esGasto || row.esReembolso) continue;
+      // Los reembolsos sí se comparan: un pendiente de tipo "reembolso_gasto" se
+      // cobra precisamente con un abono en una categoría de gasto.
+      if (row.esGasto) continue;
       if (row.tipo !== 'Ingreso') continue;
       const matches = activePendings.filter(p =>
         p.divisa === selectedAccount.divisa &&

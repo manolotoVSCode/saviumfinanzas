@@ -36,6 +36,25 @@ describe('toParsedRows', () => {
     expect(x).toMatchObject({ tipo: 'Gastos', esGasto: true, categoriaId: 'ingreso' });
   });
 
+  it('marca como reembolso un abono cuya categoría sugerida es de gasto', () => {
+    const [r] = toParsedRows([mov({ montoOriginal: 20000 })], 'Banco', sug('gasto'), cats, 'sin');
+    expect(r).toMatchObject({ esReembolso: true, esGasto: false, tipo: 'Ingreso', categoriaId: 'gasto', monto: 20000 });
+  });
+
+  it('un abono con categoría de ingreso no es reembolso, y un cargo tampoco', () => {
+    const [ingreso] = toParsedRows([mov({ montoOriginal: 20000 })], 'Banco', sug('ingreso'), cats, 'sin');
+    expect(ingreso.esReembolso).toBe(false);
+    const [gasto] = toParsedRows([mov({ montoOriginal: -500 })], 'Banco', sug('gasto'), cats, 'sin');
+    expect(gasto.esReembolso).toBe(false);
+    const [sinSugerencia] = toParsedRows([mov({ montoOriginal: 20000 })], 'Banco', () => null, cats, 'sin');
+    expect(sinSugerencia.esReembolso).toBe(false);
+  });
+
+  it('en tarjeta, el abono también se marca si la categoría sugerida es de gasto', () => {
+    const [r] = toParsedRows([mov({ montoOriginal: -800 })], 'Tarjeta de Crédito', sug('gasto'), cats, 'sin');
+    expect(r).toMatchObject({ esReembolso: true, esGasto: false, monto: 800 });
+  });
+
   it('conserva sourceRow y tarjetahabiente', () => {
     const [r] = toParsedRows([mov({ sourceRow: 7, tarjetahabiente: 'MANUEL' })], 'Banco', () => null, cats, 'sin');
     expect(r).toMatchObject({ sourceRow: 7, tarjetahabiente: 'MANUEL', incluir: true, esReembolso: false });

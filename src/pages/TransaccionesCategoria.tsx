@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Calendar, CreditCard, FileText, Pencil } from 'lucide-react';
 import { Transaction } from '@/types/finance';
+import { esReembolso, gastoNeto } from '@/lib/finance/reembolsos';
 
 const TransaccionesCategoria = () => {
   const navigate = useNavigate();
@@ -111,11 +112,15 @@ const TransaccionesCategoria = () => {
     return transactions.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
   }, [financeData.transactions, categoria, subcategoria, divisa, mesIndex, tipo, monthNum, yearNum]);
 
-  // Calcular totales
-  const totalAmount = filteredTransactions.reduce((sum, t) => {
-    return sum + Math.abs(tipo === 'Ingreso' ? (t.ingreso || 0) : (t.gasto || 0));
-  }, 0);
   const isIncome = tipo === 'Ingreso';
+
+  // En categorías de gasto, un ingreso es un reembolso y RESTA: misma regla que
+  // usa el dashboard, para que este detalle cuadre con la tarjeta de la que vienes.
+  const totalAmount = isIncome
+    ? filteredTransactions.reduce((sum, t) => sum + Math.abs(t.ingreso || 0), 0)
+    : gastoNeto(filteredTransactions);
+
+  const reembolsos = isIncome ? [] : filteredTransactions.filter(esReembolso);
 
   const formatCurrencyValue = (amount: number, currency: string) => {
     return `${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)} ${currency}`;
@@ -231,6 +236,17 @@ const TransaccionesCategoria = () => {
                 <FileText className="h-4 w-4" />
                 <span>{filteredTransactions.length} transacciones</span>
               </div>
+              {reembolsos.length > 0 && (
+                <div className="flex items-center gap-1 text-success">
+                  <span>
+                    {reembolsos.length} reembolso{reembolsos.length !== 1 ? 's' : ''} descontado
+                    {reembolsos.length !== 1 ? 's' : ''}: −{formatCurrencyValue(
+                      reembolsos.reduce((sum, t) => sum + Math.abs(t.ingreso || 0), 0),
+                      divisa,
+                    )}
+                  </span>
+                </div>
+              )}
               {filteredTransactions.length > 0 && (
                 <>
                   <span>•</span>
@@ -303,8 +319,12 @@ const TransaccionesCategoria = () => {
                             {t.comentario || <span className="text-muted-foreground italic">Sin notas</span>}
                           </p>
                         </TableCell>
-                        <TableCell className={`text-right font-semibold whitespace-nowrap ${isIncome ? 'text-success' : 'text-destructive'}`}>
-                          {formatCurrencyValue(Math.abs(isIncome ? (t.ingreso || 0) : (t.gasto || 0)), t.divisa || divisa)}
+                        <TableCell className={`text-right font-semibold whitespace-nowrap ${isIncome || esReembolso(t) ? 'text-success' : 'text-destructive'}`}>
+                          {!isIncome && esReembolso(t) && '−'}
+                          {formatCurrencyValue(Math.abs(isIncome ? (t.ingreso || 0) : (esReembolso(t) ? t.ingreso : t.gasto) || 0), t.divisa || divisa)}
+                          {!isIncome && esReembolso(t) && (
+                            <Badge variant="secondary" className="ml-2 text-[10px] font-normal align-middle">Reembolso</Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />

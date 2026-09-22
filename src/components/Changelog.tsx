@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '8.0',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Bug className="h-4 w-4" />, text: 'Al abrir el detalle de una categoría de gasto, un reembolso ya no aparece en 0.00: se muestra en verde con su importe y se resta del total, así el detalle cuadra con la tarjeta del dashboard', type: 'fix' },
+      { icon: <Tag className="h-4 w-4" />, text: 'Al importar, un abono cuya categoría sugerida es de gasto se marca solo como reembolso (la casilla sigue mandando)', type: 'feature' },
+      { icon: <Zap className="h-4 w-4" />, text: 'Los reembolsos ya pueden vincularse con un pendiente por cobrar al importar', type: 'improvement' },
+    ],
+  },
+  {
     version: '7.9',
     date: 'Septiembre 2026',
     changes: [

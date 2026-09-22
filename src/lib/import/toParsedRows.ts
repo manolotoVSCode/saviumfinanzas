@@ -73,6 +73,11 @@ export const toParsedRows = (
       tipo = isExpenseLike ? 'Gastos' : 'Ingreso';
     }
 
+    // Un abono cuya categoría sugerida es de gasto es un reembolso: dinero que
+    // vuelve de un gasto anterior (devolución de una compra, gasto médico que
+    // te reintegran). Se marca solo; la casilla del preview sigue mandando.
+    const esReembolso = !isExpenseLike && (matched?.tipo === 'Gastos' || matched?.tipo === 'Reembolso');
+
     return {
       id: `import-${i}-${stamp}`,
       sourceRow: m.sourceRow,
@@ -80,7 +85,7 @@ export const toParsedRows = (
       descripcion: m.descripcion,
       monto,
       esGasto: tipo === 'Gastos' || tipo === 'Retiro',
-      esReembolso: false,
+      esReembolso,
       categoriaId: suggestion?.categoriaId || sinAsignarId || '',
       incluir: true,
       montoOriginal,
