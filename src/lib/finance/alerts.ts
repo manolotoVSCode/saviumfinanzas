@@ -1,6 +1,7 @@
 import { Category, Transaction } from '@/types/finance';
 import { groupAnnualPayments, isAnnualCategory } from './annualPayments';
-import { toFechaISO } from './fechas';
+import { finMesAnterior, toFechaISO } from './fechas';
+import { agruparCiclos } from './subscriptions';
 
 export type AlertType = 'pago_anual' | 'suscripcion_sube' | 'categoria_disparada';
 
@@ -39,12 +40,13 @@ export interface AlertsInput {
 
 /** Umbrales. */
 export const ALERT_RULES = {
-  /** Pago anual: avisar cuando falten ≤ N días (o ya haya vencido hasta hace N días). */
+  /** Pago anual: avisar cuando falten ≤ N días desde hoy. */
   annualDaysAhead: 15,
+  /** Pago anual vencido: solo si el vencimiento cae ≤ N días antes del corte de datos (fin del mes anterior); lo vencido en el mes en curso está pendiente de importar. */
   annualDaysOverdue: 30,
   /** Suscripción: subida mínima del último cobro respecto al anterior. */
   subscriptionIncreaseRatio: 1.01,
-  /** Categoría: gasto del mes respecto a la media de los 12 meses anteriores. */
+  /** Categoría: gasto del último mes cerrado respecto a la media de los 12 meses anteriores a ese. */
   categoryOverRatio: 1.4,
   /** Categoría: media mínima mensual para considerarla (evita ruido en categorías casi vacías). */
   categoryMinAverage: 500,
@@ -58,12 +60,20 @@ const sameMonth = (d: Date, y: number, m: number) => d.getFullYear() === y && d.
 
 export const annualPaymentAlerts = (categories: Category[], transactions: Transaction[], inactive: Set<string>, now: Date): Alert[] => {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const corte = finMesAnterior(now);
+  const corteDia = new Date(corte.getFullYear(), corte.getMonth(), corte.getDate());
   return groupAnnualPayments(categories, transactions)
     .filter(g => !inactive.has(g.id))
     .flatMap(g => {
       const due = new Date(g.nextPayment.getFullYear(), g.nextPayment.getMonth(), g.nextPayment.getDate());
       const days = Math.round((due.getTime() - today.getTime()) / dayMs);
-      if (days > ALERT_RULES.annualDaysAhead || days < -ALERT_RULES.annualDaysOverdue) return [];
+      if (days > ALERT_RULES.annualDaysAhead) return [];
+      if (days < 0) {
+        // Vencido: solo cuenta si cae en un mes ya importado (≤ corte) y a ≤ N días del corte.
+        // groupAnnualPayments ya adelanta nextPayment un año cuando el pago existe.
+        const diasAntesDelCorte = Math.round((corteDia.getTime() - due.getTime()) / dayMs);
+        if (diasAntesDelCorte < 0 || diasAntesDelCorte > ALERT_RULES.annualDaysOverdue) return [];
+      }
       const when = days < 0 ? `venció hace ${-days} día${days === -1 ? '' : 's'}` : days === 0 ? 'vence hoy' : `vence en ${days} día${days === 1 ? '' : 's'}`;
       const currency = g.history[0] ? transactions.find(t => t.comentario === g.history[0].comment && t.subcategoriaId === g.categoryId)?.divisa ?? 'MXN' : 'MXN';
       return [{
@@ -85,11 +95,11 @@ export const subscriptionIncreaseAlerts = (subscriptions: SubscriptionForAlerts[
     .filter(s => s.active && s.original_comments.length > 0)
     .flatMap(s => {
       const comments = new Set(s.original_comments);
-      const payments = transactions
-        .filter(t => t.gasto > 0 && comments.has(t.comentario))
-        .sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
-      if (payments.length < 2) return [];
-      const [last, prev] = payments;
+      const payments = transactions.filter(t => t.gasto > 0 && comments.has(t.comentario));
+      const ciclos = agruparCiclos(payments, p => p.fecha);
+      if (ciclos.length < 2) return [];
+      const last = ciclos[ciclos.length - 1][ciclos[ciclos.length - 1].length - 1];
+      const prev = ciclos[ciclos.length - 2][ciclos[ciclos.length - 2].length - 1];
       if (last.divisa !== prev.divisa) return [];
       if (last.gasto < prev.gasto * ALERT_RULES.subscriptionIncreaseRatio) return [];
       const pct = ((last.gasto - prev.gasto) / prev.gasto) * 100;
@@ -108,13 +118,17 @@ export const subscriptionIncreaseAlerts = (subscriptions: SubscriptionForAlerts[
 };
 
 /**
- * Categoría (nivel `categoria`, no subcategoría) cuyo gasto neto del mes en curso
- * supera en `categoryOverRatio` la media de los 12 meses anteriores con gasto.
+ * Categoría (nivel `categoria`, no subcategoría) cuyo gasto neto del ÚLTIMO MES
+ * CERRADO (corte de datos: el mes en curso aún no está importado) supera en
+ * `categoryOverRatio` la media de los 12 meses anteriores con gasto.
  * Se excluyen inmuebles y las categorías con seguimiento anual (picos por diseño).
+ * La clave `categoria_disparada:<categoria>:<yyyy-mm>` es la que se habría generado
+ * en su momento, así que los descartes no resucitan.
  */
 export const categorySpikeAlerts = (categories: Category[], transactions: Transaction[], now: Date): Alert[] => {
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const corte = finMesAnterior(now);
+  const year = corte.getFullYear();
+  const month = corte.getMonth();
   const excluded = new Set(categories.filter(isAnnualCategory).map(c => c.id));
   const byId = new Map(categories.map(c => [c.id, c]));
 
@@ -124,7 +138,8 @@ export const categorySpikeAlerts = (categories: Category[], transactions: Transa
   for (const t of transactions) {
     const c = byId.get(t.subcategoriaId);
     if (!c || c.tipo !== 'Gastos' || excluded.has(c.id) || c.categoria === 'Compra Venta Inmuebles') continue;
-    const ym = `${t.fecha.getFullYear()}-${t.fecha.getMonth()}`;
+    // Transaction.fecha es medianoche UTC: con getters locales un cargo del día 1 caería en el mes anterior.
+    const ym = `${t.fecha.getUTCFullYear()}-${t.fecha.getUTCMonth()}`;
     if (!monthly.has(c.categoria)) monthly.set(c.categoria, new Map());
     const m = monthly.get(c.categoria)!;
     m.set(ym, (m.get(ym) ?? 0) + t.gasto - t.ingreso);
