@@ -1,6 +1,6 @@
 export type ClassificationMatchType = 'exact' | 'contains' | 'starts_with';
 
-const normalizeRuleText = (value: string) =>
+export const normalizeRuleText = (value: string) =>
   value
     .toLowerCase()
     .replace(/[^a-z0-9áéíóúñü\s]/g, ' ')

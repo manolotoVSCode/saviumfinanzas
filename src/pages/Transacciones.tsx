@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TransactionsManager } from '@/components/TransactionsManager';
 import { ExcelExporter } from '@/components/ExcelExporter';
-import BankStatementImporter from '@/components/BankStatementImporter';
+import BankStatementImporter from '@/components/import/BankStatementImporter';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { Button } from '@/components/ui/button';
