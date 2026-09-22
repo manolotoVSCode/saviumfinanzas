@@ -5,6 +5,7 @@ import { useMobileCurrency } from '@/contexts/MobileCurrencyContext';
 import { computeDashboardMetrics } from '@/lib/finance/dashboardMetrics';
 import { Card, CardContent } from '@/components/ui/card';
 import { Cargando, Importe, Seccion } from '@/components/movil/ui';
+import { AlertasResumen } from '@/components/movil/AlertasResumen';
 import { Account, AccountType } from '@/types/finance';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +53,9 @@ const ResumenMovil = () => {
 
   return (
     <div className="space-y-6">
+      {/* 0. Alertas activas (solo si hay) */}
+      <AlertasResumen />
+
       {/* 1. Patrimonio neto */}
       <div className="pt-2">
         <p className="text-sm text-muted-foreground mb-1">Patrimonio neto</p>
