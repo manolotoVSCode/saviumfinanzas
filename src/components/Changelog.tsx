@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '7.9',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Tag className="h-4 w-4" />, text: 'Reglas: cada una muestra "Gana / Candidatas" — las transacciones que se lleva frente a las que podría clasificar — y el aviso de solape distingue el reparto intencional (por monto o cuenta) del que deja una regla sin aplicarse nunca', type: 'improvement' },
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Panel "Salud de las reglas": reglas que nunca se aplican, sin coincidencias, palabras clave repetidas, compartidas entre dos reglas y demasiado cortas', type: 'feature' },
+      { icon: <Upload className="h-4 w-4" />, text: 'Al importar, las últimas cuentas usadas salen como botones directos y encabezan el desplegable: un clic y a soltar el archivo', type: 'improvement' },
+    ],
+  },
+  {
     version: '7.8',
     date: 'Septiembre 2026',
     changes: [

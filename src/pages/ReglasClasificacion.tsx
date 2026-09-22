@@ -7,14 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, ChevronDown, ChevronRight, Layers, Stethoscope } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { matchesClassificationRule, splitClassificationKeywords } from '@/lib/classificationRules';
+import { classifyOverlap, computeRuleOutcomes, computeRulesHealth, OverlapSeverity } from '@/lib/finance/rulesAudit';
 import { Transaction } from '@/types/finance';
 
 const MATCH_TYPE_LABELS: Record<string, string> = {
@@ -83,6 +85,7 @@ const ReglasClasificacion = () => {
   const [categoryId, setCategoryId] = useState('');
   const [cuentaId, setCuentaId] = useState('');
   const [priority, setPriority] = useState('0');
+  const [showHealth, setShowHealth] = useState(false);
   const [active, setActive] = useState(true);
   const [amountMin, setAmountMin] = useState('');
   const [amountMax, setAmountMax] = useState('');
@@ -105,43 +108,43 @@ const ReglasClasificacion = () => {
     return true;
   }
 
-  // Compute rule -> matching transaction IDs (for overlap detection)
-  const ruleMatches = useMemo(() => {
-    const map: Record<string, Set<string>> = {};
-    rules.forEach(rule => {
-      map[rule.id] = new Set(
-        transactions.filter(t => transactionMatchesRule(t, rule)).map(t => t.id)
-      );
-    });
-    return map;
-  }, [rules, transactions]);
-
+  // Quién gana qué: la regla que primero coincide por prioridad se lleva la
+  // transacción; las demás solo eran candidatas.
+  const outcomes = useMemo(() => computeRuleOutcomes(rules, transactions), [rules, transactions]);
   const matchCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    Object.entries(ruleMatches).forEach(([id, set]) => { c[id] = set.size; });
+    rules.forEach(r => { c[r.id] = outcomes[r.id]?.candidatas ?? 0; });
     return c;
-  }, [ruleMatches]);
+  }, [rules, outcomes]);
 
-  // Detect overlapping rules (share ≥1 transaction with another active rule)
-  const overlappingRules = useMemo(() => {
-    const overlap: Record<string, string[]> = {};
-    const active = rules.filter(r => r.active);
-    for (let i = 0; i < active.length; i++) {
-      for (let j = i + 1; j < active.length; j++) {
-        const a = active[i], b = active[j];
-        const setA = ruleMatches[a.id];
-        const setB = ruleMatches[b.id];
-        if (!setA || !setB) continue;
-        let shared = 0;
-        setA.forEach(id => { if (setB.has(id)) shared++; });
-        if (shared > 0) {
-          (overlap[a.id] ||= []).push(b.id);
-          (overlap[b.id] ||= []).push(a.id);
-        }
-      }
-    }
-    return overlap;
-  }, [rules, ruleMatches]);
+  const health = useMemo(() => computeRulesHealth(rules, outcomes), [rules, outcomes]);
+
+  /** Por regla: el solape más grave que sufre, con quién y cuántas pierde. */
+  const overlapPorRegla = useMemo(() => {
+    const byId = new Map(rules.map(r => [r.id, r]));
+    const out: Record<string, { severity: OverlapSeverity; conflictos: { rule: ClassificationRule; n: number; severity: OverlapSeverity }[] }> = {};
+    const peso: Record<OverlapSeverity, number> = { anulada: 3, sospechoso: 2, intencional: 1, menor: 0 };
+    rules.forEach(rule => {
+      const o = outcomes[rule.id];
+      if (!o || o.pierdeAnte.length === 0) return;
+      const conflictos = o.pierdeAnte
+        .map(({ ruleId, n }) => {
+          const ganadora = byId.get(ruleId);
+          if (!ganadora) return null;
+          return { rule: ganadora, n, severity: classifyOverlap(ganadora, rule, n, o) };
+        })
+        .filter(Boolean) as { rule: ClassificationRule; n: number; severity: OverlapSeverity }[];
+      if (conflictos.length === 0) return;
+      const severity = conflictos.reduce<OverlapSeverity>((peor, c) => (peso[c.severity] > peso[peor] ? c.severity : peor), 'menor');
+      out[rule.id] = { severity, conflictos };
+    });
+    return out;
+  }, [rules, outcomes]);
+
+  const reglasARevisar = useMemo(
+    () => Object.values(overlapPorRegla).filter(o => o.severity === 'anulada' || o.severity === 'sospechoso').length,
+    [overlapPorRegla],
+  );
 
   const matchingTransactions = useMemo(() => {
     if (!matchesDialogRule) return [];
@@ -312,8 +315,8 @@ const ReglasClasificacion = () => {
     total: rules.length,
     activas: rules.filter(r => r.active).length,
     sinUso: rules.filter(r => r.active && (matchCounts[r.id] || 0) === 0).length,
-    solapadas: Object.keys(overlappingRules).length,
-  }), [rules, matchCounts, overlappingRules]);
+    solapadas: reglasARevisar,
+  }), [rules, matchCounts, reglasARevisar]);
 
   if (loading || loadingFinance) {
     return (
@@ -364,17 +367,109 @@ const ReglasClasificacion = () => {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Con solapes</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.solapadas}</p>
+              <p className="text-xs text-muted-foreground">Solapes a revisar</p>
+              <p className={`text-2xl font-bold ${stats.solapadas > 0 ? 'text-orange-600' : 'text-muted-foreground'}`}>{stats.solapadas}</p>
             </CardContent>
           </Card>
         </div>
+
+        {(health.muertas.length + health.anuladas.length + health.duplicadasEnRegla.length + health.compartidas.length + health.cortas.length) > 0 && (
+          <Card>
+            <Collapsible open={showHealth} onOpenChange={setShowHealth}>
+              <CollapsibleTrigger asChild>
+                <button type="button" className="w-full flex items-center gap-2 p-4 text-left hover:bg-accent/50">
+                  {showHealth ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Salud de las reglas</span>
+                  <span className="text-sm text-muted-foreground">
+                    {[
+                      health.muertas.length && `${health.muertas.length} sin coincidencias`,
+                      health.anuladas.length && `${health.anuladas.length} anuladas`,
+                      health.duplicadasEnRegla.length && `${health.duplicadasEnRegla.length} con keywords repetidas`,
+                      health.compartidas.length && `${health.compartidas.length} keywords en dos reglas`,
+                      health.cortas.length && `${health.cortas.length} keywords muy cortas`,
+                    ].filter(Boolean).join(' · ')}
+                  </span>
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-4 text-sm">
+                  {health.anuladas.length > 0 && (
+                    <div>
+                      <p className="font-medium">Nunca se aplican</p>
+                      <p className="text-xs text-muted-foreground mb-1">Coinciden con transacciones, pero otra regla de más prioridad se las lleva todas.</p>
+                      <ul className="space-y-0.5">
+                        {health.anuladas.map(({ rule, ganadoras }) => (
+                          <li key={rule.id}>
+                            <button type="button" className="underline underline-offset-2" onClick={() => openEdit(rules.find(r => r.id === rule.id)!)}>{rule.name || rule.keyword}</button>
+                            <span className="text-muted-foreground"> — se las lleva {ganadoras.map(id => rules.find(r => r.id === id)?.name || '—').join(', ')}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {health.muertas.length > 0 && (
+                    <div>
+                      <p className="font-medium">Sin ninguna coincidencia</p>
+                      <p className="text-xs text-muted-foreground mb-1">Ninguna transacción tuya las activa: o sobran, o sus palabras clave no son las que trae el banco.</p>
+                      <div className="flex flex-wrap gap-1">
+                        {health.muertas.map(r => (
+                          <Badge key={r.id} variant="outline" className="cursor-pointer" onClick={() => openEdit(rules.find(x => x.id === r.id)!)}>{r.name || r.keyword}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {health.duplicadasEnRegla.length > 0 && (
+                    <div>
+                      <p className="font-medium">Palabras clave repetidas dentro de la misma regla</p>
+                      <ul className="space-y-0.5">
+                        {health.duplicadasEnRegla.map(({ rule, keywords }) => (
+                          <li key={rule.id}>
+                            <button type="button" className="underline underline-offset-2" onClick={() => openEdit(rules.find(r => r.id === rule.id)!)}>{rule.name || rule.keyword}</button>
+                            <span className="text-muted-foreground"> — {keywords.map(k => k.toUpperCase()).join(', ')}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {health.compartidas.length > 0 && (
+                    <div>
+                      <p className="font-medium">La misma palabra clave en dos reglas</p>
+                      <p className="text-xs text-muted-foreground mb-1">Gana siempre la de más prioridad; si el reparto no es a propósito, una de las dos sobra.</p>
+                      <ul className="space-y-0.5">
+                        {health.compartidas.map(({ keyword, ruleIds }) => (
+                          <li key={keyword}>
+                            <span className="font-mono text-xs">{keyword.toUpperCase()}</span>
+                            <span className="text-muted-foreground"> — {ruleIds.map(id => rules.find(r => r.id === id)?.name || '—').join(' / ')}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {health.cortas.length > 0 && (
+                    <div>
+                      <p className="font-medium">Palabras clave muy cortas</p>
+                      <p className="text-xs text-muted-foreground mb-1">Coinciden por principio de palabra: DR atrapa cualquier palabra que empiece por "dr".</p>
+                      <div className="flex flex-wrap gap-1">
+                        {health.cortas.map(({ keyword, ruleId }, i) => (
+                          <Badge key={`${keyword}-${i}`} variant="secondary" className="text-[10px] font-mono cursor-pointer" title={rules.find(r => r.id === ruleId)?.name || ''} onClick={() => openEdit(rules.find(r => r.id === ruleId)!)}>
+                            {keyword.toUpperCase()}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Reglas</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Se aplican al importar estados de cuenta. Mayor prioridad = se evalúa primero. Las reglas solapadas comparten transacciones con otra regla.
+              Se aplican al importar estados de cuenta. Mayor prioridad = se evalúa primero. "Gana / Candidatas" son las transacciones que la regla se lleva frente a las que podría clasificar; el resto se las queda otra regla de más prioridad.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -428,7 +523,7 @@ const ReglasClasificacion = () => {
                       <SortableHead label="Tipo" k="match_type" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                       <SortableHead label="Cuenta" k="cuenta" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                       <SortableHead label="Categoría" k="category" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                      <SortableHead label="Coincidencias" k="matches" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
+                      <SortableHead label="Gana / Candidatas" k="matches" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
                       <SortableHead label="Prioridad" k="priority" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
                       <SortableHead label="Activa" k="active" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
                       <TableHead className="text-right">Acciones</TableHead>
@@ -439,21 +534,28 @@ const ReglasClasificacion = () => {
                       const kws = splitClassificationKeywords(rule.keyword).map(k => k.toUpperCase());
                       const shown = kws.slice(0, 3);
                       const rest = kws.length - shown.length;
-                      const overlaps = overlappingRules[rule.id];
+                      const overlap = overlapPorRegla[rule.id];
                       return (
                         <TableRow key={rule.id} className={!rule.active ? 'opacity-50' : ''}>
                           <TableCell className="font-medium max-w-[200px]" title={rule.name || rule.keyword}>
                             <div className="flex items-center gap-1">
                               <span className="truncate">{rule.name || '—'}</span>
-                              {overlaps && (() => {
-                                const names = overlaps
-                                  .map(id => {
-                                    const r = rules.find(x => x.id === id);
-                                    return r ? (r.name || r.keyword || '—') : null;
-                                  })
-                                  .filter(Boolean) as string[];
+                              {overlap && overlap.severity !== 'menor' && (() => {
+                                const detalle = overlap.conflictos
+                                  .map(c => `${c.rule.name || c.rule.keyword} (${c.n})`)
+                                  .join(', ');
+                                if (overlap.severity === 'intencional') {
+                                  return (
+                                    <span title={`Reparto intencional con: ${detalle}. Alguna de las dos acota por monto o por cuenta.`}>
+                                      <Layers className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                    </span>
+                                  );
+                                }
+                                const texto = overlap.severity === 'anulada'
+                                  ? `Nunca se aplica: ${detalle} se lleva todas sus coincidencias`
+                                  : `Pierde la mayoría de sus coincidencias ante: ${detalle}`;
                                 return (
-                                  <span title={`Solapa con: ${names.join(', ')}`}>
+                                  <span title={texto}>
                                     <AlertTriangle className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                                   </span>
                                 );
@@ -476,13 +578,28 @@ const ReglasClasificacion = () => {
                           <TableCell className="text-sm text-muted-foreground whitespace-nowrap max-w-[160px] truncate" title={rule.cuenta_id ? getAccountName(rule.cuenta_id) : 'Todas'}>{rule.cuenta_id ? getAccountName(rule.cuenta_id) : 'Todas'}</TableCell>
                           <TableCell className="max-w-[200px] truncate" title={getCategoryLabel(rule.category_id)}>{getCategoryLabel(rule.category_id)}</TableCell>
                           <TableCell className="text-center">
-                            <Badge
-                              variant={matchCounts[rule.id] > 0 ? 'default' : 'secondary'}
-                              className={matchCounts[rule.id] > 0 ? 'cursor-pointer hover:opacity-80' : ''}
-                              onClick={() => matchCounts[rule.id] > 0 && setMatchesDialogRule(rule)}
-                            >
-                              {matchCounts[rule.id] || 0}
-                            </Badge>
+                            {(() => {
+                              const o = outcomes[rule.id];
+                              const candidatas = o?.candidatas ?? 0;
+                              const gana = o?.gana ?? 0;
+                              const perdidas = candidatas - gana;
+                              const detalle = overlap?.conflictos.map(c => `${c.n} → ${c.rule.name || c.rule.keyword}`).join(', ');
+                              return (
+                                <span
+                                  className="inline-flex items-baseline gap-1"
+                                  title={perdidas > 0 ? `${perdidas} se las lleva otra regla: ${detalle}` : undefined}
+                                >
+                                  <Badge
+                                    variant={gana > 0 ? 'default' : 'secondary'}
+                                    className={candidatas > 0 ? 'cursor-pointer hover:opacity-80' : ''}
+                                    onClick={() => candidatas > 0 && setMatchesDialogRule(rule)}
+                                  >
+                                    {gana}
+                                  </Badge>
+                                  {perdidas > 0 && <span className="text-xs text-muted-foreground">/ {candidatas}</span>}
+                                </span>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge variant={priorityBadgeVariant(rule.priority)}>{rule.priority}</Badge>

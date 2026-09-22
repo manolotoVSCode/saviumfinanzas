@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useClassificationRules } from '@/hooks/useClassificationRules';
@@ -15,6 +15,7 @@ import { toFechaISO } from '@/lib/finance/fechas';
 import { DateHint, parseBankStatement, ParseMeta, SkippedRow } from '@/lib/import/bankStatementParser';
 import { buildHistoryIndex, suggestCategory } from '@/lib/import/importCategorizer';
 import { esEntrada, montoConSigno, ParsedRow, toParsedRows } from '@/lib/import/toParsedRows';
+import { cuentasRecientes, ordenarPorRecientes, registrarCuentaReciente } from '@/lib/import/cuentasRecientes';
 import { Account, Category, Transaction } from '@/types/finance';
 import { CreateRuleFromRowDialog, NewRule } from './CreateRuleFromRowDialog';
 import { ImportPreviewTable, SortColumn, SortDirection } from './ImportPreviewTable';
@@ -60,6 +61,17 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const { sync } = useSubscriptionSync();
 
   const selectedAccount = useMemo(() => accounts.find(a => a.id === selectedAccountId), [accounts, selectedAccountId]);
+
+  // Atajos a las últimas cuentas importadas: con 27 cuentas, buscar AMEX o HSBC
+  // en el desplegable era el primer peaje de cada importación.
+  const recientes = useMemo(() => (open ? cuentasRecientes(accounts.map(a => a.id)) : []), [open, accounts]);
+  const cuentasAgrupadas = useMemo(() => ordenarPorRecientes(accounts, recientes), [accounts, recientes]);
+
+  /** Atajo: elige la cuenta y salta directo a soltar el archivo. */
+  const usarCuenta = (id: string) => {
+    setSelectedAccountId(id);
+    setStep('upload');
+  };
   const isCreditCard = selectedAccount?.tipo === 'Tarjeta de Crédito';
 
   const sinAsignarCategory = useMemo(
@@ -210,6 +222,8 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
       // addTransactionsBatch relanza si falla y, si va bien, ya invalidó `transacciones`.
       await onImportTransactions(transactionsToImport);
+      // Solo tras importar de verdad: los atajos reflejan importaciones, no tanteos.
+      registrarCuentaReciente(selectedAccountId);
 
       // Vincular pendientes: localizar la transacción recién creada (cuenta+fecha+comentario+monto)
       // y marcar el pendiente como cobrado. Un fallo aquí no debe dejar el
@@ -385,16 +399,43 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
 
         {step === 'select-account' && (
           <div className="space-y-4 py-4">
+            {cuentasAgrupadas.recientes.length > 0 && (
+              <div className="space-y-2">
+                <Label>Últimas usadas</Label>
+                <div className="flex flex-wrap gap-2">
+                  {cuentasAgrupadas.recientes.map(account => (
+                    <Button key={account.id} variant="outline" size="sm" className="h-9" onClick={() => usarCuenta(account.id)}>
+                      {account.nombre}
+                      <span className="ml-1 text-xs text-muted-foreground">{account.divisa}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Cuenta</Label>
               <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
                 <SelectTrigger><SelectValue placeholder="Selecciona una cuenta" /></SelectTrigger>
                 <SelectContent>
-                  {accounts.map(account => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.nombre} ({account.tipo}) - {account.divisa}
-                    </SelectItem>
-                  ))}
+                  {cuentasAgrupadas.recientes.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>Últimas usadas</SelectLabel>
+                      {cuentasAgrupadas.recientes.map(account => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.nombre} ({account.tipo}) - {account.divisa}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  <SelectGroup>
+                    {cuentasAgrupadas.recientes.length > 0 && <SelectLabel>Todas</SelectLabel>}
+                    {cuentasAgrupadas.resto.map(account => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.nombre} ({account.tipo}) - {account.divisa}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
@@ -411,7 +452,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
             )}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={handleClose}>Cancelar</Button>
-              <Button onClick={() => setStep('upload')} disabled={!selectedAccountId}>Continuar</Button>
+              <Button onClick={() => usarCuenta(selectedAccountId)} disabled={!selectedAccountId}>Continuar</Button>
             </div>
           </div>
         )}
