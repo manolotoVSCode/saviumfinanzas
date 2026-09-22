@@ -7,11 +7,36 @@ export const normalizeRuleText = (value: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
+export interface ParsedKeyword {
+  /** Texto normalizado, ya sin comillas. */
+  texto: string;
+  /** Entrecomillada: solo coincide si aparece como palabra suelta ("SPA" no caza "SPAIN"). */
+  palabraCompleta: boolean;
+}
+
+/** Marca una palabra clave como "palabra completa" o le quita la marca. */
+export const conPalabraCompleta = (raw: string, palabraCompleta: boolean): string => {
+  const texto = raw.trim().replace(/^["'](.*)["']$/, '$1').trim();
+  return palabraCompleta ? `"${texto}"` : texto;
+};
+
+/** `SPA` → por principio de palabra; `"SPA"` → palabra suelta. */
+export const parseKeyword = (raw: string): ParsedKeyword => {
+  const trimmed = (raw || '').trim();
+  const entrecomillada = /^["'].*["']$/.test(trimmed) && trimmed.length >= 2;
+  const interior = entrecomillada ? trimmed.slice(1, -1) : trimmed;
+  return { texto: normalizeRuleText(interior), palabraCompleta: entrecomillada };
+};
+
+export const parseClassificationKeywords = (value: string): ParsedKeyword[] =>
+  (value || '').split(',').map(parseKeyword).filter((k) => k.texto);
+
 export const splitClassificationKeywords = (value: string) =>
-  value
-    .split(',')
-    .map(normalizeRuleText)
-    .filter(Boolean);
+  parseClassificationKeywords(value).map((k) => k.texto);
+
+/** La palabra clave aparece como palabra suelta, con límite a ambos lados. */
+const contienePalabraSuelta = (normalizedDescription: string, keyword: string) =>
+  ` ${normalizedDescription} `.includes(` ${keyword} `);
 
 const matchesContainsKeyword = (normalizedDescription: string, keyword: string) => {
   if (keyword.includes(' ')) {
@@ -32,7 +57,7 @@ export const matchesClassificationKeyword = (
   matchType: ClassificationMatchType,
 ) => {
   const normalizedDescription = normalizeRuleText(description);
-  const normalizedKeyword = normalizeRuleText(keyword);
+  const { texto: normalizedKeyword, palabraCompleta } = parseKeyword(keyword);
 
   if (!normalizedDescription || !normalizedKeyword) return false;
 
@@ -40,9 +65,14 @@ export const matchesClassificationKeyword = (
     case 'exact':
       return normalizedDescription === normalizedKeyword;
     case 'starts_with':
-      return normalizedDescription.startsWith(normalizedKeyword);
+      // Entrecomillada, la descripción tiene que empezar por la palabra entera.
+      return palabraCompleta
+        ? normalizedDescription === normalizedKeyword || normalizedDescription.startsWith(`${normalizedKeyword} `)
+        : normalizedDescription.startsWith(normalizedKeyword);
     case 'contains':
-      return matchesContainsKeyword(normalizedDescription, normalizedKeyword);
+      return palabraCompleta
+        ? contienePalabraSuelta(normalizedDescription, normalizedKeyword)
+        : matchesContainsKeyword(normalizedDescription, normalizedKeyword);
     default:
       return false;
   }
@@ -52,7 +82,7 @@ export const matchesClassificationRule = (
   description: string,
   keywordList: string,
   matchType: ClassificationMatchType,
-) => splitClassificationKeywords(keywordList).some((keyword) => matchesClassificationKeyword(description, keyword, matchType));
+) => (keywordList || '').split(',').some((keyword) => matchesClassificationKeyword(description, keyword, matchType));
 
 /** Campos de classification_rules que usa la búsqueda (la fila completa del hook es asignable). */
 export interface ClassificationRuleLike {
@@ -86,7 +116,7 @@ export const findMatchingRuleDetailed = (
   for (const rule of rules) {
     if (!rule.active) continue;
 
-    const keyword = splitClassificationKeywords(rule.keyword)
+    const keyword = (rule.keyword || '').split(',')
       .find((k) => matchesClassificationKeyword(description, k, rule.match_type));
     if (keyword === undefined) continue;
 
@@ -100,7 +130,7 @@ export const findMatchingRuleDetailed = (
     // If rule has amount filters but no amount provided, skip this rule
     if ((rule.amount_min !== null || rule.amount_max !== null) && amount === undefined) continue;
 
-    return { category_id: rule.category_id, name: rule.name, keyword };
+    return { category_id: rule.category_id, name: rule.name, keyword: parseKeyword(keyword).texto };
   }
   return null;
 };

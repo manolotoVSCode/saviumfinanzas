@@ -15,6 +15,8 @@ const changelog: ChangelogEntry[] = [
       { icon: <Tag className="h-4 w-4" />, text: 'Reglas: cada una muestra "Gana / Candidatas" — las transacciones que se lleva frente a las que podría clasificar — y el aviso de solape distingue el reparto intencional (por monto o cuenta) del que deja una regla sin aplicarse nunca', type: 'improvement' },
       { icon: <Sparkles className="h-4 w-4" />, text: 'Panel "Salud de las reglas": reglas que nunca se aplican, sin coincidencias, palabras clave repetidas, compartidas entre dos reglas y demasiado cortas', type: 'feature' },
       { icon: <Upload className="h-4 w-4" />, text: 'Al importar, las últimas cuentas usadas salen como botones directos y encabezan el desplegable: un clic y a soltar el archivo', type: 'improvement' },
+      { icon: <Tag className="h-4 w-4" />, text: 'Palabras clave de una regla con "palabra completa": un clic en la etiqueta y SPA deja de coincidir con SPAIN sin afectar al resto de reglas', type: 'feature' },
+      { icon: <Bug className="h-4 w-4" />, text: 'Las palabras clave repetidas dentro de una regla ya no se guardan, aunque estén escritas con otras mayúsculas o espacios', type: 'fix' },
     ],
   },
   {

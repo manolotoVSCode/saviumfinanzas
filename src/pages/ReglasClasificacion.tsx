@@ -15,7 +15,7 @@ import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter, X, ArrowUpDown, ArrowU
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
-import { matchesClassificationRule, splitClassificationKeywords } from '@/lib/classificationRules';
+import { conPalabraCompleta, matchesClassificationRule, normalizeRuleText, parseKeyword, splitClassificationKeywords } from '@/lib/classificationRules';
 import { classifyOverlap, computeRuleOutcomes, computeRulesHealth, OverlapSeverity } from '@/lib/finance/rulesAudit';
 import { Transaction } from '@/types/finance';
 
@@ -86,6 +86,8 @@ const ReglasClasificacion = () => {
   const [cuentaId, setCuentaId] = useState('');
   const [priority, setPriority] = useState('0');
   const [showHealth, setShowHealth] = useState(false);
+  /** Texto de la keyword que se intentó añadir estando ya en la lista: se resalta un instante. */
+  const [keywordRepetida, setKeywordRepetida] = useState<string | null>(null);
   const [active, setActive] = useState(true);
   const [amountMin, setAmountMin] = useState('');
   const [amountMax, setAmountMax] = useState('');
@@ -237,7 +239,11 @@ const ReglasClasificacion = () => {
   function openEdit(rule: ClassificationRule) {
     setEditingRule(rule);
     setRuleName(rule.name || '');
-    setKeywords(splitClassificationKeywords(rule.keyword).map(k => k.toUpperCase()));
+    // Se conserva la marca de palabra completa (las comillas) al editar.
+    setKeywords((rule.keyword || '').split(',').map(raw => {
+      const { texto, palabraCompleta } = parseKeyword(raw);
+      return texto ? conPalabraCompleta(texto.toUpperCase(), palabraCompleta) : '';
+    }).filter(Boolean));
     setKeywordInput('');
     setMatchType(rule.match_type);
     setCategoryId(rule.category_id);
@@ -249,11 +255,30 @@ const ReglasClasificacion = () => {
     setDialogOpen(true);
   }
 
+  /** Sin repetidas: compara el texto normalizado, así "Pet Grooming" y "PET GROOMING" son la misma. */
+  function sinDuplicados(lista: string[]): string[] {
+    const vistas = new Set<string>();
+    return lista.filter(k => {
+      const clave = parseKeyword(k).texto;
+      if (!clave || vistas.has(clave)) return false;
+      vistas.add(clave);
+      return true;
+    });
+  }
+
   function addKeywordsFromInput() {
     const parts = keywordInput.split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
     if (parts.length === 0) return;
-    setKeywords(prev => Array.from(new Set([...prev, ...parts])));
+    const yaEstaban = parts.filter(p => keywords.some(k => parseKeyword(k).texto === normalizeRuleText(p)));
+    setKeywords(prev => sinDuplicados([...prev, ...parts]));
     setKeywordInput('');
+    if (yaEstaban.length > 0) setKeywordRepetida(parseKeyword(yaEstaban[0]).texto);
+  }
+
+  /** Alterna entre coincidir por principio de palabra y exigir la palabra suelta. */
+  function togglePalabraCompleta(kw: string) {
+    const { texto, palabraCompleta } = parseKeyword(kw);
+    setKeywords(prev => prev.map(k => (k === kw ? conPalabraCompleta(texto.toUpperCase(), !palabraCompleta) : k)));
   }
 
   function handleKeywordKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -274,7 +299,7 @@ const ReglasClasificacion = () => {
   async function handleSave() {
     // Also flush any pending text in the input
     const pending = keywordInput.split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
-    const finalKeywords = Array.from(new Set([...keywords, ...pending]));
+    const finalKeywords = sinDuplicados([...keywords, ...pending]);
     if (finalKeywords.length === 0 || !categoryId) return;
 
     const data = {
@@ -667,29 +692,49 @@ const ReglasClasificacion = () => {
             <div className="space-y-2">
               <Label>Palabras clave</Label>
               <div className="flex flex-wrap gap-1.5 p-2 border rounded-md min-h-[42px] bg-background focus-within:ring-2 focus-within:ring-ring">
-                {keywords.map(kw => (
-                  <Badge key={kw} variant="secondary" className="gap-1 font-mono text-[11px]">
-                    {kw}
-                    <button
-                      type="button"
-                      onClick={() => removeKeyword(kw)}
-                      className="hover:text-destructive"
-                      aria-label={`Eliminar ${kw}`}
+                {keywords.map(kw => {
+                  const { texto, palabraCompleta } = parseKeyword(kw);
+                  const repetida = keywordRepetida === texto;
+                  return (
+                    <Badge
+                      key={kw}
+                      variant={palabraCompleta ? 'default' : 'secondary'}
+                      className={`gap-1 font-mono text-[11px] ${repetida ? 'ring-2 ring-destructive' : ''}`}
                     >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
+                      <button
+                        type="button"
+                        onClick={() => togglePalabraCompleta(kw)}
+                        title={palabraCompleta
+                          ? `Palabra completa: solo coincide si "${texto.toUpperCase()}" va suelta. Clic para volver a coincidir por principio de palabra.`
+                          : `Coincide con cualquier palabra que empiece por ${texto.toUpperCase()}. Clic para exigir la palabra completa.`}
+                      >
+                        {palabraCompleta ? `"${texto.toUpperCase()}"` : texto.toUpperCase()}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeKeyword(kw)}
+                        className="hover:text-destructive"
+                        aria-label={`Eliminar ${texto.toUpperCase()}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  );
+                })}
                 <input
                   className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
                   value={keywordInput}
-                  onChange={e => setKeywordInput(e.target.value)}
+                  onChange={e => { setKeywordInput(e.target.value); if (keywordRepetida) setKeywordRepetida(null); }}
                   onKeyDown={handleKeywordKeyDown}
                   onBlur={() => keywordInput.trim() && addKeywordsFromInput()}
                   placeholder={keywords.length === 0 ? 'AMAZON, UBER, NETFLIX...' : 'Añadir otra'}
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground">Enter, coma o Tab para añadir. La regla matchea si <strong>cualquier</strong> keyword coincide.</p>
+              <p className="text-[11px] text-muted-foreground">
+                Enter, coma o Tab para añadir. La regla matchea si <strong>cualquier</strong> keyword coincide.
+                Clic en una keyword para exigir <strong>palabra completa</strong>: <span className="font-mono">"SPA"</span> coincide con "SPA URBANO" pero no con "SPAIN".
+                {keywordRepetida && <span className="text-destructive"> · "{keywordRepetida.toUpperCase()}" ya estaba en la lista.</span>}
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Tipo de coincidencia</Label>

@@ -1,7 +1,7 @@
 import {
   ClassificationMatchType,
-  matchesClassificationKeyword,
-  splitClassificationKeywords,
+  matchesClassificationRule,
+  parseClassificationKeywords,
 } from '@/lib/classificationRules';
 
 /** Campos de una regla que necesita la auditoría. */
@@ -40,9 +40,7 @@ export interface RuleOutcome {
 /** Mismo criterio que el importador: keyword, cuenta e importe. */
 const esCandidata = (tx: AuditTransaction, rule: AuditRule): boolean => {
   if (!rule.active) return false;
-  const coincide = splitClassificationKeywords(rule.keyword)
-    .some((k) => matchesClassificationKeyword(tx.comentario || '', k, rule.match_type));
-  if (!coincide) return false;
+  if (!matchesClassificationRule(tx.comentario || '', rule.keyword, rule.match_type)) return false;
   if (rule.cuenta_id !== null && rule.cuenta_id !== tx.cuentaId) return false;
   const monto = Number(tx.gasto || 0) + Number(tx.ingreso || 0);
   if (rule.amount_min !== null && monto < rule.amount_min) return false;
@@ -142,13 +140,14 @@ export const computeRulesHealth = (
   const cortas: { keyword: string; ruleId: string }[] = [];
 
   for (const r of activas) {
-    const keywords = splitClassificationKeywords(r.keyword);
+    const keywords = parseClassificationKeywords(r.keyword);
     const vistas = new Set<string>();
     const repetidas = new Set<string>();
-    for (const k of keywords) {
-      if (vistas.has(k)) repetidas.add(k);
-      vistas.add(k);
-      if (k.length <= LONGITUD_KEYWORD_CORTA) cortas.push({ keyword: k, ruleId: r.id });
+    for (const { texto, palabraCompleta } of keywords) {
+      if (vistas.has(texto)) repetidas.add(texto);
+      vistas.add(texto);
+      // Una keyword corta marcada como palabra completa ya no captura de más.
+      if (!palabraCompleta && texto.length <= LONGITUD_KEYWORD_CORTA) cortas.push({ keyword: texto, ruleId: r.id });
     }
     if (repetidas.size > 0) duplicadasEnRegla.push({ rule: r, keywords: [...repetidas] });
     for (const k of vistas) porKeyword.set(k, [...(porKeyword.get(k) ?? []), r.id]);

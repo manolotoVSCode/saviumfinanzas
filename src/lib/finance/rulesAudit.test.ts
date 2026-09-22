@@ -108,6 +108,16 @@ describe('computeRulesHealth', () => {
     expect(health.cortas.map(c => c.keyword)).toEqual(['spa']);
   });
 
+  it('una keyword corta marcada como palabra completa deja de ser sospechosa', () => {
+    const rules = [rule({ id: 'higiene', keyword: '"SPA", PELUQUERIA', priority: 10 })];
+    const txs = [tx({ id: 't1', comentario: 'FIVE GUYS SPAIN MADRID' }), tx({ id: 't2', comentario: 'SPA URBANO' })];
+    const outcomes = computeRuleOutcomes(rules, txs);
+    const health = computeRulesHealth(rules, outcomes);
+    // "SPA" ya no caza SPAIN, así que solo gana la transacción del spa de verdad.
+    expect(outcomes.higiene).toMatchObject({ candidatas: 1, gana: 1 });
+    expect(health.cortas).toEqual([]);
+  });
+
   it('una regla sin problemas no aparece en ningún grupo', () => {
     const limpia = rule({ id: 'ok', keyword: 'NETFLIX, SPOTIFY', priority: 10 });
     const outcomes = computeRuleOutcomes([limpia], [tx({ id: 't', comentario: 'NETFLIX MX' })]);
