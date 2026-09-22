@@ -34,3 +34,34 @@ export const ordenarPorRecientes = <T extends { id: string }>(cuentas: T[], reci
   const ids = new Set(enRecientes.map((c) => c.id));
   return { recientes: enRecientes, resto: cuentas.filter((c) => !ids.has(c.id)) };
 };
+
+/**
+ * Arranque cuando el navegador no tiene historial (primera vez, otro equipo):
+ * las cuentas con MÁS movimientos, que son las que se alimentan de estados de
+ * cuenta. Ordenar por fecha del último movimiento no sirve: una cuenta de
+ * efectivo con cuatro apuntes a mano se cuela por delante del banco.
+ * Empate a movimientos → gana la del movimiento más reciente.
+ */
+export const cuentasPorActividad = <T extends { id: string }>(
+  cuentas: T[],
+  transactions: { cuentaId?: string | null; fecha: Date | string }[],
+  max: number = MAXIMO,
+): string[] => {
+  const ultima = new Map<string, number>();
+  const cuantas = new Map<string, number>();
+
+  for (const t of transactions) {
+    if (!t.cuentaId) continue;
+    const ts = t.fecha instanceof Date ? t.fecha.getTime() : new Date(t.fecha).getTime();
+    if (!Number.isFinite(ts)) continue;
+    cuantas.set(t.cuentaId, (cuantas.get(t.cuentaId) ?? 0) + 1);
+    const previa = ultima.get(t.cuentaId);
+    if (previa === undefined || ts > previa) ultima.set(t.cuentaId, ts);
+  }
+
+  return cuentas
+    .filter((c) => ultima.has(c.id))
+    .sort((a, b) => ((cuantas.get(b.id) ?? 0) - (cuantas.get(a.id) ?? 0)) || (ultima.get(b.id)! - ultima.get(a.id)!))
+    .slice(0, max)
+    .map((c) => c.id);
+};

@@ -15,7 +15,7 @@ import { toFechaISO } from '@/lib/finance/fechas';
 import { DateHint, parseBankStatement, ParseMeta, SkippedRow } from '@/lib/import/bankStatementParser';
 import { buildHistoryIndex, suggestCategory } from '@/lib/import/importCategorizer';
 import { esEntrada, montoConSigno, ParsedRow, toParsedRows } from '@/lib/import/toParsedRows';
-import { cuentasRecientes, ordenarPorRecientes, registrarCuentaReciente } from '@/lib/import/cuentasRecientes';
+import { cuentasPorActividad, cuentasRecientes, ordenarPorRecientes, registrarCuentaReciente } from '@/lib/import/cuentasRecientes';
 import { Account, Category, Transaction } from '@/types/finance';
 import { CreateRuleFromRowDialog, NewRule } from './CreateRuleFromRowDialog';
 import { ImportPreviewTable, SortColumn, SortDirection } from './ImportPreviewTable';
@@ -63,8 +63,15 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const selectedAccount = useMemo(() => accounts.find(a => a.id === selectedAccountId), [accounts, selectedAccountId]);
 
   // Atajos a las últimas cuentas importadas: con 27 cuentas, buscar AMEX o HSBC
-  // en el desplegable era el primer peaje de cada importación.
-  const recientes = useMemo(() => (open ? cuentasRecientes(accounts.map(a => a.id)) : []), [open, accounts]);
+  // en el desplegable era el primer peaje de cada importación. Sin historial
+  // guardado (primera vez, otro equipo) se deducen de las transacciones, que ya
+  // dicen en qué cuentas hay movimiento.
+  const { recientes, deducidas } = useMemo(() => {
+    if (!open) return { recientes: [] as string[], deducidas: false };
+    const guardadas = cuentasRecientes(accounts.map(a => a.id));
+    if (guardadas.length > 0) return { recientes: guardadas, deducidas: false };
+    return { recientes: cuentasPorActividad(accounts, transactions), deducidas: true };
+  }, [open, accounts, transactions]);
   const cuentasAgrupadas = useMemo(() => ordenarPorRecientes(accounts, recientes), [accounts, recientes]);
 
   /** Atajo: elige la cuenta y salta directo a soltar el archivo. */
@@ -403,7 +410,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
           <div className="space-y-4 py-4">
             {cuentasAgrupadas.recientes.length > 0 && (
               <div className="space-y-2">
-                <Label>Últimas usadas</Label>
+                <Label>{deducidas ? 'Con más movimientos' : 'Últimas usadas'}</Label>
                 <div className="flex flex-wrap gap-2">
                   {cuentasAgrupadas.recientes.map(account => (
                     <Button key={account.id} variant="outline" size="sm" className="h-9" onClick={() => usarCuenta(account.id)}>
@@ -422,7 +429,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
                 <SelectContent>
                   {cuentasAgrupadas.recientes.length > 0 && (
                     <SelectGroup>
-                      <SelectLabel>Últimas usadas</SelectLabel>
+                      <SelectLabel>{deducidas ? 'Con más movimientos' : 'Últimas usadas'}</SelectLabel>
                       {cuentasAgrupadas.recientes.map(account => (
                         <SelectItem key={account.id} value={account.id}>
                           {account.nombre} ({account.tipo}) - {account.divisa}
