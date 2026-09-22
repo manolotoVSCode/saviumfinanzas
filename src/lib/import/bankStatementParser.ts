@@ -95,7 +95,7 @@ export function parseDate(dateStr: string, formatHint: DateHint = 'auto'): Date 
   if (ddMonYYYY) {
     const monthKey = ddMonYYYY[2].toLowerCase()
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '');
+      .replace(/[\u0300-\u036f]/g, '');
     const months: Record<string, number> = {
       jan: 0, ene: 0, feb: 1, mar: 2, apr: 3, abr: 3,
       may: 4, jun: 5, jul: 6, aug: 7, ago: 7, sep: 8,
@@ -114,7 +114,8 @@ export function parseDate(dateStr: string, formatHint: DateHint = 'auto'): Date 
   }
 
   const fallback = new Date(cleaned);
-  return isNaN(fallback.getTime()) ? null : fallback;
+  if (isNaN(fallback.getTime())) return null;
+  return new Date(fallback.getUTCFullYear(), fallback.getUTCMonth(), fallback.getUTCDate());
 }
 
 // True if any DD/MM/YYYY-style date in dateCol has both first parts ≤ 12 (ambiguous)
@@ -133,7 +134,7 @@ export function detectDateAmbiguity(rows: string[][], dateCol: number): boolean 
 // ("Cuenta: 123", "DETALLE DE MOVIMIENTOS", empty row, then FECHA | DESCRIPCIÓN | CARGO | ABONO | SALDO).
 // Drop everything above the header row so column detection works.
 export function stripPreamble(rows: string[][]): string[][] {
-  const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  const norm = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   const limit = Math.min(rows.length, 15);
   for (let i = 0; i < limit; i++) {
     const cells = rows[i].map(norm);
@@ -177,7 +178,7 @@ export function detectFormat(lines: string[][]): { dateCol: number; descCol: num
       // Strip accents AND parenthetical units like "(€)", "(MXN)", "(USD)" from header names
       const normalizedHeader = header
         .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
+        .replace(/[\u0300-\u036f]/g, '')
         .replace(/\s*\([^)]*\)\s*/g, '')
         .trim();
 
@@ -218,16 +219,21 @@ export function detectFormat(lines: string[][]): { dateCol: number; descCol: num
       }
 
       // --- Description column ---
-      if (
+      // Cabeceras fuertes (descripción/concepto real) siempre ganan; las débiles
+      // (comentario, referencia) solo se usan si aún no hay una fuerte encontrada.
+      const esDescripcionFuerte =
         normalizedHeader === 'descripcion' ||
         normalizedHeader === 'description' ||
         normalizedHeader === 'concepto' ||
         normalizedHeader === 'detalle' ||
-        normalizedHeader === 'comentario' ||
-        normalizedHeader === 'referencia' ||
         normalizedHeader.includes('descripcion') ||
-        normalizedHeader.includes('concepto')
-      ) {
+        normalizedHeader.includes('concepto');
+      const esDescripcionDebil = normalizedHeader === 'comentario' || normalizedHeader === 'referencia';
+
+      if (esDescripcionFuerte) {
+        descCol = i;
+        descFromHeader = true;
+      } else if (esDescripcionDebil && !descFromHeader) {
         descCol = i;
         descFromHeader = true;
       }
@@ -262,7 +268,7 @@ export function detectFormat(lines: string[][]): { dateCol: number; descCol: num
     if (amountCol === -1) {
       const amountCandidates: { col: number; hasDecimal: boolean; count: number }[] = [];
       const headerNames = hasHeader
-        ? lines[0].map(h => (h || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim())
+        ? lines[0].map(h => (h || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim())
         : [];
       const isBalanceCol = (i: number) =>
         ['saldo', 'balance', 'saldo disponible', 'saldo contable', 'disponible'].includes(headerNames[i] || '');
@@ -342,7 +348,7 @@ const TARJETAHABIENTE_HEADERS = [
   'nombre del titular', 'titulartarjeta',
 ];
 
-const sinAcentos = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+const sinAcentos = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
 /** Motivo de descarte de un importe que parseAmount dejó en 0. */
 const motivoMonto = (raw: string): SkipReason => (raw.trim() === '' || /\d/.test(raw) ? 'monto_cero' : 'monto_invalido');
@@ -398,10 +404,16 @@ export function parseRows(rawRows: string[][], hint: DateHint = 'auto'): { movem
       raw = row[amountCol] ?? '';
       montoOriginal = parseAmount(raw);
     } else {
-      // Sin columna de importe: primer numérico de derecha a izquierda
+      // Sin columna de importe: primer numérico de derecha a izquierda,
+      // nunca la columna de fecha ni una celda con forma de fecha (evita
+      // confundir un Saldo u otro numérico que además parsea como fecha).
       for (let j = row.length - 1; j >= 0; j--) {
-        const v = parseAmount(row[j] ?? '');
-        if (v !== 0 && !isNaN(v)) { montoOriginal = v; raw = row[j]; break; }
+        if (j === dateCol) continue;
+        const cell = row[j] ?? '';
+        if (parseDate(cell, hint)) continue;
+        raw = cell;
+        const v = parseAmount(cell);
+        if (v !== 0 && !isNaN(v)) { montoOriginal = v; break; }
       }
     }
 

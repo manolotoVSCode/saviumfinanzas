@@ -25,6 +25,10 @@ describe('parseDate', () => {
     expect(parseDate('5 ago 2026')).toEqual(local(2026, 8, 5));
     expect(parseDate('sin fecha')).toBeNull();
   });
+
+  it('el fallback ISO con hora/UTC se reconstruye con getters UTC (evita el día -1 en zonas negativas)', () => {
+    expect(parseDate('2026-08-05T00:00:00Z')).toEqual(local(2026, 8, 5));
+  });
 });
 
 describe('detectDateAmbiguity', () => {
@@ -79,12 +83,31 @@ describe('parseCsvText', () => {
     expect(r.movements[0].descripcion).toBe('UBER');
     expect(r.ambiguousDate).toBe(true);
   });
+
+  it('una cabecera débil de descripción (Comentario/Referencia) no pisa una fuerte ya encontrada', () => {
+    const r1 = parseCsvText('Fecha,Descripción,Comentario,Importe\n05/08/2026,MERCADONA MADRID,ref 1,-10\n');
+    expect(r1.movements[0].descripcion).toBe('MERCADONA MADRID');
+
+    const r2 = parseCsvText('Fecha,Concepto,Referencia,Importe\n05/08/2026,UBER,123457,-10\n');
+    expect(r2.movements[0].descripcion).toBe('UBER');
+  });
 });
 
 describe('parseRows', () => {
   it('sin cabecera, la única columna numérica que no es fecha se toma como importe', () => {
     const r = parseRows([['05/08/2026', 'CONCEPTO SIN CABECERA', 'x', '250']]);
     expect(r.movements[0].montoOriginal).toBe(250);
+  });
+
+  it('el fallback sin columna de importe nunca toma la fecha ni una celda con forma de fecha (Saldo excluido, sin importe usable)', () => {
+    const r = parseCsvText('Fecha,Concepto,Saldo\n05/08/2026,PAGO,1000\n06/08/2026,PAGO,900\n');
+    expect(r.movements).toHaveLength(0);
+    expect(r.skipped.map(s => s.reason)).toEqual(['monto_invalido', 'monto_invalido']);
+  });
+
+  it('el fallback sin columna de importe con un archivo de una sola columna (Fecha) no produce movimientos', () => {
+    const r = parseCsvText('Fecha\n05/08/2026\n06/08/2026\n');
+    expect(r.movements).toHaveLength(0);
   });
 });
 

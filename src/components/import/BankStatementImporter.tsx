@@ -212,40 +212,51 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       await onImportTransactions(transactionsToImport);
 
       // Vincular pendientes: localizar la transacción recién creada (cuenta+fecha+comentario+monto)
-      // y marcar el pendiente como cobrado.
-      const linkedEntries = rowsToImport
-        .map(r => ({ row: r, pendingId: pendingLinks[r.id] }))
-        .filter(e => e.pendingId);
+      // y marcar el pendiente como cobrado. Un fallo aquí no debe dejar el
+      // preview abierto invitando a una importación duplicada: la importación
+      // ya ocurrió, así que solo se registra y se avisa por toast.
       let vinculados = 0;
-      if (linkedEntries.length > 0) {
-        const { data: userData } = await supabase.auth.getUser();
-        const userId = userData.user?.id;
-        if (userId) {
-          for (const { row, pendingId } of linkedEntries) {
-            const pending = pendings.find(p => p.id === pendingId);
-            if (!pending) continue;
-            const fechaStr = toFechaISO(row.fecha);
-            const { data: txMatches } = await supabase
-              .from('transacciones')
-              .select('id, ingreso, comentario, cuenta_id, fecha, created_at')
-              .eq('user_id', userId)
-              .eq('cuenta_id', selectedAccountId)
-              .eq('fecha', fechaStr)
-              .eq('comentario', row.descripcion)
-              .order('created_at', { ascending: false })
-              .limit(5);
-            const tx = (txMatches ?? []).find(t => Math.abs(Number(t.ingreso) - row.monto) < 0.01);
-            if (!tx) continue;
-            const totalCobrado = (pending.monto_cobrado ?? 0) + row.monto;
-            const nuevoEstado = totalCobrado >= pending.monto_esperado ? 'cobrado' : 'cobrado_parcial';
-            await supabase
-              .from('transaction_pendings')
-              .update({ transaccion_cobro_id: tx.id, monto_cobrado: totalCobrado, fecha_cobro: fechaStr, estado: nuevoEstado })
-              .eq('id', pendingId);
-            vinculados++;
+      try {
+        const linkedEntries = rowsToImport
+          .map(r => ({ row: r, pendingId: pendingLinks[r.id] }))
+          .filter(e => e.pendingId);
+        if (linkedEntries.length > 0) {
+          const { data: userData } = await supabase.auth.getUser();
+          const userId = userData.user?.id;
+          if (userId) {
+            for (const { row, pendingId } of linkedEntries) {
+              const pending = pendings.find(p => p.id === pendingId);
+              if (!pending) continue;
+              const fechaStr = toFechaISO(row.fecha);
+              const { data: txMatches } = await supabase
+                .from('transacciones')
+                .select('id, ingreso, comentario, cuenta_id, fecha, created_at')
+                .eq('user_id', userId)
+                .eq('cuenta_id', selectedAccountId)
+                .eq('fecha', fechaStr)
+                .eq('comentario', row.descripcion)
+                .order('created_at', { ascending: false })
+                .limit(5);
+              const tx = (txMatches ?? []).find(t => Math.abs(Number(t.ingreso) - row.monto) < 0.01);
+              if (!tx) continue;
+              const totalCobrado = (pending.monto_cobrado ?? 0) + row.monto;
+              const nuevoEstado = totalCobrado >= pending.monto_esperado ? 'cobrado' : 'cobrado_parcial';
+              await supabase
+                .from('transaction_pendings')
+                .update({ transaccion_cobro_id: tx.id, monto_cobrado: totalCobrado, fecha_cobro: fechaStr, estado: nuevoEstado })
+                .eq('id', pendingId);
+              vinculados++;
+            }
+            await reloadPendings();
           }
-          await reloadPendings();
         }
+      } catch (linkError) {
+        console.error('Error linking pendings:', linkError);
+        toast({
+          title: 'Transacciones importadas',
+          description: 'no se pudieron vincular los pendientes',
+          variant: 'destructive',
+        });
       }
 
       toast({
