@@ -47,6 +47,20 @@ describe('annualPaymentAlerts', () => {
     const [a] = annualPaymentAlerts([seguro], txs, new Set(), NOW);
     expect(annualPaymentAlerts([seguro], txs, new Set([a.key.split(':')[1]]), NOW)).toHaveLength(0);
   });
+
+  it('un vencimiento exactamente en el corte (31 de agosto) alerta', () => {
+    const [a] = annualPaymentAlerts([seguro], pago(new Date(2025, 7, 31)), new Set(), NOW);
+    expect(a).toBeDefined();
+  });
+
+  it('un vencimiento a 30 días antes del corte alerta', () => {
+    const [a] = annualPaymentAlerts([seguro], pago(new Date(2025, 7, 1)), new Set(), NOW);
+    expect(a).toBeDefined();
+  });
+
+  it('un vencimiento a 31 días antes del corte no alerta', () => {
+    expect(annualPaymentAlerts([seguro], pago(new Date(2025, 6, 31)), new Set(), NOW)).toHaveLength(0);
+  });
 });
 
 describe('subscriptionIncreaseAlerts', () => {
@@ -90,12 +104,22 @@ describe('subscriptionIncreaseAlerts', () => {
     expect(a.detail).toContain('20.00 a 100.00');
   });
 
-  it('calla si solo hay un ciclo de pagos', () => {
+  it('calla si solo hay un ciclo de pagos con el mismo importe', () => {
     const unSoloCiclo = subscriptionIncreaseAlerts([netflix], [
       tx({ id: 'p2', comentario: 'NETFLIX.COM', gasto: 100, fecha: new Date('2026-07-30') }),
       tx({ id: 'p3', comentario: 'NETFLIX.COM', gasto: 100, fecha: new Date('2026-08-08') }),
     ]);
     expect(unSoloCiclo).toHaveLength(0);
+  });
+
+  it('un cambio de plan a mitad de un único ciclo también avisa (primero vs. último cargo del ciclo)', () => {
+    const [a] = subscriptionIncreaseAlerts([netflix], [
+      tx({ id: 'p2', comentario: 'NETFLIX.COM', gasto: 20, fecha: new Date('2026-07-30') }),
+      tx({ id: 'p3', comentario: 'NETFLIX.COM', gasto: 100, fecha: new Date('2026-08-08') }),
+    ]);
+    expect(a).toBeDefined();
+    expect(a.detail).toContain('20.00 a 100.00');
+    expect(a.key).toBe('suscripcion_sube:s1:p3');
   });
 });
 

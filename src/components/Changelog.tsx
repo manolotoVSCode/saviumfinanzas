@@ -14,6 +14,7 @@ const changelog: ChangelogEntry[] = [
     changes: [
       { icon: <Sparkles className="h-4 w-4" />, text: 'Alertas en el Resumen móvil: las activas se muestran arriba del patrimonio (solo lectura)', type: 'feature' },
       { icon: <Bug className="h-4 w-4" />, text: 'Gasto inusual: se evalúa el último mes cerrado (el mes en curso aún no está importado), y un pago anual "vencido" solo alerta si venció en un mes ya importado', type: 'fix' },
+      { icon: <Zap className="h-4 w-4" />, text: 'Suscripción que sube de precio: se comparan ciclos de cobro, no cargos sueltos; un cambio de plan a mitad de ciclo también avisa', type: 'improvement' },
     ],
   },
   {

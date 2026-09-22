@@ -90,6 +90,13 @@ export const annualPaymentAlerts = (categories: Category[], transactions: Transa
     });
 };
 
+/**
+ * Suscripción cuyo cobro sube de precio: compara ciclos de cobro, no cargos sueltos.
+ * Con ≥2 ciclos, compara el último cargo del último ciclo con el último cargo del
+ * ciclo anterior. Con un único ciclo que tiene ≥2 cargos (cambio de plan a mitad de
+ * ciclo, p.ej. cancelación + nueva suscripción en la misma ventana de `agruparCiclos`),
+ * compara el primer cargo del ciclo con el último.
+ */
 export const subscriptionIncreaseAlerts = (subscriptions: SubscriptionForAlerts[], transactions: Transaction[]): Alert[] => {
   return subscriptions
     .filter(s => s.active && s.original_comments.length > 0)
@@ -97,9 +104,17 @@ export const subscriptionIncreaseAlerts = (subscriptions: SubscriptionForAlerts[
       const comments = new Set(s.original_comments);
       const payments = transactions.filter(t => t.gasto > 0 && comments.has(t.comentario));
       const ciclos = agruparCiclos(payments, p => p.fecha);
-      if (ciclos.length < 2) return [];
-      const last = ciclos[ciclos.length - 1][ciclos[ciclos.length - 1].length - 1];
-      const prev = ciclos[ciclos.length - 2][ciclos[ciclos.length - 2].length - 1];
+      let prev: Transaction;
+      let last: Transaction;
+      if (ciclos.length >= 2) {
+        last = ciclos[ciclos.length - 1][ciclos[ciclos.length - 1].length - 1];
+        prev = ciclos[ciclos.length - 2][ciclos[ciclos.length - 2].length - 1];
+      } else if (ciclos.length === 1 && ciclos[0].length >= 2) {
+        prev = ciclos[0][0];
+        last = ciclos[0][ciclos[0].length - 1];
+      } else {
+        return [];
+      }
       if (last.divisa !== prev.divisa) return [];
       if (last.gasto < prev.gasto * ALERT_RULES.subscriptionIncreaseRatio) return [];
       const pct = ((last.gasto - prev.gasto) / prev.gasto) * 100;
