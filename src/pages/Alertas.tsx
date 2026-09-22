@@ -68,7 +68,7 @@ const Alertas = () => {
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">Alertas</h1>
           <p className="text-muted-foreground">
-            Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días, suscripciones que suben de precio y categorías un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% por encima de su media
+            Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días o vencidos en el último mes cerrado, suscripciones que suben de precio y categorías cuyo gasto del último mes cerrado supera en un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% su media de los 12 meses anteriores
           </p>
         </div>
 

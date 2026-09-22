@@ -9,6 +9,14 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '7.6',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Alertas en el Resumen móvil: las activas se muestran arriba del patrimonio (solo lectura)', type: 'feature' },
+      { icon: <Bug className="h-4 w-4" />, text: 'Gasto inusual: se evalúa el último mes cerrado (el mes en curso aún no está importado), y un pago anual "vencido" solo alerta si venció en un mes ya importado', type: 'fix' },
+    ],
+  },
+  {
     version: '7.5',
     date: 'Septiembre 2026',
     changes: [
