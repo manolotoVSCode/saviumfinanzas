@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { fetchAccounts, fetchCategories, fetchTransactions } from '@/lib/finance/queries';
 import { computeAccountBalances, enrichTransactions } from '@/lib/finance/calculations';
 import { computeDashboardMetrics } from '@/lib/finance/dashboardMetrics';
+import { toFechaISO } from '@/lib/finance/fechas';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 
 const ACCOUNT_TYPES: AccountType[] = [
@@ -389,47 +390,44 @@ export const useFinanceDataSupabase = () => {
     }
   };
 
+  /**
+   * Inserción masiva (importador). Las fechas llegan LOCALES del parser → toFechaISO.
+   * Relanza el error: el importador muestra el toast y mantiene el preview abierto.
+   */
   const addTransactionsBatch = async (newTransactions: Omit<Transaction, 'id' | 'monto'>[]) => {
-    try {
-      // Obtener el usuario actual
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        throw new Error('Usuario no autenticado');
-      }
-
-      // Preparar datos para inserción masiva
-      const insertData = newTransactions.map(transaction => {
-        const data: any = {
-          cuenta_id: transaction.cuentaId,
-          fecha: transaction.fecha.toISOString().split('T')[0],
-          comentario: transaction.comentario,
-          ingreso: transaction.ingreso,
-          gasto: transaction.gasto,
-          subcategoria_id: transaction.subcategoriaId,
-          divisa: transaction.divisa || 'MXN',
-          user_id: userData.user.id
-        };
-        if (transaction.tarjetahabiente) {
-          data.tarjetahabiente = transaction.tarjetahabiente;
-        }
-        return data;
-      });
-
-      const { error } = await supabase
-        .from('transacciones')
-        .insert(insertData);
-
-      if (error) throw error;
-
-      await invalidate(QK.transacciones);
-    } catch (error) {
-      console.error('Error adding transactions batch:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron importar las transacciones",
-        variant: "destructive"
-      });
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user) {
+      throw new Error('Usuario no autenticado');
     }
+
+    const insertData = newTransactions.map(transaction => {
+      const data: any = {
+        cuenta_id: transaction.cuentaId,
+        fecha: toFechaISO(transaction.fecha),
+        comentario: transaction.comentario,
+        ingreso: transaction.ingreso,
+        gasto: transaction.gasto,
+        subcategoria_id: transaction.subcategoriaId,
+        divisa: transaction.divisa || 'MXN',
+        user_id: userData.user.id
+      };
+      if (transaction.tarjetahabiente) {
+        data.tarjetahabiente = transaction.tarjetahabiente;
+      }
+      return data;
+    });
+
+    const { error } = await supabase
+      .from('transacciones')
+      .insert(insertData);
+
+    if (error) {
+      console.error('Error adding transactions batch:', error);
+      throw error;
+    }
+
+    // Los saldos se derivan en memoria de la caché de transacciones.
+    await invalidate(QK.transacciones);
   };
 
   const updateTransaction = async (id: string, transaction: Partial<Transaction>, autoContribution?: { targetAccountId: string; targetAccountType: 'Aportación' | 'Retiro' }) => {
