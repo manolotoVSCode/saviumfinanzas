@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ClassificationMatchType, matchesClassificationRule } from '@/lib/classificationRules';
+import { ClassificationMatchType, findMatchingRuleDetailed as findDetailed, RuleMatch } from '@/lib/classificationRules';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 
 export interface ClassificationRule {
@@ -83,27 +83,11 @@ export function useClassificationRules() {
     return error;
   };
 
-  const findMatchingRule = (description: string, amount?: number, accountId?: string): string | null => {
-    // Rules are already sorted by priority desc
-    for (const rule of rules) {
-      if (!rule.active) continue;
+  const findMatchingRuleDetailed = (description: string, amount?: number, accountId?: string): RuleMatch | null =>
+    findDetailed(rules, description, amount, accountId);
 
-      if (!matchesClassificationRule(description, rule.keyword, rule.match_type)) continue;
+  const findMatchingRule = (description: string, amount?: number, accountId?: string): string | null =>
+    findMatchingRuleDetailed(description, amount, accountId)?.category_id ?? null;
 
-      // Account filter — if rule specifies an account, it must match
-      if (rule.cuenta_id !== null && accountId !== undefined && rule.cuenta_id !== accountId) continue;
-      if (rule.cuenta_id !== null && accountId === undefined) continue;
-
-      // Amount filters are AND conditions — both keyword AND amount must match
-      if (rule.amount_min !== null && amount !== undefined && amount < rule.amount_min) continue;
-      if (rule.amount_max !== null && amount !== undefined && amount > rule.amount_max) continue;
-      // If rule has amount filters but no amount provided, skip this rule
-      if ((rule.amount_min !== null || rule.amount_max !== null) && amount === undefined) continue;
-
-      return rule.category_id;
-    }
-    return null;
-  };
-
-  return { rules, loading: !!user && query.isPending, addRule, updateRule, deleteRule, findMatchingRule, refreshRules: invalidate };
+  return { rules, loading: !!user && query.isPending, addRule, updateRule, deleteRule, findMatchingRule, findMatchingRuleDetailed, refreshRules: invalidate };
 }
