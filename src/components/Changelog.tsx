@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '7.7',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <Upload className="h-4 w-4" />, text: 'Importación más fiable: CSV con separador ; o coma, archivos Latin-1, columna Importe respetada en Excel, y las filas descartadas se ven con su motivo', type: 'improvement' },
+      { icon: <Tag className="h-4 w-4" />, text: 'Cada categoría sugerida muestra por qué (historial exacto, regla o parecido); las reglas ganan a las adivinanzas y se pueden crear desde el propio preview', type: 'feature' },
+      { icon: <Bug className="h-4 w-4" />, text: 'Si la importación falla, el preview permanece abierto; si va bien, un aviso indica cuántas transacciones se guardaron y las suscripciones del móvil quedan al día', type: 'fix' },
+    ],
+  },
+  {
     version: '7.6',
     date: 'Septiembre 2026',
     changes: [
