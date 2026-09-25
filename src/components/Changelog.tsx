@@ -16,6 +16,7 @@ const changelog: ChangelogEntry[] = [
       { icon: <Tag className="h-4 w-4" />, text: 'Al importar, un abono cuya categoría sugerida es de gasto se marca solo como reembolso (la casilla sigue mandando)', type: 'feature' },
       { icon: <Zap className="h-4 w-4" />, text: 'Los reembolsos ya pueden vincularse con un pendiente por cobrar al importar', type: 'improvement' },
       { icon: <Upload className="h-4 w-4" />, text: 'Los atajos de cuenta al importar aparecen desde el primer día: sin historial en el navegador se deducen de tus cuentas con más movimientos', type: 'fix' },
+      { icon: <Bug className="h-4 w-4" />, text: 'Si la importación falla, el aviso dice el motivo real en vez de un "Error al importar" genérico', type: 'fix' },
     ],
   },
   {

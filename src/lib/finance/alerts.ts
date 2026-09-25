@@ -56,7 +56,6 @@ export const ALERT_RULES = {
 
 const MONTH_NAMES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const dayMs = 24 * 60 * 60 * 1000;
-const sameMonth = (d: Date, y: number, m: number) => d.getFullYear() === y && d.getMonth() === m;
 
 export const annualPaymentAlerts = (categories: Category[], transactions: Transaction[], inactive: Set<string>, now: Date): Alert[] => {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());

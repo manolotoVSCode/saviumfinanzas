@@ -292,7 +292,14 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       sync().catch(() => undefined);
     } catch (error) {
       console.error('Error importing:', error);
-      toast({ title: 'Error', description: 'Error al importar transacciones', variant: 'destructive' });
+      // El motivo real (fecha fuera de rango, categoría que ya no existe, red) se
+      // enseña: con el preview abierto hay que saber si reintentar o qué corregir.
+      const motivo = error instanceof Error ? error.message : String(error ?? '');
+      toast({
+        title: 'Error al importar transacciones',
+        description: motivo || 'No se pudo guardar la importación. Revisa la conexión y reintenta.',
+        variant: 'destructive',
+      });
       // El preview sigue abierto con las filas intactas.
     } finally {
       setImporting(false);
