@@ -79,18 +79,20 @@ export const useInformacionFamilia = () => {
     return { tipo: 'ok', fila };
   }, [user, alGuardar]);
 
-  const marcarRevisado = useCallback(async (): Promise<FilaFamilia> => {
-    if (!user) throw new Error('Sin sesión');
+  const marcarRevisado = useCallback(async (updatedAtLeido: string): Promise<ResultadoGuardado> => {
+    if (!user) return { tipo: 'error', error: new Error('Sin sesión') };
     const { data, error } = await supabase
       .from('informacion_familia')
       .update({ revisado_at: new Date().toISOString() })
       .eq('user_id', user.id)
+      .eq('updated_at', updatedAtLeido)
       .select(COLUMNAS)
-      .single();
-    if (error) throw error;
+      .maybeSingle();
+    if (error) return { tipo: 'error', error };
+    if (!data) return { tipo: 'conflicto' };
     const fila = aFila(data);
     alGuardar(fila);
-    return fila;
+    return { tipo: 'ok', fila };
   }, [user, alGuardar]);
 
   const { refetch } = query;

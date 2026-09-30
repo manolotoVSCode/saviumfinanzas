@@ -6,7 +6,12 @@ import { FilaFamilia, useInformacionFamilia } from './useInformacionFamilia';
 export type EstadoGuardado = 'guardado' | 'pendiente' | 'guardando' | 'error' | 'conflicto';
 
 const RETRASO_MS = 1500;
-const motivo = (error: unknown) => (error instanceof Error ? error.message : String(error ?? ''));
+const motivo = (error: unknown): string =>
+  error instanceof Error
+    ? error.message
+    : typeof error === 'object' && error !== null && 'message' in error
+      ? String((error as { message: unknown }).message)
+      : String(error ?? '');
 
 /**
  * Estado local único de «Para mi familia» con guardado automático:
@@ -25,6 +30,7 @@ export const useEditorFamilia = () => {
   const estadoRef = useRef<EstadoGuardado>('guardado');
   const enVueloRef = useRef(false);
   const repetirRef = useRef(false);
+  const generacionRef = useRef(0);
 
   const setEstado = useCallback((e: EstadoGuardado) => {
     estadoRef.current = e;
@@ -37,6 +43,7 @@ export const useEditorFamilia = () => {
     setDoc(d);
     baseRef.current = fila?.updatedAt ?? null;
     repetirRef.current = false;
+    generacionRef.current += 1;
     setEstado('guardado');
   }, [setEstado]);
 
@@ -52,9 +59,11 @@ export const useEditorFamilia = () => {
     if (estadoRef.current === 'conflicto' && !forzar) return;
     if (enVueloRef.current) { repetirRef.current = true; return; }
     enVueloRef.current = true;
+    const generacion = generacionRef.current;
     setEstado('guardando');
     const r = await remoto.guardar(enviado, baseRef.current, forzar);
     enVueloRef.current = false;
+    if (generacion !== generacionRef.current) return; // se recargó durante el guardado: el resultado ya no aplica
     if (r.tipo === 'ok') {
       baseRef.current = r.fila.updatedAt;
       if (repetirRef.current) {
@@ -99,7 +108,7 @@ export const useEditorFamilia = () => {
   // HashRouter no permite bloquear la navegación: se guarda al desmontar; al cerrar la pestaña, además se avisa.
   useEffect(() => {
     const antesDeCerrar = (e: BeforeUnloadEvent) => {
-      if (!['pendiente', 'guardando', 'error'].includes(estadoRef.current)) return;
+      if (!['pendiente', 'guardando', 'error', 'conflicto'].includes(estadoRef.current)) return;
       if (estadoRef.current === 'pendiente') void guardarAhoraRef.current();
       e.preventDefault();
       e.returnValue = '';
@@ -120,13 +129,32 @@ export const useEditorFamilia = () => {
   };
 
   const marcarRevisado = async () => {
-    try {
-      const fila = await remoto.marcarRevisado();
-      // El trigger movió updated_at; en conflicto no se avanza la base para no ocultarlo.
-      if (estadoRef.current !== 'conflicto') baseRef.current = fila.updatedAt;
+    // Solo con todo guardado y sin guardado en curso: así no compite con el autoguardado.
+    if (estadoRef.current !== 'guardado' || enVueloRef.current) return;
+    const base = baseRef.current;
+    const enviado = docRef.current;
+    if (base === null) return; // aún no hay fila que revisar
+    enVueloRef.current = true;
+    const generacion = generacionRef.current;
+    const r = await remoto.marcarRevisado(base);
+    enVueloRef.current = false;
+    if (generacion !== generacionRef.current) return;
+    if (r.tipo === 'ok') {
+      baseRef.current = r.fila.updatedAt; // el trigger movió updated_at
       toast({ title: 'Marcado como revisado' });
-    } catch (error) {
-      toast({ title: 'No se pudo marcar como revisado', description: motivo(error), variant: 'destructive' });
+      if (repetirRef.current || docRef.current !== enviado) {
+        repetirRef.current = false;
+        void guardarAhoraRef.current();
+      }
+    } else if (r.tipo === 'conflicto') {
+      repetirRef.current = false;
+      setEstado('conflicto');
+    } else {
+      toast({ title: 'No se pudo marcar como revisado', description: motivo(r.error) || 'Error desconocido', variant: 'destructive' });
+      if (repetirRef.current || docRef.current !== enviado) {
+        repetirRef.current = false;
+        void guardarAhoraRef.current();
+      }
     }
   };
 
