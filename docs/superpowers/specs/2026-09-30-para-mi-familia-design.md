@@ -12,7 +12,7 @@ Una página con lo que la familia necesita saber si el usuario falta: qué hacer
 
 ## Principios
 
-- Lógica pura en `src/lib/finance/familia.ts`, testeada con vitest; el hook solo carga y guarda; los componentes solo pintan.
+- Lógica pura en `src/lib/finance/familia.ts` (documento y revisión) y `src/lib/finance/familiaResumen.ts` (cálculos sobre datos de Savium), testeada con vitest; el hook solo carga y guarda; los componentes solo pintan.
 - El patrimonio usa **el mismo cálculo** que Informes › Patrimonio Neto, así que el total coincide con su KPI «Patrimonio neto actual».
 - Nunca se guardan contraseñas, NIP ni frases semilla. La página lo recuerda en los bloques de documentos y cripto.
 - **Nada escrito a mano se pierde en silencio**: ni al normalizar, ni por notas huérfanas, ni por dos pestañas.
@@ -75,7 +75,7 @@ interface DecisionPago { decision: 'mantener' | 'cancelar' | null; nota: string 
 
 ### Patrimonio: `resumenPatrimonioFamilia`
 
-- **Saldo por cuenta**: se extrae de `netWorthHistory.ts` un helper exportado `saldosAlCierre(accounts, transactions, fechaCierre)`, que devuelve el saldo inicial más los movimientos con fecha menor o igual al cierre. `computeNetWorthHistory` pasa a usarlo, y también esta página, con el cierre del mes en curso, que es exactamente el último punto de Informes. También se exportan `ASSET_TYPES` y `LIABILITY_TYPES`.
+- **Saldo por cuenta**: se extrae de `netWorthHistory.ts` un helper exportado `saldosAlCierre(accounts, transactions, fechaCierre)`, que devuelve el saldo inicial más los movimientos con fecha menor o igual al cierre. `computeNetWorthHistory` no se toca (su bucle incremental es más eficiente); un test garantiza que `saldosAlCierre` al cierre del mes en curso da exactamente su último punto. También se exportan `ASSET_TYPES` y `LIABILITY_TYPES`.
 - **Fecha que se muestra**: «Saldos según lo importado. Último mes completo: agosto 2026» (`finMesAnterior`). No se recorta al corte, porque entonces no coincidiría con Informes; solo se rotula.
 - **Grupos**, en este orden:
   - Bancos y efectivo (`Efectivo`, `Banco`, `Ahorros`).
@@ -177,7 +177,7 @@ Vitest sobre `familia.ts` y `alerts.ts`:
   - Campos faltantes y elementos sin `id`: se reparan.
   - Lo irreparable y las claves desconocidas van a `extra`.
   - La ida y vuelta es idempotente y no pierde nada.
-- **`saldosAlCierre`**: el refactor no cambia `computeNetWorthHistory`; los tests existentes siguen verdes.
+- **`saldosAlCierre`**: suma hasta el cierre incluido y coincide con `computeNetWorthHistory`.
 - **`resumenPatrimonioFamilia`**:
   - Agrupación por tipo y cuentas vendidas excluidas.
   - Deudas: con saldo negativo suman; con saldo 0 o positivo aparecen como «sin deuda».
@@ -206,7 +206,7 @@ Además `tsc`, `build`, y una comprobación manual en el navegador antes de dar 
 
 - Commits por tema:
   1. Migración.
-  2. `saldosAlCierre`, sin cambio de comportamiento.
+  2. `saldosAlCierre`.
   3. Lógica y tests de `familia.ts`.
   4. Hook y página.
   5. Alerta.
