@@ -236,6 +236,27 @@ export type Database = {
         }
         Relationships: []
       }
+      informacion_familia: {
+        Row: {
+          contenido: Json
+          revisado_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contenido?: Json
+          revisado_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contenido?: Json
+          revisado_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       inversiones: {
         Row: {
           activa: boolean
