@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { valorCSV } from '@/lib/csv';
 import { Download, Database } from 'lucide-react';
 
 interface TableSelection {
@@ -14,6 +15,7 @@ interface TableSelection {
   inversiones: boolean;
   criptomonedas: boolean;
   profiles: boolean;
+  informacion_familia: boolean;
 }
 
 export const DatabaseBackup = () => {
@@ -25,6 +27,7 @@ export const DatabaseBackup = () => {
     inversiones: true,
     criptomonedas: true,
     profiles: true,
+    informacion_familia: true,
   });
   const { toast } = useToast();
 
@@ -69,23 +72,14 @@ export const DatabaseBackup = () => {
         if (data && data.length > 0) {
           // Agregar encabezado de la tabla
           csvContent += `\n=== ${tableName.toUpperCase()} ===\n`;
-          
+
           // Agregar encabezados de columnas
           const headers = Object.keys(data[0]);
           csvContent += headers.join(',') + '\n';
-          
+
           // Agregar datos
-          data.forEach(row => {
-            const values = headers.map(header => {
-              const value = row[header];
-              // Escapar comillas y manejar valores nulos
-              if (value === null || value === undefined) return '';
-              if (typeof value === 'string' && value.includes(',')) {
-                return `"${value.replace(/"/g, '""')}"`;
-              }
-              return String(value);
-            });
-            csvContent += values.join(',') + '\n';
+          (data as unknown as Record<string, unknown>[]).forEach(row => {
+            csvContent += headers.map(header => valorCSV(row[header])).join(',') + '\n';
           });
           
           csvContent += '\n';
@@ -125,7 +119,8 @@ export const DatabaseBackup = () => {
     categorias: 'Categorías',
     inversiones: 'Inversiones',
     criptomonedas: 'Criptomonedas',
-    profiles: 'Perfil'
+    profiles: 'Perfil',
+    informacion_familia: 'Información para la familia'
   };
 
   return (
@@ -150,7 +145,7 @@ export const DatabaseBackup = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Seleccionar Tablas para Exportar</AlertDialogTitle>
             <AlertDialogDescription>
-              Elige qué datos quieres incluir en tu copia de seguridad:
+              Elige qué datos quieres incluir en tu copia de seguridad: El archivo contiene tus datos personales sin cifrar: guárdalo en un lugar seguro.
             </AlertDialogDescription>
           </AlertDialogHeader>
           
