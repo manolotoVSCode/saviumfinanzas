@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFinanceDataSupabase } from './useFinanceDataSupabase';
 import { useSubscriptionServices } from './useSubscriptionServices';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
-import { Alert, computeAlerts } from '@/lib/finance/alerts';
+import { Alert, computeAlerts, RevisionFamilia } from '@/lib/finance/alerts';
 import { readInactiveAnnualIds } from '@/lib/finance/annualPayments';
 
 const fetchDismissals = async (): Promise<string[]> => {
@@ -14,9 +14,16 @@ const fetchDismissals = async (): Promise<string[]> => {
   return (data ?? []).map(d => d.alert_key);
 };
 
+/** Solo revisado_at: useAlerts se monta en todas las páginas y no debe traer el documento. */
+const fetchRevisionFamilia = async (): Promise<RevisionFamilia | null> => {
+  const { data, error } = await supabase.from('informacion_familia').select('revisado_at').maybeSingle();
+  if (error) throw error;
+  return data ? { revisadoAt: data.revisado_at } : null;
+};
+
 /**
  * Alertas calculadas en cliente (pagos anuales próximos, suscripciones que
- * suben, categorías disparadas) menos las descartadas por el usuario.
+ * suben, categorías disparadas, revisión de la información familiar) menos las descartadas por el usuario.
  */
 export const useAlerts = () => {
   const { user } = useAuth();
@@ -34,9 +41,19 @@ export const useAlerts = () => {
     retry: 1,
   });
 
+  // Si falla (p.ej. migración sin aplicar) no hay alerta y no bloquea el resto: fuera de `loading`.
+  const revisionQuery = useQuery({
+    queryKey: QK.revisionFamilia,
+    queryFn: fetchRevisionFamilia,
+    staleTime: STALE_TIME,
+    enabled: !!user,
+    retry: false,
+  });
+  const revisionFamilia = revisionQuery.data ?? null;
+
   const allAlerts = useMemo(
-    () => computeAlerts({ categories, transactions, subscriptions, inactiveAnnualIds: inactiveAnnual }),
-    [categories, transactions, subscriptions, inactiveAnnual]
+    () => computeAlerts({ categories, transactions, subscriptions, inactiveAnnualIds: inactiveAnnual, revisionFamilia }),
+    [categories, transactions, subscriptions, inactiveAnnual, revisionFamilia]
   );
 
   const dismissed = useMemo(() => new Set(dismissalsQuery.data ?? []), [dismissalsQuery.data]);

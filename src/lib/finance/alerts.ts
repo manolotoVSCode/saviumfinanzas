@@ -1,9 +1,10 @@
 import { Category, Transaction } from '@/types/finance';
 import { groupAnnualPayments, isAnnualCategory } from './annualPayments';
+import { diasDesdeRevision, estadoRevision } from './familia';
 import { finMesAnterior, toFechaISO } from './fechas';
 import { agruparCiclos } from './subscriptions';
 
-export type AlertType = 'pago_anual' | 'suscripcion_sube' | 'categoria_disparada';
+export type AlertType = 'pago_anual' | 'suscripcion_sube' | 'categoria_disparada' | 'familia_revision';
 
 export interface Alert {
   /** Clave estable de la ocurrencia; un descarte se guarda por clave. */
@@ -11,8 +12,8 @@ export interface Alert {
   type: AlertType;
   title: string;
   detail: string;
-  /** Importe principal en la divisa de la transacción origen. */
-  amount: number;
+  /** Importe principal en la divisa de la transacción origen; sin importe en avisos que no son de dinero. */
+  amount?: number;
   currency: string;
   /** Fecha relevante (vencimiento / último cobro / mes). */
   date: Date;
@@ -29,12 +30,18 @@ export interface SubscriptionForAlerts {
   original_comments: string[];
 }
 
+/** Estado de revisión de «Para mi familia»; null = sin fila, cargando o error (no alerta). */
+export interface RevisionFamilia {
+  revisadoAt: string | null;
+}
+
 export interface AlertsInput {
   categories: Category[];
   transactions: Transaction[];
   subscriptions: SubscriptionForAlerts[];
   /** Ids de pagos anuales marcados como inactivos por el usuario. */
   inactiveAnnualIds: Set<string>;
+  revisionFamilia?: RevisionFamilia | null;
   now?: Date;
 }
 
@@ -187,11 +194,32 @@ export const categorySpikeAlerts = (categories: Category[], transactions: Transa
       severity: 'media',
     });
   }
-  return alerts.sort((a, b) => b.amount - a.amount);
+  return alerts.sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
 };
 
-export const computeAlerts = ({ categories, transactions, subscriptions, inactiveAnnualIds, now = new Date() }: AlertsInput): Alert[] => [
+/**
+ * «Para mi familia» sin revisar hace más de DIAS_REVISION días. La clave lleva
+ * la fecha local de la última revisión: al marcar como revisado deja de estar
+ * vencida, y un descarte vale solo hasta la siguiente revisión.
+ */
+export const familiaRevisionAlerts = (revision: RevisionFamilia | null, now: Date): Alert[] => {
+  if (!revision?.revisadoAt || estadoRevision(revision.revisadoAt, now) !== 'vencida') return [];
+  const fecha = new Date(revision.revisadoAt);
+  return [{
+    key: `familia_revision:${toFechaISO(fecha)}`,
+    type: 'familia_revision',
+    title: 'Revisa la información para tu familia',
+    detail: `Última revisión hace ${diasDesdeRevision(revision.revisadoAt, now)} días`,
+    currency: 'MXN',
+    date: fecha,
+    href: '/familia',
+    severity: 'media',
+  }];
+};
+
+export const computeAlerts = ({ categories, transactions, subscriptions, inactiveAnnualIds, revisionFamilia = null, now = new Date() }: AlertsInput): Alert[] => [
   ...annualPaymentAlerts(categories, transactions, inactiveAnnualIds, now),
   ...subscriptionIncreaseAlerts(subscriptions, transactions),
   ...categorySpikeAlerts(categories, transactions, now),
+  ...familiaRevisionAlerts(revisionFamilia, now),
 ];

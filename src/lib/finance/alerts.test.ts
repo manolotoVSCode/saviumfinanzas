@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Category, Transaction } from '@/types/finance';
-import { annualPaymentAlerts, categorySpikeAlerts, subscriptionIncreaseAlerts } from './alerts';
+import { annualPaymentAlerts, categorySpikeAlerts, computeAlerts, familiaRevisionAlerts, subscriptionIncreaseAlerts } from './alerts';
 
 // "Hoy" fijo: 20 de septiembre de 2026 → corte de datos 31 de agosto
 const NOW = new Date(2026, 8, 20);
@@ -167,5 +167,32 @@ describe('categorySpikeAlerts', () => {
     expect(categorySpikeAlerts([anual], [...history(1000), tx({ gasto: 5000 })], NOW)).toHaveLength(0);
     const inmueble = cat({ id: 'c1', categoria: 'Compra Venta Inmuebles' });
     expect(categorySpikeAlerts([inmueble], [...history(1000), tx({ gasto: 5000 })], NOW)).toHaveLength(0);
+  });
+});
+
+describe('familiaRevisionAlerts', () => {
+  const HOY = new Date(2026, 8, 30, 12);
+
+  it('sin fila o revisada hace ≤180 días no alerta', () => {
+    expect(familiaRevisionAlerts(null, HOY)).toEqual([]);
+    expect(familiaRevisionAlerts({ revisadoAt: null }, HOY)).toEqual([]);
+    expect(familiaRevisionAlerts({ revisadoAt: new Date(2026, 3, 3, 10).toISOString() }, HOY)).toEqual([]); // 180 días
+  });
+
+  it('vencida: alerta media sin importe, con clave estable por fecha local', () => {
+    const [a] = familiaRevisionAlerts({ revisadoAt: new Date(2026, 3, 2, 10).toISOString() }, HOY);
+    expect(a).toMatchObject({
+      key: 'familia_revision:2026-04-02', type: 'familia_revision', href: '/familia', severity: 'media',
+      title: 'Revisa la información para tu familia', detail: 'Última revisión hace 181 días',
+    });
+    expect(a.amount).toBeUndefined();
+  });
+
+  it('computeAlerts la incluye', () => {
+    const alerts = computeAlerts({
+      categories: [], transactions: [], subscriptions: [], inactiveAnnualIds: new Set(), now: HOY,
+      revisionFamilia: { revisadoAt: new Date(2026, 0, 1).toISOString() },
+    });
+    expect(alerts.map(a => a.type)).toEqual(['familia_revision']);
   });
 });

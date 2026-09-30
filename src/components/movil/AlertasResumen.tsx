@@ -1,4 +1,4 @@
-import { CalendarClock, CreditCard, TrendingUp } from 'lucide-react';
+import { CalendarClock, CreditCard, TrendingUp, HeartHandshake } from 'lucide-react';
 import { useAlerts } from '@/hooks/useAlerts';
 import { AlertType } from '@/lib/finance/alerts';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +9,7 @@ const ICONO: Record<AlertType, typeof CalendarClock> = {
   pago_anual: CalendarClock,
   suscripcion_sube: CreditCard,
   categoria_disparada: TrendingUp,
+  familia_revision: HeartHandshake,
 };
 
 /**
@@ -33,9 +34,11 @@ export const AlertasResumen = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold truncate">{a.title}</p>
                   <p className="text-sm text-muted-foreground">{a.detail}</p>
-                  <div className="mt-1">
-                    <Importe amount={a.amount} currency={a.currency} />
-                  </div>
+                  {a.amount !== undefined && (
+                    <div className="mt-1">
+                      <Importe amount={a.amount} currency={a.currency} />
+                    </div>
+                  )}
                 </div>
               </div>
             );
