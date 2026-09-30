@@ -38,11 +38,16 @@ export const DIAS_REVISION = 180;
 export const DIAS_AVISO_VENCIMIENTO = 30;
 
 const CAMPOS = new Set(['carta', 'contactos', 'seguros', 'documentos', 'notasPatrimonio', 'pagos']);
+const CAMPOS_CONTACTO = new Set(['id', 'nombre', 'rol', 'telefono', 'email', 'nota']);
+const CAMPOS_SEGURO = new Set(['id', 'tipo', 'aseguradora', 'poliza', 'sumaAsegurada', 'divisa', 'beneficiarios', 'vencimiento', 'comoReclamar']);
+const CAMPOS_DOCUMENTO = new Set(['id', 'que', 'donde', 'nota']);
+const CAMPOS_DECISION_PAGO = new Set(['decision', 'nota']);
 const IRREPARABLES = '_irreparables';
 const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 const nuevoId = () => crypto.randomUUID();
 const esObjeto = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const esEscalar = (v: unknown): v is string | number | boolean => typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
 const texto = (v: unknown): string =>
   typeof v === 'string' ? v : typeof v === 'number' || typeof v === 'boolean' ? String(v) : '';
 const numero = (v: unknown): number | null => {
@@ -61,21 +66,89 @@ export const nuevoSeguro = (): Seguro => ({
 });
 export const nuevoDocumento = (): Documento => ({ id: nuevoId(), que: '', donde: '', nota: '' });
 
-const repararContacto = (o: Record<string, unknown>): Contacto => ({
-  id: texto(o.id) || nuevoId(), nombre: texto(o.nombre), rol: texto(o.rol),
-  telefono: texto(o.telefono), email: texto(o.email), nota: texto(o.nota),
-});
-const repararSeguro = (o: Record<string, unknown>): Seguro => ({
-  id: texto(o.id) || nuevoId(), tipo: texto(o.tipo), aseguradora: texto(o.aseguradora), poliza: texto(o.poliza),
-  sumaAsegurada: numero(o.sumaAsegurada),
-  divisa: DIVISAS.includes(o.divisa as Divisa) ? (o.divisa as Divisa) : 'MXN',
-  beneficiarios: texto(o.beneficiarios),
-  vencimiento: typeof o.vencimiento === 'string' && FECHA_ISO.test(o.vencimiento) ? o.vencimiento : null,
-  comoReclamar: texto(o.comoReclamar),
-});
-const repararDocumento = (o: Record<string, unknown>): Documento => ({
-  id: texto(o.id) || nuevoId(), que: texto(o.que), donde: texto(o.donde), nota: texto(o.nota),
-});
+type ApartarFn = (campo: string, valor: unknown) => void;
+
+const repararContacto = (o: Record<string, unknown>, apartar: ApartarFn): Contacto => {
+  const id = texto(o.id) || nuevoId();
+
+  // Track unknown keys
+  for (const k of Object.keys(o)) {
+    if (!CAMPOS_CONTACTO.has(k)) {
+      apartar('contactos', { id, campo: k, valor: o[k] });
+    }
+  }
+
+  // Track lossy repairs for text fields
+  for (const campo of ['nombre', 'rol', 'telefono', 'email', 'nota']) {
+    if (o[campo] !== undefined && !esEscalar(o[campo])) {
+      apartar('contactos', { id, campo, valor: o[campo] });
+    }
+  }
+
+  return { id, nombre: texto(o.nombre), rol: texto(o.rol), telefono: texto(o.telefono), email: texto(o.email), nota: texto(o.nota) };
+};
+
+const repararSeguro = (o: Record<string, unknown>, apartar: ApartarFn): Seguro => {
+  const id = texto(o.id) || nuevoId();
+
+  // Track unknown keys
+  for (const k of Object.keys(o)) {
+    if (!CAMPOS_SEGURO.has(k)) {
+      apartar('seguros', { id, campo: k, valor: o[k] });
+    }
+  }
+
+  // Track lossy repairs for text fields
+  for (const campo of ['tipo', 'aseguradora', 'poliza', 'beneficiarios', 'comoReclamar']) {
+    if (o[campo] !== undefined && !esEscalar(o[campo])) {
+      apartar('seguros', { id, campo, valor: o[campo] });
+    }
+  }
+
+  // Track unparseable sumaAsegurada
+  if (o.sumaAsegurada !== undefined && o.sumaAsegurada !== null && numero(o.sumaAsegurada) === null) {
+    apartar('seguros', { id, campo: 'sumaAsegurada', valor: o.sumaAsegurada });
+  }
+
+  // Track invalid divisa
+  if (o.divisa !== undefined && !DIVISAS.includes(o.divisa as Divisa)) {
+    apartar('seguros', { id, campo: 'divisa', valor: o.divisa });
+  }
+
+  // Track invalid vencimiento format
+  if (o.vencimiento !== undefined && o.vencimiento !== null && !(typeof o.vencimiento === 'string' && FECHA_ISO.test(o.vencimiento))) {
+    apartar('seguros', { id, campo: 'vencimiento', valor: o.vencimiento });
+  }
+
+  return {
+    id, tipo: texto(o.tipo), aseguradora: texto(o.aseguradora), poliza: texto(o.poliza),
+    sumaAsegurada: numero(o.sumaAsegurada),
+    divisa: DIVISAS.includes(o.divisa as Divisa) ? (o.divisa as Divisa) : 'MXN',
+    beneficiarios: texto(o.beneficiarios),
+    vencimiento: typeof o.vencimiento === 'string' && FECHA_ISO.test(o.vencimiento) ? o.vencimiento : null,
+    comoReclamar: texto(o.comoReclamar),
+  };
+};
+
+const repararDocumento = (o: Record<string, unknown>, apartar: ApartarFn): Documento => {
+  const id = texto(o.id) || nuevoId();
+
+  // Track unknown keys
+  for (const k of Object.keys(o)) {
+    if (!CAMPOS_DOCUMENTO.has(k)) {
+      apartar('documentos', { id, campo: k, valor: o[k] });
+    }
+  }
+
+  // Track lossy repairs for text fields
+  for (const campo of ['que', 'donde', 'nota']) {
+    if (o[campo] !== undefined && !esEscalar(o[campo])) {
+      apartar('documentos', { id, campo, valor: o[campo] });
+    }
+  }
+
+  return { id, que: texto(o.que), donde: texto(o.donde), nota: texto(o.nota) };
+};
 
 /**
  * Convierte lo que venga de la BD en un documento válido. Repara en vez de
@@ -95,6 +168,9 @@ export const normalizarInfoFamilia = (raw: unknown): InfoFamilia => {
     for (const [k, v] of Object.entries(raw[IRREPARABLES] as Record<string, unknown>)) {
       irreparables[k] = Array.isArray(v) ? [...v] : [v];
     }
+  } else if (raw[IRREPARABLES] !== undefined) {
+    // Preserve non-object _irreparables
+    (irreparables[IRREPARABLES] ??= []).push(raw[IRREPARABLES]);
   }
   const apartar = (campo: string, valor: unknown) => { (irreparables[campo] ??= []).push(valor); };
 
@@ -107,13 +183,13 @@ export const normalizarInfoFamilia = (raw: unknown): InfoFamilia => {
     else apartar('carta', raw.carta);
   }
 
-  const lista = <T>(campo: string, reparar: (o: Record<string, unknown>) => T): T[] => {
+  const lista = <T>(campo: string, reparar: (o: Record<string, unknown>, apartar: ApartarFn) => T): T[] => {
     const v = raw[campo];
     if (v === undefined) return [];
     if (!Array.isArray(v)) { apartar(campo, v); return []; }
     const out: T[] = [];
     for (const el of v) {
-      if (esObjeto(el)) out.push(reparar(el));
+      if (esObjeto(el)) out.push(reparar(el, apartar));
       else apartar(campo, el);
     }
     return out;
@@ -134,7 +210,24 @@ export const normalizarInfoFamilia = (raw: unknown): InfoFamilia => {
     if (!esObjeto(raw.pagos)) apartar('pagos', raw.pagos);
     else for (const [clave, valor] of Object.entries(raw.pagos)) {
       if (!esObjeto(valor)) { apartar('pagos', { clave, valor }); continue; }
+
+      // Track unknown keys in pagos entry
+      for (const k of Object.keys(valor)) {
+        if (!CAMPOS_DECISION_PAGO.has(k)) {
+          apartar('pagos', { clave, campo: k, valor: valor[k] });
+        }
+      }
+
+      // Track lossy repairs in pagos entry
       const decision = valor.decision === 'mantener' || valor.decision === 'cancelar' ? valor.decision : null;
+      if (valor.decision !== undefined && valor.decision !== null && valor.decision !== 'mantener' && valor.decision !== 'cancelar') {
+        apartar('pagos', { clave, campo: 'decision', valor: valor.decision });
+      }
+
+      if (valor.nota !== undefined && !esEscalar(valor.nota)) {
+        apartar('pagos', { clave, campo: 'nota', valor: valor.nota });
+      }
+
       info.pagos[clave] = { decision, nota: texto(valor.nota) };
     }
   }
@@ -179,7 +272,7 @@ export const sinHuerfana = (d: InfoFamilia, h: NotaHuerfana): InfoFamilia => {
 
 /** Días naturales locales desde la revisión (misma cuenta que diasHasta: el cambio de horario no desplaza). */
 export const diasDesdeRevision = (revisadoAt: string, now: Date = new Date()): number =>
-  -diasHasta(toFechaISO(new Date(revisadoAt)), now);
+  0 - diasHasta(toFechaISO(new Date(revisadoAt)), now);
 
 export const estadoRevision = (revisadoAt: string | null, now: Date = new Date()): EstadoRevision => {
   if (!revisadoAt) return 'sin_datos';

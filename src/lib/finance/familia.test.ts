@@ -126,3 +126,63 @@ describe('esTablaInexistente', () => {
     expect(esTablaInexistente(null)).toBe(false);
   });
 });
+
+describe('conservación de campos reparados (fix round 1)', () => {
+  it('seguro con divisa inválida y vencimiento no-ISO stasha ambos', () => {
+    const info = normalizarInfoFamilia({
+      seguros: [{ id: 's1', sumaAsegurada: '1500000', divisa: 'GBP', vencimiento: '31/12/2026' }],
+    });
+    const [s] = info.seguros;
+    expect(s).toMatchObject({ id: 's1', sumaAsegurada: 1500000, divisa: 'MXN', vencimiento: null });
+    const irrep = info.extra._irreparables as Record<string, unknown[]> | undefined;
+    expect(irrep?.seguros).toContainEqual({ id: 's1', campo: 'divisa', valor: 'GBP' });
+    expect(irrep?.seguros).toContainEqual({ id: 's1', campo: 'vencimiento', valor: '31/12/2026' });
+  });
+
+  it('contacto con nombre inválido y clave desconocida stasha ambos', () => {
+    const info = normalizarInfoFamilia({
+      contactos: [{ id: 'c1', nombre: { a: 1 }, whatsapp: '55' }],
+    });
+    const [c] = info.contactos;
+    expect(c).toMatchObject({ id: 'c1', nombre: '', rol: '', telefono: '', email: '', nota: '' });
+    const irrep = info.extra._irreparables as Record<string, unknown[]> | undefined;
+    expect(irrep?.contactos).toContainEqual({ id: 'c1', campo: 'nombre', valor: { a: 1 } });
+    expect(irrep?.contactos).toContainEqual({ id: 'c1', campo: 'whatsapp', valor: '55' });
+  });
+
+  it('pagos entry con decision inválida y clave extra stasha ambas', () => {
+    const info = normalizarInfoFamilia({
+      pagos: { 'sub:x': { decision: 'vender', nota: 'x', extra: 1 } },
+    });
+    expect(info.pagos['sub:x']).toEqual({ decision: null, nota: 'x' });
+    const irrep = info.extra._irreparables as Record<string, unknown[]> | undefined;
+    expect(irrep?.pagos).toContainEqual({ clave: 'sub:x', campo: 'decision', valor: 'vender' });
+    expect(irrep?.pagos).toContainEqual({ clave: 'sub:x', campo: 'extra', valor: 1 });
+  });
+
+  it('_irreparables no-objeto se conserva', () => {
+    const info = normalizarInfoFamilia({ _irreparables: 'raro' });
+    expect(info.extra._irreparables).toEqual({ _irreparables: ['raro'] });
+  });
+
+  it('ida y vuelta preserva todo incluyendo reparables y _irreparables no-objeto', () => {
+    const raw = {
+      seguros: [{ id: 's1', divisa: 'GBP', vencimiento: '31/12/2026', sumaAsegurada: 'ocho' }],
+      contactos: [{ id: 'c1', nombre: { a: 1 }, whatsapp: '55' }],
+      pagos: { 'sub:x': { decision: 'vender', nota: 'x', extra: 1 } },
+      _irreparables: 'raro',
+    };
+    const una = normalizarInfoFamilia(raw);
+    const dos = normalizarInfoFamilia(serializarInfoFamilia(una));
+    expect(dos).toEqual(una);
+  });
+});
+
+describe('diasDesdeRevision same-day is +0', () => {
+  it('Object.is(diasDesdeRevision(same-day), 0) is true', () => {
+    const fecha = new Date(2026, 8, 30, 23, 30).toISOString();
+    const result = diasDesdeRevision(fecha, NOW);
+    expect(Object.is(result, 0)).toBe(true);
+    expect(result).toBe(0);
+  });
+});
