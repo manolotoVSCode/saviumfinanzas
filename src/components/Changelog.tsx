@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Shield, BarChart3, Upload, Wallet, Tag, Globe, Users, Bug, Zap } from 'lucide-react';
+import { Sparkles, Shield, BarChart3, Upload, Wallet, Tag, Globe, Users, Bug, Zap, HeartHandshake, Database, Bell } from 'lucide-react';
 
 interface ChangelogEntry {
   version: string;
@@ -8,6 +8,15 @@ interface ChangelogEntry {
 }
 
 const changelog: ChangelogEntry[] = [
+  {
+    version: '8.1',
+    date: 'Septiembre 2026',
+    changes: [
+      { icon: <HeartHandshake className="h-4 w-4" />, text: 'Nueva página "Para mi familia": carta de primeros pasos, contactos clave, seguros, documentos y accesos, más el patrimonio y los pagos recurrentes calculados solos, cada partida con su nota para la familia. Se guarda sola mientras escribes', type: 'feature' },
+      { icon: <Bell className="h-4 w-4" />, text: 'Alerta para revisar la información familiar cuando pasan más de 180 días sin marcarla como revisada', type: 'feature' },
+      { icon: <Database className="h-4 w-4" />, text: 'La copia de seguridad incluye la información familiar y ya no se rompe con comillas o saltos de línea en los textos', type: 'fix' },
+    ],
+  },
   {
     version: '8.0',
     date: 'Septiembre 2026',
