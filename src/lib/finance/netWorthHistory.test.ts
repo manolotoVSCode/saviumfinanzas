@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Account, Transaction } from '@/types/finance';
-import { computeNetWorthHistory } from './netWorthHistory';
+import { computeNetWorthHistory, saldosAlCierre } from './netWorthHistory';
 import { ConvertCurrency } from './dashboardMetrics';
 
 const RATES = { MXN: 1, USD: 20, EUR: 22 };
@@ -61,5 +61,35 @@ describe('computeNetWorthHistory', () => {
 
   it('sin cuentas relevantes devuelve vacío', () => {
     expect(computeNetWorthHistory([], [], convert, 'MXN', NOW)).toEqual([]);
+  });
+});
+
+describe('saldosAlCierre', () => {
+  it('suma saldo inicial y movimientos hasta el cierre incluido, sin los posteriores', () => {
+    const cierre = new Date(2026, 8, 30, 23, 59, 59, 999);
+    const s = saldosAlCierre(
+      [account({ id: 'a1', saldoInicial: 100 }), account({ id: 'a2', saldoInicial: 5 })],
+      [
+        tx({ cuentaId: 'a1', monto: 50, fecha: new Date(2026, 8, 30, 12) }),
+        tx({ cuentaId: 'a1', monto: 7, fecha: new Date(2026, 9, 1) }),
+        tx({ cuentaId: 'zz', monto: 1, fecha: new Date(2026, 8, 1) }),
+      ],
+      cierre
+    );
+    expect(s.get('a1')).toBe(150);
+    expect(s.get('a2')).toBe(5);
+    expect(s.has('zz')).toBe(false);
+  });
+
+  it('al cierre del mes en curso coincide con el último punto del histórico', () => {
+    const accounts = [
+      account({ id: 'b', tipo: 'Banco', saldoInicial: 1000 }),
+      account({ id: 'tc', tipo: 'Tarjeta de Crédito', saldoInicial: -300 }),
+    ];
+    const txs = [tx({ cuentaId: 'b', monto: 200, fecha: new Date(2026, 8, 10) })];
+    const s = saldosAlCierre(accounts, txs, new Date(2026, 9, 0, 23, 59, 59, 999));
+    const puntos = computeNetWorthHistory(accounts, txs, convert, 'MXN', NOW);
+    const last = puntos[puntos.length - 1];
+    expect((s.get('b') ?? 0) - Math.abs(Math.min(0, s.get('tc') ?? 0))).toBe(last.patrimonio);
   });
 });

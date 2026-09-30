@@ -15,8 +15,8 @@ const MONTH_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Se
 
 // Misma clasificación que computeDashboardMetrics: activos por tipo (sin vendidas),
 // pasivos = parte negativa del saldo de tarjetas e hipotecas.
-const ASSET_TYPES = new Set(['Efectivo', 'Banco', 'Ahorros', 'Inversiones', 'Empresa Propia', 'Bien Raíz']);
-const LIABILITY_TYPES = new Set(['Tarjeta de Crédito', 'Hipoteca']);
+export const ASSET_TYPES = new Set(['Efectivo', 'Banco', 'Ahorros', 'Inversiones', 'Empresa Propia', 'Bien Raíz']);
+export const LIABILITY_TYPES = new Set(['Tarjeta de Crédito', 'Hipoteca']);
 
 /**
  * Patrimonio neto al cierre de cada mes, reconstruido desde las transacciones:
@@ -76,4 +76,18 @@ export const computeNetWorthHistory = (
   }
 
   return months && months > 0 ? points.slice(-months) : points;
+};
+
+/**
+ * Saldo de cada cuenta (en su divisa) al instante `cierre`, incluido:
+ * saldoInicial + Σ movimientos con fecha ≤ cierre. Misma regla que
+ * computeNetWorthHistory; con el cierre del mes en curso da su último punto.
+ */
+export const saldosAlCierre = (accounts: Account[], transactions: Transaction[], cierre: Date): Map<string, number> => {
+  const saldos = new Map<string, number>(accounts.map(a => [a.id, a.saldoInicial]));
+  for (const t of transactions) {
+    if (t.fecha > cierre || !saldos.has(t.cuentaId)) continue;
+    saldos.set(t.cuentaId, saldos.get(t.cuentaId)! + t.monto);
+  }
+  return saldos;
 };
