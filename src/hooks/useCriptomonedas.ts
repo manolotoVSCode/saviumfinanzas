@@ -142,6 +142,7 @@ export const useCriptomonedas = () => {
   return {
     criptomonedas,
     loading: !!user && criptosQuery.isPending,
+    error: criptosQuery.error,
     precios,
     addCriptomoneda,
     updateCriptomoneda,

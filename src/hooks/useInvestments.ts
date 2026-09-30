@@ -196,6 +196,7 @@ export const useInvestments = () => {
     valuations,
     payouts,
     loading: (!!user && query.isPending) || accountsLoading,
+    error: query.error,
     saveInvestment,
     deleteInvestment,
     addValuation,
