@@ -144,7 +144,8 @@ describe('saldosAlCierre', () => {
     ];
     const txs = [tx({ cuentaId: 'b', monto: 200, fecha: new Date(2026, 8, 10) })];
     const s = saldosAlCierre(accounts, txs, new Date(2026, 9, 0, 23, 59, 59, 999));
-    const last = computeNetWorthHistory(accounts, txs, convert, 'MXN', NOW).at(-1)!;
+    const puntos = computeNetWorthHistory(accounts, txs, convert, 'MXN', NOW);
+    const last = puntos[puntos.length - 1];
     expect((s.get('b') ?? 0) - Math.abs(Math.min(0, s.get('tc') ?? 0))).toBe(last.patrimonio);
   });
 });
@@ -617,7 +618,8 @@ describe('resumenPatrimonioFamilia', () => {
   });
 
   it('el total es igual al último punto de computeNetWorthHistory, con movimientos del mes en curso', () => {
-    const last = computeNetWorthHistory(accounts, txs, convert, 'MXN', NOW).at(-1)!;
+    const puntos = computeNetWorthHistory(accounts, txs, convert, 'MXN', NOW);
+    const last = puntos[puntos.length - 1];
     expect(r.activos).toBe(last.activos);
     expect(r.pasivos).toBe(last.pasivos);
     expect(r.patrimonio).toBe(last.patrimonio);
