@@ -6,21 +6,12 @@ import { useFinanceDataSupabase } from './useFinanceDataSupabase';
 import { useSubscriptionServices } from './useSubscriptionServices';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 import { Alert, computeAlerts } from '@/lib/finance/alerts';
+import { readInactiveAnnualIds } from '@/lib/finance/annualPayments';
 
 const fetchDismissals = async (): Promise<string[]> => {
   const { data, error } = await supabase.from('alert_dismissals').select('alert_key');
   if (error) throw error;
   return (data ?? []).map(d => d.alert_key);
-};
-
-/** Misma clave que usa AnnualPaymentsTracker para los pagos marcados inactivos. */
-const readInactiveAnnual = (): Set<string> => {
-  try {
-    const saved = localStorage.getItem('inactive_annual_payments');
-    return new Set(saved ? (JSON.parse(saved) as string[]) : []);
-  } catch {
-    return new Set();
-  }
 };
 
 /**
@@ -32,7 +23,7 @@ export const useAlerts = () => {
   const queryClient = useQueryClient();
   const QK = financeQueryKeys(user?.id);
   const { categories, transactions, loading: financeLoading } = useFinanceDataSupabase();
-  const [inactiveAnnual] = useState(readInactiveAnnual);
+  const [inactiveAnnual] = useState(readInactiveAnnualIds);
 
   const { subscriptions, loading: subsLoading } = useSubscriptionServices();
   const dismissalsQuery = useQuery({
