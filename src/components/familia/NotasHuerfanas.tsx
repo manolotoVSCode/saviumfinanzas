@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Copy, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { NotaHuerfana } from '@/lib/finance/familia';
 
 interface Props {
@@ -8,7 +9,17 @@ interface Props {
   onBorrar: (n: NotaHuerfana) => void;
 }
 
-export const NotasHuerfanas = ({ notas, onBorrar }: Props) => (
+export const NotasHuerfanas = ({ notas, onBorrar }: Props) => {
+  const { toast } = useToast();
+  const copiar = async (texto: string) => {
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast({ title: 'Copiado' });
+    } catch {
+      toast({ title: 'No se pudo copiar', variant: 'destructive' });
+    }
+  };
+  return (
   <Card className="border-amber-500/40">
     <CardHeader>
       <CardTitle>Notas sin partida</CardTitle>
@@ -23,10 +34,11 @@ export const NotasHuerfanas = ({ notas, onBorrar }: Props) => (
             <p className="text-sm">{n.texto}</p>
             <p className="text-xs text-muted-foreground">{n.clave}</p>
           </div>
-          <Button variant="ghost" size="icon" title="Copiar" onClick={() => void navigator.clipboard.writeText(n.texto)}><Copy className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" title="Copiar" onClick={() => void copiar(n.texto)}><Copy className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" title="Borrar" onClick={() => { if (window.confirm('¿Borrar esta nota?')) onBorrar(n); }}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ))}
     </CardContent>
   </Card>
-);
+  );
+};

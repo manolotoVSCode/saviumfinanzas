@@ -145,7 +145,8 @@ export const DatabaseBackup = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Seleccionar Tablas para Exportar</AlertDialogTitle>
             <AlertDialogDescription>
-              Elige qué datos quieres incluir en tu copia de seguridad: El archivo contiene tus datos personales sin cifrar: guárdalo en un lugar seguro.
+              Elige qué datos quieres incluir en tu copia de seguridad.
+              <span className="block mt-2">El archivo contiene tus datos personales sin cifrar: guárdalo en un lugar seguro.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           

@@ -112,7 +112,7 @@ const Familia = () => {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <IndicadorGuardado estado={editor.estado} onReintentar={editor.reintentar} onRecargar={editor.recargar} onGuardarLaMia={editor.guardarLaMia} />
+              {doc && <IndicadorGuardado estado={editor.estado} onReintentar={editor.reintentar} onRecargar={editor.recargar} onGuardarLaMia={editor.guardarLaMia} />}
               <Button onClick={editor.marcarRevisado} disabled={!editor.fila || editor.estado !== 'guardado'}>Marcar como revisado</Button>
             </div>
           </CardContent>

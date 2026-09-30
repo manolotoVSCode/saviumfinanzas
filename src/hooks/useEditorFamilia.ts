@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { InfoFamilia, infoFamiliaVacia } from '@/lib/finance/familia';
+import { InfoFamilia, infoFamiliaVacia, serializarInfoFamilia } from '@/lib/finance/familia';
 import { FilaFamilia, useInformacionFamilia } from './useInformacionFamilia';
 
 export type EstadoGuardado = 'guardado' | 'pendiente' | 'guardando' | 'error' | 'conflicto';
@@ -116,9 +116,22 @@ export const useEditorFamilia = () => {
     window.addEventListener('beforeunload', antesDeCerrar);
     return () => {
       window.removeEventListener('beforeunload', antesDeCerrar);
-      if (estadoRef.current === 'pendiente') void guardarAhoraRef.current();
+      const e = estadoRef.current;
+      if (e === 'pendiente' || e === 'error') void guardarAhoraRef.current();
+      else if (e === 'conflicto' && docRef.current) {
+        // No se guarda (sobrescribiría): se deja copia local y se avisa.
+        try {
+          sessionStorage.setItem('familia:sin-guardar', JSON.stringify(serializarInfoFamilia(docRef.current)));
+        } catch { /* sin almacenamiento disponible */ }
+        toast({
+          title: 'Cambios sin guardar en «Para mi familia»',
+          description: 'Había un conflicto con otra versión y tus últimos cambios no se guardaron. Vuelve a la página para revisarlos.',
+          variant: 'destructive',
+          duration: Infinity,
+        });
+      }
     };
-  }, []);
+  }, [toast]);
 
   const recargar = async () => {
     try {

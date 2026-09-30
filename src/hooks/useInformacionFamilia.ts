@@ -49,7 +49,7 @@ export const useInformacionFamilia = () => {
 
   const alGuardar = useCallback((fila: FilaFamilia) => {
     queryClient.setQueryData(QK.informacionFamilia, fila);
-    queryClient.invalidateQueries({ queryKey: QK.revisionFamilia });
+    queryClient.setQueryData(QK.revisionFamilia, { revisadoAt: fila.revisadoAt });
   }, [queryClient, QK]);
 
   const guardar = useCallback(async (info: InfoFamilia, updatedAtLeido: string | null, forzar = false): Promise<ResultadoGuardado> => {
