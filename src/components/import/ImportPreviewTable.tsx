@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Pending } from '@/hooks/usePendings';
 import { esEntrada, ParsedRow } from '@/lib/import/toParsedRows';
-import { Category, TransactionType } from '@/types/finance';
+import { Category, Transaction, TransactionType } from '@/types/finance';
 import { cn } from '@/lib/utils';
+import { fechaTxISO, parseFechaLocal } from '@/lib/finance/fechas';
 
 export type SortColumn = 'fecha' | 'descripcion' | 'tipo' | 'monto' | 'categoria';
 export type SortDirection = 'asc' | 'desc';
@@ -34,6 +35,8 @@ interface Props {
   pendingMatches: Map<string, Pending[]>;
   pendingLinks: Record<string, string>;
   onTogglePendingLink: (rowId: string, matches: Pending[]) => void;
+  /** Fila → movimiento que ya está en la cuenta con el mismo importe y fecha cercana. */
+  duplicados: Map<string, Transaction>;
 }
 
 const formatDate = (date: Date) => date.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -60,7 +63,7 @@ const FuenteIcono = ({ row }: { row: ParsedRow }) => {
 
 export const ImportPreviewTable = ({
   rows, allRows, categories, isCreditCard, hasTarjetahabiente, sortColumn, sortDirection, onSort,
-  onToggleAll, onToggleInclude, onToggleReembolso, onCategoryChange, onCreateRule, pendingMatches, pendingLinks, onTogglePendingLink,
+  onToggleAll, onToggleInclude, onToggleReembolso, onCategoryChange, onCreateRule, pendingMatches, pendingLinks, onTogglePendingLink, duplicados,
 }: Props) => {
   const [openCatRowId, setOpenCatRowId] = useState<string | null>(null);
 
@@ -150,6 +153,7 @@ export const ImportPreviewTable = ({
             const isExpense = !esEntrada(row);
             const matches = pendingMatches.get(row.id);
             const linkedId = pendingLinks[row.id];
+            const duplicado = duplicados.get(row.id);
             const selectedMatch = matches ? (linkedId ? matches.find(m => m.id === linkedId) : matches[0]) : undefined;
 
             return (
@@ -160,6 +164,15 @@ export const ImportPreviewTable = ({
                 <TableCell className="whitespace-nowrap text-xs px-2">{formatDate(row.fecha)}</TableCell>
                 <TableCell className="max-w-[220px] text-xs px-2" title={row.descripcion}>
                   <div className="truncate">{row.descripcion}</div>
+                  {duplicado && (
+                    <Badge
+                      variant="outline"
+                      className="mt-1 text-[10px] px-1.5 py-0 font-normal border-yellow-500 max-w-full truncate"
+                      title={`Ya está en la cuenta: ${formatDate(parseFechaLocal(fechaTxISO(duplicado.fecha)))} · ${duplicado.comentario}`}
+                    >
+                      ¿Duplicado? Ya está: {duplicado.comentario}
+                    </Badge>
+                  )}
                   {matches && matches.length > 0 && (
                     <button type="button" onClick={() => onTogglePendingLink(row.id, matches)} className="mt-1 inline-flex items-center gap-1" title={selectedMatch?.concepto}>
                       <Badge variant={linkedId ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0 font-normal">

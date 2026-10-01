@@ -15,6 +15,7 @@ import { toFechaISO } from '@/lib/finance/fechas';
 import { DateHint, parseBankStatement, ParseMeta, SkippedRow } from '@/lib/import/bankStatementParser';
 import { buildHistoryIndex, suggestCategory } from '@/lib/import/importCategorizer';
 import { esEntrada, montoConSigno, ParsedRow, toParsedRows } from '@/lib/import/toParsedRows';
+import { posiblesDuplicados } from '@/lib/import/posiblesDuplicados';
 import { cuentasPorActividad, cuentasRecientes, ordenarPorRecientes, registrarCuentaReciente } from '@/lib/import/cuentasRecientes';
 import { Account, Category, Transaction } from '@/types/finance';
 import { CreateRuleFromRowDialog, NewRule } from './CreateRuleFromRowDialog';
@@ -29,7 +30,7 @@ interface BankStatementImporterProps {
 }
 
 type Step = 'select-account' | 'upload' | 'preview';
-type PreviewFilter = 'all' | 'sin_asignar' | 'dudosas' | 'entradas';
+type PreviewFilter = 'all' | 'sin_asignar' | 'dudosas' | 'entradas' | 'duplicados';
 
 const esSinAsignar = (cat: Category | undefined) => !cat || cat.subcategoria === 'Sin Asignar' || cat.categoria === 'SIN ASIGNAR';
 
@@ -54,6 +55,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
   const [pendingLinks, setPendingLinks] = useState<Record<string, string>>({});
   const [previewFilter, setPreviewFilter] = useState<PreviewFilter>('all');
   const [ruleRow, setRuleRow] = useState<ParsedRow | null>(null);
+  const [duplicados, setDuplicados] = useState<Map<string, Transaction>>(new Map());
 
   const { toast } = useToast();
   const { findMatchingRuleDetailed, addRule } = useClassificationRules();
@@ -113,7 +115,11 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
       return;
     }
 
-    setParsedRows(toParsedRows(result.movements, selectedAccount!.tipo, categorizer, categories, sinAsignarCategory?.id));
+    const rows = toParsedRows(result.movements, selectedAccount!.tipo, categorizer, categories, sinAsignarCategory?.id);
+    // Lo que ya está en la cuenta entra desmarcado; la casilla sigue mandando.
+    const dups = posiblesDuplicados(rows, transactions, selectedAccountId);
+    setParsedRows(dups.size > 0 ? rows.map(r => (dups.has(r.id) ? { ...r, incluir: false } : r)) : rows);
+    setDuplicados(dups);
     setSkipped(result.skipped);
     setMeta(result.meta);
     setStep('preview');
@@ -319,6 +325,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     setPendingLinks({});
     setPreviewFilter('all');
     setRuleRow(null);
+    setDuplicados(new Map());
   };
 
   const selectedCount = parsedRows.filter(r => r.incluir).length;
@@ -388,8 +395,9 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
     if (previewFilter === 'sin_asignar') return sortedRows.filter(row => esSinAsignar(categories.find(c => c.id === row.categoriaId)));
     if (previewFilter === 'dudosas') return sortedRows.filter(r => !r.categoriaManual && r.suggestion?.confidence === 'media');
     if (previewFilter === 'entradas') return sortedRows.filter(esEntrada);
+    if (previewFilter === 'duplicados') return sortedRows.filter(r => duplicados.has(r.id));
     return sortedRows;
-  }, [sortedRows, previewFilter, categories]);
+  }, [sortedRows, previewFilter, categories, duplicados]);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => (isOpen ? setOpen(true) : handleClose())}>
@@ -526,6 +534,16 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
               <Button variant={previewFilter === 'entradas' ? 'default' : 'outline'} size="sm" onClick={() => setPreviewFilter('entradas')}>
                 Ingresos y reemb. ({entradasCount})
               </Button>
+              {duplicados.size > 0 && (
+                <Button
+                  variant={previewFilter === 'duplicados' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPreviewFilter('duplicados')}
+                  className="border-yellow-500"
+                >
+                  Posibles duplicados ({duplicados.size})
+                </Button>
+              )}
             </div>
 
             <ImportPreviewTable
@@ -545,6 +563,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
               pendingMatches={rowPendingMatches}
               pendingLinks={pendingLinks}
               onTogglePendingLink={togglePendingLink}
+              duplicados={duplicados}
             />
 
             <ImportSummaryBar
@@ -554,7 +573,7 @@ const BankStatementImporter = ({ accounts, categories, transactions, onImportTra
               currency={selectedAccount?.divisa ?? 'MXN'}
               importing={importing}
               selectedCount={selectedCount}
-              onBack={() => { setParsedRows([]); setSkipped([]); setMeta(null); setStep('upload'); }}
+              onBack={() => { setParsedRows([]); setSkipped([]); setMeta(null); setDuplicados(new Map()); setPreviewFilter('all'); setStep('upload'); }}
               onImport={handleImport}
             />
           </div>
