@@ -7,12 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { Alert, AlertType, ALERT_RULES } from '@/lib/finance/alerts';
-import { CalendarClock, CreditCard, TrendingUp, X, Undo2, BellOff, ArrowRight } from 'lucide-react';
+import { DIAS_REVISION } from '@/lib/finance/familia';
+import { CalendarClock, CreditCard, TrendingUp, X, Undo2, BellOff, ArrowRight, HeartHandshake } from 'lucide-react';
 
 const TYPE_META: Record<AlertType, { label: string; icon: React.ReactNode }> = {
   pago_anual: { label: 'Pago anual', icon: <CalendarClock className="h-5 w-5" /> },
   suscripcion_sube: { label: 'Suscripción', icon: <CreditCard className="h-5 w-5" /> },
   categoria_disparada: { label: 'Gasto inusual', icon: <TrendingUp className="h-5 w-5" /> },
+  familia_revision: { label: 'Familia', icon: <HeartHandshake className="h-5 w-5" /> },
 };
 
 const AlertRow = ({ alert, action, onAction, formatCurrency }: {
@@ -37,7 +39,9 @@ const AlertRow = ({ alert, action, onAction, formatCurrency }: {
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">{alert.detail}</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
-            <span className="text-sm font-semibold tabular-nums">${formatCurrency(alert.amount)} {alert.currency}</span>
+            {alert.amount !== undefined && (
+              <span className="text-sm font-semibold tabular-nums">${formatCurrency(alert.amount)} {alert.currency}</span>
+            )}
             <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => navigate(alert.href)}>
               Ver <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
@@ -68,7 +72,7 @@ const Alertas = () => {
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">Alertas</h1>
           <p className="text-muted-foreground">
-            Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días o vencidos hasta 30 días antes del cierre del último mes importado, suscripciones que suben de precio y categorías cuyo gasto del último mes cerrado supera en un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% su media de los 12 meses anteriores
+            Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días o vencidos hasta 30 días antes del cierre del último mes importado, suscripciones que suben de precio y categorías cuyo gasto del último mes cerrado supera en un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% su media de los 12 meses anteriores, y la información para tu familia si lleva más de {DIAS_REVISION} días sin revisar
           </p>
         </div>
 

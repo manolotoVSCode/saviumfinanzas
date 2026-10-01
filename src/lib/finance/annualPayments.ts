@@ -74,3 +74,13 @@ export const groupAnnualPayments = (categories: Category[], transactions: Transa
 
   return groups.sort((a, b) => a.nextPayment.getTime() - b.nextPayment.getTime());
 };
+
+/** Ids de pagos anuales marcados inactivos (localStorage, por dispositivo; lo escribe AnnualPaymentsTracker). */
+export const readInactiveAnnualIds = (): Set<string> => {
+  try {
+    const saved = localStorage.getItem('inactive_annual_payments');
+    return new Set(saved ? (JSON.parse(saved) as string[]) : []);
+  } catch {
+    return new Set();
+  }
+};

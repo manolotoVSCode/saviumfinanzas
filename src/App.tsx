@@ -30,6 +30,7 @@ const PagosAnuales = lazy(() => import("./pages/PagosAnuales"));
 const CxP = lazy(() => import("./pages/CxP"));
 const ChangelogPage = lazy(() => import("./pages/ChangelogPage"));
 const Alertas = lazy(() => import("./pages/Alertas"));
+const Familia = lazy(() => import("./pages/Familia"));
 
 // Versión móvil (< 768px), solo lectura.
 const SoloEscritorio = lazy(() => import("./pages/movil/SoloEscritorio"));
@@ -143,6 +144,11 @@ const App = () => (
               <Route path="/cxp" element={
                 <ProtectedRoute>
                   <Responsive desktop={CxP} mobile={PorPagarMovil} />
+                </ProtectedRoute>
+              } />
+              <Route path="/familia" element={
+                <ProtectedRoute>
+                  <Responsive desktop={Familia} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/alertas" element={

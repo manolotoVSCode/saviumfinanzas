@@ -586,6 +586,7 @@ export const useFinanceDataSupabase = () => {
     accountTypes: ACCOUNT_TYPES,
     dashboardMetrics,
     loading,
+    error: loadError,
 
     // CRUD operations
     addAccount,

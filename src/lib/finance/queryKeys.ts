@@ -16,6 +16,9 @@ export const financeQueryKeys = (userId: string | undefined) => ({
   criptoPrecios: ['finance', userId, 'criptoPrecios'] as const,
   paymentSkips: ['finance', userId, 'paymentSkips'] as const,
   alertDismissals: ['finance', userId, 'alertDismissals'] as const,
+  informacionFamilia: ['finance', userId, 'informacionFamilia'] as const,
+  /** Solo revisado_at: la usa useAlerts en todas las páginas sin cargar el contenido. */
+  revisionFamilia: ['finance', userId, 'revisionFamilia'] as const,
 });
 
 /** Tipos de cambio: no dependen del usuario. */
