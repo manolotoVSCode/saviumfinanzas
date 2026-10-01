@@ -37,7 +37,8 @@ const porNombre = <T extends { nombre: string }>(a: T, b: T) => a.nombre.localeC
 /**
  * Patrimonio para la familia con la misma regla que Informes › Patrimonio Neto:
  * saldos al cierre del mes en curso, activos sin vendidas, pasivos = parte
- * negativa de tarjetas e hipotecas. Las deudas se listan siempre.
+ * negativa de tarjetas e hipotecas. Las cuentas con saldo cero no se listan
+ * (no aportan nada); una deuda con saldo a favor sí, marcada «sin deuda».
  */
 export const resumenPatrimonioFamilia = ({ accounts, transactions, convert, currency, now = new Date() }: {
   accounts: Account[]; transactions: Transaction[]; convert: ConvertCurrency; currency: CurrencyCode; now?: Date;
@@ -57,6 +58,7 @@ export const resumenPatrimonioFamilia = ({ accounts, transactions, convert, curr
         const saldoConvertido = convert(saldo, divisa, currency);
         return { clave: `cuenta:${a.id}`, nombre: a.nombre, saldo, divisa, saldoConvertido, sinDeuda: esDeuda && saldoConvertido >= 0 };
       })
+      .filter(p => Math.abs(p.saldo) >= 0.005)
       .sort(porNombre);
     if (partidas.length === 0) return [];
     const subtotal = esDeuda

@@ -28,7 +28,8 @@ describe('resumenPatrimonioFamilia', () => {
     account({ id: 'usd', nombre: 'Schwab', tipo: 'Inversiones', saldoInicial: 100, divisa: 'USD' }),
     account({ id: 'casa', nombre: 'Casa', tipo: 'Bien Raíz', saldoInicial: 5000 }),
     account({ id: 'vendida', nombre: 'Depa', tipo: 'Bien Raíz', saldoInicial: 9999, vendida: true }),
-    account({ id: 'tc0', nombre: 'Visa', tipo: 'Tarjeta de Crédito', saldoInicial: 0 }),
+    account({ id: 'tc0', nombre: 'Visa', tipo: 'Tarjeta de Crédito', saldoInicial: 50 }),
+    account({ id: 'cero', nombre: 'Pagaré saldado', tipo: 'Inversiones', saldoInicial: 0 }),
     account({ id: 'tc', nombre: 'Amex', tipo: 'Tarjeta de Crédito', saldoInicial: -300 }),
   ];
   const txs = [tx({ cuentaId: 'b', monto: 200, fecha: new Date(2026, 8, 10) })]; // mes en curso
@@ -37,6 +38,10 @@ describe('resumenPatrimonioFamilia', () => {
   it('agrupa por tipo en orden fijo, omite grupos vacíos y excluye vendidas', () => {
     expect(r.grupos.map(g => g.id)).toEqual(['liquidez', 'inversiones', 'inmuebles', 'deudas']);
     expect(r.grupos.find(g => g.id === 'inmuebles')!.partidas.map(p => p.nombre)).toEqual(['Casa']);
+  });
+
+  it('no lista cuentas con saldo cero', () => {
+    expect(r.grupos.flatMap(g => g.partidas).map(p => p.nombre)).not.toContain('Pagaré saldado');
   });
 
   it('el total es igual al último punto de computeNetWorthHistory, con movimientos del mes en curso', () => {
