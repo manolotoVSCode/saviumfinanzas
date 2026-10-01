@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '8.2',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Upload className="h-4 w-4" />, text: 'Al importar, los movimientos que ya están en la cuenta (mismo importe, ±2 días, aunque la descripción sea otra) entran desmarcados con el aviso "¿Duplicado?" y un filtro propio', type: 'feature' },
+    ],
+  },
+  {
     version: '8.1',
     date: 'Septiembre 2026',
     changes: [
@@ -26,7 +33,6 @@ const changelog: ChangelogEntry[] = [
       { icon: <Zap className="h-4 w-4" />, text: 'Los reembolsos ya pueden vincularse con un pendiente por cobrar al importar', type: 'improvement' },
       { icon: <Upload className="h-4 w-4" />, text: 'Los atajos de cuenta al importar aparecen desde el primer día: sin historial en el navegador se deducen de tus cuentas con más movimientos', type: 'fix' },
       { icon: <Bug className="h-4 w-4" />, text: 'Si la importación falla, el aviso dice el motivo real en vez de un "Error al importar" genérico', type: 'fix' },
-      { icon: <Upload className="h-4 w-4" />, text: 'Al importar, los movimientos que ya están en la cuenta (mismo importe, ±2 días, aunque la descripción sea otra) entran desmarcados con el aviso "¿Duplicado?" y un filtro propio', type: 'feature' },
     ],
   },
   {
