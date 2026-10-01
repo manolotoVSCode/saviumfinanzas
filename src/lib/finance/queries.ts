@@ -79,6 +79,9 @@ export const fetchTransactions = async (): Promise<Transaction[]> => {
       .from('transacciones')
       .select('*')
       .order('fecha', { ascending: false })
+      // Desempate: con solo `fecha` (no única) Postgres puede repetir o saltarse
+      // filas del mismo día en el corte entre páginas.
+      .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
 
     if (error) throw error;
