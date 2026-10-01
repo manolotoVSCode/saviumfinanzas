@@ -3,11 +3,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { KeyRound } from 'lucide-react';
-import { GrupoInversiones, PartidaCripto, ResumenPatrimonio } from '@/lib/finance/familiaResumen';
+import { PartidaCripto, ResumenPatrimonio } from '@/lib/finance/familiaResumen';
 
 interface Props {
   resumen: ResumenPatrimonio;
-  inversiones: GrupoInversiones[];
   cripto: PartidaCripto[];
   notas: Record<string, string>;
   /** Sin callback (información sin cargar) las notas se muestran solo lectura. */
@@ -16,7 +15,7 @@ interface Props {
   formatCurrency: (n: number) => string;
 }
 
-export const PatrimonioFamilia = ({ resumen, inversiones, cripto, notas, onNota, currency, formatCurrency }: Props) => {
+export const PatrimonioFamilia = ({ resumen, cripto, notas, onNota, currency, formatCurrency }: Props) => {
   const nota = (clave: string) =>
     onNota ? (
       <Input
@@ -62,34 +61,6 @@ export const PatrimonioFamilia = ({ resumen, inversiones, cripto, notas, onNota,
             ))}
           </div>
         ))}
-
-        {inversiones.length > 0 && (
-          <div className="space-y-3">
-            <div className="border-b pb-1">
-              <h3 className="font-semibold">Detalle de inversiones</h3>
-              <p className="text-xs text-muted-foreground">Informativo: no suma al patrimonio (ya está en las cuentas).</p>
-            </div>
-            {inversiones.map(g => (
-              <div key={g.tipo} className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">{g.tipo}</p>
-                {g.partidas.map(p => (
-                  <div key={p.clave}>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="truncate">{p.nombre}</span>
-                      <span className="text-sm tabular-nums shrink-0">{importe(p.valor, p.moneda)}</span>
-                    </div>
-                    {(p.vencimiento || p.tasaAnual !== null) && (
-                      <p className="text-xs text-muted-foreground">
-                        {p.vencimiento && `Vence ${p.vencimiento}`}{p.vencimiento && p.tasaAnual !== null && ' · '}{p.tasaAnual !== null && `${p.tasaAnual}% anual`}
-                      </p>
-                    )}
-                    {nota(p.clave)}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
 
         {cripto.length > 0 && (
           <div className="space-y-2">

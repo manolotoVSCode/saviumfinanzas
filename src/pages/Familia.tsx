@@ -8,8 +8,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock } from 'lucide-react';
 import { useEditorFamilia } from '@/hooks/useEditorFamilia';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
-import { useInvestments } from '@/hooks/useInvestments';
-import { useInvestmentTypes } from '@/hooks/useInvestmentTypes';
 import { useCriptomonedas } from '@/hooks/useCriptomonedas';
 import { useSubscriptionServices } from '@/hooks/useSubscriptionServices';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
@@ -21,7 +19,7 @@ import {
   nuevoContacto, nuevoDocumento, nuevoSeguro, sinHuerfana,
 } from '@/lib/finance/familia';
 import {
-  detalleCriptoFamilia, detalleInversionesFamilia, notasHuerfanas, pagosRecurrentesFamilia, resumenPatrimonioFamilia,
+  detalleCriptoFamilia, notasHuerfanas, pagosRecurrentesFamilia, resumenPatrimonioFamilia,
 } from '@/lib/finance/familiaResumen';
 import { CampoLista, ListaEditable } from '@/components/familia/ListaEditable';
 import { IndicadorGuardado } from '@/components/familia/IndicadorGuardado';
@@ -58,8 +56,6 @@ const Familia = () => {
   const editor = useEditorFamilia();
   const { doc } = editor;
   const { accounts, transactions, categories, loading: finLoading, error: finError } = useFinanceDataSupabase();
-  const { investments, loading: invLoading, error: invError } = useInvestments();
-  const { types } = useInvestmentTypes();
   const { criptomonedas, loading: criptoLoading, error: criptoError } = useCriptomonedas();
   const { subscriptions, loading: subsLoading, error: subsError } = useSubscriptionServices();
   const { convertCurrency } = useExchangeRates();
@@ -70,7 +66,6 @@ const Familia = () => {
     () => resumenPatrimonioFamilia({ accounts, transactions, convert: convertCurrency, currency: config.currency }),
     [accounts, transactions, convertCurrency, config.currency]
   );
-  const inversiones = useMemo(() => detalleInversionesFamilia(investments, types), [investments, types]);
   const cripto = useMemo(() => detalleCriptoFamilia(criptomonedas), [criptomonedas]);
   const annualGroups = useMemo(() => groupAnnualPayments(categories, transactions), [categories, transactions]);
   const pagos = useMemo(
@@ -79,16 +74,17 @@ const Familia = () => {
     }) : []),
     [doc, subscriptions, annualGroups, transactions, inactiveAnnual, config.currency]
   );
-  const fuentesListas = !finLoading && !invLoading && !criptoLoading && !subsLoading && !finError && !invError && !criptoError && !subsError;
+  const fuentesListas = !finLoading && !criptoLoading && !subsLoading && !finError && !criptoError && !subsError;
   const huerfanas = useMemo(
     () => (doc && fuentesListas ? notasHuerfanas(doc, {
       cuentas: accounts.map(a => a.id),
-      inversiones: investments.map(i => i.id),
+      // Ya no hay detalle de inversiones: una nota antigua de inversion:* se muestra como huérfana.
+      inversiones: [],
       criptos: criptomonedas.map(c => c.id),
       suscripciones: subscriptions.map(s => s.id),
       anuales: annualGroups.map(g => g.id),
     }) : []),
-    [doc, fuentesListas, accounts, investments, criptomonedas, subscriptions, annualGroups]
+    [doc, fuentesListas, accounts, criptomonedas, subscriptions, annualGroups]
   );
 
   const revision = estadoRevision(editor.fila?.revisadoAt ?? null);
@@ -196,7 +192,6 @@ const Familia = () => {
 
         <PatrimonioFamilia
           resumen={resumen}
-          inversiones={inversiones}
           cripto={cripto}
           notas={doc?.notasPatrimonio ?? {}}
           onNota={doc ? (clave, texto) => editor.actualizar(d => conNota(d, clave, texto)) : undefined}

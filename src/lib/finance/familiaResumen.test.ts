@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { Account, Transaction } from '@/types/finance';
-import { Investment, InvestmentType } from '@/types/investments';
 import { CryptoWithPrice } from '@/types/crypto';
 import { ConvertCurrency } from './dashboardMetrics';
 import { AnnualPaymentGroup } from './annualPayments';
 import { computeNetWorthHistory } from './netWorthHistory';
 import { infoFamiliaVacia } from './familia';
 import {
-  detalleCriptoFamilia, detalleInversionesFamilia, notasHuerfanas, pagosRecurrentesFamilia, resumenPatrimonioFamilia,
+  detalleCriptoFamilia, notasHuerfanas, pagosRecurrentesFamilia, resumenPatrimonioFamilia,
 } from './familiaResumen';
 
 const RATES = { MXN: 1, USD: 20, EUR: 22 };
@@ -66,29 +65,6 @@ describe('resumenPatrimonioFamilia', () => {
 
   it('el último mes completo es el anterior al actual', () => {
     expect([r.ultimoMesCompleto.getFullYear(), r.ultimoMesCompleto.getMonth()]).toEqual([2026, 7]);
-  });
-});
-
-describe('detalleInversionesFamilia', () => {
-  const inv = (o: Partial<Investment>) => ({
-    id: 'i', nombre: 'X', tipo: '', tipo_id: null, monto_invertido: 0, valor_actual: 0, moneda: 'MXN',
-    fecha_vencimiento: null, tasa_anual: null, activa: true, ...o,
-  }) as Investment;
-  const types = [{ id: 'cete', nombre: 'CETES' }, { id: 'fibra', nombre: 'Fibras' }] as InvestmentType[];
-
-  it('agrupa las activas por tipo, usa valor_actual y cae a monto_invertido', () => {
-    const grupos = detalleInversionesFamilia([
-      inv({ id: 'a', nombre: 'Cete 28', tipo_id: 'cete', valor_actual: 1000, fecha_vencimiento: '2026-10-15', tasa_anual: 10 }),
-      inv({ id: 'b', nombre: 'Fibra', tipo_id: 'fibra', valor_actual: 0, monto_invertido: 500 }),
-      inv({ id: 'c', nombre: 'Vieja', tipo_id: 'cete', activa: false, valor_actual: 99 }),
-      inv({ id: 'd', nombre: 'Suelta', valor_actual: 5 }),
-      inv({ id: 'e', nombre: 'Saldada', tipo_id: 'cete' }),
-    ], types);
-    expect(grupos.map(g => g.tipo)).toEqual(['CETES', 'Fibras', 'Sin tipo asignado']);
-    expect(grupos[0].partidas).toEqual([
-      { clave: 'inversion:a', nombre: 'Cete 28', valor: 1000, moneda: 'MXN', vencimiento: '2026-10-15', tasaAnual: 10 },
-    ]);
-    expect(grupos[1].partidas[0].valor).toBe(500);
   });
 });
 

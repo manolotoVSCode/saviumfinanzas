@@ -1,5 +1,4 @@
 import { Account, AccountType, Transaction } from '@/types/finance';
-import { Investment, InvestmentType } from '@/types/investments';
 import { CryptoWithPrice } from '@/types/crypto';
 import { ConvertCurrency, CurrencyCode } from './dashboardMetrics';
 import { AnnualPaymentGroup } from './annualPayments';
@@ -70,32 +69,6 @@ export const resumenPatrimonioFamilia = ({ accounts, transactions, convert, curr
   });
 
   return { grupos, activos, pasivos, patrimonio: activos - pasivos, ultimoMesCompleto: finMesAnterior(now) };
-};
-
-export interface PartidaInversion {
-  clave: string; nombre: string; valor: number; moneda: string;
-  vencimiento: string | null; tasaAnual: number | null;
-}
-export interface GrupoInversiones { tipo: string; partidas: PartidaInversion[] }
-
-/** Inversiones activas con valor distinto de cero, agrupadas por tipo. Informativo: no suma al patrimonio. `valor_actual` ya viene calculado por useInvestments. */
-export const detalleInversionesFamilia = (investments: Investment[], types: InvestmentType[]): GrupoInversiones[] => {
-  const nombreTipo = new Map(types.map(t => [t.id, t.nombre]));
-  const grupos = new Map<string, PartidaInversion[]>();
-  for (const i of investments) {
-    if (!i.activa) continue;
-    const valor = i.valor_actual || i.monto_invertido || 0;
-    if (valor === 0) continue;
-    const tipo = (i.tipo_id && nombreTipo.get(i.tipo_id)) || 'Sin tipo asignado';
-    if (!grupos.has(tipo)) grupos.set(tipo, []);
-    grupos.get(tipo)!.push({
-      clave: `inversion:${i.id}`, nombre: i.nombre, valor,
-      moneda: i.moneda || 'MXN', vencimiento: i.fecha_vencimiento, tasaAnual: i.tasa_anual,
-    });
-  }
-  return [...grupos.entries()]
-    .map(([tipo, partidas]) => ({ tipo, partidas: partidas.sort(porNombre) }))
-    .sort((a, b) => (a.tipo === 'Sin tipo asignado' ? 1 : b.tipo === 'Sin tipo asignado' ? -1 : a.tipo.localeCompare(b.tipo, 'es')));
 };
 
 export interface PartidaCripto {
