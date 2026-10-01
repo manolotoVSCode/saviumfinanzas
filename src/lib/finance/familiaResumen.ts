@@ -78,16 +78,18 @@ export interface PartidaInversion {
 }
 export interface GrupoInversiones { tipo: string; partidas: PartidaInversion[] }
 
-/** Inversiones activas agrupadas por tipo. Informativo: no suma al patrimonio. `valor_actual` ya viene calculado por useInvestments. */
+/** Inversiones activas con valor distinto de cero, agrupadas por tipo. Informativo: no suma al patrimonio. `valor_actual` ya viene calculado por useInvestments. */
 export const detalleInversionesFamilia = (investments: Investment[], types: InvestmentType[]): GrupoInversiones[] => {
   const nombreTipo = new Map(types.map(t => [t.id, t.nombre]));
   const grupos = new Map<string, PartidaInversion[]>();
   for (const i of investments) {
     if (!i.activa) continue;
+    const valor = i.valor_actual || i.monto_invertido || 0;
+    if (valor === 0) continue;
     const tipo = (i.tipo_id && nombreTipo.get(i.tipo_id)) || 'Sin tipo asignado';
     if (!grupos.has(tipo)) grupos.set(tipo, []);
     grupos.get(tipo)!.push({
-      clave: `inversion:${i.id}`, nombre: i.nombre, valor: i.valor_actual || i.monto_invertido || 0,
+      clave: `inversion:${i.id}`, nombre: i.nombre, valor,
       moneda: i.moneda || 'MXN', vencimiento: i.fecha_vencimiento, tasaAnual: i.tasa_anual,
     });
   }

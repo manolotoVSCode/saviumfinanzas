@@ -81,7 +81,8 @@ describe('detalleInversionesFamilia', () => {
       inv({ id: 'a', nombre: 'Cete 28', tipo_id: 'cete', valor_actual: 1000, fecha_vencimiento: '2026-10-15', tasa_anual: 10 }),
       inv({ id: 'b', nombre: 'Fibra', tipo_id: 'fibra', valor_actual: 0, monto_invertido: 500 }),
       inv({ id: 'c', nombre: 'Vieja', tipo_id: 'cete', activa: false, valor_actual: 99 }),
-      inv({ id: 'd', nombre: 'Suelta' }),
+      inv({ id: 'd', nombre: 'Suelta', valor_actual: 5 }),
+      inv({ id: 'e', nombre: 'Saldada', tipo_id: 'cete' }),
     ], types);
     expect(grupos.map(g => g.tipo)).toEqual(['CETES', 'Fibras', 'Sin tipo asignado']);
     expect(grupos[0].partidas).toEqual([
