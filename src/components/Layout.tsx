@@ -48,7 +48,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/ingresos-recurrentes', icon: Repeat, label: 'Ingresos Recurrentes' },
     { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales' },
     { path: '/informes', icon: FileText, label: 'Informes Financieros' },
-    { path: '/familia', icon: HeartHandshake, label: 'Para mi familia' },
+    { path: '/familia', icon: HeartHandshake, label: 'Para mi familia', danger: true },
     { path: '/alertas', icon: Bell, label: 'Alertas', badge: alertCount || undefined },
   ];
 
@@ -80,15 +80,19 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
 
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {mainNavItems.map(({ path, icon: Icon, label, badge }: any) => (
+            {mainNavItems.map(({ path, icon: Icon, label, badge, danger }: any) => (
               <button
                 key={path}
                 onClick={() => navigate(path)}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative',
-                  isActive(path)
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  danger
+                    ? isActive(path)
+                      ? 'bg-destructive/10 text-destructive'
+                      : 'text-destructive hover:bg-destructive/10'
+                    : isActive(path)
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />

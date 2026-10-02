@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Lock } from 'lucide-react';
+import { HeartHandshake, Lock } from 'lucide-react';
 import { useEditorFamilia } from '@/hooks/useEditorFamilia';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useCriptomonedas } from '@/hooks/useCriptomonedas';
@@ -52,7 +52,7 @@ const CAMPOS_DOCUMENTO: CampoLista<Documento>[] = [
 
 const VENCIMIENTO_CLASE = { vencida: 'text-destructive font-semibold', proxima: 'text-amber-600 font-semibold', vigente: 'text-muted-foreground', sin_fecha: 'text-muted-foreground' };
 
-const Familia = () => {
+const ContenidoFamilia = () => {
   const editor = useEditorFamilia();
   const { doc } = editor;
   const { accounts, transactions, categories, loading: finLoading, error: finError } = useFinanceDataSupabase();
@@ -91,7 +91,6 @@ const Familia = () => {
   const migracionPendiente = !!editor.error && esTablaInexistente(editor.error);
 
   return (
-    <Layout>
       <div className="animate-fade-in space-y-6 max-w-4xl mx-auto">
         <div className="text-center">
           <h1 className="text-3xl font-bold">Para mi familia</h1>
@@ -233,6 +232,23 @@ const Familia = () => {
           </>
         )}
       </div>
+  );
+};
+
+/** Portada: el contenido (y sus consultas) solo se carga al pulsar el botón; se vuelve a cerrar al salir de la página. */
+const Familia = () => {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <Layout>
+      {abierto ? <ContenidoFamilia /> : (
+        <div className="animate-fade-in flex flex-col items-center justify-center gap-6 min-h-[60vh] text-center">
+          <HeartHandshake className="h-12 w-12 text-destructive" />
+          <h1 className="text-3xl font-bold">Para mi familia</h1>
+          <Button size="lg" variant="destructive" onClick={() => setAbierto(true)}>
+            Abrir solo en caso de que ya no esté
+          </Button>
+        </div>
+      )}
     </Layout>
   );
 };
