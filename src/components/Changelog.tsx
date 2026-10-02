@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '8.3',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <HeartHandshake className="h-4 w-4" />, text: '"Para mi familia" aparece en rojo en el menú y abre con una portada: el contenido solo se muestra al pulsar "Abrir solo en caso de que ya no esté"', type: 'improvement' },
+    ],
+  },
+  {
     version: '8.2',
     date: 'Octubre 2026',
     changes: [
