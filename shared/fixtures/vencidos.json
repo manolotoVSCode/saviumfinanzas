@@ -1,0 +1,17 @@
+{
+  "tasas": { "MXN": 1, "USD": 20, "EUR": 22 },
+  "now": "2026-09-15T12:00:00",
+  "pendientes": [
+    { "id": "p1", "monto_esperado": 1000, "monto_cobrado": 0, "divisa": "MXN", "fecha_esperada": "2026-09-10", "estado": "pendiente" },
+    { "id": "p2", "monto_esperado": 500, "monto_cobrado": 100, "divisa": "USD", "fecha_esperada": "2026-09-15", "estado": "cobrado_parcial" },
+    { "id": "p3", "monto_esperado": 300, "monto_cobrado": 0, "divisa": "MXN", "fecha_esperada": null, "estado": "pendiente" },
+    { "id": "p4", "monto_esperado": 999, "monto_cobrado": 999, "divisa": "MXN", "fecha_esperada": "2026-09-01", "estado": "cobrado" },
+    { "id": "p5", "monto_esperado": 888, "monto_cobrado": 0, "divisa": "MXN", "fecha_esperada": "2026-09-02", "estado": "cancelado" },
+    { "id": "p6", "monto_esperado": 200, "monto_cobrado": 0, "divisa": "EUR", "fecha_esperada": "2026-10-01", "estado": "pendiente" },
+    { "id": "p7", "monto_esperado": 100, "monto_cobrado": 0, "divisa": "MXN", "fecha_esperada": "2026-09-14", "estado": "pendiente" }
+  ],
+  "casos": [
+    { "nombre": "en MXN", "moneda": "MXN", "esperado": { "orden": ["p1", "p7", "p2", "p6", "p3"], "vencidos": ["p1", "p7"], "total": 13800 } },
+    { "nombre": "en USD", "moneda": "USD", "esperado": { "orden": ["p1", "p7", "p2", "p6", "p3"], "vencidos": ["p1", "p7"], "total": 690 } }
+  ]
+}

@@ -4,6 +4,9 @@ import react from "@vitejs/plugin-react-swc";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 
+// Los tests (y los fixtures compartidos con la app iOS) asumen la zona del usuario.
+process.env.TZ = "America/Mexico_City";
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "/",

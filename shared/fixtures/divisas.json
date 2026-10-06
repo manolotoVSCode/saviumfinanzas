@@ -1,0 +1,9 @@
+{
+  "tasas": { "MXN": 1, "USD": 20, "EUR": 22 },
+  "casos": [
+    { "nombre": "USD a MXN", "importe": 100, "de": "USD", "a": "MXN", "esperado": 2000 },
+    { "nombre": "MXN a EUR", "importe": 2200, "de": "MXN", "a": "EUR", "esperado": 100 },
+    { "nombre": "USD a EUR pasa por MXN", "importe": 100, "de": "USD", "a": "EUR", "esperado": 90.9090909091 },
+    { "nombre": "misma divisa", "importe": 5, "de": "EUR", "a": "EUR", "esperado": 5 }
+  ]
+}

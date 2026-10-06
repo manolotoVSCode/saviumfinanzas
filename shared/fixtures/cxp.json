@@ -1,0 +1,92 @@
+{
+  "now": "2026-09-15T12:00:00",
+  "monedaBase": "MXN",
+  "casos": [
+    {
+      "nombre": "suscripciones: solo activas y dentro del horizonte",
+      "horizonte": 30,
+      "suscripciones": [
+        { "id": "s1", "service_name": "Netflix", "active": true, "frecuencia": "Mensual", "proximo_pago": "2026-09-20", "ultimo_pago_monto": 199 },
+        { "id": "s2", "service_name": "Inactiva", "active": false, "frecuencia": "Mensual", "proximo_pago": "2026-09-20", "ultimo_pago_monto": 50 },
+        { "id": "s3", "service_name": "Pasada", "active": true, "frecuencia": "Mensual", "proximo_pago": "2026-09-10", "ultimo_pago_monto": 60 },
+        { "id": "s4", "service_name": "Lejana", "active": true, "frecuencia": "Mensual", "proximo_pago": "2026-11-01", "ultimo_pago_monto": 70 }
+      ],
+      "esperado": [
+        { "id": "sub-s1", "concepto": "Netflix", "tipo": "Suscripción", "monto": 199, "divisa": "MXN", "fecha": "2026-09-20", "detalle": "Mensual" }
+      ]
+    },
+    {
+      "nombre": "pago anual: último pago + 1 año, con su divisa",
+      "horizonte": 30,
+      "categorias": [
+        { "id": "seg", "categoria": "Seguros", "subcategoria": "Coche", "tipo": "Gastos", "frecuencia_seguimiento": "anual" }
+      ],
+      "transacciones": [
+        { "id": "t1", "fecha": "2025-09-25", "gasto": 12000, "divisa": "USD", "subcategoriaId": "seg" }
+      ],
+      "esperado": [
+        { "id": "anual-seg", "concepto": "Seguros · Coche", "tipo": "Pago anual", "monto": 12000, "divisa": "USD", "fecha": "2026-09-25", "detalle": "Estimado según último pago" }
+      ]
+    },
+    {
+      "nombre": "tarjetas: solo con deuda de al menos un céntimo y no vendidas, a 15 días",
+      "horizonte": 30,
+      "cuentas": [
+        { "id": "tc", "nombre": "Visa", "tipo": "Tarjeta de Crédito", "saldoActual": -1234.5, "divisa": "MXN" },
+        { "id": "tc2", "nombre": "Amex", "tipo": "Tarjeta de Crédito", "saldoActual": -0.004, "divisa": "MXN" },
+        { "id": "tc3", "nombre": "Vieja", "tipo": "Tarjeta de Crédito", "saldoActual": -100, "divisa": "MXN", "vendida": true },
+        { "id": "b1", "nombre": "Banco", "tipo": "Banco", "saldoActual": -50, "divisa": "MXN" }
+      ],
+      "esperado": [
+        { "id": "card-tc", "concepto": "Visa", "tipo": "Tarjeta de crédito", "monto": 1234.5, "divisa": "MXN", "fecha": "2026-09-30", "detalle": "Saldo pendiente actual" }
+      ]
+    },
+    {
+      "nombre": "préstamos: cuota mensual si el último pago es reciente al corte",
+      "horizonte": 30,
+      "categorias": [
+        { "id": "pr", "categoria": "Deudas", "subcategoria": "Préstamo coche", "tipo": "Gastos" },
+        { "id": "pr2", "categoria": "Hogar", "subcategoria": "Hipoteca casa", "tipo": "Gastos" }
+      ],
+      "transacciones": [
+        { "id": "t1", "fecha": "2026-08-20", "gasto": 5000, "divisa": "MXN", "subcategoriaId": "pr" },
+        { "id": "t2", "fecha": "2026-06-10", "gasto": 9000, "divisa": "MXN", "subcategoriaId": "pr2" }
+      ],
+      "esperado": [
+        { "id": "loan-pr", "concepto": "Deudas · Préstamo coche", "tipo": "Préstamo", "monto": 5000, "divisa": "MXN", "fecha": "2026-09-20", "detalle": "Cuota estimada" }
+      ]
+    },
+    {
+      "nombre": "recurrente mensual: promedio de los dos últimos pagos",
+      "horizonte": 30,
+      "categorias": [
+        { "id": "int", "categoria": "Servicios", "subcategoria": "Internet", "tipo": "Gastos" }
+      ],
+      "transacciones": [
+        { "id": "t1", "fecha": "2026-06-05", "gasto": 500, "divisa": "MXN", "subcategoriaId": "int" },
+        { "id": "t2", "fecha": "2026-07-05", "gasto": 520, "divisa": "MXN", "subcategoriaId": "int" },
+        { "id": "t3", "fecha": "2026-08-05", "gasto": 540, "divisa": "MXN", "subcategoriaId": "int" }
+      ],
+      "esperado": [
+        { "id": "rec-int-MXN", "concepto": "Servicios · Internet", "tipo": "Recurrente mensual", "monto": 530, "divisa": "MXN", "fecha": "2026-10-05", "detalle": "mensual · prom. últimos 2" }
+      ]
+    },
+    {
+      "nombre": "orden por fecha estimada entre fuentes",
+      "horizonte": 30,
+      "suscripciones": [
+        { "id": "s1", "service_name": "Netflix", "active": true, "frecuencia": "Mensual", "proximo_pago": "2026-09-20", "ultimo_pago_monto": 199 }
+      ],
+      "categorias": [
+        { "id": "seg", "categoria": "Seguros", "subcategoria": "Coche", "tipo": "Gastos", "frecuencia_seguimiento": "anual" }
+      ],
+      "transacciones": [
+        { "id": "t1", "fecha": "2025-09-25", "gasto": 12000, "divisa": "USD", "subcategoriaId": "seg" }
+      ],
+      "cuentas": [
+        { "id": "tc", "nombre": "Visa", "tipo": "Tarjeta de Crédito", "saldoActual": -1234.5, "divisa": "MXN" }
+      ],
+      "esperadoIds": ["sub-s1", "anual-seg", "card-tc"]
+    }
+  ]
+}

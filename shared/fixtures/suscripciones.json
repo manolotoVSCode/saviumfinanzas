@@ -1,0 +1,21 @@
+{
+  "now": "2026-09-15T12:00:00",
+  "resumen": {
+    "suscripciones": [
+      { "frecuencia": "Mensual", "ultimo_pago_monto": 199 },
+      { "frecuencia": "Anual", "ultimo_pago_monto": 1200 },
+      { "frecuencia": "Semanal", "ultimo_pago_monto": 100 },
+      { "frecuencia": "Irregular", "ultimo_pago_monto": 50 },
+      { "frecuencia": "Quincenal", "ultimo_pago_monto": 10 }
+    ],
+    "esperado": { "estimadoMensual": 732.3333333333, "estimadas": 3, "sinEstimar": 2 }
+  },
+  "estados": [
+    { "proximo_pago": "2026-08-30", "esperado": { "estado": "sin_cargo", "dias": -16 } },
+    { "proximo_pago": "2026-08-31", "esperado": { "estado": "sin_cargo", "dias": -15 } },
+    { "proximo_pago": "2026-09-01", "esperado": { "estado": "este_mes", "dias": -14 } },
+    { "proximo_pago": "2026-09-10", "esperado": { "estado": "este_mes", "dias": -5 } },
+    { "proximo_pago": "2026-09-30", "esperado": { "estado": "este_mes", "dias": 15 } },
+    { "proximo_pago": "2026-10-02", "esperado": { "estado": "proxima", "dias": 17 } }
+  ]
+}

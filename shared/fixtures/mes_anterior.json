@@ -1,0 +1,17 @@
+{
+  "tasas": { "MXN": 1, "USD": 20, "EUR": 22 },
+  "now": "2026-09-15T12:00:00",
+  "transacciones": [
+    { "id": "t1", "fecha": "2026-08-10", "ingreso": 30000, "divisa": "MXN", "tipo": "Ingreso", "categoria": "Sueldo" },
+    { "id": "t2", "fecha": "2026-08-12", "gasto": 1000, "divisa": "MXN", "tipo": "Gastos", "categoria": "Casa" },
+    { "id": "t3", "fecha": "2026-08-13", "ingreso": 200, "divisa": "MXN", "tipo": "Gastos", "categoria": "Casa" },
+    { "id": "t4", "fecha": "2026-08-20", "gasto": 50, "divisa": "USD", "tipo": "Gastos", "categoria": "Viajes" },
+    { "id": "t5", "fecha": "2026-08-21", "gasto": 500000, "divisa": "MXN", "tipo": "Gastos", "categoria": "Compra Venta Inmuebles" },
+    { "id": "t6", "fecha": "2026-09-05", "gasto": 999, "divisa": "MXN", "tipo": "Gastos", "categoria": "Casa" },
+    { "id": "t7", "fecha": "2026-07-15", "gasto": 777, "divisa": "MXN", "tipo": "Gastos", "categoria": "Casa" }
+  ],
+  "casos": [
+    { "nombre": "en MXN: reembolso resta del gasto, inmuebles excluidos, USD convertido", "moneda": "MXN", "esperado": { "ingresos": 30000, "gastos": 1800, "balance": 28200 } },
+    { "nombre": "en USD", "moneda": "USD", "esperado": { "ingresos": 1500, "gastos": 90, "balance": 1410 } }
+  ]
+}
