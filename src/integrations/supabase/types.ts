@@ -763,7 +763,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      patrimonio_por_divisa: {
+        Row: {
+          clase: string
+          divisa: string
+          importe: number
+          rubro: string
+          user_id: string
+        }
+        Relationships: []
+      }
+      saldos_cuentas: {
+        Row: {
+          created_at: string
+          divisa: string
+          fecha_inicio: string | null
+          id: string
+          modalidad: string | null
+          nombre: string
+          rendimiento_bruto: number | null
+          rendimiento_mensual: number | null
+          rendimiento_neto: number | null
+          saldo_actual: number
+          saldo_inicial: number
+          tipo: string
+          tipo_inversion: string | null
+          ultimo_pago: string | null
+          updated_at: string
+          user_id: string
+          valor_mercado: number | null
+          vendida: boolean
+        }
+        Relationships: []
+      }
     }
     Functions: {
       create_default_classification_rules: {
