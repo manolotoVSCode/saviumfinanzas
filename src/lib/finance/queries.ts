@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Account, AccountType, Category, Transaction, TransactionType } from '@/types/finance';
+import { mapPatrimonio, PatrimonioFila } from './patrimonio';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = { [key: string]: any };
@@ -10,7 +11,7 @@ export const mapAccounts = (cuentasData: Row[]): Account[] => {
     nombre: cuenta.nombre,
     tipo: cuenta.tipo as AccountType,
     saldoInicial: Number(cuenta.saldo_inicial),
-    saldoActual: Number(cuenta.saldo_inicial), // Se calculará después
+    saldoActual: Number(cuenta.saldo_actual ?? cuenta.saldo_inicial), // de la vista saldos_cuentas
     divisa: cuenta.divisa as 'MXN' | 'USD' | 'EUR',
     valorMercado: cuenta.valor_mercado ? Number(cuenta.valor_mercado) : undefined,
     rendimientoMensual: cuenta.rendimiento_mensual ? Number(cuenta.rendimiento_mensual) : undefined,
@@ -56,10 +57,18 @@ export const mapTransactions = (transaccionesData: Row[]): Transaction[] => {
   return mappedTransactions;
 };
 
+/** Cuentas con su saldo actual calculado en Postgres (vista saldos_cuentas). */
 export const fetchAccounts = async (): Promise<Account[]> => {
-  const { data, error } = await supabase.from('cuentas').select('*');
+  const { data, error } = await supabase.from('saldos_cuentas').select('*');
   if (error) throw error;
   return mapAccounts(data ?? []);
+};
+
+/** Activos y pasivos por divisa y rubro (vista patrimonio_por_divisa). */
+export const fetchPatrimonio = async (): Promise<PatrimonioFila[]> => {
+  const { data, error } = await supabase.from('patrimonio_por_divisa').select('divisa, clase, rubro, importe');
+  if (error) throw error;
+  return mapPatrimonio(data ?? []);
 };
 
 export const fetchCategories = async (): Promise<Category[]> => {

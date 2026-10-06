@@ -29,14 +29,14 @@ const Linea = ({ etiqueta, amount, currency, destacado = false, negativo = false
 );
 
 const ResumenMovil = () => {
-  const { accounts, transactions, loading } = useFinanceDataSupabase();
+  const { accounts, transactions, patrimonio, loading } = useFinanceDataSupabase();
   const { convertCurrency } = useExchangeRates();
   const { currency } = useMobileCurrency();
 
   // Se llama directamente porque el dashboardMetrics del hook está fijo a config.currency.
   const metrics = useMemo(
-    () => computeDashboardMetrics(accounts, transactions, convertCurrency, currency),
-    [accounts, transactions, convertCurrency, currency],
+    () => computeDashboardMetrics(accounts, transactions, patrimonio, convertCurrency, currency),
+    [accounts, transactions, patrimonio, convertCurrency, currency],
   );
 
   const cuentasPorTipo = useMemo(() => {

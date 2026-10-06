@@ -4,6 +4,8 @@
  */
 export const financeQueryKeys = (userId: string | undefined) => ({
   cuentas: ['finance', userId, 'cuentas'] as const,
+  /** Cuelga de `cuentas`: invalidar QK.cuentas refresca también el patrimonio. */
+  patrimonio: ['finance', userId, 'cuentas', 'patrimonio'] as const,
   categorias: ['finance', userId, 'categorias'] as const,
   transacciones: ['finance', userId, 'transacciones'] as const,
   subscriptions: ['finance', userId, 'subscriptions'] as const,

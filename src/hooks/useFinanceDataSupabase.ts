@@ -6,8 +6,9 @@ import { useExchangeRates } from './useExchangeRates';
 import { useAppConfig } from './useAppConfig';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { fetchAccounts, fetchCategories, fetchTransactions } from '@/lib/finance/queries';
-import { computeAccountBalances, enrichTransactions } from '@/lib/finance/calculations';
+import { fetchAccounts, fetchCategories, fetchPatrimonio, fetchTransactions } from '@/lib/finance/queries';
+import { enrichTransactions } from '@/lib/finance/calculations';
+import { PatrimonioFila } from '@/lib/finance/patrimonio';
 import { computeDashboardMetrics } from '@/lib/finance/dashboardMetrics';
 import { toFechaISO } from '@/lib/finance/fechas';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
@@ -23,6 +24,7 @@ export { financeQueryKeys };
 const EMPTY_ACCOUNTS: Account[] = [];
 const EMPTY_CATEGORIES: Category[] = [];
 const EMPTY_TRANSACTIONS: Transaction[] = [];
+const EMPTY_PATRIMONIO: PatrimonioFila[] = [];
 
 /**
  * Fuente única de cuentas, categorías y transacciones. Todas las pantallas
@@ -40,13 +42,15 @@ export const useFinanceDataSupabase = () => {
   const accountsQuery = useQuery({ queryKey: QK.cuentas, queryFn: fetchAccounts, staleTime: STALE_TIME, enabled: !!user });
   const categoriesQuery = useQuery({ queryKey: QK.categorias, queryFn: fetchCategories, staleTime: STALE_TIME, enabled: !!user });
   const transactionsQuery = useQuery({ queryKey: QK.transacciones, queryFn: fetchTransactions, staleTime: STALE_TIME, enabled: !!user });
+  const patrimonioQuery = useQuery({ queryKey: QK.patrimonio, queryFn: fetchPatrimonio, staleTime: STALE_TIME, enabled: !!user });
 
   const accounts = accountsQuery.data ?? EMPTY_ACCOUNTS;
   const categories = categoriesQuery.data ?? EMPTY_CATEGORIES;
   const transactions = transactionsQuery.data ?? EMPTY_TRANSACTIONS;
-  const loading = accountsQuery.isPending || categoriesQuery.isPending || transactionsQuery.isPending;
+  const patrimonio = patrimonioQuery.data ?? EMPTY_PATRIMONIO;
+  const loading = accountsQuery.isPending || categoriesQuery.isPending || transactionsQuery.isPending || patrimonioQuery.isPending;
 
-  const loadError = accountsQuery.error ?? categoriesQuery.error ?? transactionsQuery.error;
+  const loadError = accountsQuery.error ?? categoriesQuery.error ?? transactionsQuery.error ?? patrimonioQuery.error;
   useEffect(() => {
     if (!loadError) return;
     console.error('Error loading data:', loadError);
@@ -61,12 +65,11 @@ export const useFinanceDataSupabase = () => {
     await Promise.all(keys.map(queryKey => queryClient.invalidateQueries({ queryKey })));
   };
 
-  const accountsWithBalances = useMemo(() => computeAccountBalances(accounts, transactions), [accounts, transactions]);
   const enrichedTransactions = useMemo(() => enrichTransactions(transactions, categories), [transactions, categories]);
 
   const dashboardMetrics = useMemo(
-    (): DashboardMetrics => computeDashboardMetrics(accountsWithBalances, enrichedTransactions, convertCurrency, config.currency),
-    [accountsWithBalances, enrichedTransactions, convertCurrency, config.currency]
+    (): DashboardMetrics => computeDashboardMetrics(accounts, enrichedTransactions, patrimonio, convertCurrency, config.currency),
+    [accounts, enrichedTransactions, patrimonio, convertCurrency, config.currency]
   );
 
   // CRUD operations para cuentas
@@ -379,7 +382,7 @@ export const useFinanceDataSupabase = () => {
         if (autoError) throw autoError;
       }
 
-      await invalidate(QK.transacciones);
+      await invalidate(QK.transacciones, QK.cuentas);
     } catch (error) {
       console.error('Error adding transaction:', error);
       toast({
@@ -427,7 +430,7 @@ export const useFinanceDataSupabase = () => {
     }
 
     // Los saldos se derivan en memoria de la caché de transacciones.
-    await invalidate(QK.transacciones);
+    await invalidate(QK.transacciones, QK.cuentas);
   };
 
   const updateTransaction = async (id: string, transaction: Partial<Transaction>, autoContribution?: { targetAccountId: string; targetAccountType: 'Aportación' | 'Retiro' }) => {
@@ -519,7 +522,7 @@ export const useFinanceDataSupabase = () => {
         }
       }
       
-      await invalidate(QK.transacciones);
+      await invalidate(QK.transacciones, QK.cuentas);
     } catch (error) {
       console.error('Error updating transaction:', error);
       toast({
@@ -539,7 +542,7 @@ export const useFinanceDataSupabase = () => {
 
       if (error) throw error;
 
-      await invalidate(QK.transacciones);
+      await invalidate(QK.transacciones, QK.cuentas);
     } catch (error) {
       console.error('Error deleting transaction:', error);
       toast({
@@ -565,7 +568,7 @@ export const useFinanceDataSupabase = () => {
 
       if (error) throw error;
 
-      await invalidate(QK.transacciones);
+      await invalidate(QK.transacciones, QK.cuentas);
     } catch (error) {
       console.error('Error clearing all transactions:', error);
       toast({
@@ -579,7 +582,8 @@ export const useFinanceDataSupabase = () => {
 
   return {
     // Data
-    accounts: accountsWithBalances,
+    accounts,
+    patrimonio,
     categories,
     transactions: enrichedTransactions,
     enrichedTransactions,

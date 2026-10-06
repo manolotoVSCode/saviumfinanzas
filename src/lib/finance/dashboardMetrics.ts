@@ -1,4 +1,5 @@
 import { Account, DashboardMetrics, Transaction, TransactionType } from '@/types/finance';
+import { computePatrimonio, PatrimonioFila } from './patrimonio';
 
 export type CurrencyCode = 'MXN' | 'USD' | 'EUR';
 export type ConvertCurrency = (amount: number, from: CurrencyCode, to: CurrencyCode) => number;
@@ -109,6 +110,7 @@ const generateRecommendations = (activos: any, pasivos: any, balanceMes: number,
 export const computeDashboardMetrics = (
   accountsWithBalances: Account[],
   enrichedTransactions: Transaction[],
+  patrimonio: PatrimonioFila[],
   convertCurrency: ConvertCurrency,
   currency: CurrencyCode,
   now: Date = new Date()
@@ -189,90 +191,9 @@ export const computeDashboardMetrics = (
     const variacionGastosAnual = gastosAnioAnterior > 0 ? ((gastosAnio - gastosAnioAnterior) / gastosAnioAnterior) * 100 : 0;
     const variacionBalanceAnual = balanceAnioAnterior !== 0 ? ((balanceAnio - balanceAnioAnterior) / Math.abs(balanceAnioAnterior)) * 100 : 0;
     
-    // ACTIVOS DETALLADOS POR MONEDA
-    // Para el dashboard, siempre usar saldoActual que refleja todas las transacciones
-    // valorMercado es solo informativo y puede estar desactualizado
-    const activosPorMoneda = {
-      MXN: {
-        efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && (a.divisa === 'MXN' || !a.divisa) && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && (a.divisa === 'MXN' || !a.divisa) && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-        empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && (a.divisa === 'MXN' || !a.divisa) && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-        bienRaiz: accountsWithBalances.filter(a => a.tipo === 'Bien Raíz' && (a.divisa === 'MXN' || !a.divisa) && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-      },
-      USD: {
-        efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && a.divisa === 'USD' && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'USD' && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-        empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && a.divisa === 'USD' && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-        bienRaiz: accountsWithBalances.filter(a => a.tipo === 'Bien Raíz' && a.divisa === 'USD' && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-      },
-      EUR: {
-        efectivoBancos: accountsWithBalances.filter(a => ['Efectivo', 'Banco', 'Ahorros'].includes(a.tipo) && a.divisa === 'EUR' && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-        inversiones: accountsWithBalances.filter(a => a.tipo === 'Inversiones' && a.divisa === 'EUR' && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-        empresasPrivadas: accountsWithBalances.filter(a => a.tipo === 'Empresa Propia' && a.divisa === 'EUR' && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-        bienRaiz: accountsWithBalances.filter(a => a.tipo === 'Bien Raíz' && a.divisa === 'EUR' && !a.vendida).reduce((s, a) => s + a.saldoActual, 0),
-      }
-    };
-    
-    // Calcular totales por moneda
-    Object.keys(activosPorMoneda).forEach(moneda => {
-      const activos = activosPorMoneda[moneda as keyof typeof activosPorMoneda];
-      (activos as any).total = activos.efectivoBancos + activos.inversiones + activos.empresasPrivadas + activos.bienRaiz;
-    });
-    
-    // Para compatibilidad con código existente - INCLUYENDO BIEN RAÍZ EN ACTIVOS
-    const activos = {
-      efectivoBancos: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
-        return total + convertCurrency(activos.efectivoBancos, moneda as any, currency);
-      }, 0),
-      inversiones: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
-        return total + convertCurrency(activos.inversiones, moneda as any, currency);
-      }, 0),
-      empresasPrivadas: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
-        return total + convertCurrency(activos.empresasPrivadas, moneda as any, currency);
-      }, 0),
-      bienRaiz: Object.entries(activosPorMoneda).reduce((total, [moneda, activos]) => {
-        return total + convertCurrency(activos.bienRaiz, moneda as any, currency);
-      }, 0),
-      total: 0
-    };
-    // TOTAL ACTIVOS = efectivo + inversiones + bienes raíces + empresas privadas
-    activos.total = activos.efectivoBancos + activos.inversiones + activos.bienRaiz + activos.empresasPrivadas;
-    
-    // PASIVOS DETALLADOS POR MONEDA
-    const pasivosPorMoneda = {
-      MXN: {
-        tarjetasCredito: accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
-        hipoteca: accountsWithBalances.filter(a => a.tipo === 'Hipoteca' && (a.divisa === 'MXN' || !a.divisa)).reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
-      },
-      USD: {
-        tarjetasCredito: accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito' && a.divisa === 'USD').reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
-        hipoteca: accountsWithBalances.filter(a => a.tipo === 'Hipoteca' && a.divisa === 'USD').reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
-      },
-      EUR: {
-        tarjetasCredito: accountsWithBalances.filter(a => a.tipo === 'Tarjeta de Crédito' && a.divisa === 'EUR').reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
-        hipoteca: accountsWithBalances.filter(a => a.tipo === 'Hipoteca' && a.divisa === 'EUR').reduce((s, a) => s + Math.abs(Math.min(0, a.saldoActual)), 0),
-      }
-    };
-    
-    // Calcular totales por moneda
-    Object.keys(pasivosPorMoneda).forEach(moneda => {
-      const pasivos = pasivosPorMoneda[moneda as keyof typeof pasivosPorMoneda];
-      (pasivos as any).total = pasivos.tarjetasCredito + pasivos.hipoteca;
-    });
-    
-    // Para compatibilidad con código existente - convertir a moneda configurada
-    const pasivos = {
-      tarjetasCredito: Object.entries(pasivosPorMoneda).reduce((total, [moneda, pasivos]) => {
-        return total + convertCurrency(pasivos.tarjetasCredito, moneda as any, currency);
-      }, 0),
-      hipoteca: Object.entries(pasivosPorMoneda).reduce((total, [moneda, pasivos]) => {
-        return total + convertCurrency(pasivos.hipoteca, moneda as any, currency);
-      }, 0),
-      total: 0
-    };
-    pasivos.total = pasivos.tarjetasCredito + pasivos.hipoteca;
-    
-    const patrimonioNeto = activos.total - pasivos.total;
+    // ACTIVOS, PASIVOS Y PATRIMONIO: reglas en la vista patrimonio_por_divisa (compartida con la app iOS)
+    const { activosPorMoneda, pasivosPorMoneda, activos, pasivos, patrimonioNeto } =
+      computePatrimonio(patrimonio, convertCurrency, currency);
     const patrimonioNetoAnterior = patrimonioNeto - balanceMes;
     const variacionPatrimonio = patrimonioNetoAnterior > 0 ? ((patrimonioNeto - patrimonioNetoAnterior) / patrimonioNetoAnterior) * 100 : 0;
     
