@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ConvertCurrency } from './dashboardMetrics';
-import { computePendingsSummary, isPendingOverdue, PendingForSummary } from './pendingsSummary';
+import { computePendingsSummary, filtrarPendientes, isPendingOverdue, PendingForSummary } from './pendingsSummary';
 
 // Tasas fijas para el test: 1 USD = 20 MXN, 1 EUR = 22 MXN
 const RATES = { MXN: 1, USD: 20, EUR: 22 };
@@ -68,5 +68,27 @@ describe('computePendingsSummary', () => {
   it('un pendiente con divisa desconocida se suma como si estuviera en la divisa elegida', () => {
     const r = computePendingsSummary([pending({ id: 'x', monto_esperado: 100, divisa: 'GBP' })], convert, 'MXN', NOW);
     expect(r.total).toBe(100);
+  });
+});
+
+describe('filtrarPendientes', () => {
+  const now = new Date(2026, 8, 15, 12, 0);
+  const lista = [
+    { ...pending({ id: 'hoy', fecha_esperada: '2026-09-15' }), tipo: 'reembolso_gasto' },
+    { ...pending({ id: 'ayer', fecha_esperada: '2026-09-14' }), tipo: 'ingreso_esperado' },
+    { ...pending({ id: 'cobrado', fecha_esperada: '2026-09-01', estado: 'cobrado' }), tipo: 'ingreso_esperado' },
+    { ...pending({ id: 'cancelado', estado: 'cancelado' }), tipo: 'reembolso_gasto' },
+  ];
+  const ids = (f: Parameters<typeof filtrarPendientes>[1]) => filtrarPendientes(lista, f, now).map((p) => p.id);
+
+  it('vencidos usa la fecha local: lo que vence hoy no entra, lo de ayer sí', () => {
+    expect(ids('vencidos')).toEqual(['ayer']);
+  });
+  it('todos y por tipo solo muestran activos; cobrados y cancelados por estado', () => {
+    expect(ids('todos')).toEqual(['hoy', 'ayer']);
+    expect(ids('reembolso_gasto')).toEqual(['hoy']);
+    expect(ids('ingreso_esperado')).toEqual(['ayer']);
+    expect(ids('cobrados')).toEqual(['cobrado']);
+    expect(ids('cancelados')).toEqual(['cancelado']);
   });
 });

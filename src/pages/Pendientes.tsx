@@ -31,8 +31,9 @@ import { usePendings, Pending, PendingTipo } from '@/hooks/usePendings';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { formatNumber } from '@/lib/formatters';
+import { filtrarPendientes, FiltroPendientes, isPendingActive, isPendingOverdue } from '@/lib/finance/pendingsSummary';
 
-type Filter = 'todos' | 'reembolso_gasto' | 'ingreso_esperado' | 'vencidos' | 'cobrados' | 'cancelados';
+type Filter = FiltroPendientes;
 
 const Pendientes = () => {
   const { pendings, loading, addPending, updatePending, deletePending, markAsPaid, totalPendientePorCobrar, overdueCount } = usePendings();
@@ -45,25 +46,7 @@ const Pendientes = () => {
   const [deleting, setDeleting] = useState<Pending | null>(null);
   const [filter, setFilter] = useState<Filter>('todos');
 
-  const filtered = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    return pendings.filter(p => {
-      switch (filter) {
-        case 'todos':
-          return p.estado === 'pendiente' || p.estado === 'cobrado_parcial';
-        case 'reembolso_gasto':
-        case 'ingreso_esperado':
-          return p.tipo === filter && (p.estado === 'pendiente' || p.estado === 'cobrado_parcial');
-        case 'vencidos':
-          return (p.estado === 'pendiente' || p.estado === 'cobrado_parcial')
-            && p.fecha_esperada && new Date(p.fecha_esperada) < today;
-        case 'cobrados':
-          return p.estado === 'cobrado';
-        case 'cancelados':
-          return p.estado === 'cancelado';
-      }
-    });
-  }, [pendings, filter]);
+  const filtered = useMemo(() => filtrarPendientes(pendings, filter), [pendings, filter]);
 
   return (
     <Layout>
@@ -128,8 +111,7 @@ const Pendientes = () => {
                       </TableHeader>
                       <TableBody>
                         {filtered.map((p) => {
-                          const isOverdue = p.fecha_esperada && new Date(p.fecha_esperada) < new Date()
-                            && (p.estado === 'pendiente' || p.estado === 'cobrado_parcial');
+                          const isOverdue = isPendingActive(p) && isPendingOverdue(p, new Date());
                           const restante = p.monto_esperado - (p.monto_cobrado ?? 0);
                           return (
                             <TableRow key={p.id}>

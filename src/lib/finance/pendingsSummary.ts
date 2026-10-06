@@ -35,6 +35,30 @@ export const isPendingOverdue = (p: { fecha_esperada: string | null }, now: Date
   return !!p.fecha_esperada && parseFechaLocal(p.fecha_esperada) < today;
 };
 
+export type FiltroPendientes = 'todos' | 'reembolso_gasto' | 'ingreso_esperado' | 'vencidos' | 'cobrados' | 'cancelados';
+
+/** Filtro de la página Pendientes, con la misma regla de vencido que el badge y el resumen. */
+export const filtrarPendientes = <T extends { estado: string; tipo: string; fecha_esperada: string | null }>(
+  pendings: T[],
+  filtro: FiltroPendientes,
+  now: Date = new Date(),
+): T[] =>
+  pendings.filter((p) => {
+    switch (filtro) {
+      case 'todos':
+        return isPendingActive(p);
+      case 'reembolso_gasto':
+      case 'ingreso_esperado':
+        return p.tipo === filtro && isPendingActive(p);
+      case 'vencidos':
+        return isPendingActive(p) && isPendingOverdue(p, now);
+      case 'cobrados':
+        return p.estado === 'cobrado';
+      case 'cancelados':
+        return p.estado === 'cancelado';
+    }
+  });
+
 export const computePendingsSummary = <T extends PendingForSummary>(
   pendings: T[],
   convertCurrency: ConvertCurrency,
