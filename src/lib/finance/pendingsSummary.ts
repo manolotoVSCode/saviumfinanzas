@@ -1,5 +1,6 @@
 import { ConvertCurrency, CurrencyCode } from './dashboardMetrics';
 import { toCurrencyCode } from './currency';
+import { parseFechaLocal } from './fechas';
 
 export interface PendingForSummary {
   id: string;
@@ -28,11 +29,10 @@ export interface PendingsSummary<T extends PendingForSummary> {
 export const isPendingActive = (p: { estado: string }): boolean =>
   p.estado === 'pendiente' || p.estado === 'cobrado_parcial';
 
-/** Misma regla que usePendings.overdueCount: fecha_esperada < hoy a las 00:00 local. */
+/** Vencido: fecha_esperada (día local) anterior a hoy. Lo que vence hoy aún no está vencido. */
 export const isPendingOverdue = (p: { fecha_esperada: string | null }, now: Date): boolean => {
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  return !!p.fecha_esperada && new Date(p.fecha_esperada) < today;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return !!p.fecha_esperada && parseFechaLocal(p.fecha_esperada) < today;
 };
 
 export const computePendingsSummary = <T extends PendingForSummary>(

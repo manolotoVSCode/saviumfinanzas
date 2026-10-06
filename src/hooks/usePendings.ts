@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
+import { isPendingActive, isPendingOverdue } from '@/lib/finance/pendingsSummary';
 
 export type PendingTipo = 'reembolso_gasto' | 'ingreso_esperado';
 export type PendingEstado = 'pendiente' | 'cobrado_parcial' | 'cobrado' | 'cancelado';
@@ -146,13 +147,8 @@ export const usePendings = () => {
   };
 
   const overdueCount = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return pendings.filter(p =>
-      (p.estado === 'pendiente' || p.estado === 'cobrado_parcial') &&
-      p.fecha_esperada &&
-      new Date(p.fecha_esperada) < today
-    ).length;
+    const now = new Date();
+    return pendings.filter((p) => isPendingActive(p) && isPendingOverdue(p, now)).length;
   }, [pendings]);
 
   const activeCount = useMemo(

@@ -21,6 +21,12 @@ describe('isPendingOverdue', () => {
     expect(isPendingOverdue(pending({ fecha_esperada: '2026-09-20' }), NOW)).toBe(false);
     expect(isPendingOverdue(pending({ fecha_esperada: null }), NOW)).toBe(false);
   });
+
+  it('lo que vence hoy no está vencido; lo de ayer sí (fecha local, no UTC)', () => {
+    const now = new Date(2026, 8, 15, 12, 0);
+    expect(isPendingOverdue(pending({ fecha_esperada: '2026-09-15' }), now)).toBe(false);
+    expect(isPendingOverdue(pending({ fecha_esperada: '2026-09-14' }), now)).toBe(true);
+  });
 });
 
 describe('computePendingsSummary', () => {

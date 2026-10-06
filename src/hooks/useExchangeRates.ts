@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { EXCHANGE_RATES_KEY, STALE_TIME } from '@/lib/finance/queryKeys';
+import { convertWithRates } from '@/lib/finance/currency';
 
 export interface ExchangeRates {
   USD: number;
@@ -45,11 +46,8 @@ export const useExchangeRates = () => {
   const rates = query.data ?? DEFAULT_RATES;
 
   const convertCurrency = useCallback(
-    (amount: number, fromCurrency: 'MXN' | 'USD' | 'EUR', toCurrency: 'MXN' | 'USD' | 'EUR'): number => {
-      if (fromCurrency === toCurrency) return amount;
-      const amountInMXN = fromCurrency !== 'MXN' ? amount * rates[fromCurrency] : amount;
-      return toCurrency === 'MXN' ? amountInMXN : amountInMXN / rates[toCurrency];
-    },
+    (amount: number, fromCurrency: 'MXN' | 'USD' | 'EUR', toCurrency: 'MXN' | 'USD' | 'EUR'): number =>
+      convertWithRates(amount, fromCurrency, toCurrency, rates),
     [rates]
   );
 
