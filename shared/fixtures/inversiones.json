@@ -1,0 +1,25 @@
+{
+  "tasas": { "MXN": 1, "USD": 20, "EUR": 22 },
+  "moneda": "MXN",
+  "inversiones": [
+    { "id": "i1", "nombre": "Fondo", "moneda": "MXN", "monto_invertido": 1000, "valor_actual": 0, "activa": true, "cuenta_id": null },
+    { "id": "i2", "nombre": "Bono", "moneda": "USD", "monto_invertido": 500, "valor_actual": 0, "activa": true, "cuenta_id": "c1" },
+    { "id": "i3", "nombre": "Vieja", "moneda": "EUR", "monto_invertido": 100, "valor_actual": 150, "activa": false, "cuenta_id": null },
+    { "id": "i4", "nombre": "Sin capital", "moneda": "MXN", "monto_invertido": 0, "valor_actual": 0, "activa": true, "cuenta_id": null }
+  ],
+  "valuaciones": [
+    { "inversion_id": "i1", "fecha": "2026-06-01", "valor": 1200 },
+    { "inversion_id": "i1", "fecha": "2026-01-01", "valor": 1000 },
+    { "inversion_id": "i4", "fecha": "2026-02-01", "valor": 300 }
+  ],
+  "saldosCuenta": { "c1": 600 },
+  "esperado": {
+    "porInversion": {
+      "i1": { "valor": 1200, "invertido": 1000, "delta": 200, "pct": 20 },
+      "i2": { "valor": 600, "invertido": 500, "delta": 100, "pct": 20 },
+      "i3": { "valor": 150, "invertido": 100, "delta": 50, "pct": 50 },
+      "i4": { "valor": 300, "invertido": 300, "delta": 0, "pct": 0 }
+    },
+    "totales": { "invertido": 11000, "valor": 13500 }
+  }
+}

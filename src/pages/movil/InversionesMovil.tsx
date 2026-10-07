@@ -3,8 +3,7 @@ import { TrendingDown, TrendingUp } from 'lucide-react';
 import { useInvestments } from '@/hooks/useInvestments';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useMobileCurrency } from '@/contexts/MobileCurrencyContext';
-import { investmentReturn } from '@/lib/finance/investmentReturn';
-import { toCurrencyCode } from '@/lib/finance/currency';
+import { investmentReturn, totalesInversiones } from '@/lib/finance/investmentReturn';
 import { formatNumber } from '@/lib/formatters';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,18 +18,7 @@ const InversionesMovil = () => {
   const activas = useMemo(() => investments.filter((i) => i.activa !== false), [investments]);
 
   // Misma regla que el escritorio (toPref), pero hacia la divisa elegida en móvil
-  const totals = useMemo(() => {
-    const toElegida = (amount: number, divisa: string) =>
-      divisa === currency ? amount : convertCurrency(amount, toCurrencyCode(divisa, currency), currency);
-    return activas.reduce(
-      (acc, i) => {
-        acc.invertido += toElegida(i.monto_invertido || 0, i.moneda);
-        acc.valor += toElegida(i.valor_actual || i.monto_invertido || 0, i.moneda);
-        return acc;
-      },
-      { invertido: 0, valor: 0 },
-    );
-  }, [activas, currency, convertCurrency]);
+  const totals = useMemo(() => totalesInversiones(activas, convertCurrency, currency), [activas, convertCurrency, currency]);
   const rendimiento = totals.valor - totals.invertido;
   const rendimientoPct = totals.invertido ? (rendimiento / totals.invertido) * 100 : 0;
 

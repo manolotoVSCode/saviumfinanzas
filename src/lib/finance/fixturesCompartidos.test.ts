@@ -5,11 +5,14 @@ import vencidos from '../../../shared/fixtures/vencidos.json';
 import suscripciones from '../../../shared/fixtures/suscripciones.json';
 import mesAnterior from '../../../shared/fixtures/mes_anterior.json';
 import cxp from '../../../shared/fixtures/cxp.json';
+import inversiones from '../../../shared/fixtures/inversiones.json';
 import { convertWithRates, Tasas } from './currency';
 import { ConvertCurrency, CurrencyCode, computeDashboardMetrics } from './dashboardMetrics';
 import { computePendingsSummary, PendingForSummary } from './pendingsSummary';
 import { computeSubscriptionsSummary, estadoSuscripcion } from './subscriptionsSummary';
 import { computeCxP, CxPSubscription } from './cxp';
+import { investmentReturn, totalesInversiones, valorActualInversion } from './investmentReturn';
+import type { Investment, InvestmentValuation } from '@/types/investments';
 
 // Contrato con la app iOS: ver shared/fixtures/README.md.
 const TOL = 6; // decimales de tolerancia (1e-6)
@@ -112,5 +115,29 @@ describe('fixtures compartidos · por pagar', () => {
       expect(rows.map((r) => ({ id: r.id, concepto: r.concepto, tipo: r.tipo, monto: r.monto, divisa: r.divisa, fecha: dia(r.fechaEstimada), detalle: r.detalle })))
         .toEqual((caso.esperado ?? []).map((e) => ({ ...e, monto: expect.closeTo(e.monto, TOL) })));
     });
+  });
+});
+
+describe('fixtures compartidos · inversiones', () => {
+  const saldos = inversiones.saldosCuenta as Record<string, number>;
+  const conValor = inversiones.inversiones.map((i) => ({
+    ...i,
+    valor_actual: valorActualInversion(i, inversiones.valuaciones, i.cuenta_id ? saldos[i.cuenta_id] : undefined),
+    saldo_cuenta: i.cuenta_id ? saldos[i.cuenta_id] : null,
+  }));
+  conValor.forEach((i) => {
+    it(`rendimiento de ${i.id}`, () => {
+      const esperado = (inversiones.esperado.porInversion as Record<string, { valor: number; invertido: number; delta: number; pct: number }>)[i.id];
+      const r = investmentReturn(i as unknown as Investment, inversiones.valuaciones as unknown as InvestmentValuation[]);
+      expect(r.valor).toBeCloseTo(esperado.valor, TOL);
+      expect(r.invertido).toBeCloseTo(esperado.invertido, TOL);
+      expect(r.delta).toBeCloseTo(esperado.delta, TOL);
+      expect(r.pct).toBeCloseTo(esperado.pct, TOL);
+    });
+  });
+  it('totales de las activas', () => {
+    const r = totalesInversiones(conValor, convertir(inversiones.tasas), inversiones.moneda as CurrencyCode);
+    expect(r.invertido).toBeCloseTo(inversiones.esperado.totales.invertido, TOL);
+    expect(r.valor).toBeCloseTo(inversiones.esperado.totales.valor, TOL);
   });
 });

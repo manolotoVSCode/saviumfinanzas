@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 import { Investment, InvestmentPayout, InvestmentValuation } from '@/types/investments';
+import { valorActualInversion } from '@/lib/finance/investmentReturn';
 
 interface InvestmentsData {
   investments: Investment[];
@@ -63,14 +64,8 @@ export const useInvestments = () => {
     const raw = query.data?.investments ?? EMPTY_INVESTMENTS;
     const saldoPorCuenta = new Map(accounts.map((a) => [a.id, a.saldoActual]));
     return raw.map((i) => {
-      const lastVal = valuations
-        .filter((v) => v.inversion_id === i.id)
-        .sort((a, b) => a.fecha.localeCompare(b.fecha))
-        .slice(-1)[0];
       const saldoCuenta = i.cuenta_id ? saldoPorCuenta.get(i.cuenta_id) : undefined;
-      const valor =
-        lastVal?.valor ??
-        (saldoCuenta !== undefined ? saldoCuenta : i.valor_actual || i.monto_invertido || 0);
+      const valor = valorActualInversion(i, valuations, saldoCuenta);
       return { ...i, saldo_cuenta: saldoCuenta ?? null, valor_actual: valor } as Investment;
     });
   }, [query.data, accounts, valuations]);

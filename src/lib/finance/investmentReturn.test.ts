@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Investment, InvestmentValuation } from '@/types/investments';
-import { investmentReturn } from './investmentReturn';
+import { investmentReturn, totalesInversiones, valorActualInversion } from './investmentReturn';
 
 const inv = (over: Partial<Investment>): Investment => ({
   id: 'i1', user_id: 'u', nombre: 'Cetes', tipo: 'Renta fija', tipo_id: null,
@@ -67,5 +67,37 @@ describe('investmentReturn', () => {
     const r = investmentReturn(inv({ monto_invertido: 0, valor_actual: 0 }), []);
     expect(r.pct).toBe(0);
     expect(r.valor).toBe(0);
+  });
+});
+
+describe('valorActualInversion', () => {
+  const inv = { id: 'i1', valor_actual: 50, monto_invertido: 40 };
+  it('usa la última valuación por fecha', () => {
+    const vals = [
+      { inversion_id: 'i1', fecha: '2026-06-01', valor: 1200 },
+      { inversion_id: 'i1', fecha: '2026-01-01', valor: 1000 },
+      { inversion_id: 'otra', fecha: '2026-09-01', valor: 9 },
+    ];
+    expect(valorActualInversion(inv, vals, 777)).toBe(1200);
+  });
+  it('sin valuaciones usa el saldo de la cuenta vinculada', () => {
+    expect(valorActualInversion(inv, [], 600)).toBe(600);
+  });
+  it('sin valuaciones ni cuenta usa valor_actual y luego monto_invertido', () => {
+    expect(valorActualInversion(inv, [], undefined)).toBe(50);
+    expect(valorActualInversion({ ...inv, valor_actual: 0 }, [], undefined)).toBe(40);
+  });
+});
+
+describe('totalesInversiones', () => {
+  const RATES = { MXN: 1, USD: 20, EUR: 22 };
+  const convert = (a: number, f: 'MXN' | 'USD' | 'EUR', t: 'MXN' | 'USD' | 'EUR') => (f === t ? a : (a * RATES[f]) / RATES[t]);
+  it('suma solo las activas, convertidas', () => {
+    const r = totalesInversiones([
+      { activa: true, moneda: 'MXN', monto_invertido: 1000, valor_actual: 1200 },
+      { moneda: 'USD', monto_invertido: 500, valor_actual: 600 },
+      { activa: false, moneda: 'EUR', monto_invertido: 100, valor_actual: 150 },
+    ], convert, 'MXN');
+    expect(r).toEqual({ invertido: 11000, valor: 13200 });
   });
 });

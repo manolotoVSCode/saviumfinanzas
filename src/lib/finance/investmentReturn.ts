@@ -1,4 +1,6 @@
 import { Investment, InvestmentValuation } from '@/types/investments';
+import type { ConvertCurrency, CurrencyCode } from './dashboardMetrics';
+import { toCurrencyCode } from './currency';
 
 export interface InvestmentReturn {
   /** Capital de referencia: monto_invertido, si no la primera valuación, si no el saldo de la cuenta vinculada. */
@@ -30,3 +32,35 @@ export const investmentReturn = (inv: Investment, valuations: InvestmentValuatio
   const pct = base ? (delta / base) * 100 : 0;
   return { invertido, valor, delta, pct, ultima };
 };
+
+/** Valor actual: última valuación; si no hay, saldo de la cuenta vinculada; si no, valor_actual o monto_invertido. */
+export const valorActualInversion = (
+  inv: { id: string; valor_actual: number; monto_invertido: number },
+  valuations: { inversion_id: string; fecha: string; valor: number }[],
+  saldoCuenta: number | undefined,
+): number => {
+  const ultima = valuations
+    .filter((v) => v.inversion_id === inv.id)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .slice(-1)[0];
+  return ultima?.valor ?? (saldoCuenta !== undefined ? saldoCuenta : inv.valor_actual || inv.monto_invertido || 0);
+};
+
+/** Invertido y valor de las inversiones activas, convertidos a `currency` (como InversionesMovil). */
+export const totalesInversiones = (
+  invs: { activa?: boolean; moneda: string; monto_invertido: number; valor_actual: number }[],
+  convertCurrency: ConvertCurrency,
+  currency: CurrencyCode,
+): { invertido: number; valor: number } =>
+  invs
+    .filter((i) => i.activa !== false)
+    .reduce(
+      (acc, i) => {
+        const de = toCurrencyCode(i.moneda, currency);
+        acc.invertido += de === currency ? i.monto_invertido || 0 : convertCurrency(i.monto_invertido || 0, de, currency);
+        const valor = i.valor_actual || i.monto_invertido || 0;
+        acc.valor += de === currency ? valor : convertCurrency(valor, de, currency);
+        return acc;
+      },
+      { invertido: 0, valor: 0 },
+    );
