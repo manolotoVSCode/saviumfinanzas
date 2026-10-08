@@ -8,6 +8,7 @@ struct SaviumApp: App {
     @State private var datos = DatosStore()
     @State private var movimientos = MovimientosStore()
 
+
     var body: some Scene {
         WindowGroup {
             RaizView()
