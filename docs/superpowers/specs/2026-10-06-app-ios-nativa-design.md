@@ -22,8 +22,7 @@ pesado (importar, reglas, informes, configuración, categorías) se queda solo e
 
 ## Fuera de alcance (fase 1)
 
-Widgets; alertas de la web (las sustituye la sección «Atención»); editar o borrar
-transacciones; aportación automática y traspasos entre cuentas; marcar pendientes como
+Widgets; alertas de la web (las sustituye la sección «Atención»); editar transacciones (borrar se añadió el 2026-10-08: deslizar en Movimientos, con confirmación); aportación automática y traspasos entre cuentas; marcar pendientes como
 cobrados o pagados; actualizar valoraciones; caché en disco y guardado sin conexión;
 crear cuentas de usuario; iPad y Mac; cambiar qué entra en el patrimonio.
 

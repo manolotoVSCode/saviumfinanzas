@@ -5,6 +5,8 @@ struct MovimientosView: View {
     @Environment(MovimientosStore.self) private var store
     @Environment(DatosStore.self) private var datos
     @State private var apuntando = false
+    @State private var aBorrar: Transaccion?
+    @Environment(AppModel.self) private var app
 
     var body: some View {
         @Bindable var store = store
@@ -15,6 +17,9 @@ struct MovimientosView: View {
                     ForEach(grupo.movimientos) { t in
                         NavigationLink { DetalleMovimientoView(t: t) } label: { FilaMovimiento(t: t) }
                             .onAppear { if t.id == store.filas.last?.id { Task { await store.cargarMas() } } }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button("Borrar", systemImage: "trash", role: .destructive) { aBorrar = t }
+                            }
                     }
                 }
             }
@@ -45,6 +50,21 @@ struct MovimientosView: View {
         .overlay(alignment: .bottomTrailing) { BotonNuevo { apuntando = true } }
         .sheet(isPresented: $apuntando) { NuevoMovimientoView() }
         .contentMargins(.bottom, 80, for: .scrollContent)
+        .confirmationDialog(textoConfirmacion, isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }),
+                            titleVisibility: .visible, presenting: aBorrar) { t in
+            Button("Borrar", role: .destructive) {
+                Task { if await store.borrar(t) { await datos.cargar(app: app) } }
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: { _ in
+            Text("No se puede deshacer.")
+        }
+    }
+
+    private var textoConfirmacion: String {
+        guard let t = aBorrar else { return "" }
+        let dia = Fechas.diaLocal(t.fecha, calendario: .current)?.formatted(.dateTime.day().month().locale(Locale(identifier: "es_MX"))) ?? t.fecha
+        return "¿Borrar «\(t.comentario.isEmpty ? "Sin comentario" : t.comentario)» (\(Formato.importe(t.importe, t.divisa)), \(dia))?"
     }
 
     private func titulo(_ dia: String) -> String {

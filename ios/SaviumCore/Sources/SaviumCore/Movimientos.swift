@@ -10,6 +10,20 @@ public enum Movimientos {
         return grupos
     }
 
+    /// Borrado optimista: la lista sin la fila y dónde estaba, para reponerla si el borrado falla.
+    public static func quitar(_ id: String, de filas: [Transaccion]) -> (filas: [Transaccion], quitada: (indice: Int, transaccion: Transaccion)?) {
+        guard let i = filas.firstIndex(where: { $0.id == id }) else { return (filas, nil) }
+        var resto = filas
+        let t = resto.remove(at: i)
+        return (resto, (i, t))
+    }
+
+    public static func reponer(_ quitada: (indice: Int, transaccion: Transaccion), en filas: [Transaccion]) -> [Transaccion] {
+        var resultado = filas
+        resultado.insert(quitada.transaccion, at: min(quitada.indice, resultado.count))
+        return resultado
+    }
+
     /// Subcategorías más usadas en `txs` (las más recientes primero si empatan).
     public static func frecuentes(_ txs: [Transaccion], limite: Int) -> [String] {
         var cuenta: [String: (n: Int, ultima: String)] = [:]

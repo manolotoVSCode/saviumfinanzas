@@ -53,4 +53,14 @@ struct MovimientosTests {
         let json = try #require(String(data: JSONEncoder().encode(a), encoding: .utf8))
         #expect(json.contains("\"id\":\"\(a.id)\""))
     }
+
+    @Test("borrar: se quita al momento y, si falla, vuelve a su sitio")
+    func quitarYReponer() {
+        let txs = [Transaccion(id: "a", fecha: "2026-10-08"), Transaccion(id: "b", fecha: "2026-10-08"), Transaccion(id: "c", fecha: "2026-10-07")]
+        let q = Movimientos.quitar("b", de: txs)
+        #expect(q.filas.map(\.id) == ["a", "c"])
+        let quitada = try! #require(q.quitada)
+        #expect(Movimientos.reponer(quitada, en: q.filas).map(\.id) == ["a", "b", "c"])
+        #expect(Movimientos.quitar("x", de: txs).quitada == nil)
+    }
 }

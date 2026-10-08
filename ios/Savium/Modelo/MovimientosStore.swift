@@ -14,6 +14,21 @@ final class MovimientosStore {
     private var pagina = 0
     private var consulta = 0   // descarta respuestas de una búsqueda anterior
 
+    /// Quita la fila al momento; si el borrado falla, la repone y devuelve false.
+    func borrar(_ t: Transaccion) async -> Bool {
+        let q = Movimientos.quitar(t.id, de: filas)
+        guard let quitada = q.quitada else { return false }
+        filas = q.filas
+        do {
+            try await repo.borrar(id: t.id)
+            return true
+        } catch {
+            filas = Movimientos.reponer(quitada, en: filas)
+            self.error = "No se pudo borrar. Revisa la conexión y vuelve a intentarlo."
+            return false
+        }
+    }
+
     /// Al cerrar sesión.
     func reiniciar() {
         consulta += 1

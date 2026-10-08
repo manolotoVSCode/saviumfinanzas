@@ -79,6 +79,11 @@ struct Repositorio: Sendable {
         }
     }
 
+    /// Borra una transacción por id (las RLS solo dejan borrar las del usuario).
+    func borrar(id: String) async throws {
+        try await db.from("transacciones").delete().eq("id", value: id).execute()
+    }
+
     private func todas(_ pagina: (Int, Int) async throws -> [Transaccion]) async throws -> [Transaccion] {
         var todas: [Transaccion] = []
         var desde = 0

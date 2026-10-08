@@ -23,7 +23,7 @@
 - iOS mínimo **26.0**. Única dependencia externa de la app: `supabase-swift` (`https://github.com/supabase/supabase-swift`, `from: "2.0.0"`). XcodeGen es herramienta de desarrollo, no dependencia (ya instalado en `/opt/homebrew/bin/xcodegen`).
 - Bundle ID `com.manoloto.savium`; nombre visible **Savium**; color de acento **#239005** (el trazo de `public/favicon.svg`).
 - Todo texto de UI, nombre nuevo y commit, en **español**. Commits por tema terminados en `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. **Nunca `git push`.**
-- La app **no** escribe en ninguna tabla salvo `transacciones` (insertar). No toca `subscription_services` ni `transaction_pendings`.
+- La app **no** escribe en ninguna tabla salvo `transacciones` (insertar; y borrar desde Movimientos, añadido el 2026-10-08). No toca `subscription_services` ni `transaction_pendings`.
 - No se guardan datos financieros en disco. Solo en `UserDefaults`: la divisa elegida y la última cuenta usada.
 - Nunca introduzcas la contraseña real del usuario. Para ver la app con datos reales, el usuario inicia sesión él mismo en el panel del simulador.
 - Zona horaria: la app usa `Calendar.current`. Los tests de `SaviumCore` usan un calendario gregoriano con `America/Mexico_City`.
