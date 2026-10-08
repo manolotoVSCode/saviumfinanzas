@@ -6,8 +6,8 @@ import { posiblesDuplicados } from './posiblesDuplicados';
 const tx = (id: string, iso: string, monto: number, cuentaId = 'hsbc') => ({
   id, cuentaId, fecha: parseFechaLocal(iso), monto, comentario: id,
 });
-const fila = (id: string, y: number, m: number, d: number, monto: number, esGasto = true) => ({
-  id, fecha: new Date(y, m - 1, d), monto, esGasto, esReembolso: false,
+const fila = (id: string, y: number, m: number, d: number, monto: number, esGasto = true, descripcion = '') => ({
+  id, fecha: new Date(y, m - 1, d), monto, esGasto, esReembolso: false, descripcion,
 });
 
 describe('posibles duplicados al importar', () => {
@@ -42,6 +42,19 @@ describe('posibles duplicados al importar', () => {
   it('prefiere el existente de fecha más cercana', () => {
     const existentes = [tx('lejos', '2026-08-29', -100), tx('cerca', '2026-08-31', -100)];
     expect(posiblesDuplicados([fila('f', 2026, 8, 31, 100)], existentes, 'hsbc').get('f')?.id).toBe('cerca');
+  });
+
+  it('un cargo recurrente con el mismo texto del banco a 1-2 días no es duplicado (casetas de AMEX)', () => {
+    const caseta = 'PASE D ISRA O -PALMAS P MIGUEL HIDALGO';
+    const existentes = [tx(caseta, '2026-09-05', -20.97, 'amex')];
+    const filas = [fila('6sep', 2026, 9, 6, 20.97, true, caseta), fila('7sep', 2026, 9, 7, 20.97, true, caseta)];
+    expect(posiblesDuplicados(filas, existentes, 'amex').size).toBe(0);
+  });
+
+  it('la misma línea del banco el mismo día sí es duplicado (estados que se solapan)', () => {
+    const caseta = 'PASE D ISRA O -PALMAS P MIGUEL HIDALGO';
+    const r = posiblesDuplicados([fila('f', 2026, 9, 5, 20.97, true, '  pase d isra o -palmas p  miguel hidalgo ')], [tx(caseta, '2026-09-05', -20.97, 'amex')], 'amex');
+    expect(r.get('f')?.id).toBe(caseta);
   });
 
   it('tolera redondeo de centavos', () => {

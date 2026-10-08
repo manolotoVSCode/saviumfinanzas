@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '8.5',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Upload className="h-4 w-4" />, text: 'Al importar, un cargo que se repite casi a diario con el mismo texto (las casetas de AMEX) ya no se marca como "¿Duplicado?" por parecerse al del día anterior: con el mismo texto del banco solo es duplicado si también coincide el día', type: 'fix' },
+    ],
+  },
+  {
     version: '8.4',
     date: 'Octubre 2026',
     changes: [
