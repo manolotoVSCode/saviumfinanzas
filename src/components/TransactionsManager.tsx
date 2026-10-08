@@ -52,6 +52,12 @@ export const TransactionsManager = ({
     return m;
   }, [pendings]);
 
+  // Cuentas con al menos un movimiento, para el filtro
+  const accountsWithTransactions = useMemo(() => {
+    const ids = new Set(transactions.map(t => t.cuentaId));
+    return accounts.filter(a => ids.has(a.id));
+  }, [accounts, transactions]);
+
   const handleCreatePendingFromTx = async (tx: Transaction) => {
     const monto = tx.gasto || tx.ingreso || 0;
     if (monto <= 0) return;
@@ -1296,7 +1302,7 @@ export const TransactionsManager = ({
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   <SelectItem value="all">Todas las cuentas</SelectItem>
-                  {accounts.map((account) => (
+                  {accountsWithTransactions.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
                       {account.nombre}
                     </SelectItem>
