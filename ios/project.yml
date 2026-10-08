@@ -1,0 +1,34 @@
+name: Savium
+options:
+  bundleIdPrefix: com.manoloto
+  deploymentTarget:
+    iOS: "26.0"
+  developmentLanguage: es
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: "2.0.0"
+  SaviumCore:
+    path: SaviumCore
+targets:
+  Savium:
+    type: application
+    platform: iOS
+    sources: [Savium]
+    dependencies:
+      - package: Supabase
+      - package: SaviumCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.manoloto.savium
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Savium
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Savium usa Face ID para proteger tus datos financieros."
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "6.0"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
