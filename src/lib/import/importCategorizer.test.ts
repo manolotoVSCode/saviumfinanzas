@@ -7,7 +7,7 @@ const tx = (over: Partial<Transaction>): Transaction => ({
   monto: -100, subcategoriaId: 'transporte', divisa: 'MXN', ...over,
 });
 const sinReglas = () => null;
-const regla = (id: string) => () => ({ category_id: id, name: 'Netflix', keyword: 'netflix' });
+const regla = (id: string) => () => ({ category_id: id, name: 'Netflix', keyword: 'netflix', acotada: false });
 
 describe('normalizeDescription / partialKey', () => {
   it('normaliza y calcula la clave parcial solo con ≥2 palabras y ≥8 caracteres', () => {
@@ -49,6 +49,17 @@ describe('suggestCategory', () => {
     const h = buildHistoryIndex([tx({ comentario: 'NETFLIX.COM', subcategoriaId: 'ocio' }), tx({ id: '2', comentario: 'NETFLIX.COM', subcategoriaId: 'ocio' })]);
     expect(suggestCategory('NETFLIX.COM', 199, 'a1', h, regla('streaming'))).toEqual({
       categoriaId: 'ocio', source: 'historial', detail: 'Historial · 2 movimientos', confidence: 'alta',
+    });
+  });
+
+  it('una regla acotada por monto gana al historial exacto (Amazon 99 → Suscripción)', () => {
+    const h = buildHistoryIndex([
+      tx({ id: '1', comentario: 'AMAZON MX*AMAZON RETAIL', subcategoriaId: 'amazon' }),
+      tx({ id: '2', comentario: 'AMAZON MX*AMAZON RETAIL', subcategoriaId: 'amazon' }),
+    ]);
+    const acotada = () => ({ category_id: 'suscripciones', name: 'Amazon Suscripción', keyword: 'amazon', acotada: true });
+    expect(suggestCategory('AMAZON MX*AMAZON RETAIL', 99, 'a1', h, acotada)).toEqual({
+      categoriaId: 'suscripciones', source: 'regla', detail: 'Regla · Amazon Suscripción', confidence: 'alta',
     });
   });
 

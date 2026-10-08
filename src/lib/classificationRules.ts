@@ -101,6 +101,8 @@ export interface RuleMatch {
   name: string | null;
   /** Primera palabra clave de la lista de la regla que coincidió. */
   keyword: string;
+  /** Acota por monto o por cuenta: es un reparto deliberado y gana al historial. */
+  acotada: boolean;
 }
 
 /**
@@ -130,7 +132,12 @@ export const findMatchingRuleDetailed = (
     // If rule has amount filters but no amount provided, skip this rule
     if ((rule.amount_min !== null || rule.amount_max !== null) && amount === undefined) continue;
 
-    return { category_id: rule.category_id, name: rule.name, keyword: parseKeyword(keyword).texto };
+    return {
+      category_id: rule.category_id,
+      name: rule.name,
+      keyword: parseKeyword(keyword).texto,
+      acotada: rule.amount_min !== null || rule.amount_max !== null || rule.cuenta_id !== null,
+    };
   }
   return null;
 };

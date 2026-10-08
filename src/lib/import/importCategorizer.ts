@@ -82,7 +82,12 @@ export const buildHistoryIndex = (transactions: Transaction[], ignorarCategoriaI
 
 export type RuleFinder = (description: string, amount?: number, accountId?: string) => RuleMatch | null;
 
-/** Orden: historial exacto → regla → historial parcial estricto. Sin `includes` bidireccional. */
+/**
+ * Orden: regla acotada (monto o cuenta) → historial exacto → regla → historial
+ * parcial estricto. La acotada va primero porque reparte un mismo texto del banco
+ * por importe (Amazon 99 → Suscripción) y el historial de ese texto la taparía.
+ * Sin `includes` bidireccional.
+ */
 export const suggestCategory = (
   description: string,
   amount: number | undefined,
@@ -91,16 +96,18 @@ export const suggestCategory = (
   findRule: RuleFinder,
 ): CategorySuggestion | null => {
   const n = normalizeDescription(description);
+  const rule = findRule(description, amount, accountId);
+  const porRegla = (r: RuleMatch): CategorySuggestion =>
+    ({ categoriaId: r.category_id, source: 'regla', detail: `Regla · ${r.name || r.keyword}`, confidence: 'alta' });
+
+  if (rule?.acotada) return porRegla(rule);
 
   const exact = history.exact.get(n);
   if (exact) {
     return { categoriaId: exact.categoriaId, source: 'historial', detail: `Historial · ${exact.count} movimiento${exact.count === 1 ? '' : 's'}`, confidence: 'alta' };
   }
 
-  const rule = findRule(description, amount, accountId);
-  if (rule) {
-    return { categoriaId: rule.category_id, source: 'regla', detail: `Regla · ${rule.name || rule.keyword}`, confidence: 'alta' };
-  }
+  if (rule) return porRegla(rule);
 
   const p = partialKey(n);
   const parcial = p ? history.partial.get(p) : undefined;

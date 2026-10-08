@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '8.6',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Upload className="h-4 w-4" />, text: 'Al importar, una regla acotada por monto o por cuenta gana al historial: el cargo de Amazon Prime ya no se clasifica como compra de Amazon solo porque el banco usa el mismo texto para ambos', type: 'fix' },
+    ],
+  },
+  {
     version: '8.5',
     date: 'Octubre 2026',
     changes: [

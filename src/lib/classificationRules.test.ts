@@ -13,7 +13,7 @@ describe('findMatchingRuleDetailed', () => {
       rule({ name: 'Streaming', keyword: 'spotify, netflix', category_id: 'cat-stream' }),
       rule({ name: 'Netflix' }),
     ];
-    expect(findMatchingRuleDetailed(rules, 'NETFLIX.COM MX')).toEqual({ category_id: 'cat-stream', name: 'Streaming', keyword: 'netflix' });
+    expect(findMatchingRuleDetailed(rules, 'NETFLIX.COM MX')).toEqual({ category_id: 'cat-stream', name: 'Streaming', keyword: 'netflix', acotada: false });
     expect(findMatchingRuleDetailed(rules, 'UBER EATS')).toBeNull();
   });
 
