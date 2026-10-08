@@ -49,10 +49,16 @@ struct NuevoMovimientoView: View {
                     Section { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red) }
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(form.esGasto ? "Nuevo gasto" : "Nuevo ingreso")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancelar", role: .cancel) { dismiss() } }
+                // El teclado decimal no tiene tecla para cerrarse.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Listo") { importeEnfocado = false }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     if guardando { ProgressView() } else {
                         Button(error == nil ? "Guardar" : "Reintentar") { Task { await guardar() } }
