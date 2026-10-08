@@ -28,7 +28,7 @@ struct ModelosTests {
 
     @Test("codifica la transacción nueva con las columnas de la tabla")
     func codifica() throws {
-        let n = NuevaTransaccion(cuentaId: "a", fecha: "2026-10-06", comentario: "Café", ingreso: 0, gasto: 45, subcategoriaId: "s", divisa: "MXN", userId: "u")
+        let n = NuevaTransaccion(id: "t1", cuentaId: "a", fecha: "2026-10-06", comentario: "Café", ingreso: 0, gasto: 45, subcategoriaId: "s", divisa: "MXN", userId: "u")
         let json = try #require(String(data: JSONEncoder().encode(n), encoding: .utf8))
         for clave in ["\"cuenta_id\"", "\"subcategoria_id\"", "\"user_id\"", "\"fecha\":\"2026-10-06\""] {
             #expect(json.contains(clave), "\(clave)")

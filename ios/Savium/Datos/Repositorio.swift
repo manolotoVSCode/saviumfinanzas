@@ -2,7 +2,13 @@ import Foundation
 import Supabase
 import SaviumCore
 
-let supabase = SupabaseClient(supabaseURL: Config.supabaseURL, supabaseKey: Config.supabaseClave)
+// emitLocalSessionAsInitialSession: al abrir sin red con el token caducado se entra con la sesión
+// guardada (y «Sin conexión») en vez de mandar al login; una caducidad real llega luego como signedOut.
+let supabase = SupabaseClient(
+    supabaseURL: Config.supabaseURL,
+    supabaseKey: Config.supabaseClave,
+    options: SupabaseClientOptions(auth: .init(emitLocalSessionAsInitialSession: true))
+)
 
 /// Única puerta a Supabase. Las RLS limitan todo al usuario de la sesión.
 struct Repositorio: Sendable {
@@ -66,7 +72,11 @@ struct Repositorio: Sendable {
     }
 
     func crear(_ t: NuevaTransaccion) async throws {
-        try await db.from("transacciones").insert(t).execute()
+        do {
+            try await db.from("transacciones").insert(t).execute()
+        } catch let error as PostgrestError where error.code == "23505" {
+            // Mismo id ya guardado: el intento anterior llegó aunque se perdiera la respuesta.
+        }
     }
 
     private func todas(_ pagina: (Int, Int) async throws -> [Transaccion]) async throws -> [Transaccion] {

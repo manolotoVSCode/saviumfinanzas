@@ -3,6 +3,8 @@ import SwiftUI
 struct RaizView: View {
     @Environment(Sesion.self) private var sesion
     @Environment(Bloqueo.self) private var bloqueo
+    @Environment(DatosStore.self) private var datos
+    @Environment(MovimientosStore.self) private var movimientos
     @Environment(\.scenePhase) private var fase
 
     var body: some View {
@@ -30,6 +32,7 @@ struct RaizView: View {
         }
         .onChange(of: sesion.estado) { anterior, nuevo in
             if anterior == .fuera, case .dentro = nuevo { bloqueo.recienAutenticado() }
+            if nuevo == .fuera { datos.reiniciar(); movimientos.reiniciar() }
         }
         .onChange(of: fase) { _, nueva in
             if nueva == .background { bloqueo.enSegundoPlano() }

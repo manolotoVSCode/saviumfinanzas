@@ -25,6 +25,8 @@ public enum Movimientos {
 
 /// Estado de la hoja «Apuntar» y la transacción que produce.
 public struct FormularioMovimiento: Sendable, Equatable {
+    /// Id de la transacción que crea este formulario; el mismo en todos los reintentos.
+    public let idEnvio: String = UUID().uuidString.lowercased()
     public var esGasto = true
     public var importeTexto = ""
     public var cuentaId: String?
@@ -40,7 +42,7 @@ public struct FormularioMovimiento: Sendable, Equatable {
     /// Fecha en el día local; divisa de la cuenta.
     public func construir(cuentas: [Cuenta], userId: String, calendario: Calendar) -> NuevaTransaccion? {
         guard let importe, let cuentaId, let subcategoriaId, let cuenta = cuentas.first(where: { $0.id == cuentaId }) else { return nil }
-        return NuevaTransaccion(cuentaId: cuentaId, fecha: Fechas.isoLocal(fecha, calendario: calendario),
+        return NuevaTransaccion(id: idEnvio, cuentaId: cuentaId, fecha: Fechas.isoLocal(fecha, calendario: calendario),
                                 comentario: comentario.trimmingCharacters(in: .whitespacesAndNewlines),
                                 ingreso: esGasto ? 0 : importe, gasto: esGasto ? importe : 0,
                                 subcategoriaId: subcategoriaId, divisa: cuenta.divisa, userId: userId)

@@ -23,6 +23,13 @@ final class DatosStore {
     private(set) var actualizado: Date?
 
     var hayDatos: Bool { actualizado != nil }
+
+    /// Al cerrar sesión: nada de la cuenta anterior se queda en memoria.
+    func reiniciar() {
+        cuentas = []; filasPatrimonio = []; categorias = []; pendientes = []; suscripciones = []
+        inversiones = []; valuaciones = []; movimientosPorPagar = []; movimientosMesAnterior = []; recientes = []
+        error = nil; actualizado = nil
+    }
     var cal: Calendar { .current }
 
     func cargar(app: AppModel) async {

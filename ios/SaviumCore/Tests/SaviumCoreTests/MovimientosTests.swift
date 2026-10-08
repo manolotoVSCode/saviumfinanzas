@@ -34,10 +34,23 @@ struct MovimientosTests {
         f.importeTexto = "45,5"; f.cuentaId = "c1"; f.subcategoriaId = "cafe"; f.comentario = "  Café  "
         #expect(f.esValido)
         let n = try #require(f.construir(cuentas: cuentas, userId: "u", calendario: cal))
-        #expect(n == NuevaTransaccion(cuentaId: "c1", fecha: "2026-10-06", comentario: "Café", ingreso: 0, gasto: 45.5, subcategoriaId: "cafe", divisa: "USD", userId: "u"))
+        #expect(n == NuevaTransaccion(id: f.idEnvio, cuentaId: "c1", fecha: "2026-10-06", comentario: "Café", ingreso: 0, gasto: 45.5, subcategoriaId: "cafe", divisa: "USD", userId: "u"))
         f.esGasto = false
         #expect(f.construir(cuentas: cuentas, userId: "u", calendario: cal)?.ingreso == 45.5)
         f.importeTexto = "0"
         #expect(!f.esValido && f.construir(cuentas: cuentas, userId: "u", calendario: cal) == nil)
+    }
+
+    @Test("Review Focus 2: un reintento envía el mismo id, así la BD rechaza el duplicado")
+    func mismoIdEnReintentos() throws {
+        let cuentas = [Cuenta(id: "c1", nombre: "Efectivo", tipo: "Efectivo", divisa: "MXN", vendida: false, saldoInicial: 0, saldoActual: 0)]
+        var f = FormularioMovimiento(fecha: .now)
+        f.importeTexto = "1"; f.cuentaId = "c1"; f.subcategoriaId = "s"
+        let a = try #require(f.construir(cuentas: cuentas, userId: "u", calendario: Fixtures.calendarioMX))
+        let b = try #require(f.construir(cuentas: cuentas, userId: "u", calendario: Fixtures.calendarioMX))
+        #expect(a.id == b.id)
+        #expect(FormularioMovimiento(fecha: .now).idEnvio != f.idEnvio)
+        let json = try #require(String(data: JSONEncoder().encode(a), encoding: .utf8))
+        #expect(json.contains("\"id\":\"\(a.id)\""))
     }
 }

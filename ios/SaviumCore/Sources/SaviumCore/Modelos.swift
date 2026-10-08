@@ -62,6 +62,8 @@ public struct Transaccion: Codable, Sendable, Identifiable, Hashable {
 
 /// Lo que inserta la app en `transacciones` (mismos campos que addTransaction en la web).
 public struct NuevaTransaccion: Encodable, Sendable, Equatable {
+    /// Lo genera la app: si un reintento llega tras un guardado cuya respuesta se perdió, la BD lo rechaza por duplicado.
+    public let id: String
     public let cuentaId: String
     public let fecha: String
     public let comentario: String
@@ -71,12 +73,12 @@ public struct NuevaTransaccion: Encodable, Sendable, Equatable {
     public let divisa: String
     public let userId: String
     enum CodingKeys: String, CodingKey {
-        case fecha, comentario, ingreso, gasto, divisa
+        case id, fecha, comentario, ingreso, gasto, divisa
         case cuentaId = "cuenta_id", subcategoriaId = "subcategoria_id", userId = "user_id"
     }
-    public init(cuentaId: String, fecha: String, comentario: String, ingreso: Double, gasto: Double,
+    public init(id: String, cuentaId: String, fecha: String, comentario: String, ingreso: Double, gasto: Double,
                 subcategoriaId: String, divisa: String, userId: String) {
-        self.cuentaId = cuentaId; self.fecha = fecha; self.comentario = comentario; self.ingreso = ingreso
+        self.id = id; self.cuentaId = cuentaId; self.fecha = fecha; self.comentario = comentario; self.ingreso = ingreso
         self.gasto = gasto; self.subcategoriaId = subcategoriaId; self.divisa = divisa; self.userId = userId
     }
 }

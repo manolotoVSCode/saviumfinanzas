@@ -14,6 +14,12 @@ final class MovimientosStore {
     private var pagina = 0
     private var consulta = 0   // descarta respuestas de una búsqueda anterior
 
+    /// Al cerrar sesión.
+    func reiniciar() {
+        consulta += 1
+        filas = []; pagina = 0; hayMas = true; cargando = false; error = nil; cuentaId = nil; texto = ""
+    }
+
     func recargar() async {
         consulta += 1
         pagina = 0; hayMas = true; filas = []; cargando = false
