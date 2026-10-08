@@ -6,6 +6,7 @@ import suscripciones from '../../../shared/fixtures/suscripciones.json';
 import mesAnterior from '../../../shared/fixtures/mes_anterior.json';
 import cxp from '../../../shared/fixtures/cxp.json';
 import inversiones from '../../../shared/fixtures/inversiones.json';
+import { parseFechaLocal, toFechaISO } from './fechas';
 import { convertWithRates, Tasas } from './currency';
 import { ConvertCurrency, CurrencyCode, computeDashboardMetrics } from './dashboardMetrics';
 import { computePendingsSummary, PendingForSummary } from './pendingsSummary';
@@ -22,18 +23,17 @@ const convertir = (tasas: Tasas): ConvertCurrency => (importe, de, a) => convert
 /** 'YYYY-MM-DDTHH:mm:ss' sin zona → Date local (ECMAScript lo interpreta como hora local). */
 const ahora = (s: string) => new Date(s);
 
-/** Día de calendario de una fecha de salida. Sirve igual para medianoche UTC (transacciones)
- *  y para fechas locales de mediodía o medianoche en UTC−6. */
-const dia = (d: Date) => d.toISOString().slice(0, 10);
+/** Día de calendario (local) de una fecha de salida. */
+const dia = (d: Date) => toFechaISO(d);
 
 type TxFixture = {
   id: string; fecha: string; ingreso?: number; gasto?: number; divisa?: string;
   subcategoriaId?: string; tipo?: string; categoria?: string;
 };
 
-/** Igual que mapTransactions: `fecha` a medianoche UTC. */
+/** Igual que mapTransactions: `fecha` a medianoche local. */
 const tx = (f: TxFixture): Transaction => ({
-  id: f.id, cuentaId: 'a1', fecha: new Date(f.fecha), comentario: '',
+  id: f.id, cuentaId: 'a1', fecha: parseFechaLocal(f.fecha), comentario: '',
   ingreso: f.ingreso ?? 0, gasto: f.gasto ?? 0, monto: (f.ingreso ?? 0) - (f.gasto ?? 0),
   subcategoriaId: f.subcategoriaId ?? 'c1', divisa: (f.divisa ?? 'MXN') as CurrencyCode,
   tipo: f.tipo as TransactionType | undefined, categoria: f.categoria,

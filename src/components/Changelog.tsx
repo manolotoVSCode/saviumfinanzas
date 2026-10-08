@@ -9,6 +9,14 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '8.4',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Bug className="h-4 w-4" />, text: 'Los movimientos del día 1 ya cuentan en su mes y no en el anterior (las fechas se leían en UTC): cuadran el dashboard, la tendencia mensual, los comparativos, Por pagar, la exportación a Excel y la lista de movimientos', type: 'fix' },
+      { icon: <Bug className="h-4 w-4" />, text: 'La fecha de "hoy" en los formularios ya no salta al día siguiente después de las 18:00', type: 'fix' },
+    ],
+  },
+  {
     version: '8.3',
     date: 'Octubre 2026',
     changes: [

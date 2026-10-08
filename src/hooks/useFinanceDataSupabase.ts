@@ -306,7 +306,7 @@ export const useFinanceDataSupabase = () => {
       // Preparar datos para inserción en Supabase
       const insertData = {
         cuenta_id: transaction.cuentaId,
-        fecha: transaction.fecha.toISOString().split('T')[0],
+        fecha: toFechaISO(transaction.fecha),
         comentario: transaction.comentario,
         ingreso: transaction.ingreso,
         gasto: transaction.gasto,
@@ -366,7 +366,7 @@ export const useFinanceDataSupabase = () => {
 
         const autoContribData = {
           cuenta_id: autoContribution.targetAccountId,
-          fecha: transaction.fecha.toISOString().split('T')[0],
+          fecha: toFechaISO(transaction.fecha),
           comentario: `Automática (${autoTipo}): ${transaction.comentario}`,
           ingreso: autoIngreso,
           gasto: autoGasto,
@@ -444,7 +444,7 @@ export const useFinanceDataSupabase = () => {
       // Preparar datos para Supabase
       const updateData: any = {};
       
-      if (transaction.fecha) updateData.fecha = transaction.fecha.toISOString().split('T')[0];
+      if (transaction.fecha) updateData.fecha = toFechaISO(transaction.fecha);
       if (transaction.comentario) updateData.comentario = transaction.comentario;
       if (transaction.subcategoriaId) updateData.subcategoria_id = transaction.subcategoriaId;
       if (transaction.cuentaId) updateData.cuenta_id = transaction.cuentaId;
@@ -500,7 +500,7 @@ export const useFinanceDataSupabase = () => {
             user_id: userData.user.id,
             cuenta_id: autoContribution.targetAccountId,
             subcategoria_id: targetCategory?.id || transaction.subcategoriaId,
-            fecha: transaction.fecha?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+            fecha: toFechaISO(transaction.fecha ?? new Date()),
             comentario: `Automática (${autoTipo}): ${transaction.comentario}`,
             ingreso: autoIngreso,
             gasto: autoGasto,

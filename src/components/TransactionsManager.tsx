@@ -16,6 +16,7 @@ import { Transaction, Account, Category } from '@/types/finance';
 import { Plus, Edit, Trash2, Calendar, ArrowUpDown, ArrowUp, ArrowDown, Check, ChevronsUpDown, Copy, HandCoins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePendings } from '@/hooks/usePendings';
+import { parseFechaLocal, toFechaISO } from '@/lib/finance/fechas';
 import { toast } from '@/hooks/use-toast';
 
 
@@ -65,7 +66,7 @@ export const TransactionsManager = ({
       tipo,
       monto_esperado: monto,
       divisa: tx.divisa,
-      fecha_esperada: new Date().toISOString().split('T')[0],
+      fecha_esperada: toFechaISO(new Date()),
       concepto: tx.comentario || (tipo === 'reembolso_gasto' ? 'Reembolso esperado' : 'Ingreso esperado'),
       notas: null,
     });
@@ -144,7 +145,7 @@ export const TransactionsManager = ({
 
   const [formData, setFormData] = useState({
     cuentaId: '',
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: toFechaISO(new Date()),
     comentario: '',
     ingreso: 0,
     gasto: 0,
@@ -266,7 +267,7 @@ export const TransactionsManager = ({
   const resetForm = () => {
     setFormData({
       cuentaId: '',
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: toFechaISO(new Date()),
       comentario: '',
       ingreso: 0,
       gasto: 0,
@@ -291,7 +292,7 @@ export const TransactionsManager = ({
     setAutoContribution({ enabled: false, targetAccountId: '', targetAccountType: 'Aportación' });
     setFormData({
       cuentaId: '',
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: toFechaISO(new Date()),
       comentario: '',
       ingreso: 0,
       gasto: 0,
@@ -320,7 +321,7 @@ export const TransactionsManager = ({
 
     const transactionData = {
       ...formData,
-      fecha: new Date(formData.fecha + 'T12:00:00')
+      fecha: parseFechaLocal(formData.fecha)
     };
 
     if (editingTransaction) {
@@ -346,7 +347,7 @@ export const TransactionsManager = ({
     
     setFormData({
       cuentaId: transaction.cuentaId,
-      fecha: new Date(transaction.fecha.getTime() + transaction.fecha.getTimezoneOffset() * 60000).toISOString().split('T')[0],
+      fecha: toFechaISO(transaction.fecha),
       comentario: transaction.comentario,
       ingreso: transaction.ingreso,
       gasto: transaction.gasto,
@@ -507,7 +508,7 @@ export const TransactionsManager = ({
 
   const handleBulkDateChange = async () => {
     for (const transactionId of selectedTransactions) {
-      onUpdateTransaction(transactionId, { fecha: new Date(bulkDate + 'T12:00:00') });
+      onUpdateTransaction(transactionId, { fecha: parseFechaLocal(bulkDate) });
     }
     setSelectedTransactions(new Set());
     setIsEditingBulkDate(false);
@@ -521,7 +522,7 @@ export const TransactionsManager = ({
 
       const newTransaction: Omit<Transaction, 'id' | 'monto'> = {
         cuentaId: original.cuentaId,
-        fecha: duplicateChangeDate && duplicateDate ? new Date(duplicateDate + 'T12:00:00') : original.fecha,
+        fecha: duplicateChangeDate && duplicateDate ? parseFechaLocal(duplicateDate) : original.fecha,
         comentario: duplicateChangeComment && duplicateComment ? duplicateComment : original.comentario,
         ingreso: original.ingreso,
         gasto: original.gasto,
@@ -1751,7 +1752,7 @@ export const TransactionsManager = ({
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{new Date(transaction.fecha.getTime() + transaction.fecha.getTimezoneOffset() * 60000).toLocaleDateString('es-MX')}</span>
+                      <span>{transaction.fecha.toLocaleDateString('es-MX')}</span>
                     </div>
                   </TableCell>
                   <TableCell>{getAccountName(transaction.cuentaId)}</TableCell>

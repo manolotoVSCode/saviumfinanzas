@@ -7,6 +7,7 @@ import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 import { Investment, InvestmentPayout, InvestmentValuation } from '@/types/investments';
 import { valorActualInversion } from '@/lib/finance/investmentReturn';
+import { toFechaISO } from '@/lib/finance/fechas';
 
 interface InvestmentsData {
   investments: Investment[];
@@ -87,7 +88,7 @@ export const useInvestments = () => {
       modalidad: values.modalidad_pago || values.modalidad || 'Reinversión',
       modalidad_pago: values.modalidad_pago ?? null,
       moneda: values.moneda || 'MXN',
-      fecha_inicio: values.fecha_inicio || new Date().toISOString().slice(0, 10),
+      fecha_inicio: values.fecha_inicio || toFechaISO(new Date()),
       fecha_vencimiento: values.fecha_vencimiento ?? null,
       cuenta_id: values.cuenta_id ?? null,
       beneficio_estimado: values.beneficio_estimado ?? null,

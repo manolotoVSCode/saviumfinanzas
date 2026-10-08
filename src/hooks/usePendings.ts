@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 import { isPendingActive, isPendingOverdue } from '@/lib/finance/pendingsSummary';
+import { toFechaISO } from '@/lib/finance/fechas';
 
 export type PendingTipo = 'reembolso_gasto' | 'ingreso_esperado';
 export type PendingEstado = 'pendiente' | 'cobrado_parcial' | 'cobrado' | 'cancelado';
@@ -133,7 +134,7 @@ export const usePendings = () => {
       .from('transaction_pendings')
       .update({
         monto_cobrado: totalCobrado,
-        fecha_cobro: fechaCobro.toISOString().split('T')[0],
+        fecha_cobro: toFechaISO(fechaCobro),
         estado: nuevoEstado,
       })
       .eq('id', pending.id);

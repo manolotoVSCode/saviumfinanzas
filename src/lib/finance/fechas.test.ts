@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diasHasta, fechaTxISO, finMesAnterior, parseFechaLocal, toFechaISO } from './fechas';
+import { diasHasta, finMesAnterior, parseFechaLocal, toFechaISO } from './fechas';
 
 const NOW = new Date(2026, 8, 15, 14, 30); // 15 sep 2026, con hora para comprobar el truncado
 
@@ -40,9 +40,10 @@ describe('toFechaISO', () => {
   });
 });
 
-describe('fechaTxISO', () => {
-  it('es el inverso exacto de new Date("YYYY-MM-DD") (Transaction.fecha, medianoche UTC)', () => {
-    expect(fechaTxISO(new Date('2026-08-08'))).toBe('2026-08-08');
-    expect(fechaTxISO(new Date('2026-01-01'))).toBe('2026-01-01');
+describe('parseFechaLocal ↔ toFechaISO', () => {
+  it('ida y vuelta sin perder el día (Transaction.fecha se lee y se escribe así)', () => {
+    for (const iso of ['2026-08-08', '2026-01-01', '2026-09-01', '2025-12-31']) {
+      expect(toFechaISO(parseFechaLocal(iso))).toBe(iso);
+    }
   });
 });

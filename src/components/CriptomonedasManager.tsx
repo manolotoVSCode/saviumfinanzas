@@ -12,6 +12,7 @@ import { useCriptomonedas } from '@/hooks/useCriptomonedas';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Criptomoneda } from '@/types/crypto';
+import { toFechaISO } from '@/lib/finance/fechas';
 
 const CRIPTOMONEDAS_DISPONIBLES = [
   { simbolo: 'BTC', nombre: 'Bitcoin' },
@@ -32,7 +33,7 @@ const CriptoForm: React.FC<CriptoFormProps> = ({ cripto, onSave, onClose }) => {
     cantidad: cripto?.cantidad?.toString() || '',
     precio_compra: cripto?.precio_compra?.toString() || '',
     divisa_compra: cripto?.divisa_compra || 'USD',
-    fecha_compra: cripto?.fecha_compra || new Date().toISOString().split('T')[0],
+    fecha_compra: cripto?.fecha_compra || toFechaISO(new Date()),
     notas: cripto?.notas || '',
   });
 

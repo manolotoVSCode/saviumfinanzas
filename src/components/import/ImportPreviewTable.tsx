@@ -11,7 +11,6 @@ import { Pending } from '@/hooks/usePendings';
 import { esEntrada, ParsedRow } from '@/lib/import/toParsedRows';
 import { Category, Transaction, TransactionType } from '@/types/finance';
 import { cn } from '@/lib/utils';
-import { fechaTxISO, parseFechaLocal } from '@/lib/finance/fechas';
 
 export type SortColumn = 'fecha' | 'descripcion' | 'tipo' | 'monto' | 'categoria';
 export type SortDirection = 'asc' | 'desc';
@@ -168,7 +167,7 @@ export const ImportPreviewTable = ({
                     <Badge
                       variant="outline"
                       className="mt-1 text-[10px] px-1.5 py-0 font-normal border-yellow-500 max-w-full truncate"
-                      title={`Ya está en la cuenta: ${formatDate(parseFechaLocal(fechaTxISO(duplicado.fecha)))} · ${duplicado.comentario}`}
+                      title={`Ya está en la cuenta: ${formatDate(duplicado.fecha)} · ${duplicado.comentario}`}
                     >
                       ¿Duplicado? Ya está: {duplicado.comentario}
                     </Badge>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Category, Transaction } from '@/types/finance';
-import { toFechaISO } from './fechas';
+import { parseFechaLocal, toFechaISO } from './fechas';
 import {
   calculateNextPayment, detectFrequency, detectSubscriptions, mergeWithStored,
   previousPaymentAmount, resolveServiceName, SubscriptionRow,
@@ -9,13 +9,13 @@ import {
 // "Hoy" fijo: 20 de septiembre de 2026
 const NOW = new Date(2026, 8, 20);
 
-// Transaction.fecha real: new Date('YYYY-MM-DD') = medianoche UTC
-const utc = (iso: string) => new Date(iso);
+// Transaction.fecha real: medianoche local (parseFechaLocal en queries.ts)
+const dia = (iso: string) => parseFechaLocal(iso);
 const local = (y: number, m: number, d: number) => new Date(y, m - 1, d);
 
 const cat = (over: Partial<Category>): Category => ({ id: 'sub', categoria: 'Servicios', subcategoria: 'Suscripciones', tipo: 'Gastos', ...over });
 const tx = (over: Partial<Transaction>): Transaction => ({
-  id: 't', cuentaId: 'a1', fecha: utc('2026-08-08'), comentario: 'NETFLIX.COM', ingreso: 0, gasto: 199,
+  id: 't', cuentaId: 'a1', fecha: dia('2026-08-08'), comentario: 'NETFLIX.COM', ingreso: 0, gasto: 199,
   monto: -199, subcategoriaId: 'sub', divisa: 'MXN', ...over,
 });
 const row = (over: Partial<SubscriptionRow>): SubscriptionRow => ({
@@ -48,7 +48,7 @@ describe('resolveServiceName', () => {
 });
 
 describe('detectFrequency', () => {
-  const fechas = (...isos: string[]) => isos.map(utc);
+  const fechas = (...isos: string[]) => isos.map(dia);
 
   it('mensual limpio', () => {
     expect(detectFrequency(fechas('2026-05-08', '2026-06-08', '2026-07-08', '2026-08-08')).frecuencia).toBe('Mensual');
@@ -91,11 +91,11 @@ describe('calculateNextPayment', () => {
 describe('previousPaymentAmount', () => {
   it('devuelve el último cargo del ciclo anterior, no el segundo más reciente', () => {
     const txs = [
-      tx({ id: '1', comentario: 'ANTHROPIC', fecha: utc('2026-06-08'), gasto: 20 }),
-      tx({ id: '2', comentario: 'ANTHROPIC', fecha: utc('2026-07-08'), gasto: 20 }),
-      tx({ id: '3', comentario: 'ANTHROPIC', fecha: utc('2026-07-30'), gasto: 100 }),
-      tx({ id: '4', comentario: 'ANTHROPIC', fecha: utc('2026-08-08'), gasto: 100 }),
-      tx({ id: 'x', comentario: 'OTRO', fecha: utc('2026-08-01'), gasto: 5 }),
+      tx({ id: '1', comentario: 'ANTHROPIC', fecha: dia('2026-06-08'), gasto: 20 }),
+      tx({ id: '2', comentario: 'ANTHROPIC', fecha: dia('2026-07-08'), gasto: 20 }),
+      tx({ id: '3', comentario: 'ANTHROPIC', fecha: dia('2026-07-30'), gasto: 100 }),
+      tx({ id: '4', comentario: 'ANTHROPIC', fecha: dia('2026-08-08'), gasto: 100 }),
+      tx({ id: 'x', comentario: 'OTRO', fecha: dia('2026-08-01'), gasto: 5 }),
     ];
     expect(previousPaymentAmount(['ANTHROPIC'], txs)).toBe(20);
     expect(previousPaymentAmount(['ANTHROPIC'], txs.slice(3))).toBeNull();
@@ -103,23 +103,23 @@ describe('previousPaymentAmount', () => {
 });
 
 describe('detectSubscriptions', () => {
-  it('agrupa por canon_key con mediana de gaps; fechas: ultimoPago en UTC, proximoPago local', () => {
+  it('agrupa por canon_key con mediana de gaps; fechas: ultimoPago y proximoPago en local', () => {
     const txs = ['2026-05-08', '2026-06-08', '2026-07-08', '2026-07-30', '2026-08-08'].map((f, i) =>
-      tx({ id: `a${i}`, comentario: 'ANTHROPIC', fecha: utc(f), gasto: i >= 3 ? 100 : 20 }));
+      tx({ id: `a${i}`, comentario: 'ANTHROPIC', fecha: dia(f), gasto: i >= 3 ? 100 : 20 }));
     const [d] = detectSubscriptions(txs, CATS, [], NOW);
     expect(d.canonKey).toBe('custom-anthropic');
     expect(d.frecuencia).toBe('Mensual');
     expect(d.numeroPagos).toBe(5);
-    expect(d.ultimoPago).toEqual({ monto: 100, fecha: utc('2026-08-08') });
+    expect(d.ultimoPago).toEqual({ monto: 100, fecha: dia('2026-08-08') });
     expect(toFechaISO(d.proximoPago)).toBe('2026-09-08');
     expect(d.originalComments).toHaveLength(5);
   });
   it('ignora lo que no es gasto, no es Suscripciones o tiene más de 24 meses', () => {
     const txs = [
-      tx({ id: '1' }), tx({ id: '2', fecha: utc('2026-07-08') }),
+      tx({ id: '1' }), tx({ id: '2', fecha: dia('2026-07-08') }),
       tx({ id: 'ing', ingreso: 199, gasto: 0 }),
       tx({ id: 'otra', subcategoriaId: 'luz' }),
-      tx({ id: 'vieja', fecha: utc('2024-01-01') }),
+      tx({ id: 'vieja', fecha: dia('2024-01-01') }),
     ];
     const r = detectSubscriptions(txs, CATS, [], NOW);
     expect(r).toHaveLength(1);
@@ -131,9 +131,9 @@ describe('detectSubscriptions', () => {
 });
 
 describe('mergeWithStored', () => {
-  const detectada = detectSubscriptions([tx({ id: '1', fecha: utc('2026-07-08') }), tx({ id: '2' })], CATS, [], NOW);
+  const detectada = detectSubscriptions([tx({ id: '1', fecha: dia('2026-07-08') }), tx({ id: '2' })], CATS, [], NOW);
 
-  it('actualiza la fila existente conservando nombre, activo y alias; escribe fechas UTC/local', () => {
+  it('actualiza la fila existente conservando nombre, activo y alias; escribe fechas YYYY-MM-DD locales', () => {
     const { updates, inserts, orphanIds } = mergeWithStored(detectada, [row({ service_name: 'Mi Netflix', active: false, aliases: ['nflx'] })]);
     expect(inserts).toEqual([]);
     expect(orphanIds).toEqual([]);

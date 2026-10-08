@@ -1,4 +1,4 @@
-import { fechaTxISO, toFechaISO } from '@/lib/finance/fechas';
+import { toFechaISO } from '@/lib/finance/fechas';
 import { Transaction } from '@/types/finance';
 import { montoConSigno, ParsedRow } from './toParsedRows';
 
@@ -26,8 +26,7 @@ export const posiblesDuplicados = <T extends Existente>(filas: Fila[], existente
     const dia = diaUTC(toFechaISO(f.fecha));
     for (const t of deCuenta) {
       if (Math.abs(t.monto - monto) >= 0.01) continue;
-      // Transaction.fecha es medianoche UTC; la fila, medianoche local.
-      const dias = Math.abs(diaUTC(fechaTxISO(t.fecha)) - dia);
+      const dias = Math.abs(diaUTC(toFechaISO(t.fecha)) - dia);
       if (dias <= MAX_DIAS) candidatos.push({ fila: f.id, tx: t, dias });
     }
   }

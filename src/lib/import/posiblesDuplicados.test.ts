@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { parseFechaLocal } from '@/lib/finance/fechas';
 import { posiblesDuplicados } from './posiblesDuplicados';
 
-// Transaction.fecha llega en medianoche UTC (queries.ts) y la fila del archivo en medianoche local.
+// Transaction.fecha y la fila del archivo llegan ambas en medianoche local.
 const tx = (id: string, iso: string, monto: number, cuentaId = 'hsbc') => ({
-  id, cuentaId, fecha: new Date(iso), monto, comentario: id,
+  id, cuentaId, fecha: parseFechaLocal(iso), monto, comentario: id,
 });
 const fila = (id: string, y: number, m: number, d: number, monto: number, esGasto = true) => ({
   id, fecha: new Date(y, m - 1, d), monto, esGasto, esReembolso: false,

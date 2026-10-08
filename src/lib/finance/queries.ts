@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Account, AccountType, Category, Transaction, TransactionType } from '@/types/finance';
+import { parseFechaLocal } from './fechas';
 import { mapPatrimonio, PatrimonioFila } from './patrimonio';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -42,7 +43,7 @@ export const mapCategories = (categoriasData: Row[]): Category[] => {
 export const mapTransactions = (transaccionesData: Row[]): Transaction[] => {
   const mappedTransactions: Transaction[] = transaccionesData.map(transaccion => ({
     id: transaccion.id,
-    fecha: new Date(transaccion.fecha),
+    fecha: parseFechaLocal(transaccion.fecha), // medianoche local: new Date('YYYY-MM-DD') movería el día 1 al mes anterior
     comentario: transaccion.comentario,
     monto: Number(transaccion.ingreso) - Number(transaccion.gasto),
     ingreso: Number(transaccion.ingreso),

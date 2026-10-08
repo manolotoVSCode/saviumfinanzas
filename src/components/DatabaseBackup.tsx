@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { valorCSV } from '@/lib/csv';
 import { Download, Database } from 'lucide-react';
+import { toFechaISO } from '@/lib/finance/fechas';
 
 interface TableSelection {
   transacciones: boolean;
@@ -56,7 +57,7 @@ export const DatabaseBackup = () => {
       }
 
       let csvContent = '';
-      const timestamp = new Date().toISOString().split('T')[0];
+      const timestamp = toFechaISO(new Date());
 
       for (const tableName of selectedTables) {
         // Obtener datos de cada tabla

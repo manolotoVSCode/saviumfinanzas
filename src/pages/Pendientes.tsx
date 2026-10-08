@@ -32,6 +32,7 @@ import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { formatNumber } from '@/lib/formatters';
 import { filtrarPendientes, FiltroPendientes, isPendingActive, isPendingOverdue } from '@/lib/finance/pendingsSummary';
+import { parseFechaLocal, toFechaISO } from '@/lib/finance/fechas';
 
 type Filter = FiltroPendientes;
 
@@ -428,12 +429,12 @@ interface PayDialogProps {
 const PayPendingDialog = ({ pending, onCancel, onConfirm }: PayDialogProps) => {
   const restante = pending.monto_esperado - (pending.monto_cobrado ?? 0);
   const [monto, setMonto] = useState(restante.toString());
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(toFechaISO(new Date()));
 
   const handleConfirm = async () => {
     if (!monto) return;
     await onConfirm({
-      fechaCobro: new Date(fecha + 'T00:00:00'),
+      fechaCobro: parseFechaLocal(fecha),
       montoCobrado: parseFloat(monto),
     });
   };

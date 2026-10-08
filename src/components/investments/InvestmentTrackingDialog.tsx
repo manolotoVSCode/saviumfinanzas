@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { Investment, InvestmentPayout, InvestmentValuation } from '@/types/investments';
 import { formatNumber } from '@/lib/formatters';
+import { toFechaISO } from '@/lib/finance/fechas';
 import {
   CartesianGrid,
   Line,
@@ -36,7 +37,7 @@ interface Props {
   onDeletePayout: (id: string) => Promise<boolean>;
 }
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const todayISO = () => toFechaISO(new Date());
 const fmtDate = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('es-MX');

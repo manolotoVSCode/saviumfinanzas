@@ -159,8 +159,7 @@ export const categorySpikeAlerts = (categories: Category[], transactions: Transa
   for (const t of transactions) {
     const c = byId.get(t.subcategoriaId);
     if (!c || c.tipo !== 'Gastos' || excluded.has(c.id) || c.categoria === 'Compra Venta Inmuebles') continue;
-    // Transaction.fecha es medianoche UTC: con getters locales un cargo del día 1 caería en el mes anterior.
-    const ym = `${t.fecha.getUTCFullYear()}-${t.fecha.getUTCMonth()}`;
+    const ym = `${t.fecha.getFullYear()}-${t.fecha.getMonth()}`;
     if (!monthly.has(c.categoria)) monthly.set(c.categoria, new Map());
     const m = monthly.get(c.categoria)!;
     m.set(ym, (m.get(ym) ?? 0) + t.gasto - t.ingreso);

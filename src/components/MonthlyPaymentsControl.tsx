@@ -140,15 +140,9 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
           const esMesAnterior = targetDate.getFullYear() === mesAnteriorDate.getFullYear() && 
                                targetDate.getMonth() === mesAnteriorDate.getMonth();
           
-          // Buscar pagos en este mes (comparación por mes/año en UTC para evitar problemas de zona horaria)
-          const targetUTCStart = new Date(Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), 1));
-          const targetUTCYear = targetUTCStart.getUTCFullYear();
-          const targetUTCMonth = targetUTCStart.getUTCMonth();
-
-          const monthPayments = categoryTransactions.filter(t => {
-            const d = new Date(t.fecha);
-            return d.getUTCFullYear() === targetUTCYear && d.getUTCMonth() === targetUTCMonth;
-          });
+          const monthPayments = categoryTransactions.filter(t =>
+            t.fecha.getFullYear() === targetDate.getFullYear() && t.fecha.getMonth() === targetDate.getMonth()
+          );
 
           const totalMonto = monthPayments.reduce((sum, t) => sum + t.ingreso, 0);
           const latestPayment = monthPayments.sort((a, b) => 
@@ -414,9 +408,9 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
                                     <span className="font-semibold">{formatCurrency(pago.monto)}</span>
                                     {pago.fecha && (
                                       <span className="text-xs text-muted-foreground">
-                                        {String(pago.fecha.getUTCDate()).padStart(2, '0')}-{
+                                        {String(pago.fecha.getDate()).padStart(2, '0')}-{
                                           ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
-                                           'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][pago.fecha.getUTCMonth()]
+                                           'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][pago.fecha.getMonth()]
                                         }
                                       </span>
                                     )}

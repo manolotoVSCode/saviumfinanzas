@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Transaction, Account, Category } from '@/types/finance';
 import { FileDown } from 'lucide-react';
+import { parseFechaLocal, toFechaISO } from '@/lib/finance/fechas';
 
 interface ExcelExporterProps {
   transactions: Transaction[];
@@ -72,8 +73,8 @@ export const ExcelExporter = ({ transactions, accounts, categories }: ExcelExpor
 
     // Filtrar según el tipo de exportación
     if (exportType === 'dateRange' && startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      const start = parseFechaLocal(startDate);
+      const end = parseFechaLocal(endDate);
       end.setHours(23, 59, 59, 999);
 
       filteredTransactions = transactions.filter(transaction => {
@@ -155,7 +156,7 @@ export const ExcelExporter = ({ transactions, accounts, categories }: ExcelExpor
         break;
     }
     
-    fileName += `_${new Date().toISOString().split('T')[0]}.xlsx`;
+    fileName += `_${toFechaISO(new Date())}.xlsx`;
 
     // Descargar archivo
     XLSX.writeFile(workbook, fileName);

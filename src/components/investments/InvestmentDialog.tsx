@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Investment, InvestmentType, PAYOUT_MODES } from '@/types/investments';
+import { toFechaISO } from '@/lib/finance/fechas';
 
 interface Props {
   open: boolean;
@@ -16,7 +17,7 @@ interface Props {
   onSave: (values: Partial<Investment>, id?: string) => Promise<boolean>;
 }
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const todayISO = () => toFechaISO(new Date());
 
 export const InvestmentDialog = ({ open, onOpenChange, types, investment, onSave }: Props) => {
   const [form, setForm] = useState<Partial<Investment>>({});

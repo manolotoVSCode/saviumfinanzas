@@ -1,6 +1,6 @@
 import { Category, Transaction } from '@/types/finance';
 import type { Database } from '@/integrations/supabase/types';
-import { fechaTxISO, parseFechaLocal, toFechaISO } from './fechas';
+import { toFechaISO } from './fechas';
 import { matchTransactionToPattern, SUBSCRIPTION_PATTERNS } from './subscriptionPatterns';
 
 /** Valores admitidos por el CHECK de subscription_services.frecuencia (migración 20260809033858). Única definición. */
@@ -19,10 +19,8 @@ export interface DetectedSubscription {
   canonKey: string;
   serviceName: string;
   tipoServicio: string;
-  /** `fecha` es Transaction.fecha (medianoche UTC): se escribe con fechaTxISO. */
   ultimoPago: { monto: number; fecha: Date };
   frecuencia: SubscriptionFrequency;
-  /** Fecha local: se escribe con toFechaISO. */
   proximoPago: Date;
   numeroPagos: number;
   originalComments: string[];
@@ -35,9 +33,6 @@ export const DIAS_MISMO_CICLO = 15;
 const MESES_ANALIZADOS = 24;
 
 const diasEntre = (a: Date, b: Date) => Math.round((b.getTime() - a.getTime()) / DIA_MS);
-
-/** Transaction.fecha es medianoche UTC; para sumar meses en local hay que pasarla a medianoche local. */
-const utcALocal = (d: Date): Date => parseFechaLocal(fechaTxISO(d));
 
 /** 1) alias del usuario, 2) patrones embebidos, 3) nombre limpio + clave `custom-…`. */
 export const resolveServiceName = (
@@ -163,7 +158,7 @@ export const detectSubscriptions = (
       tipoServicio: g.tipoServicio,
       ultimoPago: { monto: ultimo.gasto, fecha: ultimo.fecha },
       frecuencia,
-      proximoPago: calculateNextPayment(utcALocal(ultimo.fecha), frecuencia),
+      proximoPago: calculateNextPayment(ultimo.fecha, frecuencia),
       numeroPagos: sorted.length,
       originalComments: sorted.map(t => t.comentario),
     });
@@ -209,9 +204,9 @@ export const mergeWithStored = (
     const comunes = {
       tipo_servicio: d.tipoServicio,
       ultimo_pago_monto: d.ultimoPago.monto,
-      ultimo_pago_fecha: fechaTxISO(d.ultimoPago.fecha),
+      ultimo_pago_fecha: toFechaISO(d.ultimoPago.fecha),
       frecuencia,
-      proximo_pago: toFechaISO(calculateNextPayment(utcALocal(d.ultimoPago.fecha), frecuencia)),
+      proximo_pago: toFechaISO(calculateNextPayment(d.ultimoPago.fecha, frecuencia)),
       numero_pagos: d.numeroPagos,
       original_comments: d.originalComments,
     };
