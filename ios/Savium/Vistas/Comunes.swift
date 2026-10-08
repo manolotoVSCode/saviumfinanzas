@@ -58,15 +58,26 @@ struct SinDatos: View {
     }
 }
 
-/// Botón flotante «+» con Liquid Glass.
-struct BotonNuevo: View {
-    let accion: () -> Void
-    var body: some View {
-        Button(action: accion) { Image(systemName: "plus").font(.title2.bold()).frame(width: 56, height: 56) }
-            .buttonStyle(.glassProminent).buttonBorderShape(.circle)
-            .padding(.trailing, 20)
-            .accessibilityLabel("Apuntar gasto o ingreso")
+/// «+» arriba a la derecha en todas las pestañas: botón de cristal verde que abre «Apuntar».
+private struct BotonApuntar: ViewModifier {
+    @Environment(DatosStore.self) private var datos
+    @State private var apuntando = false
+    func body(content: Content) -> some View {
+        content
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { apuntando = true } label: { Image(systemName: "plus") }
+                        .buttonStyle(.glassProminent)
+                        .disabled(!datos.hayDatos)
+                        .accessibilityLabel("Apuntar gasto o ingreso")
+                }
+            }
+            .sheet(isPresented: $apuntando) { NuevoMovimientoView() }
     }
+}
+
+extension View {
+    func botonApuntar() -> some View { modifier(BotonApuntar()) }
 }
 
 struct MenuPerfil: View {

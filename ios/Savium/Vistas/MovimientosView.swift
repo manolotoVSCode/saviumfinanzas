@@ -46,7 +46,6 @@ struct MovimientosView: View {
         .onChange(of: store.cuentaId) { Task { await store.recargar() } }
         .refreshable { await store.recargar() }
         .task { if store.filas.isEmpty { await store.recargar() } }
-        .contentMargins(.bottom, 80, for: .scrollContent)
         .confirmationDialog(textoConfirmacion, isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }),
                             titleVisibility: .visible, presenting: aBorrar) { t in
             Button("Borrar", role: .destructive) {

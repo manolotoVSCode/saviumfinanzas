@@ -75,6 +75,5 @@ struct ResumenView: View {
                 Linea(titulo: "Balance", valor: mes.balance, divisa: d, destacado: true)
             }
         }
-        .contentMargins(.bottom, 80, for: .scrollContent)
     }
 }

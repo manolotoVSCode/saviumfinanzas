@@ -5,10 +5,6 @@ import SwiftUI
 struct PestanasView: View {
     @Environment(AppModel.self) private var app
     @Environment(DatosStore.self) private var datos
-    @State private var apuntando = false
-
-    /// El «+» solo en Inicio y Movimientos, justo encima de la barra.
-    private var conBotonNuevo: Bool { datos.hayDatos && (app.pestana == .resumen || app.pestana == .movimientos) }
 
     var body: some View {
         ZStack {
@@ -18,18 +14,12 @@ struct PestanasView: View {
             pestana(.pendientes) { PendientesView() }
             pestana(.suscripciones) { SuscripcionesView() }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(alignment: .trailing, spacing: 8) {
-                if conBotonNuevo { BotonNuevo { apuntando = true } }
-                BarraPestanas()
-            }
-        }
-        .sheet(isPresented: $apuntando) { NuevoMovimientoView() }
+        .safeAreaInset(edge: .bottom, spacing: 0) { BarraPestanas() }
         .task { await datos.cargar(app: app) }
     }
 
     private func pestana<V: View>(_ p: Pestana, @ViewBuilder _ contenido: () -> V) -> some View {
-        NavigationStack { contenido() }
+        NavigationStack { contenido().botonApuntar() }
             .opacity(app.pestana == p ? 1 : 0)
             .allowsHitTesting(app.pestana == p)
             .accessibilityHidden(app.pestana != p)
