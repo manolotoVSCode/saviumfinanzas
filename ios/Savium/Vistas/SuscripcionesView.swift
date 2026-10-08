@@ -13,14 +13,16 @@ struct SuscripcionesView: View {
 
     private var lista: some View {
         let subs = datos.suscripciones.sorted { $0.proximoPago < $1.proximoPago }
-        let r = Suscripciones.resumen(subs.map { (frecuencia: $0.frecuencia, monto: $0.ultimoPagoMonto) })
+        let mensuales = Suscripciones.totalMensuales(subs.map { (frecuencia: $0.frecuencia, monto: $0.ultimoPagoMonto) })
+        let otras = subs.count - mensuales.cantidad
         // subscription_services no guarda divisa: la web asume la del perfil.
         let d = app.divisa.rawValue
         return List {
             AvisoEstado()
             Section {
-                Linea(titulo: "Coste mensual estimado", valor: r.estimadoMensual, divisa: d, destacado: true)
-                if r.sinEstimar > 0 { Text("\(r.sinEstimar) irregulares sin estimar").font(.footnote).foregroundStyle(.secondary) }
+                Linea(titulo: "Mensuales activas", valor: mensuales.total, divisa: d, destacado: true)
+                Text("\(mensuales.cantidad) mensuales" + (otras > 0 ? " · \(otras) con otra frecuencia (no suman)" : ""))
+                    .font(.footnote).foregroundStyle(.secondary)
             }
             Section("Activas") {
                 ForEach(subs) { s in

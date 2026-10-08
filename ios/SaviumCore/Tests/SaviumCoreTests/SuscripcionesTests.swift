@@ -30,4 +30,14 @@ struct SuscripcionesTests {
             #expect(s.dias == e.esperado.dias, "\(e.proximo_pago)")
         }
     }
+
+    @Test("total mensual: solo las de frecuencia Mensual, sin prorratear (como el escritorio de la web)")
+    func totalMensuales() {
+        let r = Suscripciones.totalMensuales([
+            (frecuencia: "Mensual", monto: 184.99), (frecuencia: "Mensual", monto: 1737.70),
+            (frecuencia: "Anual", monto: 2000), (frecuencia: "Semanal", monto: 100), (frecuencia: "Mensual", monto: 49),
+        ])
+        #expect(abs(r.total - 1971.69) < 1e-6)
+        #expect(r.cantidad == 3)
+    }
 }

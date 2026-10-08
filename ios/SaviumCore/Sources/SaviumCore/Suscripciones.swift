@@ -27,6 +27,13 @@ public enum Suscripciones {
         return Resumen(estimadoMensual: total, estimadas: estimadas, sinEstimar: sinEstimar)
     }
 
+    /// «Suscripciones mensuales activas» del escritorio (SubscriptionsManager): suma del último pago
+    /// de las de frecuencia Mensual, sin prorratear las demás. El llamador pasa solo las activas.
+    public static func totalMensuales(_ subs: [(frecuencia: String, monto: Double)]) -> (total: Double, cantidad: Int) {
+        let mensuales = subs.filter { $0.frecuencia == "Mensual" }
+        return (mensuales.reduce(0) { $0 + $1.monto }, mensuales.count)
+    }
+
     public enum Estado: String, Sendable {
         /// Caía en un mes ya importado y no apareció el cargo.
         case sinCargo = "sin_cargo"
