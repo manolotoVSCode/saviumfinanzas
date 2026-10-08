@@ -23,13 +23,14 @@ public struct Categoria: Codable, Sendable, Identifiable, Hashable {
     public let id: String
     public let categoria: String
     public let subcategoria: String
-    public let tipo: String
+    /// 'Gastos', 'Ingreso'… Puede venir null en la BD.
+    public let tipo: String?
     public let frecuenciaSeguimiento: String?
     enum CodingKeys: String, CodingKey {
         case id, categoria, subcategoria, tipo
         case frecuenciaSeguimiento = "frecuencia_seguimiento"
     }
-    public init(id: String, categoria: String, subcategoria: String, tipo: String, frecuenciaSeguimiento: String? = nil) {
+    public init(id: String, categoria: String, subcategoria: String, tipo: String?, frecuenciaSeguimiento: String? = nil) {
         self.id = id; self.categoria = categoria; self.subcategoria = subcategoria
         self.tipo = tipo; self.frecuenciaSeguimiento = frecuenciaSeguimiento
     }

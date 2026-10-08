@@ -18,6 +18,14 @@ struct ModelosTests {
         #expect(try JSONDecoder().decode(Suscripcion.self, from: Data(sub.utf8)).serviceName == "Netflix")
     }
 
+    @Test("una categoría con tipo null en la BD no rompe la carga")
+    func categoriaSinTipo() throws {
+        let json = #"[{"id":"c","categoria":"Varios","subcategoria":"Otros","tipo":null,"frecuencia_seguimiento":null}]"#
+        let cats = try JSONDecoder().decode([Categoria].self, from: Data(json.utf8))
+        #expect(cats.first?.tipo == nil)
+        #expect(PorPagar.subcategoriasRelevantes(cats).isEmpty)
+    }
+
     @Test("codifica la transacción nueva con las columnas de la tabla")
     func codifica() throws {
         let n = NuevaTransaccion(cuentaId: "a", fecha: "2026-10-06", comentario: "Café", ingreso: 0, gasto: 45, subcategoriaId: "s", divisa: "MXN", userId: "u")

@@ -1,7 +1,7 @@
 import Foundation
 
 public enum Formato {
-    nonisolated(unsafe) private static let formateador: NumberFormatter = {
+    private static let formateador: NumberFormatter = {
         let f = NumberFormatter()
         f.locale = Locale(identifier: "en_US")
         f.numberStyle = .decimal
