@@ -9,6 +9,8 @@ import SaviumCore
 final class DatosStore {
     let repo = Repositorio(db: supabase)
     private(set) var cuentas: [Cuenta] = []
+    /// Cuentas con al menos un movimiento: las únicas que ofrece el filtro de Movimientos.
+    private(set) var cuentasConMovimientos: Set<String> = []
     private(set) var filasPatrimonio: [FilaPatrimonio] = []
     private(set) var categorias: [Categoria] = []
     private(set) var pendientes: [Pendiente] = []
@@ -26,7 +28,7 @@ final class DatosStore {
 
     /// Al cerrar sesión: nada de la cuenta anterior se queda en memoria.
     func reiniciar() {
-        cuentas = []; filasPatrimonio = []; categorias = []; pendientes = []; suscripciones = []
+        cuentas = []; cuentasConMovimientos = []; filasPatrimonio = []; categorias = []; pendientes = []; suscripciones = []
         inversiones = []; valuaciones = []; movimientosPorPagar = []; movimientosMesAnterior = []; recientes = []
         error = nil; actualizado = nil
     }
@@ -56,7 +58,8 @@ final class DatosStore {
             let (nc, np, npe, ns, ni, nv) = try await (c, p, pe, s, i, v)
             let (nma, nre) = try await (ma, re)
             let divisaPerfil = try await perfil?.divisaPreferida
-            cuentas = nc; filasPatrimonio = np; categorias = cats; pendientes = npe
+            let conMovs = try await repo.cuentasConMovimientos(nc.map(\.id))
+            cuentas = nc; cuentasConMovimientos = conMovs; filasPatrimonio = np; categorias = cats; pendientes = npe
             suscripciones = ns; inversiones = ni; valuaciones = nv
             movimientosMesAnterior = nma; recientes = nre; movimientosPorPagar = pp
             app.usarDivisaDelPerfil(divisaPerfil)

@@ -20,6 +20,21 @@ struct Repositorio: Sendable {
     func cuentas() async throws -> [Cuenta] {
         try await db.from("saldos_cuentas").select("id, nombre, tipo, divisa, vendida, saldo_inicial, saldo_actual").execute().value
     }
+    /// Ids de las cuentas que tienen al menos un movimiento (una consulta de una fila por cuenta).
+    func cuentasConMovimientos(_ ids: [String]) async throws -> Set<String> {
+        struct Fila: Decodable { let id: String }
+        return try await withThrowingTaskGroup(of: String?.self) { grupo in
+            for id in ids {
+                grupo.addTask {
+                    let filas: [Fila] = try await db.from("transacciones").select("id").eq("cuenta_id", value: id).limit(1).execute().value
+                    return filas.isEmpty ? nil : id
+                }
+            }
+            var conMovimientos = Set<String>()
+            for try await id in grupo { if let id { conMovimientos.insert(id) } }
+            return conMovimientos
+        }
+    }
     func patrimonio() async throws -> [FilaPatrimonio] {
         try await db.from("patrimonio_por_divisa").select("divisa, clase, rubro, importe").execute().value
     }

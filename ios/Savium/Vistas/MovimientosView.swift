@@ -36,7 +36,7 @@ struct MovimientosView: View {
                 Menu {
                     Picker("Cuenta", selection: $store.cuentaId) {
                         Text("Todas las cuentas").tag(String?.none)
-                        ForEach(datos.cuentas.filter { !$0.vendida }) { Text($0.nombre).tag(Optional($0.id)) }
+                        ForEach(datos.cuentas.filter { !$0.vendida && datos.cuentasConMovimientos.contains($0.id) }) { Text($0.nombre).tag(Optional($0.id)) }
                     }
                 } label: {
                     Label("Filtrar", systemImage: store.cuentaId == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
