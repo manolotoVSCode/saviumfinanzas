@@ -64,7 +64,7 @@ struct BotonNuevo: View {
     var body: some View {
         Button(action: accion) { Image(systemName: "plus").font(.title2.bold()).frame(width: 56, height: 56) }
             .buttonStyle(.glassProminent).buttonBorderShape(.circle)
-            .padding(.trailing, 20).padding(.bottom, 12)
+            .padding(.trailing, 20)
             .accessibilityLabel("Apuntar gasto o ingreso")
     }
 }

@@ -4,7 +4,6 @@ import SaviumCore
 struct ResumenView: View {
     @Environment(DatosStore.self) private var datos
     @Environment(AppModel.self) private var app
-    @State private var apuntando = false
 
     private var nombreMesAnterior: String {
         let d = Calendar.current.date(byAdding: .month, value: -1, to: .now)!
@@ -19,8 +18,6 @@ struct ResumenView: View {
         .navigationTitle("Resumen")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { MenuPerfil() } }
         .refreshable { await datos.cargar(app: app) }
-        .overlay(alignment: .bottomTrailing) { if datos.hayDatos { BotonNuevo { apuntando = true } } }
-        .sheet(isPresented: $apuntando) { NuevoMovimientoView() }
     }
 
     private var lista: some View {

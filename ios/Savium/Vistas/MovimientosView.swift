@@ -4,7 +4,6 @@ import SaviumCore
 struct MovimientosView: View {
     @Environment(MovimientosStore.self) private var store
     @Environment(DatosStore.self) private var datos
-    @State private var apuntando = false
     @State private var aBorrar: Transaccion?
     @Environment(AppModel.self) private var app
 
@@ -47,8 +46,6 @@ struct MovimientosView: View {
         .onChange(of: store.cuentaId) { Task { await store.recargar() } }
         .refreshable { await store.recargar() }
         .task { if store.filas.isEmpty { await store.recargar() } }
-        .overlay(alignment: .bottomTrailing) { BotonNuevo { apuntando = true } }
-        .sheet(isPresented: $apuntando) { NuevoMovimientoView() }
         .contentMargins(.bottom, 80, for: .scrollContent)
         .confirmationDialog(textoConfirmacion, isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }),
                             titleVisibility: .visible, presenting: aBorrar) { t in
