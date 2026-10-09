@@ -12,13 +12,29 @@ struct Importe: View {
     }
 }
 
+/// Fila con el importe siempre a la derecha. LabeledContent manda el importe debajo
+/// (alineado a la izquierda) cuando el nombre es largo; aquí el nombre se parte en líneas.
+struct FilaImporte<Valor: View, Etiqueta: View>: View {
+    private let valor: Valor
+    private let etiqueta: Etiqueta
+    init(@ViewBuilder _ valor: () -> Valor, @ViewBuilder label etiqueta: () -> Etiqueta) {
+        self.valor = valor(); self.etiqueta = etiqueta()
+    }
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            etiqueta.frame(maxWidth: .infinity, alignment: .leading)
+            valor.fixedSize().layoutPriority(1)
+        }
+    }
+}
+
 struct Linea: View {
     let titulo: String
     let valor: Double
     let divisa: String
     var destacado = false
     var body: some View {
-        LabeledContent {
+        FilaImporte {
             Importe(valor: valor, divisa: divisa, estilo: destacado ? .body.bold() : .body)
         } label: {
             Text(titulo).fontWeight(destacado ? .semibold : .regular)

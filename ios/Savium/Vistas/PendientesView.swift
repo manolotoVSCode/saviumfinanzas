@@ -33,7 +33,7 @@ struct PendientesView: View {
                 }
                 Section {
                     ForEach(r.filas) { f in
-                        LabeledContent {
+                        FilaImporte {
                             Importe(valor: f.restante, divisa: f.pendiente.divisa, color: f.vencido ? .red : nil)
                         } label: {
                             VStack(alignment: .leading) {
@@ -61,7 +61,7 @@ struct PendientesView: View {
                 Section {
                     ForEach(filas) { f in
                         let dias = Calendar.current.dateComponents([.day], from: hoy, to: Calendar.current.startOfDay(for: f.fechaEstimada)).day ?? 0
-                        LabeledContent {
+                        FilaImporte {
                             Importe(valor: f.monto, divisa: f.divisa.rawValue)
                         } label: {
                             VStack(alignment: .leading) {

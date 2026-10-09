@@ -46,7 +46,7 @@ struct ResumenView: View {
                 Section("Atención") {
                     ForEach(vencidos) { f in
                         Button { app.pestana = .pendientes } label: {
-                            LabeledContent {
+                            FilaImporte {
                                 Importe(valor: f.restante, divisa: f.pendiente.divisa, color: .red)
                             } label: {
                                 Label(f.pendiente.concepto ?? "Pendiente", systemImage: "exclamationmark.circle.fill").foregroundStyle(.red)
@@ -55,7 +55,7 @@ struct ResumenView: View {
                     }
                     ForEach(proximos) { f in
                         Button { app.pestana = .pendientes } label: {
-                            LabeledContent {
+                            FilaImporte {
                                 Importe(valor: f.monto, divisa: f.divisa.rawValue)
                             } label: {
                                 Label {

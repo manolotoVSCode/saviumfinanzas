@@ -17,15 +17,17 @@ struct PatrimonioView: View {
     private var lista: some View {
         let p = datos.patrimonio(app)
         let d = app.divisa.rawValue
-        let activos = Rubro.allCases.filter { !$0.esPasivo && (p.porRubro[$0] ?? 0) != 0 }
-        let pasivos = Rubro.allCases.filter { $0.esPasivo && (p.porRubro[$0] ?? 0) != 0 }
+        // Nada a cero: ni rubros, ni cuentas, ni inversiones (menos de un céntimo cuenta como cero).
+        let conImporte = { (v: Double) in abs(v) >= 0.005 }
+        let activos = Rubro.allCases.filter { !$0.esPasivo && conImporte(p.porRubro[$0] ?? 0) }
+        let pasivos = Rubro.allCases.filter { $0.esPasivo && conImporte(p.porRubro[$0] ?? 0) }
         // Se ocultan las vendidas y las de saldo residual, como ResumenMovil.
-        let visibles = datos.cuentas.filter { !$0.vendida && abs($0.saldoActual) >= 0.005 }
+        let visibles = datos.cuentas.filter { !$0.vendida && conImporte($0.saldoActual) }
         let saldos = Dictionary(datos.cuentas.map { ($0.id, $0.saldoActual) }, uniquingKeysWith: { a, _ in a })
         let invs = datos.inversiones.map { i in
             (i, valor: Inversiones.valorActual(i, valuaciones: datos.valuaciones, saldoCuenta: i.cuentaId.flatMap { saldos[$0] }))
         }
-        let activas = invs.filter { $0.0.activa }
+        let activas = invs.filter { $0.0.activa && conImporte($0.valor != 0 ? $0.valor : $0.0.montoInvertido) }
         let totales = Inversiones.totales(invs, tasas: app.tasas, moneda: app.divisa)
         let rend = totales.valor - totales.invertido
         return List {
@@ -44,8 +46,10 @@ struct PatrimonioView: View {
             Section("Activos · \(Formato.importe(p.activos, d))") {
                 ForEach(activos) { Linea(titulo: $0.nombre, valor: p.porRubro[$0] ?? 0, divisa: d) }
             }
-            Section("Pasivos · \(Formato.importe(p.pasivos, d))") {
-                ForEach(pasivos) { Linea(titulo: $0.nombre, valor: p.porRubro[$0] ?? 0, divisa: d) }
+            if !pasivos.isEmpty {
+                Section("Pasivos · \(Formato.importe(p.pasivos, d))") {
+                    ForEach(pasivos) { Linea(titulo: $0.nombre, valor: p.porRubro[$0] ?? 0, divisa: d) }
+                }
             }
             ForEach(Self.ordenTipos, id: \.self) { tipo in
                 let cuentas = visibles.filter { $0.tipo == tipo }
@@ -66,7 +70,7 @@ struct PatrimonioView: View {
                     ForEach(activas, id: \.0.id) { par in
                         let r = Inversiones.rendimiento(par.0, valor: par.valor, valuaciones: datos.valuaciones,
                                                         saldoCuenta: par.0.cuentaId.flatMap { saldos[$0] })
-                        LabeledContent {
+                        FilaImporte {
                             VStack(alignment: .trailing) {
                                 Importe(valor: r.valor, divisa: par.0.moneda)
                                 Text(String(format: "%+.2f%%", r.pct)).font(.caption).foregroundStyle(r.pct >= 0 ? .green : .red)

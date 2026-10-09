@@ -27,7 +27,7 @@ struct SuscripcionesView: View {
             Section("Activas") {
                 ForEach(subs) { s in
                     let e = Suscripciones.estado(proximoPago: s.proximoPago, now: .now, calendario: .current)
-                    LabeledContent {
+                    FilaImporte {
                         Importe(valor: s.ultimoPagoMonto, divisa: d)
                     } label: {
                         VStack(alignment: .leading) {
