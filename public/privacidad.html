@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Savium · Política de privacidad</title>
+  <style>
+    :root { color-scheme: light dark; --verde: #239005; }
+    body { font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; background: Canvas; color: CanvasText; }
+    h1 { font-size: 28px; margin-bottom: 4px; }
+    h2 { font-size: 20px; margin-top: 32px; }
+    .fecha { color: GrayText; margin-top: 0; }
+    a { color: var(--verde); }
+  </style>
+</head>
+<body>
+  <h1>Política de privacidad de Savium</h1>
+  <p class="fecha">Última actualización: 8 de octubre de 2026</p>
+
+  <p>Savium es una aplicación de finanzas personales (web en savium.manoloto.com y app para iPhone) creada y usada por su autor, Manuel de la Torre, para llevar el control de sus propias cuentas. No se vende ni se ofrece al público.</p>
+
+  <h2>Qué datos se tratan</h2>
+  <ul>
+    <li><strong>Datos de la cuenta:</strong> correo electrónico y contraseña (la contraseña la gestiona el proveedor de autenticación y nunca se guarda en claro).</li>
+    <li><strong>Datos financieros que introduce el propio usuario:</strong> cuentas, saldos, movimientos, categorías, pendientes de cobro, suscripciones e inversiones.</li>
+  </ul>
+  <p>Savium no accede a tus cuentas bancarias, no usa la ubicación, los contactos, las fotos ni el micrófono, y no recopila datos con fines publicitarios.</p>
+
+  <h2>Para qué se usan</h2>
+  <p>Únicamente para mostrar al usuario su propia información financiera y los cálculos derivados (saldos, patrimonio, pagos próximos). No se comparten con terceros, no se venden y no se usan para seguimiento ni publicidad.</p>
+
+  <h2>Dónde se guardan</h2>
+  <p>En una base de datos gestionada por Supabase. Cada fila está protegida con reglas de acceso por usuario: solo la persona que ha iniciado sesión puede leer o modificar sus propios datos. La app de iPhone guarda la sesión en el Llavero de iOS y solo dos preferencias en el dispositivo (la divisa elegida y la última cuenta usada); los datos financieros no se almacenan en el teléfono.</p>
+
+  <h2>Face ID</h2>
+  <p>La app puede pedir Face ID o el código del iPhone para abrirse. Esa comprobación la hace iOS en el propio dispositivo; Savium no recibe ni guarda datos biométricos.</p>
+
+  <h2>Tipos de cambio</h2>
+  <p>Para convertir entre pesos, dólares y euros, la app consulta tipos de cambio públicos en exchangerate-api.com. Esa consulta no incluye ningún dato personal.</p>
+
+  <h2>Conservación y borrado</h2>
+  <p>Los datos se conservan mientras exista la cuenta. Para borrar la cuenta y todos sus datos, escribe a <a href="mailto:manoloto@gmail.com">manoloto@gmail.com</a> y se eliminarán en un plazo máximo de 30 días.</p>
+
+  <h2>Contacto</h2>
+  <p>Cualquier duda sobre esta política: <a href="mailto:manoloto@gmail.com">manoloto@gmail.com</a>.</p>
+</body>
+</html>
