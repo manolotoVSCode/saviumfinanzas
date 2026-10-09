@@ -1,8 +1,9 @@
-"""Icono de la app: el cubo de public/favicon.svg sobre fondo blanco, a 1024 px."""
+"""Icono de la app: el cubo de public/favicon.svg en blanco sobre fondo verde Savium, a 1024 px."""
 from pathlib import Path
 from PIL import Image, ImageDraw
 
 VERDE = (0x23, 0x90, 0x05)
+BLANCO = (255, 255, 255)
 LADO = 1024
 ESCALA = LADO * 0.62 / 184          # el cubo ocupa ~62 % del icono
 DESPLAZAMIENTO = (LADO - 184 * ESCALA) / 2
@@ -18,14 +19,14 @@ TRAZOS = [
 def punto(p):
     return (DESPLAZAMIENTO + p[0] * ESCALA, DESPLAZAMIENTO + p[1] * ESCALA)
 
-img = Image.new("RGB", (LADO, LADO), "white")
+img = Image.new("RGB", (LADO, LADO), VERDE)
 d = ImageDraw.Draw(img)
 for trazo in TRAZOS:
     pts = [punto(p) for p in trazo]
-    d.line(pts, fill=VERDE, width=TRAZO, joint="curve")
+    d.line(pts, fill=BLANCO, width=TRAZO, joint="curve")
     for x, y in pts:  # extremos redondeados (stroke-linecap="round")
         r = TRAZO / 2
-        d.ellipse((x - r, y - r, x + r, y + r), fill=VERDE)
+        d.ellipse((x - r, y - r, x + r, y + r), fill=BLANCO)
 
 destino = Path(__file__).resolve().parent.parent / "Savium/Assets.xcassets/AppIcon.appiconset/icono-1024.png"
 destino.parent.mkdir(parents=True, exist_ok=True)
