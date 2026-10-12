@@ -32,17 +32,16 @@ struct AjustesView: View {
                 }
 
                 Section {
-                    Toggle("Bloquear con Face ID", isOn: Binding(get: { bloqueo.activo }, set: { bloqueo.cambiarActivo($0) }))
-                        .disabled(!bloqueo.disponible)
-                    if bloqueo.disponible && bloqueo.activo {
+                    Toggle("Pedir acceso al abrir", isOn: Binding(get: { bloqueo.activo }, set: { bloqueo.cambiarActivo($0) }))
+                    if bloqueo.activo {
                         Picker("Pedirlo al volver", selection: Binding(get: { bloqueo.plazo }, set: { bloqueo.cambiarPlazo($0) })) {
                             ForEach(PlazoBloqueo.allCases) { Text($0.titulo).tag($0) }
                         }
                     }
                 } footer: {
                     Text(bloqueo.disponible
-                         ? "Se pide siempre al abrir la app y al volver a ella después del tiempo elegido."
-                         : "Este iPhone no tiene Face ID ni código configurado.")
+                         ? "Al abrir la app y al volver a ella después del tiempo elegido: Face ID o tu contraseña."
+                         : "Al abrir la app y al volver a ella después del tiempo elegido: tu contraseña.")
                 }
 
                 Section {

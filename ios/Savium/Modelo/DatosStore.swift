@@ -43,6 +43,7 @@ final class DatosStore {
 
     func cargar(app: AppModel) async {
         guard !cargando else { return }
+        if let s = ModoSenuelo.datos { cargarSenuelo(s); return }
         cargando = true
         defer { cargando = false }
         async let tasas: Void = app.cargarTasas()
@@ -62,12 +63,14 @@ final class DatosStore {
             async let perfil = repo.perfil()
             let yo = supabase.auth.currentUser?.id.uuidString.lowercased() ?? ""
             async let accesos = repo.accesos(yo)
+            async let codigo = repo.hashCodigoEmergencia()
             let cats = try await repo.categorias()
             let pp = try await repo.movimientos(deSubcategorias: PorPagar.subcategoriasRelevantes(cats))
             let (nc, np, npe, ns, ni, nv) = try await (c, p, pe, s, i, v)
             let (nma, nre) = try await (ma, re)
             let nuevoPerfil = try await perfil
             let nuevosAccesos = try await accesos
+            CodigoGuardado.guardar(try await codigo)
             let divisaPerfil = nuevoPerfil?.divisaPreferida
             let conMovs = try await repo.cuentasConMovimientos(nc.map(\.id))
             cuentas = nc; cuentasConMovimientos = conMovs; filasPatrimonio = np; categorias = cats; pendientes = npe
@@ -89,6 +92,16 @@ final class DatosStore {
             self.error = "Sin conexión"
         }
         await tasas
+    }
+
+    /// Modo señuelo: los datos ficticios, sin tocar la red.
+    private func cargarSenuelo(_ s: Senuelo.Datos) {
+        let mes = MesAnterior.rango(now: .now, calendario: cal)
+        cuentas = s.cuentas; cuentasConMovimientos = Set(s.cuentas.map(\.id)); filasPatrimonio = s.filasPatrimonio
+        categorias = s.categorias; pendientes = []; suscripciones = s.suscripciones; inversiones = []; valuaciones = []
+        movimientosPorPagar = []; recientes = s.movimientos
+        movimientosMesAnterior = s.movimientos.filter { $0.fecha >= mes.desde && $0.fecha <= mes.hasta }
+        soloLectura = false; error = nil; actualizado = .now
     }
 
     // MARK: Alerta de emergencia (lector)

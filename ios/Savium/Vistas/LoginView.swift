@@ -1,15 +1,21 @@
 import SwiftUI
 import SaviumCore
 
+/// Inicio de sesión y, con `acceso`, pantalla de acceso con la sesión ya abierta (al abrir la app o volver a ella).
+/// En acceso se entra con el botón de Face ID (nunca automático), con la contraseña o con el código de coacción:
+/// este último entra igual, en modo señuelo, y manda la alerta en silencio.
 struct LoginView: View {
+    var acceso = false
     @Environment(Sesion.self) private var sesion
     @Environment(Bloqueo.self) private var bloqueo
+    @Environment(AppModel.self) private var app
+    @Environment(DatosStore.self) private var datos
+    @Environment(MovimientosStore.self) private var movimientos
     @State private var recordado = UsuarioRecordado.cargar()
     @State private var email = ""
     @State private var clave = ""
     @State private var entrando = false
     @State private var conFaceID = false
-    @State private var faceIDIntentado = false
     /// Una distinta cada vez que se abre el login, al estilo de los mensajes de Claude mientras piensa.
     @State private var frase = Self.frases.randomElement()!
     private static let frases = [
@@ -117,13 +123,13 @@ struct LoginView: View {
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in tecladoVisible = true }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in tecladoVisible = false }
             .task {
-                conFaceID = recordado.map { ClaveConFaceID.hayGuardada(email: $0.email) } ?? false
-                // Como en la banca: al abrir, Face ID directamente (una sola vez; luego, con el botón).
-                // Si acaba de cerrar sesión él mismo, no: le volvería a meter y no podría salir.
-                if conFaceID && !faceIDIntentado && !sesion.salidaVoluntaria {
-                    faceIDIntentado = true
-                    await usarFaceID()
+                if acceso {
+                    if recordado == nil, let e = sesion.email { recordado = UsuarioRecordado(email: e, nombre: nil) }
+                    conFaceID = bloqueo.disponible
+                } else {
+                    conFaceID = recordado.map { ClaveConFaceID.hayGuardada(email: $0.email) } ?? false
                 }
+                // Face ID nunca salta solo: con el iPhone en manos de otro, abrir la app no debe bastar.
             }
         }
     }
@@ -132,6 +138,10 @@ struct LoginView: View {
 
     private func usarFaceID() async {
         campo = nil
+        if acceso {
+            if await bloqueo.desbloquearConFaceID() { salirDeSenuelo() }
+            return
+        }
         guard let recordado else { return }
         guard let guardada = await ClaveConFaceID.leer(email: recordado.email) else {
             conFaceID = ClaveConFaceID.hayGuardada(email: recordado.email)
@@ -147,7 +157,18 @@ struct LoginView: View {
         campo = nil
         let correo = correo
         Task {
+            if acceso, await esCodigoEmergencia(clave) {
+                // Mismo aspecto que con la contraseña: la espera, la entrada y los datos (ficticios).
+                try? await Task.sleep(for: .milliseconds(700))
+                entrarEnSenuelo()
+                entrando = false
+                return
+            }
             let ok = await sesion.entrar(email: correo, clave: clave)
+            if ok, acceso {
+                salirDeSenuelo()
+                bloqueo.recienAutenticado()
+            }
             if ok, !desdeFaceID, bloqueo.activo, ClaveConFaceID.disponible {
                 ClaveConFaceID.guardar(clave, email: correo)
             }
@@ -161,7 +182,35 @@ struct LoginView: View {
         }
     }
 
+    private func esCodigoEmergencia(_ texto: String) async -> Bool {
+        guard let yo = sesion.userId else { return false }
+        var hash = CodigoGuardado.leer()
+        if hash == nil, let remoto = try? await datos.repo.hashCodigoEmergencia() {
+            CodigoGuardado.guardar(remoto)
+            hash = remoto
+        }
+        guard let hash else { return false }
+        return CodigoEmergencia.coincide(texto, hash: hash, userId: yo)
+    }
+
+    private func entrarEnSenuelo() {
+        ModoSenuelo.activar()
+        datos.reiniciar()
+        movimientos.reiniciar()
+        AlertaEmergencia.compartida.disparar()
+        bloqueo.recienAutenticado()
+    }
+
+    /// Al entrar de verdad (Face ID o contraseña): fuera los datos ficticios.
+    private func salirDeSenuelo() {
+        guard ModoSenuelo.activo else { return }
+        ModoSenuelo.desactivar()
+        datos.reiniciar()
+        movimientos.reiniciar()
+    }
+
     private func olvidar() {
+        if acceso { Task { await sesion.cerrar() } }
         UsuarioRecordado.olvidar()
         recordado = nil
         conFaceID = false

@@ -128,6 +128,10 @@ public struct Suscripcion: Codable, Sendable, Identifiable, Hashable {
         case id, active, frecuencia
         case serviceName = "service_name", proximoPago = "proximo_pago", ultimoPagoMonto = "ultimo_pago_monto"
     }
+    public init(id: String, serviceName: String, active: Bool, frecuencia: String, proximoPago: String, ultimoPagoMonto: Double) {
+        self.id = id; self.serviceName = serviceName; self.active = active; self.frecuencia = frecuencia
+        self.proximoPago = proximoPago; self.ultimoPagoMonto = ultimoPagoMonto
+    }
 }
 
 public struct Inversion: Codable, Sendable, Identifiable, Hashable {

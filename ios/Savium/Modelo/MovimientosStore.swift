@@ -16,6 +16,11 @@ final class MovimientosStore {
 
     /// Quita la fila al momento; si el borrado falla, la repone y devuelve false.
     func borrar(_ t: Transaccion) async -> Bool {
+        if ModoSenuelo.activo {
+            ModoSenuelo.borrar(id: t.id)
+            filas.removeAll { $0.id == t.id }
+            return true
+        }
         let q = Movimientos.quitar(t.id, de: filas)
         guard let quitada = q.quitada else { return false }
         filas = q.filas
@@ -43,6 +48,14 @@ final class MovimientosStore {
 
     func cargarMas() async {
         guard hayMas, !cargando else { return }
+        if let s = ModoSenuelo.datos {
+            filas = s.movimientos.filter { t in
+                (cuentaId == nil || t.cuentaId == cuentaId) && (texto.isEmpty || t.comentario.localizedStandardContains(texto))
+            }
+            hayMas = false
+            error = nil
+            return
+        }
         cargando = true
         let mia = consulta
         defer { if mia == consulta { cargando = false } }

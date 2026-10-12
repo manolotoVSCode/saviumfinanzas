@@ -32,6 +32,7 @@ struct UsuarioRecordado: Codable, Equatable {
     static func olvidar() {
         UserDefaults.standard.removeObject(forKey: clave)
         ClaveConFaceID.borrar()
+        CodigoGuardado.guardar(nil)
     }
 
     private static func guardar(_ u: UsuarioRecordado) {
@@ -104,5 +105,29 @@ enum ClaveConFaceID {
         let consulta: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: servicio]
         SecItemDelete(consulta as CFDictionary)
         UserDefaults.standard.removeObject(forKey: marca)
+    }
+}
+
+/// Hash del código de coacción, guardado en el Llavero de este iPhone (sin Face ID: se comprueba en la pantalla
+/// de acceso, antes de entrar). Se descarga en cada carga normal; así funciona aunque no haya conexión.
+enum CodigoGuardado {
+    private static let servicio = "com.manoloto.savium.ce"
+
+    static func leer() -> String? {
+        let consulta: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: servicio,
+                                       kSecReturnData as String: true]
+        var resultado: CFTypeRef?
+        guard SecItemCopyMatching(consulta as CFDictionary, &resultado) == errSecSuccess, let d = resultado as? Data else { return nil }
+        return String(data: d, encoding: .utf8)
+    }
+
+    static func guardar(_ hash: String?) {
+        let base: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: servicio]
+        SecItemDelete(base as CFDictionary)
+        guard let hash else { return }
+        var alta = base
+        alta[kSecValueData as String] = Data(hash.utf8)
+        alta[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        SecItemAdd(alta as CFDictionary, nil)
     }
 }

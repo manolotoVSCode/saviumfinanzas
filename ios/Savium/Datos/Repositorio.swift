@@ -75,6 +75,16 @@ struct Repositorio: Sendable {
         try await db.from("alertas_emergencia").update(Vista(vista_en: .now), returning: .minimal)
             .is("vista_en", value: nil).execute()
     }
+    /// Hash del código de coacción del usuario (nil si no tiene, o si la tabla aún no existe).
+    func hashCodigoEmergencia() async throws -> String? {
+        struct Fila: Decodable { let hash: String }
+        do {
+            let filas: [Fila] = try await db.from("codigos_emergencia").select("hash").limit(1).execute().value
+            return filas.first?.hash
+        } catch is PostgrestError {
+            return nil
+        }
+    }
     func pendientes() async throws -> [Pendiente] {
         try await db.from("transaction_pendings").select("id, concepto, tipo, monto_esperado, monto_cobrado, divisa, fecha_esperada, estado").execute().value
     }

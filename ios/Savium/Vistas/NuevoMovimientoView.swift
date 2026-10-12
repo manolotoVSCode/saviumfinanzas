@@ -92,6 +92,19 @@ struct NuevoMovimientoView: View {
         guard !guardando, let userId = sesion.userId else { return }
         guardando = true
         defer { guardando = false }
+        if ModoSenuelo.activo {
+            // Señuelo: parece guardado, pero solo cambia los datos ficticios en memoria.
+            if form.editando, let cambio = form.cambios(cuentas: datos.cuentas, calendario: .current) {
+                ModoSenuelo.editar(id: form.idEnvio, cambio)
+            } else if let nueva = form.construir(cuentas: datos.cuentas, userId: userId, calendario: .current) {
+                ModoSenuelo.apuntar(nueva)
+            }
+            try? await Task.sleep(for: .milliseconds(400))
+            exito += 1
+            dismiss()
+            Task { await datos.cargar(app: app); await movimientos.recargar() }
+            return
+        }
         do {
             if form.editando {
                 guard let cambio = form.cambios(cuentas: datos.cuentas, calendario: .current) else { return }

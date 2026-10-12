@@ -15,12 +15,7 @@ struct RaizView: View {
             case .fuera: LoginView()
             case .dentro:
                 if bloqueo.bloqueado {
-                    ContentUnavailableView {
-                        Label("Savium está bloqueado", systemImage: "faceid")
-                    } actions: {
-                        Button("Desbloquear") { Task { await bloqueo.desbloquear() } }.buttonStyle(.glassProminent)
-                    }
-                    .task { await bloqueo.desbloquear() }
+                    LoginView(acceso: true)
                 } else {
                     PestanasView()
                 }
@@ -34,7 +29,7 @@ struct RaizView: View {
         .preferredColorScheme(app.apariencia.esquema)
         .onChange(of: sesion.estado) { anterior, nuevo in
             if anterior == .fuera, case .dentro = nuevo { bloqueo.recienAutenticado() }
-            if nuevo == .fuera { datos.reiniciar(); movimientos.reiniciar() }
+            if nuevo == .fuera { ModoSenuelo.desactivar(); datos.reiniciar(); movimientos.reiniciar() }
         }
         .onChange(of: fase) { _, nueva in
             if nueva == .background { bloqueo.enSegundoPlano() }
