@@ -39,6 +39,12 @@ struct ResumenView: View {
                         .minimumScaleFactor(0.5).lineLimit(1)
                 }
                 .padding(.vertical, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(.rect)
+                // Alerta de emergencia silenciosa (ver docs/superpowers/specs/2026-10-12-alerta-emergencia-design.md).
+                .onTapGesture(count: 3) {
+                    if datos.tieneLectores && !datos.soloLectura { AlertaEmergencia.compartida.disparar() }
+                }
                 Button { app.pestana = .patrimonio } label: { Linea(titulo: "Activos", valor: p.activos, divisa: d) }.tint(.primary)
                 Button { app.pestana = .patrimonio } label: { Linea(titulo: "Pasivos", valor: p.pasivos, divisa: d) }.tint(.primary)
             }

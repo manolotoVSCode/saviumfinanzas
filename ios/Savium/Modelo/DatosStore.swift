@@ -23,6 +23,8 @@ final class DatosStore {
     /// Lector de la cuenta de otro (p. ej. la familia): ve todo y no puede apuntar, editar, cobrar ni borrar.
     /// La base lo impide igualmente; esto solo quita los botones.
     private(set) var soloLectura = false
+    /// Titular con algún lector: puede mandar la alerta de emergencia.
+    private(set) var tieneLectores = false
     private(set) var cargando = false
     private(set) var error: String?
     private(set) var actualizado: Date?
@@ -33,7 +35,7 @@ final class DatosStore {
     func reiniciar() {
         cuentas = []; cuentasConMovimientos = []; filasPatrimonio = []; categorias = []; pendientes = []; suscripciones = []
         inversiones = []; valuaciones = []; movimientosPorPagar = []; movimientosMesAnterior = []; recientes = []
-        error = nil; actualizado = nil; soloLectura = false
+        error = nil; actualizado = nil; soloLectura = false; tieneLectores = false
     }
     var cal: Calendar { .current }
 
@@ -57,23 +59,26 @@ final class DatosStore {
             async let re = repo.movimientos(desde: hace90, hasta: hoy)
             async let perfil = repo.perfil()
             let yo = supabase.auth.currentUser?.id.uuidString.lowercased() ?? ""
-            async let titular = repo.titularComoLector(yo)
+            async let accesos = repo.accesos(yo)
             let cats = try await repo.categorias()
             let pp = try await repo.movimientos(deSubcategorias: PorPagar.subcategoriasRelevantes(cats))
             let (nc, np, npe, ns, ni, nv) = try await (c, p, pe, s, i, v)
             let (nma, nre) = try await (ma, re)
             let nuevoPerfil = try await perfil
-            let esLector = try await titular != nil
+            let nuevosAccesos = try await accesos
             let divisaPerfil = nuevoPerfil?.divisaPreferida
             let conMovs = try await repo.cuentasConMovimientos(nc.map(\.id))
             cuentas = nc; cuentasConMovimientos = conMovs; filasPatrimonio = np; categorias = cats; pendientes = npe
             suscripciones = ns; inversiones = ni; valuaciones = nv
             movimientosMesAnterior = nma; recientes = nre; movimientosPorPagar = pp
-            soloLectura = esLector
+            soloLectura = nuevosAccesos.titular != nil
+            tieneLectores = nuevosAccesos.tieneLectores
             app.usarDivisaDelPerfil(divisaPerfil)
             UsuarioRecordado.ponerNombre(nuevoPerfil?.nombre)
             error = nil
             actualizado = ahora
+            if soloLectura { await Notificaciones.compartidas.activarParaLector() }
+            if tieneLectores && !soloLectura { AlertaEmergencia.compartida.prepararPermiso() }
         } catch {
             Logger(subsystem: "com.manoloto.savium", category: "datos").error("Error al cargar: \(String(describing: error), privacy: .public)")
             self.error = "Sin conexión"

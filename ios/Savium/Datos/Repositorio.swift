@@ -45,15 +45,16 @@ struct Repositorio: Sendable {
         let filas: [Perfil] = try await db.from("profiles").select("divisa_preferida, nombre").limit(1).execute().value
         return filas.first
     }
-    /// Si este usuario es lector de otro titular (acceso de solo lectura), el id del titular.
-    /// Un error de la base (p. ej. la tabla aún no existe) cuenta como «no es lector»; uno de red, no.
-    func titularComoLector(_ yo: String) async throws -> String? {
-        struct Fila: Decodable { let propietario_id: String }
+    /// Accesos de lectura en los que participa este usuario: de quién es lector y si alguien lo es de él.
+    /// Un error de la base (p. ej. la tabla aún no existe) cuenta como «sin accesos»; uno de red, no.
+    func accesos(_ yo: String) async throws -> (titular: String?, tieneLectores: Bool) {
+        struct Fila: Decodable { let propietario_id: String; let lector_id: String }
         do {
-            let filas: [Fila] = try await db.from("lectores").select("propietario_id").eq("lector_id", value: yo).limit(1).execute().value
-            return filas.first?.propietario_id
+            let filas: [Fila] = try await db.from("lectores").select("propietario_id, lector_id").execute().value
+            return (filas.first { $0.lector_id.lowercased() == yo }?.propietario_id,
+                    filas.contains { $0.propietario_id.lowercased() == yo })
         } catch is PostgrestError {
-            return nil
+            return (nil, false)
         }
     }
     func pendientes() async throws -> [Pendiente] {

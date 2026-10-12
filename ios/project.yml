@@ -30,6 +30,8 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Savium
         INFOPLIST_KEY_NSFaceIDUsageDescription: "Savium usa Face ID para proteger tus datos financieros."
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Savium incluye tu ubicación en los avisos de seguridad que envías a tu familia."
+        CODE_SIGN_ENTITLEMENTS: Savium/Savium.entitlements
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         TARGETED_DEVICE_FAMILY: "1"

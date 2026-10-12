@@ -49,6 +49,7 @@ final class Sesion {
     func cerrar() async {
         cierreVoluntario = true
         salidaVoluntaria = true
+        await Notificaciones.compartidas.olvidarDispositivo()
         // Solo este iPhone: el alcance por defecto (global) cerraría también la web y los demás dispositivos.
         try? await supabase.auth.signOut(scope: .local)
     }

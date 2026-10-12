@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct SaviumApp: App {
+    @UIApplicationDelegateAdaptor(Delegado.self) private var delegado
     @State private var app = AppModel()
     @State private var sesion = Sesion()
     @State private var bloqueo = Bloqueo()
