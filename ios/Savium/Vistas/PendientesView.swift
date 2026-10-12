@@ -7,6 +7,8 @@ struct PendientesView: View {
     @Environment(AppModel.self) private var app
     @State private var modo: Modo = .cobrar
     @State private var horizonte = 30
+    @State private var aBorrar: Pendiente?
+    @State private var fallo: String?
 
     var body: some View {
         Group { if datos.hayDatos { lista } else { SinDatos() } }
@@ -44,8 +46,32 @@ struct PendientesView: View {
                                 }
                             }
                         }
+                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                            Button("Cobrar", systemImage: "checkmark.circle") { Task { await cobrar(f.pendiente) } }
+                                .tint(.green)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button("Borrar", systemImage: "trash", role: .destructive) { aBorrar = f.pendiente }
+                        }
+                    }
+                } footer: {
+                    if !r.filas.isEmpty {
+                        Text("Desliza a la derecha para marcarlo como cobrado hoy, o a la izquierda para borrarlo.")
                     }
                 }
+            }
+            .confirmationDialog("¿Borrar «\(aBorrar?.concepto ?? "Pendiente")»?",
+                                isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }),
+                                titleVisibility: .visible, presenting: aBorrar) { p in
+                Button("Borrar", role: .destructive) {
+                    Task { if !(await datos.borrar(p)) { fallo = "No se pudo borrar. Revisa la conexión y vuelve a intentarlo." } }
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: { _ in
+                Text("No se puede deshacer.")
+            }
+            .alert(fallo ?? "", isPresented: Binding(get: { fallo != nil }, set: { if !$0 { fallo = nil } })) {
+                Button("OK", role: .cancel) {}
             }
         case .pagar:
             let filas = datos.porPagar(app, horizonte: horizonte)
@@ -74,6 +100,10 @@ struct PendientesView: View {
                 }
             }
         }
+    }
+
+    private func cobrar(_ p: Pendiente) async {
+        if !(await datos.cobrar(p)) { fallo = "No se pudo marcar como cobrado. Revisa la conexión y vuelve a intentarlo." }
     }
 
     private func cuando(_ dias: Int) -> String {

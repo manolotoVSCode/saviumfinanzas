@@ -74,6 +74,29 @@ final class DatosStore {
         await tasas
     }
 
+    // MARK: Pendientes
+
+    /// Lo quita de la lista al momento; si falla, lo repone y devuelve false.
+    func cobrar(_ p: Pendiente) async -> Bool {
+        await quitarPendiente(p) { try await self.repo.cobrarPendiente(p, fecha: Fechas.isoLocal(.now, calendario: self.cal)) }
+    }
+
+    func borrar(_ p: Pendiente) async -> Bool {
+        await quitarPendiente(p) { try await self.repo.borrarPendiente(id: p.id) }
+    }
+
+    private func quitarPendiente(_ p: Pendiente, _ accion: () async throws -> Void) async -> Bool {
+        guard let i = pendientes.firstIndex(where: { $0.id == p.id }) else { return false }
+        pendientes.remove(at: i)
+        do {
+            try await accion()
+            return true
+        } catch {
+            pendientes.insert(p, at: min(i, pendientes.count))
+            return false
+        }
+    }
+
     // MARK: Derivados (siempre en la divisa elegida)
 
     func patrimonio(_ app: AppModel) -> Patrimonio.Resultado {
@@ -90,12 +113,20 @@ final class DatosStore {
     }
 
     func mesAnterior(_ app: AppModel) -> MesAnterior.Totales {
+        MesAnterior.totales(movimientosResumen, moneda: app.divisa, now: .now, calendario: cal)
+    }
+
+    func gastosPorCategoria(_ app: AppModel) -> [GastosPorCategoria.Fila] {
+        GastosPorCategoria.calcular(movimientosResumen, moneda: app.divisa, now: .now, calendario: cal)
+    }
+
+    private var movimientosResumen: [MovimientoResumen] {
         let porId = Dictionary(categorias.map { ($0.id, $0) }, uniquingKeysWith: { _, b in b })
-        let movs = movimientosMesAnterior.map {
-            MovimientoResumen(fecha: $0.dia(en: cal), ingreso: $0.ingreso, gasto: $0.gasto, divisa: $0.divisa,
-                              tipo: porId[$0.subcategoriaId]?.tipo, categoria: porId[$0.subcategoriaId]?.categoria ?? "SIN ASIGNAR")
+        return movimientosMesAnterior.map {
+            let c = porId[$0.subcategoriaId]
+            return MovimientoResumen(fecha: $0.dia(en: cal), ingreso: $0.ingreso, gasto: $0.gasto, divisa: $0.divisa,
+                                     tipo: c?.tipo, categoria: c?.categoria ?? "SIN ASIGNAR", subcategoria: c?.subcategoria)
         }
-        return MesAnterior.totales(movs, moneda: app.divisa, now: .now, calendario: cal)
     }
 
     func categoria(_ id: String) -> Categoria? { categorias.first { $0.id == id } }

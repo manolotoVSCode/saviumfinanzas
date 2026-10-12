@@ -5,6 +5,7 @@ struct MovimientosView: View {
     @Environment(MovimientosStore.self) private var store
     @Environment(DatosStore.self) private var datos
     @State private var aBorrar: Transaccion?
+    @State private var aEditar: Transaccion?
     @Environment(AppModel.self) private var app
 
     var body: some View {
@@ -14,7 +15,8 @@ struct MovimientosView: View {
             ForEach(Movimientos.agruparPorDia(store.filas), id: \.dia) { grupo in
                 Section(titulo(grupo.dia)) {
                     ForEach(grupo.movimientos) { t in
-                        NavigationLink { DetalleMovimientoView(t: t) } label: { FilaMovimiento(t: t) }
+                        Button { aEditar = t } label: { FilaMovimiento(t: t).contentShape(.rect) }
+                            .buttonStyle(.plain)
                             .onAppear { if t.id == store.filas.last?.id { Task { await store.cargarMas() } } }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button("Borrar", systemImage: "trash", role: .destructive) { aBorrar = t }
@@ -44,6 +46,9 @@ struct MovimientosView: View {
             }
         }
         .onChange(of: store.cuentaId) { Task { await store.recargar() } }
+        .sheet(item: $aEditar) { t in
+            NuevoMovimientoView(editando: t, tipoCategoria: datos.categoria(t.subcategoriaId)?.tipo)
+        }
         .refreshable { await store.recargar() }
         .task { if store.filas.isEmpty { await store.recargar() } }
         .confirmationDialog(textoConfirmacion, isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }),
@@ -86,19 +91,3 @@ struct FilaMovimiento: View {
     }
 }
 
-struct DetalleMovimientoView: View {
-    @Environment(DatosStore.self) private var datos
-    let t: Transaccion
-    var body: some View {
-        List {
-            Section { Importe(valor: t.importe, divisa: t.divisa, estilo: .title.bold(), color: t.importe > 0 ? .green : .primary) }
-            Section {
-                LabeledContent("Fecha", value: t.fecha)
-                LabeledContent("Cuenta", value: datos.cuenta(t.cuentaId)?.nombre ?? "—")
-                LabeledContent("Categoría", value: datos.categoria(t.subcategoriaId).map { "\($0.categoria) · \($0.subcategoria)" } ?? "—")
-                if !t.comentario.isEmpty { LabeledContent("Comentario", value: t.comentario) }
-            }
-        }
-        .navigationTitle("Movimiento").navigationBarTitleDisplayMode(.inline)
-    }
-}

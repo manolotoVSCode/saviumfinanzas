@@ -61,6 +61,25 @@ public struct Transaccion: Codable, Sendable, Identifiable, Hashable {
 }
 
 /// Lo que inserta la app en `transacciones` (mismos campos que addTransaction en la web).
+/// Campos que cambia «Editar movimiento» (update de transacciones).
+public struct CambioTransaccion: Encodable, Sendable, Equatable {
+    public let cuentaId: String
+    public let fecha: String
+    public let comentario: String
+    public let ingreso: Double
+    public let gasto: Double
+    public let subcategoriaId: String
+    public let divisa: String
+    enum CodingKeys: String, CodingKey {
+        case fecha, comentario, ingreso, gasto, divisa
+        case cuentaId = "cuenta_id", subcategoriaId = "subcategoria_id"
+    }
+    public init(cuentaId: String, fecha: String, comentario: String, ingreso: Double, gasto: Double, subcategoriaId: String, divisa: String) {
+        self.cuentaId = cuentaId; self.fecha = fecha; self.comentario = comentario; self.ingreso = ingreso
+        self.gasto = gasto; self.subcategoriaId = subcategoriaId; self.divisa = divisa
+    }
+}
+
 public struct NuevaTransaccion: Encodable, Sendable, Equatable {
     /// Lo genera la app: si un reintento llega tras un guardado cuya respuesta se perdió, la BD lo rechaza por duplicado.
     public let id: String

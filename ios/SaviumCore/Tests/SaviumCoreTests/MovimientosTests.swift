@@ -41,6 +41,35 @@ struct MovimientosTests {
         #expect(!f.esValido && f.construir(cuentas: cuentas, userId: "u", calendario: cal) == nil)
     }
 
+    @Test("editar: el formulario parte del movimiento y el cambio sigue a la cuenta")
+    func editar() throws {
+        let cuentas = [Cuenta(id: "mx", nombre: "Banco", tipo: "Banco", divisa: "MXN", vendida: false, saldoInicial: 0, saldoActual: 0),
+                       Cuenta(id: "us", nombre: "Dólares", tipo: "Banco", divisa: "USD", vendida: false, saldoInicial: 0, saldoActual: 0)]
+        let t = Transaccion(id: "t1", fecha: "2026-09-21", comentario: "Súper", gasto: 1234.5, divisa: "MXN", cuentaId: "mx", subcategoriaId: "s")
+        var f = FormularioMovimiento(editando: t, tipoCategoria: "Gastos", calendario: cal)
+        #expect(f.editando && f.idEnvio == "t1" && f.esGasto && f.tipoCategoria == "Gastos")
+        #expect(f.importe == 1234.5 && f.comentario == "Súper" && f.cuentaId == "mx" && f.subcategoriaId == "s")
+        #expect(Fechas.isoLocal(f.fecha, calendario: cal) == "2026-09-21")
+        f.cuentaId = "us"; f.importeTexto = "20"
+        #expect(f.cambios(cuentas: cuentas, calendario: cal) == CambioTransaccion(cuentaId: "us", fecha: "2026-09-21", comentario: "Súper",
+                                                                                  ingreso: 0, gasto: 20, subcategoriaId: "s", divisa: "USD"))
+    }
+
+    @Test("editar un reembolso o una aportación conserva su tipo y su lado")
+    func editarEspeciales() throws {
+        let cuentas = [Cuenta(id: "mx", nombre: "Banco", tipo: "Banco", divisa: "MXN", vendida: false, saldoInicial: 0, saldoActual: 0)]
+        let reembolso = Transaccion(id: "r", fecha: "2026-09-21", ingreso: 300, cuentaId: "mx", subcategoriaId: "s")
+        let r = FormularioMovimiento(editando: reembolso, tipoCategoria: "Gastos", calendario: cal)
+        #expect(r.esReembolso && r.tipoCategoria == "Gastos")
+        #expect(r.cambios(cuentas: cuentas, calendario: cal)?.ingreso == 300)
+        let aportacion = Transaccion(id: "a", fecha: "2026-09-21", ingreso: 500, cuentaId: "mx", subcategoriaId: "s")
+        let a = FormularioMovimiento(editando: aportacion, tipoCategoria: "Aportación", calendario: cal)
+        #expect(a.tipoCategoria == "Aportación" && a.cambios(cuentas: cuentas, calendario: cal)?.ingreso == 500)
+        let retiro = Transaccion(id: "b", fecha: "2026-09-21", gasto: 500, cuentaId: "mx", subcategoriaId: "s")
+        let b = FormularioMovimiento(editando: retiro, tipoCategoria: "Retiro", calendario: cal)
+        #expect(b.tipoCategoria == "Retiro" && b.cambios(cuentas: cuentas, calendario: cal)?.gasto == 500)
+    }
+
     @Test("Review Focus 2: un reintento envía el mismo id, así la BD rechaza el duplicado")
     func mismoIdEnReintentos() throws {
         let cuentas = [Cuenta(id: "c1", nombre: "Efectivo", tipo: "Efectivo", divisa: "MXN", vendida: false, saldoInicial: 0, saldoActual: 0)]

@@ -74,6 +74,50 @@ struct ResumenView: View {
                 Linea(titulo: "Gastos", valor: mes.gastos, divisa: d)
                 Linea(titulo: "Balance", valor: mes.balance, divisa: d, destacado: true)
             }
+            let categorias = datos.gastosPorCategoria(app)
+            if !categorias.isEmpty {
+                let total = categorias.reduce(0) { $0 + $1.total }
+                Section("En qué se fue el dinero") {
+                    ForEach(categorias.prefix(5)) { c in
+                        FilaCategoriaGasto(nombre: c.nombre, total: c.total, sobre: total, divisa: d, subcategorias: c.subcategorias)
+                    }
+                    if categorias.count > 5 {
+                        let resto = Array(categorias.dropFirst(5))
+                        FilaCategoriaGasto(nombre: "Otras", total: resto.reduce(0) { $0 + $1.total }, sobre: total, divisa: d,
+                                           subcategorias: resto.map { .init(nombre: $0.nombre, total: $0.total) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Categoría con su barra y su porcentaje; al tocarla despliega el detalle.
+private struct FilaCategoriaGasto: View {
+    let nombre: String
+    let total: Double
+    let sobre: Double
+    let divisa: String
+    let subcategorias: [GastosPorCategoria.Sub]
+    @State private var abierta = false
+
+    var body: some View {
+        let parte = sobre > 0 ? total / sobre : 0
+        DisclosureGroup(isExpanded: $abierta) {
+            ForEach(subcategorias, id: \.nombre) { s in
+                FilaImporte { Importe(valor: s.total, divisa: divisa) } label: { Text(s.nombre).foregroundStyle(.secondary) }
+                    .font(.subheadline)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                FilaImporte { Importe(valor: total, divisa: divisa) } label: { Text(nombre) }
+                HStack(spacing: 8) {
+                    ProgressView(value: parte).tint(.accentColor)
+                    Text(parte, format: .percent.precision(.fractionLength(0)))
+                        .font(.caption).monospacedDigit().foregroundStyle(.secondary).frame(width: 40, alignment: .trailing)
+                }
+            }
+            .padding(.vertical, 2)
         }
     }
 }

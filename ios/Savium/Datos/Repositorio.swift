@@ -94,6 +94,22 @@ struct Repositorio: Sendable {
         }
     }
 
+    func actualizar(id: String, _ cambio: CambioTransaccion) async throws {
+        try await db.from("transacciones").update(cambio).eq("id", value: id).execute()
+    }
+
+    /// Como «Cobrar» en la web pero siempre por el total: no crea ningún movimiento.
+    func cobrarPendiente(_ p: Pendiente, fecha: String) async throws {
+        struct Cobro: Encodable { let monto_cobrado: Double; let fecha_cobro: String; let estado: String }
+        try await db.from("transaction_pendings")
+            .update(Cobro(monto_cobrado: p.montoEsperado, fecha_cobro: fecha, estado: "cobrado"))
+            .eq("id", value: p.id).execute()
+    }
+
+    func borrarPendiente(id: String) async throws {
+        try await db.from("transaction_pendings").delete().eq("id", value: id).execute()
+    }
+
     /// Borra una transacción por id (las RLS solo dejan borrar las del usuario).
     func borrar(id: String) async throws {
         try await db.from("transacciones").delete().eq("id", value: id).execute()

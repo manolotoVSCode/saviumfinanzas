@@ -8,8 +8,10 @@ public struct MovimientoResumen: Sendable {
     public let divisa: String
     public let tipo: String?
     public let categoria: String?
-    public init(fecha: Date, ingreso: Double, gasto: Double, divisa: String, tipo: String?, categoria: String?) {
-        self.fecha = fecha; self.ingreso = ingreso; self.gasto = gasto; self.divisa = divisa; self.tipo = tipo; self.categoria = categoria
+    public let subcategoria: String?
+    public init(fecha: Date, ingreso: Double, gasto: Double, divisa: String, tipo: String?, categoria: String?, subcategoria: String? = nil) {
+        self.fecha = fecha; self.ingreso = ingreso; self.gasto = gasto; self.divisa = divisa; self.tipo = tipo
+        self.categoria = categoria; self.subcategoria = subcategoria
     }
 }
 

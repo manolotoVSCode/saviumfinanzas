@@ -39,8 +39,13 @@ public enum Movimientos {
 
 /// Estado de la hoja «Apuntar» y la transacción que produce.
 public struct FormularioMovimiento: Sendable, Equatable {
-    /// Id de la transacción que crea este formulario; el mismo en todos los reintentos.
-    public let idEnvio: String = UUID().uuidString.lowercased()
+    /// Id de la transacción: al apuntar, uno nuevo que se repite en todos los reintentos; al editar, el del movimiento.
+    public let idEnvio: String
+    public private(set) var editando = false
+    /// Al editar un reembolso, una aportación o un retiro: su tipo de categoría no se cambia desde la app.
+    public private(set) var tipoFijo: String?
+    /// Reembolso: ingreso en una categoría de gasto (como «Es un reembolso» en la web).
+    public private(set) var esReembolso = false
     public var esGasto = true
     public var importeTexto = ""
     public var cuentaId: String?
@@ -48,7 +53,30 @@ public struct FormularioMovimiento: Sendable, Equatable {
     public var fecha: Date
     public var comentario = ""
 
-    public init(fecha: Date, cuentaId: String? = nil) { self.fecha = fecha; self.cuentaId = cuentaId }
+    public init(fecha: Date, cuentaId: String? = nil) {
+        idEnvio = UUID().uuidString.lowercased(); self.fecha = fecha; self.cuentaId = cuentaId
+    }
+
+    public init(editando t: Transaccion, tipoCategoria: String?, calendario: Calendar) {
+        idEnvio = t.id
+        editando = true
+        fecha = t.dia(en: calendario)
+        cuentaId = t.cuentaId
+        subcategoriaId = t.subcategoriaId
+        comentario = t.comentario
+        importeTexto = String(format: "%.2f", t.ingreso > 0 ? t.ingreso : t.gasto)
+        switch tipoCategoria {
+        case "Ingreso": esGasto = false
+        case "Gastos": esGasto = true; if t.ingreso > 0 { esReembolso = true; tipoFijo = "Gastos" }
+        case "Aportación": esGasto = false; tipoFijo = "Aportación"
+        case "Retiro": esGasto = true; tipoFijo = "Retiro"
+        default: esGasto = t.gasto > 0
+        }
+    }
+
+    /// Tipo de las categorías que se ofrecen.
+    public var tipoCategoria: String { tipoFijo ?? (esGasto ? "Gastos" : "Ingreso") }
+    private var vaEnIngreso: Bool { esReembolso || !esGasto }
 
     public var importe: Double? { Formato.parsearImporte(importeTexto).flatMap { $0 > 0 ? $0 : nil } }
     public var esValido: Bool { importe != nil && cuentaId != nil && subcategoriaId != nil }
@@ -58,7 +86,16 @@ public struct FormularioMovimiento: Sendable, Equatable {
         guard let importe, let cuentaId, let subcategoriaId, let cuenta = cuentas.first(where: { $0.id == cuentaId }) else { return nil }
         return NuevaTransaccion(id: idEnvio, cuentaId: cuentaId, fecha: Fechas.isoLocal(fecha, calendario: calendario),
                                 comentario: comentario.trimmingCharacters(in: .whitespacesAndNewlines),
-                                ingreso: esGasto ? 0 : importe, gasto: esGasto ? importe : 0,
+                                ingreso: vaEnIngreso ? importe : 0, gasto: vaEnIngreso ? 0 : importe,
                                 subcategoriaId: subcategoriaId, divisa: cuenta.divisa, userId: userId)
+    }
+
+    /// Lo que se guarda al editar: mismos campos que la web; la divisa, la de la cuenta.
+    public func cambios(cuentas: [Cuenta], calendario: Calendar) -> CambioTransaccion? {
+        guard let importe, let cuentaId, let subcategoriaId, let cuenta = cuentas.first(where: { $0.id == cuentaId }) else { return nil }
+        return CambioTransaccion(cuentaId: cuentaId, fecha: Fechas.isoLocal(fecha, calendario: calendario),
+                                 comentario: comentario.trimmingCharacters(in: .whitespacesAndNewlines),
+                                 ingreso: vaEnIngreso ? importe : 0, gasto: vaEnIngreso ? 0 : importe,
+                                 subcategoriaId: subcategoriaId, divisa: cuenta.divisa)
     }
 }

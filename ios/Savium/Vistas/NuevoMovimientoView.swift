@@ -7,25 +7,40 @@ struct NuevoMovimientoView: View {
     @Environment(MovimientosStore.self) private var movimientos
     @Environment(AppModel.self) private var app
     @Environment(Sesion.self) private var sesion
-    @State private var form = FormularioMovimiento(fecha: .now, cuentaId: UserDefaults.standard.string(forKey: "savium.ultimaCuenta"))
+    @State private var form: FormularioMovimiento
     @State private var guardando = false
     @State private var error: String?
     @State private var exito = 0
     @FocusState private var importeEnfocado: Bool
 
-    private var cuentas: [Cuenta] { datos.cuentas.filter { !$0.vendida } }
+    /// Sin movimiento: apuntar uno nuevo. Con movimiento: editarlo (mismo formulario, ya relleno).
+    init(editando t: Transaccion? = nil, tipoCategoria: String? = nil) {
+        _form = State(initialValue: t.map { FormularioMovimiento(editando: $0, tipoCategoria: tipoCategoria, calendario: .current) }
+                      ?? FormularioMovimiento(fecha: .now, cuentaId: UserDefaults.standard.string(forKey: "savium.ultimaCuenta")))
+    }
+
+    /// Las no vendidas, más la del movimiento que se edita aunque esté vendida.
+    private var cuentas: [Cuenta] { datos.cuentas.filter { !$0.vendida || $0.id == form.cuentaId } }
     private var cuenta: Cuenta? { form.cuentaId.flatMap(datos.cuenta) }
-    private var tipoCategoria: String { form.esGasto ? "Gastos" : "Ingreso" }
+    private var tipoCategoria: String { form.tipoCategoria }
+    private var titulo: String {
+        if form.editando { return "Editar movimiento" }
+        return form.esGasto ? "Nuevo gasto" : "Nuevo ingreso"
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Tipo", selection: $form.esGasto) { Text("Gasto").tag(true); Text("Ingreso").tag(false) }
-                        .pickerStyle(.segmented)
-                        .onChange(of: form.esGasto) {
-                            if let id = form.subcategoriaId, datos.categoria(id)?.tipo != tipoCategoria { form.subcategoriaId = nil }
-                        }
+                    if let fijo = form.tipoFijo {
+                        LabeledContent("Tipo", value: form.esReembolso ? "Reembolso" : fijo)
+                    } else {
+                        Picker("Tipo", selection: $form.esGasto) { Text("Gasto").tag(true); Text("Ingreso").tag(false) }
+                            .pickerStyle(.segmented)
+                            .onChange(of: form.esGasto) {
+                                if let id = form.subcategoriaId, datos.categoria(id)?.tipo != tipoCategoria { form.subcategoriaId = nil }
+                            }
+                    }
                     HStack {
                         TextField("0.00", text: $form.importeTexto).keyboardType(.decimalPad).focused($importeEnfocado)
                             .font(.system(size: 40, weight: .semibold, design: .rounded)).monospacedDigit()
@@ -50,7 +65,7 @@ struct NuevoMovimientoView: View {
                 }
             }
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(form.esGasto ? "Nuevo gasto" : "Nuevo ingreso")
+            .navigationTitle(titulo)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancelar", role: .cancel) { dismiss() } }
@@ -67,20 +82,25 @@ struct NuevoMovimientoView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: exito)
-            .onAppear { importeEnfocado = true }
+            .onAppear { if !form.editando { importeEnfocado = true } }
             .interactiveDismissDisabled(guardando)
         }
     }
 
     private func guardar() async {
         // Review Focus 2: un solo envío a la vez; el botón desaparece mientras guarda.
-        guard !guardando, let userId = sesion.userId,
-              let nueva = form.construir(cuentas: datos.cuentas, userId: userId, calendario: .current) else { return }
+        guard !guardando, let userId = sesion.userId else { return }
         guardando = true
         defer { guardando = false }
         do {
-            try await datos.repo.crear(nueva)
-            UserDefaults.standard.set(nueva.cuentaId, forKey: "savium.ultimaCuenta")
+            if form.editando {
+                guard let cambio = form.cambios(cuentas: datos.cuentas, calendario: .current) else { return }
+                try await datos.repo.actualizar(id: form.idEnvio, cambio)
+            } else {
+                guard let nueva = form.construir(cuentas: datos.cuentas, userId: userId, calendario: .current) else { return }
+                try await datos.repo.crear(nueva)
+                UserDefaults.standard.set(nueva.cuentaId, forKey: "savium.ultimaCuenta")
+            }
             exito += 1
             dismiss()
             Task { await datos.cargar(app: app); await movimientos.recargar() }
