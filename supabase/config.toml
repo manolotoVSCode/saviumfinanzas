@@ -18,3 +18,7 @@ verify_jwt = false
 
 [functions.alerta]
 verify_jwt = true
+
+[functions.alerta-repetir]
+verify_jwt = false
+# La llama pg_cron sin usuario; solo reenvía lo que la base marque como pendiente (ver la función).
