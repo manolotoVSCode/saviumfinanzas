@@ -23,6 +23,8 @@ struct LoginView: View {
         "Ahorrando con estilo desde 2025",
     ]
     @FocusState private var campo: Campo?
+    /// El teclado en pantalla (no basta con el foco: con teclado físico hay foco sin teclado).
+    @State private var tecladoVisible = false
     private enum Campo { case correo, clave }
 
     var body: some View {
@@ -91,7 +93,7 @@ struct LoginView: View {
             // Con campos de correo y contraseña iOS pone su barra de Contraseñas y no muestra la de
             // «Listo» (.keyboard); por eso un botón propio sobre el teclado.
             .safeAreaInset(edge: .bottom) {
-                if campo != nil {
+                if tecladoVisible {
                     HStack {
                         Spacer()
                         Button { campo = nil } label: {
@@ -112,6 +114,8 @@ struct LoginView: View {
                     .font(.footnote).foregroundStyle(.secondary).padding(.bottom, 8)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in tecladoVisible = true }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in tecladoVisible = false }
             .task {
                 conFaceID = recordado.map { ClaveConFaceID.hayGuardada(email: $0.email) } ?? false
                 // Como en la banca: al abrir, Face ID directamente (una sola vez; luego, con el botón).
