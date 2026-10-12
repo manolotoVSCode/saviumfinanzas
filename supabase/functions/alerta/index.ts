@@ -48,10 +48,13 @@ Deno.serve(async (req) => {
   const mapa = lat !== null && lon !== null ? `https://maps.google.com/?q=${lat},${lon}` : null;
 
   // Notificaciones y correo a la vez; un fallo en uno no frena al otro.
-  const [enviadas, correo] = await Promise.all([
+  const [n, c] = await Promise.allSettled([
     notificar(admin, ids, nombre, mensaje, hora, lat, lon),
     enviarCorreos(admin, ids, nombre, mensaje, hora, mapa, precision),
   ]);
+  const enviadas = n.status === "fulfilled" ? n.value : 0;
+  const correo = c.status === "fulfilled" ? c.value : `error: ${String(c.reason).slice(0, 200)}`;
+  if (n.status === "rejected") console.error("APNs", String(n.reason));
   await admin.from("alertas_emergencia").update({ notificaciones: enviadas, correo }).eq("id", alerta.id);
   return json({ ok: true });
 });
@@ -151,6 +154,6 @@ async function enviarCorreos(admin: ReturnType<typeof createClient>, ids: string
     console.error("SMTP", String(e));
     return `error: ${String(e).slice(0, 200)}`;
   } finally {
-    await cliente.close().catch(() => {});
+    try { await cliente.close(); } catch { /* ya cerrada */ }
   }
 }
