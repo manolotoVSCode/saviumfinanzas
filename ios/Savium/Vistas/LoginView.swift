@@ -10,6 +10,18 @@ struct LoginView: View {
     @State private var entrando = false
     @State private var conFaceID = false
     @State private var faceIDIntentado = false
+    /// Una distinta cada vez que se abre el login, al estilo de los mensajes de Claude mientras piensa.
+    @State private var frase = Self.frases.randomElement()!
+    private static let frases = [
+        "Cuadrando cuentas desde 2025",
+        "Contando centavos desde 2025",
+        "Domando gastos desde 2025",
+        "Persiguiendo pesos desde 2025",
+        "Sumando y restando desde 2025",
+        "Vigilando la cartera desde 2025",
+        "Haciendo números desde 2025",
+        "Ahorrando con estilo desde 2025",
+    ]
     @FocusState private var campo: Campo?
     private enum Campo { case correo, clave }
 
@@ -93,7 +105,7 @@ struct LoginView: View {
                     VStack(spacing: 2) {
                         Text("v\(Bundle.main.versionCorta) · Proyecto personal de MT")
                         HStack(spacing: 4) {
-                            Text("Desde 2025 ·")
+                            Text("\(frase) ·")
                             Link("Privacidad", destination: URL(string: "https://savium.manoloto.com/privacidad.html")!).foregroundStyle(.tint)
                         }
                     }
