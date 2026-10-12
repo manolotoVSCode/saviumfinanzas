@@ -46,11 +46,12 @@ struct AlertaRecibidaView: View {
                 }
                 .buttonStyle(.glassProminent).tint(.white).foregroundStyle(.red).font(.title3.bold())
             }
-            if let punto, let url = URL(string: "https://maps.apple.com/?ll=\(punto.latitude),\(punto.longitude)&q=\(nombre)") {
-                Button { abrir(url) } label: {
-                    Label("Abrir en Mapas", systemImage: "map.fill").frame(maxWidth: .infinity).padding(.vertical, 4)
+            if let punto {
+                // Las dos apps de mapas; el enlace de Google abre su app si está instalada y, si no, el navegador.
+                HStack(spacing: 12) {
+                    botonMapa("Apple Maps", "https://maps.apple.com/?ll=\(punto.latitude),\(punto.longitude)&q=\(nombre)")
+                    botonMapa("Google Maps", "https://www.google.com/maps/search/?api=1&query=\(punto.latitude),\(punto.longitude)")
                 }
-                .buttonStyle(.glass).foregroundStyle(.white)
             }
             Button("Cerrar") { cerrar() }.foregroundStyle(.white.opacity(0.9)).padding(.top, 4)
         }
@@ -59,5 +60,14 @@ struct AlertaRecibidaView: View {
         .background(Color.red.gradient)
         .task { await datos.marcarVista(alerta) }
         .sensoryFeedback(.warning, trigger: alerta.id)
+    }
+
+    @ViewBuilder private func botonMapa(_ titulo: String, _ enlace: String) -> some View {
+        if let url = URL(string: enlace.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? enlace) {
+            Button { abrir(url) } label: {
+                Label(titulo, systemImage: "map.fill").frame(maxWidth: .infinity).padding(.vertical, 4)
+            }
+            .buttonStyle(.glass).foregroundStyle(.white)
+        }
     }
 }
