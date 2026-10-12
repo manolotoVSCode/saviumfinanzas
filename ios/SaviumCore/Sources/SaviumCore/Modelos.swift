@@ -145,5 +145,6 @@ public struct FilaPatrimonio: Codable, Sendable, Hashable {
 
 public struct Perfil: Codable, Sendable {
     public let divisaPreferida: String
-    enum CodingKeys: String, CodingKey { case divisaPreferida = "divisa_preferida" }
+    public let nombre: String?
+    enum CodingKeys: String, CodingKey { case divisaPreferida = "divisa_preferida", nombre }
 }

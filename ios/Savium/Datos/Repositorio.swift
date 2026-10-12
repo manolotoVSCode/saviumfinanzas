@@ -42,7 +42,7 @@ struct Repositorio: Sendable {
         try await db.from("categorias").select("id, categoria, subcategoria, tipo, frecuencia_seguimiento").execute().value
     }
     func perfil() async throws -> Perfil? {
-        let filas: [Perfil] = try await db.from("profiles").select("divisa_preferida").limit(1).execute().value
+        let filas: [Perfil] = try await db.from("profiles").select("divisa_preferida, nombre").limit(1).execute().value
         return filas.first
     }
     func pendientes() async throws -> [Pendiente] {

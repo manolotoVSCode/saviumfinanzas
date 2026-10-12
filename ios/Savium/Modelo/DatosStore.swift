@@ -57,12 +57,14 @@ final class DatosStore {
             let pp = try await repo.movimientos(deSubcategorias: PorPagar.subcategoriasRelevantes(cats))
             let (nc, np, npe, ns, ni, nv) = try await (c, p, pe, s, i, v)
             let (nma, nre) = try await (ma, re)
-            let divisaPerfil = try await perfil?.divisaPreferida
+            let nuevoPerfil = try await perfil
+            let divisaPerfil = nuevoPerfil?.divisaPreferida
             let conMovs = try await repo.cuentasConMovimientos(nc.map(\.id))
             cuentas = nc; cuentasConMovimientos = conMovs; filasPatrimonio = np; categorias = cats; pendientes = npe
             suscripciones = ns; inversiones = ni; valuaciones = nv
             movimientosMesAnterior = nma; recientes = nre; movimientosPorPagar = pp
             app.usarDivisaDelPerfil(divisaPerfil)
+            UsuarioRecordado.ponerNombre(nuevoPerfil?.nombre)
             error = nil
             actualizado = ahora
         } catch {

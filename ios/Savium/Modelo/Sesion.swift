@@ -20,6 +20,7 @@ final class Sesion {
             case .initialSession, .signedIn, .tokenRefreshed, .userUpdated:
                 estado = sesion.map { .dentro(userId: $0.user.id.uuidString.lowercased()) } ?? .fuera
                 email = sesion?.user.email
+                if let email { UsuarioRecordado.recordar(email: email) }
             case .signedOut:
                 // Review Focus 4: si no lo pidió el usuario, la sesión caducó.
                 if case .dentro = estado, !cierreVoluntario { mensaje = "Tu sesión ha caducado. Vuelve a iniciar sesión." }
@@ -31,10 +32,16 @@ final class Sesion {
         }
     }
 
-    func entrar(email: String, clave: String) async {
+    @discardableResult
+    func entrar(email: String, clave: String) async -> Bool {
         mensaje = nil
-        do { try await supabase.auth.signIn(email: email.trimmingCharacters(in: .whitespaces), password: clave) }
-        catch { mensaje = "No se pudo iniciar sesión. Revisa el correo y la contraseña." }
+        do {
+            try await supabase.auth.signIn(email: email.trimmingCharacters(in: .whitespaces), password: clave)
+            return true
+        } catch {
+            mensaje = "No se pudo iniciar sesión. Revisa el correo y la contraseña."
+            return false
+        }
     }
 
     func cerrar() async {

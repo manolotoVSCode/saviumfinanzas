@@ -33,6 +33,7 @@ final class Bloqueo {
         UserDefaults.standard.set(valor, forKey: Self.claveActivo)
         regla = ReglaBloqueo(puedeAutenticar: disponible && valor)
         regla.desbloqueado()
+        if !valor { ClaveConFaceID.borrar() }
     }
 
     func desbloquear() async {
