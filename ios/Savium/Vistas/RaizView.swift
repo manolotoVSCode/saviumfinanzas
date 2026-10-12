@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RaizView: View {
+    @Environment(AppModel.self) private var app
     @Environment(Sesion.self) private var sesion
     @Environment(Bloqueo.self) private var bloqueo
     @Environment(DatosStore.self) private var datos
@@ -27,9 +28,10 @@ struct RaizView: View {
             // Tapa las cifras en el selector de apps.
             if fase != .active {
                 Rectangle().fill(.background).ignoresSafeArea()
-                    .overlay { Image(systemName: "cube").font(.system(size: 72, weight: .light)).foregroundStyle(.tint) }
+                    .overlay { CuboSavium(lado: 88) }
             }
         }
+        .preferredColorScheme(app.apariencia.esquema)
         .onChange(of: sesion.estado) { anterior, nuevo in
             if anterior == .fuera, case .dentro = nuevo { bloqueo.recienAutenticado() }
             if nuevo == .fuera { datos.reiniciar(); movimientos.reiniciar() }

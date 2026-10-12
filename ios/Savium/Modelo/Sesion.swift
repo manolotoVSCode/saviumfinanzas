@@ -7,6 +7,7 @@ final class Sesion {
     enum Estado: Equatable { case cargando, fuera, dentro(userId: String) }
     private(set) var estado: Estado = .cargando
     var mensaje: String?
+    private(set) var email: String?
     private var cierreVoluntario = false
 
     init() { Task { await escuchar() } }
@@ -18,6 +19,7 @@ final class Sesion {
             switch evento {
             case .initialSession, .signedIn, .tokenRefreshed, .userUpdated:
                 estado = sesion.map { .dentro(userId: $0.user.id.uuidString.lowercased()) } ?? .fuera
+                email = sesion?.user.email
             case .signedOut:
                 // Review Focus 4: si no lo pidió el usuario, la sesión caducó.
                 if case .dentro = estado, !cierreVoluntario { mensaje = "Tu sesión ha caducado. Vuelve a iniciar sesión." }
@@ -37,6 +39,7 @@ final class Sesion {
 
     func cerrar() async {
         cierreVoluntario = true
-        try? await supabase.auth.signOut()
+        // Solo este iPhone: el alcance por defecto (global) cerraría también la web y los demás dispositivos.
+        try? await supabase.auth.signOut(scope: .local)
     }
 }

@@ -9,6 +9,18 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    HStack(spacing: 14) {
+                        CuboSavium(lado: 52)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Savium Finance").font(.title2.bold())
+                            Text("Tus finanzas personales").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                    .listRowBackground(Color.clear)
+                }
                 if let mensaje = sesion.mensaje {
                     Section { Label(mensaje, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
                 }
@@ -28,7 +40,6 @@ struct LoginView: View {
                     Link("¿Olvidaste tu contraseña?", destination: URL(string: "https://savium.manoloto.com/#/auth")!)
                 }
             }
-            .navigationTitle("Savium")
         }
     }
 }

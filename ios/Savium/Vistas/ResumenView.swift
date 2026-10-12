@@ -16,7 +16,7 @@ struct ResumenView: View {
             if datos.hayDatos { lista } else { SinDatos() }
         }
         .navigationTitle("Resumen")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { MenuPerfil() } }
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { BotonAjustes() } }
         .refreshable { await datos.cargar(app: app) }
     }
 

@@ -14,12 +14,17 @@ struct PestanasView: View {
             pestana(.pendientes) { PendientesView() }
             pestana(.suscripciones) { SuscripcionesView() }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { BarraPestanas() }
+        .overlay(alignment: .bottom) { BarraPestanas() }
         .task { await datos.cargar(app: app) }
     }
 
     private func pestana<V: View>(_ p: Pestana, @ViewBuilder _ contenido: () -> V) -> some View {
-        NavigationStack { contenido().botonApuntar() }
+        // El hueco de la barra va dentro de cada pestaña: desde fuera del NavigationStack
+        // las listas no lo respetaban y la última fila quedaba debajo de la barra.
+        NavigationStack {
+            contenido().botonApuntar()
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: BarraPestanas.alto) }
+        }
             .opacity(app.pestana == p ? 1 : 0)
             .allowsHitTesting(app.pestana == p)
             .accessibilityHidden(app.pestana != p)
@@ -27,6 +32,8 @@ struct PestanasView: View {
 }
 
 struct BarraPestanas: View {
+    /// Alto que ocupa la barra sobre el borde inferior seguro (botones 48 + márgenes).
+    static let alto: CGFloat = 64
     @Environment(AppModel.self) private var app
     @Environment(DatosStore.self) private var datos
 

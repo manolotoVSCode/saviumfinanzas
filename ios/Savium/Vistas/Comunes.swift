@@ -96,20 +96,35 @@ extension View {
     func botonApuntar() -> some View { modifier(BotonApuntar()) }
 }
 
-struct MenuPerfil: View {
-    @Environment(AppModel.self) private var app
-    @Environment(Sesion.self) private var sesion
+/// Engranaje de Inicio: abre Ajustes (divisa, apariencia, Face ID, cerrar sesión).
+struct BotonAjustes: View {
+    @State private var abierto = false
     var body: some View {
-        @Bindable var app = app
-        Menu {
-            Picker("Divisa", selection: $app.divisa) {
-                ForEach(Divisa.allCases) { Text($0.rawValue).tag($0) }
-            }
-            Button("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
-                Task { await sesion.cerrar() }
-            }
-        } label: {
-            Label("Perfil", systemImage: "person.crop.circle")
-        }
+        Button { abierto = true } label: { Label("Ajustes", systemImage: "gearshape") }
+            .sheet(isPresented: $abierto) { AjustesView() }
+    }
+}
+
+/// El cubo de Savium, mismos trazos que public/favicon.svg (viewBox 184×184).
+struct CuboSavium: View {
+    var lado: CGFloat = 48
+    var body: some View {
+        CuboForma()
+            .stroke(.tint, style: StrokeStyle(lineWidth: lado * 10 / 184, lineCap: .round, lineJoin: .round))
+            .frame(width: lado, height: lado)
+            .accessibilityHidden(true)
+    }
+}
+
+private struct CuboForma: Shape {
+    func path(in r: CGRect) -> Path {
+        let e = min(r.width, r.height) / 184
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: r.minX + x * e, y: r.minY + y * e) }
+        var path = Path()
+        path.addLines([p(91.5, 10), p(172.5, 48), p(91.5, 86), p(10.5, 48)])
+        path.closeSubpath()
+        path.addLines([p(10.5, 48), p(10.5, 136), p(91.5, 175), p(172.5, 136), p(172.5, 48)])
+        path.addLines([p(91.5, 106), p(91.5, 175)])
+        return path
     }
 }

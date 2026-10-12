@@ -1,14 +1,29 @@
 import Foundation
 import Observation
 import SaviumCore
+import SwiftUI
 
 enum Pestana: Hashable { case resumen, movimientos, patrimonio, pendientes, suscripciones }
+
+enum Apariencia: String, CaseIterable, Identifiable {
+    case sistema, claro, oscuro
+    var id: Self { self }
+    var titulo: String {
+        switch self { case .sistema: "Automática"; case .claro: "Clara"; case .oscuro: "Oscura" }
+    }
+    var esquema: ColorScheme? {
+        switch self { case .sistema: nil; case .claro: .light; case .oscuro: .dark }
+    }
+}
 
 @Observable @MainActor
 final class AppModel {
     var pestana: Pestana = .resumen
     var divisa: Divisa {
         didSet { UserDefaults.standard.set(divisa.rawValue, forKey: "savium.divisa") }
+    }
+    var apariencia: Apariencia {
+        didSet { UserDefaults.standard.set(apariencia.rawValue, forKey: "savium.apariencia") }
     }
     private(set) var tasas: Tasas = Conversion.tasasRespaldo
     private(set) var tasasAproximadas = false
@@ -19,6 +34,7 @@ final class AppModel {
         let guardada = UserDefaults.standard.string(forKey: "savium.divisa")
         divisa = Divisa(codigo: guardada, fallback: .MXN)
         divisaPorDefecto = guardada == nil
+        apariencia = Apariencia(rawValue: UserDefaults.standard.string(forKey: "savium.apariencia") ?? "") ?? .sistema
     }
 
     func usarDivisaDelPerfil(_ codigo: String?) {
