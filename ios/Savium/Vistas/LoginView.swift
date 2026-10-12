@@ -90,7 +90,14 @@ struct LoginView: View {
                     }
                     .padding(.horizontal).padding(.bottom, 8)
                 } else {
-                    Text("Proyecto personal de MT").font(.footnote).foregroundStyle(.secondary).padding(.bottom, 8)
+                    VStack(spacing: 2) {
+                        Text("v\(Bundle.main.versionCorta) · Proyecto personal de MT")
+                        HStack(spacing: 4) {
+                            Text("Operativa desde 2025 ·")
+                            Link("Privacidad", destination: URL(string: "https://savium.manoloto.com/privacidad.html")!).foregroundStyle(.tint)
+                        }
+                    }
+                    .font(.footnote).foregroundStyle(.secondary).padding(.bottom, 8)
                 }
             }
             .task {

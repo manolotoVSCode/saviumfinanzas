@@ -69,10 +69,5 @@ struct AjustesView: View {
         }
     }
 
-    private static var version: String {
-        let info = Bundle.main.infoDictionary
-        let corta = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        return "\(corta) (\(build))"
-    }
+    private static var version: String { "\(Bundle.main.versionCorta) (\(Bundle.main.build))" }
 }
