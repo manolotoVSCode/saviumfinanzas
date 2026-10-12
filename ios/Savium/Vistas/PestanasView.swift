@@ -16,6 +16,22 @@ struct PestanasView: View {
         }
         .overlay(alignment: .bottom) { BarraPestanas() }
         .task { await datos.cargar(app: app) }
+        // Lector: alerta de emergencia a pantalla completa (por encima de todo, tras desbloquear con Face ID).
+        .fullScreenCover(item: Binding(get: { datos.alertaActiva }, set: { datos.alertaActiva = $0 })) { a in
+            AlertaRecibidaView(alerta: a)
+        }
+        .onChange(of: Notificaciones.compartidas.alertaRecibida) { _, id in
+            guard let id else { return }
+            Notificaciones.compartidas.alertaRecibida = nil
+            Task { await datos.mostrarAlerta(id: id) }
+        }
+        .task {
+            // Si la app se abrió tocando la notificación, el id ya estaba puesto antes de esta vista.
+            if let id = Notificaciones.compartidas.alertaRecibida {
+                Notificaciones.compartidas.alertaRecibida = nil
+                await datos.mostrarAlerta(id: id)
+            }
+        }
     }
 
     private func pestana<V: View>(_ p: Pestana, @ViewBuilder _ contenido: () -> V) -> some View {

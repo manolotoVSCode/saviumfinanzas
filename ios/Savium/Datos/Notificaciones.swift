@@ -1,13 +1,16 @@
 import Foundation
+import Observation
 import Supabase
 import UIKit
 import UserNotifications
 
 /// Notificaciones de alerta: solo las recibe el lector (la familia). Al titular nunca se le pide el permiso.
-@MainActor
+@Observable @MainActor
 final class Notificaciones: NSObject, UNUserNotificationCenterDelegate {
     static let compartidas = Notificaciones()
-    private var tokenActual: String?
+    @ObservationIgnored private var tokenActual: String?
+    /// Id de la alerta que acaba de llegar o que se tocó: la app del lector abre su pantalla.
+    var alertaRecibida: String?
 
     /// Al arrancar: para mostrar la alerta aunque la app esté abierta y abrir el mapa al tocarla.
     func configurar() { UNUserNotificationCenter.current().delegate = self }
@@ -40,15 +43,18 @@ final class Notificaciones: NSObject, UNUserNotificationCenterDelegate {
         _ = try? await supabase.from("dispositivos").delete().eq("token", value: tokenActual).execute()
     }
 
+    /// Con la app abierta: suena igual y se abre la pantalla de alerta.
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification)
-        async -> UNNotificationPresentationOptions { [.banner, .list, .sound] }
+        async -> UNNotificationPresentationOptions {
+        let id = notification.request.content.userInfo["alerta"] as? String
+        await MainActor.run { if let id { alertaRecibida = id } }
+        return [.banner, .list, .sound]
+    }
 
-    /// Al tocar la alerta: el mapa con la ubicación, si la trae.
+    /// Al tocar la notificación: la pantalla de alerta (mapa, llamar).
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        let info = response.notification.request.content.userInfo
-        guard let lat = info["latitud"] as? Double, let lon = info["longitud"] as? Double,
-              let url = URL(string: "https://maps.apple.com/?ll=\(lat),\(lon)&q=Alerta") else { return }
-        await MainActor.run { UIApplication.shared.open(url) }
+        let id = response.notification.request.content.userInfo["alerta"] as? String
+        await MainActor.run { if let id { alertaRecibida = id } }
     }
 }
 

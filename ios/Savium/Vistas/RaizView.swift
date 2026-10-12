@@ -38,7 +38,10 @@ struct RaizView: View {
         }
         .onChange(of: fase) { _, nueva in
             if nueva == .background { bloqueo.enSegundoPlano() }
-            if nueva == .active { bloqueo.alVolver(); Task { await AlertaEmergencia.compartida.enviarPendiente() } }
+            if nueva == .active {
+                bloqueo.alVolver()
+                Task { await AlertaEmergencia.compartida.enviarPendiente(); await datos.comprobarAlertas() }
+            }
         }
     }
 }

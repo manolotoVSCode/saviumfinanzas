@@ -167,3 +167,20 @@ public struct Perfil: Codable, Sendable {
     public let nombre: String?
     enum CodingKeys: String, CodingKey { case divisaPreferida = "divisa_preferida", nombre }
 }
+
+/// Alerta de emergencia tal como la ve el lector (tabla alertas_emergencia, columnas permitidas).
+public struct AlertaRecibida: Codable, Sendable, Identifiable, Hashable {
+    public static let columnas = "id, creada, nombre, mensaje, telefono, latitud, longitud, precision_m, vista_en"
+    public let id: String
+    public let creada: Date
+    public let nombre: String?
+    public let mensaje: String?
+    public let telefono: String?
+    public let latitud: Double?
+    public let longitud: Double?
+    public let precisionM: Double?
+    enum CodingKeys: String, CodingKey {
+        case id, creada, nombre, mensaje, telefono, latitud, longitud
+        case precisionM = "precision_m"
+    }
+}

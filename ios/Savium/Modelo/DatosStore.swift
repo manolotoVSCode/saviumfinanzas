@@ -25,6 +25,8 @@ final class DatosStore {
     private(set) var soloLectura = false
     /// Titular con algún lector: puede mandar la alerta de emergencia.
     private(set) var tieneLectores = false
+    /// Lector: alerta de emergencia que hay que mostrar a pantalla completa.
+    var alertaActiva: AlertaRecibida?
     private(set) var cargando = false
     private(set) var error: String?
     private(set) var actualizado: Date?
@@ -35,7 +37,7 @@ final class DatosStore {
     func reiniciar() {
         cuentas = []; cuentasConMovimientos = []; filasPatrimonio = []; categorias = []; pendientes = []; suscripciones = []
         inversiones = []; valuaciones = []; movimientosPorPagar = []; movimientosMesAnterior = []; recientes = []
-        error = nil; actualizado = nil; soloLectura = false; tieneLectores = false
+        error = nil; actualizado = nil; soloLectura = false; tieneLectores = false; alertaActiva = nil
     }
     var cal: Calendar { .current }
 
@@ -77,13 +79,33 @@ final class DatosStore {
             UsuarioRecordado.ponerNombre(nuevoPerfil?.nombre)
             error = nil
             actualizado = ahora
-            if soloLectura { await Notificaciones.compartidas.activarParaLector() }
+            if soloLectura {
+                await Notificaciones.compartidas.activarParaLector()
+                await comprobarAlertas()
+            }
             if tieneLectores && !soloLectura { AlertaEmergencia.compartida.prepararPermiso() }
         } catch {
             Logger(subsystem: "com.manoloto.savium", category: "datos").error("Error al cargar: \(String(describing: error), privacy: .public)")
             self.error = "Sin conexión"
         }
         await tasas
+    }
+
+    // MARK: Alerta de emergencia (lector)
+
+    /// Al abrir la app o volver a ella: si hay una alerta sin ver, se muestra.
+    func comprobarAlertas() async {
+        guard soloLectura, alertaActiva == nil, let a = try? await repo.alertaSinVer() else { return }
+        alertaActiva = a
+    }
+
+    /// Al llegar o tocar la notificación.
+    func mostrarAlerta(id: String) async {
+        if let a = try? await repo.alerta(id: id) { alertaActiva = a }
+    }
+
+    func marcarVista(_ a: AlertaRecibida) async {
+        try? await repo.marcarVista(id: a.id)
     }
 
     // MARK: Pendientes

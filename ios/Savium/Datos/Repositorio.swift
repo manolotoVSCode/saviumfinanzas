@@ -57,6 +57,22 @@ struct Repositorio: Sendable {
             return (nil, false)
         }
     }
+    /// Lector: la alerta de emergencia más reciente sin ver (las RLS solo dejan ver las de su titular, de las últimas 24 h).
+    func alertaSinVer() async throws -> AlertaRecibida? {
+        let filas: [AlertaRecibida] = try await db.from("alertas_emergencia").select(AlertaRecibida.columnas)
+            .is("vista_en", value: nil).order("creada", ascending: false).limit(1).execute().value
+        return filas.first
+    }
+    func alerta(id: String) async throws -> AlertaRecibida? {
+        let filas: [AlertaRecibida] = try await db.from("alertas_emergencia").select(AlertaRecibida.columnas)
+            .eq("id", value: id).limit(1).execute().value
+        return filas.first
+    }
+    /// Deja de repetirse en cuanto el lector la ve.
+    func marcarVista(id: String) async throws {
+        struct Vista: Encodable { let vista_en: Date }
+        try await db.from("alertas_emergencia").update(Vista(vista_en: .now)).eq("id", value: id).execute()
+    }
     func pendientes() async throws -> [Pendiente] {
         try await db.from("transaction_pendings").select("id, concepto, tipo, monto_esperado, monto_cobrado, divisa, fecha_esperada, estado").execute().value
     }
