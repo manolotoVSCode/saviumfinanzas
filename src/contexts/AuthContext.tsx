@@ -89,8 +89,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       queryClient.clear();
       
-      // Then sign out from Supabase
-      await supabase.auth.signOut();
+      // Then sign out from Supabase. Solo este navegador: el alcance por defecto (global)
+      // revoca también la sesión de la app del iPhone.
+      await supabase.auth.signOut({ scope: 'local' });
     } catch (error) {
       console.error('Error signing out:', error);
       // Even if there's an error, clear local state
