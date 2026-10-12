@@ -93,7 +93,7 @@ final class DatosStore {
             MovimientoResumen(fecha: $0.dia(en: cal), ingreso: $0.ingreso, gasto: $0.gasto, divisa: $0.divisa,
                               tipo: porId[$0.subcategoriaId]?.tipo, categoria: porId[$0.subcategoriaId]?.categoria ?? "SIN ASIGNAR")
         }
-        return MesAnterior.totales(movs, tasas: app.tasas, moneda: app.divisa, now: .now, calendario: cal)
+        return MesAnterior.totales(movs, moneda: app.divisa, now: .now, calendario: cal)
     }
 
     func categoria(_ id: String) -> Categoria? { categorias.first { $0.id == id } }

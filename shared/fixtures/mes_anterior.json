@@ -10,8 +10,11 @@
     { "id": "t6", "fecha": "2026-09-05", "gasto": 999, "divisa": "MXN", "tipo": "Gastos", "categoria": "Casa" },
     { "id": "t7", "fecha": "2026-07-15", "gasto": 777, "divisa": "MXN", "tipo": "Gastos", "categoria": "Casa" }
   ],
+  "_nota": "esperado = computeDashboardMetrics (convierte todo). esperadoSoloDivisa = tarjeta mensual de Dashboard.tsx y app iOS: solo movimientos en esa divisa, sin convertir.",
   "casos": [
-    { "nombre": "en MXN: reembolso resta del gasto, inmuebles excluidos, USD convertido", "moneda": "MXN", "esperado": { "ingresos": 30000, "gastos": 1800, "balance": 28200 } },
-    { "nombre": "en USD", "moneda": "USD", "esperado": { "ingresos": 1500, "gastos": 90, "balance": 1410 } }
+    { "nombre": "en MXN: reembolso resta del gasto, inmuebles excluidos, USD convertido", "moneda": "MXN", "esperado": { "ingresos": 30000, "gastos": 1800, "balance": 28200 },
+      "esperadoSoloDivisa": { "ingresos": 30000, "gastos": 800, "balance": 29200 } },
+    { "nombre": "en USD", "moneda": "USD", "esperado": { "ingresos": 1500, "gastos": 90, "balance": 1410 },
+      "esperadoSoloDivisa": { "ingresos": 0, "gastos": 50, "balance": -50 } }
   ]
 }

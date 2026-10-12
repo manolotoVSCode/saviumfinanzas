@@ -13,7 +13,8 @@ public struct MovimientoResumen: Sendable {
     }
 }
 
-/// Ingresos, gastos y balance del mes anterior: mismas reglas que computeDashboardMetrics.
+/// Ingresos, gastos y balance del mes anterior, como la tarjeta mensual del escritorio (Dashboard.tsx):
+/// solo los movimientos en la divisa elegida, sin convertir los de otras divisas.
 public enum MesAnterior {
     static let excluida = "Compra Venta Inmuebles"
 
@@ -37,16 +38,13 @@ public enum MesAnterior {
         return (Fechas.isoLocal(inicio, calendario: calendario), Fechas.isoLocal(fin, calendario: calendario))
     }
 
-    public static func totales(_ movs: [MovimientoResumen], tasas: Tasas, moneda: Divisa, now: Date, calendario: Calendar) -> Totales {
+    public static func totales(_ movs: [MovimientoResumen], moneda: Divisa, now: Date, calendario: Calendar) -> Totales {
         let (inicio, fin) = limites(now: now, calendario: calendario)
-        let delMes = movs.filter { $0.fecha >= inicio && $0.fecha <= fin }
-        func conv(_ x: Double, _ d: String) -> Double {
-            Conversion.convertir(x, de: Divisa(codigo: d, fallback: moneda), a: moneda, tasas: tasas)
-        }
+        let delMes = movs.filter { $0.fecha >= inicio && $0.fecha <= fin && $0.divisa == moneda.rawValue }
         // Reembolso: ingreso en una categoría de gasto; resta del gasto, no suma al ingreso.
-        let reembolsos = delMes.filter { $0.ingreso > 0 && $0.tipo == "Gastos" }.reduce(0.0) { $0 + conv($1.ingreso, $1.divisa) }
-        let ingresos = delMes.filter { $0.ingreso > 0 && $0.tipo == "Ingreso" && $0.categoria != excluida }.reduce(0.0) { $0 + conv($1.ingreso, $1.divisa) }
-        let gastos = delMes.filter { $0.tipo == "Gastos" && $0.categoria != excluida }.reduce(0.0) { $0 + conv($1.gasto, $1.divisa) } - reembolsos
+        let reembolsos = delMes.filter { $0.ingreso > 0 && $0.tipo == "Gastos" }.reduce(0.0) { $0 + $1.ingreso }
+        let ingresos = delMes.filter { $0.ingreso > 0 && $0.tipo == "Ingreso" && $0.categoria != excluida }.reduce(0.0) { $0 + $1.ingreso }
+        let gastos = delMes.filter { $0.tipo == "Gastos" && $0.categoria != excluida }.reduce(0.0) { $0 + $1.gasto } - reembolsos
         return Totales(ingresos: ingresos, gastos: gastos)
     }
 }

@@ -14,7 +14,7 @@ struct LoginView: View {
                         CuboSavium(lado: 52)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Savium Finance").font(.title2.bold())
-                            Text("Tus finanzas personales").font(.subheadline).foregroundStyle(.secondary)
+                            Text("Wealth Management Platform").font(.subheadline).foregroundStyle(.secondary)
                         }
                     }
                     .frame(maxWidth: .infinity)
