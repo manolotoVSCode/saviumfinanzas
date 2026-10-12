@@ -11,10 +11,11 @@ struct SaludoTests {
         #expect(Saludo.texto(nombre: nil, hora: hora) == esperado)
     }
 
-    @Test("solo el primer nombre, sin mayúsculas sostenidas")
+    @Test("el nombre completo del perfil (sin apellidos), sin mayúsculas sostenidas")
     func nombre() {
         #expect(Saludo.texto(nombre: "MANUEL", hora: 22) == "Buenas noches, Manuel")
-        #expect(Saludo.texto(nombre: "  manuel jesús ", hora: 9) == "Buenos días, Manuel")
+        #expect(Saludo.texto(nombre: "Ana Gabriela", hora: 9) == "Buenos días, Ana Gabriela")
+        #expect(Saludo.texto(nombre: "  ANA   GABRIELA ", hora: 9) == "Buenos días, Ana Gabriela")
         #expect(Saludo.texto(nombre: "", hora: 13) == "Buenas tardes")
     }
 
