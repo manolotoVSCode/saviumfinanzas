@@ -43,6 +43,9 @@ struct UsuarioRecordado: Codable, Equatable {
 /// y solo en este iPhone, que además debe tener código.
 enum ClaveConFaceID {
     private static let servicio = "com.manoloto.savium.clave"
+    /// Correo cuya contraseña está guardada. Consultar el Llavero sin pedir Face ID no es fiable
+    /// con elementos protegidos por biometría, así que se lleva aparte (no es secreto).
+    private static let marca = "savium.claveGuardadaPara"
 
     static var disponible: Bool {
         LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
@@ -59,27 +62,19 @@ enum ClaveConFaceID {
             kSecAttrAccessControl as String: control,
             kSecValueData as String: Data(clave.utf8),
         ]
-        SecItemAdd(consulta as CFDictionary, nil)
+        if SecItemAdd(consulta as CFDictionary, nil) == errSecSuccess {
+            UserDefaults.standard.set(email.lowercased(), forKey: marca)
+        }
     }
 
-    /// Sin pedir Face ID: solo mira si existe.
     static func hayGuardada(email: String) -> Bool {
-        let contexto = LAContext()
-        contexto.interactionNotAllowed = true
-        let consulta: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: servicio,
-            kSecAttrAccount as String: email.lowercased(),
-            kSecUseAuthenticationContext as String: contexto,
-        ]
-        let estado = SecItemCopyMatching(consulta as CFDictionary, nil)
-        return estado == errSecSuccess || estado == errSecInteractionNotAllowed
+        UserDefaults.standard.string(forKey: marca) == email.lowercased()
     }
 
     /// Pide Face ID y devuelve la contraseña, o nil si se cancela o falla.
     static func leer(email: String) async -> String? {
         let cuenta = email.lowercased()
-        return await Task.detached {
+        let lectura = await Task.detached {
             let contexto = LAContext()
             contexto.localizedReason = "Entrar en Savium"
             let consulta: [String: Any] = [
@@ -90,14 +85,24 @@ enum ClaveConFaceID {
                 kSecReturnData as String: true,
             ]
             var resultado: CFTypeRef?
-            guard SecItemCopyMatching(consulta as CFDictionary, &resultado) == errSecSuccess,
-                  let datos = resultado as? Data else { return nil }
-            return String(data: datos, encoding: .utf8)
+            let estado = SecItemCopyMatching(consulta as CFDictionary, &resultado)
+            if estado == errSecItemNotFound { return Lectura.noHay }
+            guard estado == errSecSuccess, let datos = resultado as? Data,
+                  let clave = String(data: datos, encoding: .utf8) else { return Lectura.cancelada }
+            return Lectura.clave(clave)
         }.value
+        switch lectura {
+        case .clave(let clave): return clave
+        case .noHay: borrar(); return nil   // p. ej. cambiaron las caras registradas
+        case .cancelada: return nil
+        }
     }
+
+    private enum Lectura: Sendable { case clave(String), noHay, cancelada }
 
     static func borrar() {
         let consulta: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: servicio]
         SecItemDelete(consulta as CFDictionary)
+        UserDefaults.standard.removeObject(forKey: marca)
     }
 }

@@ -8,6 +8,8 @@ final class Sesion {
     private(set) var estado: Estado = .cargando
     var mensaje: String?
     private(set) var email: String?
+    /// Cerró sesión él mismo: el login no lanza Face ID solo (si no, no podría salir). Hasta el próximo arranque.
+    private(set) var salidaVoluntaria = false
     private var cierreVoluntario = false
 
     init() { Task { await escuchar() } }
@@ -46,6 +48,7 @@ final class Sesion {
 
     func cerrar() async {
         cierreVoluntario = true
+        salidaVoluntaria = true
         // Solo este iPhone: el alcance por defecto (global) cerraría también la web y los demás dispositivos.
         try? await supabase.auth.signOut(scope: .local)
     }
