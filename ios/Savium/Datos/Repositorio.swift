@@ -68,10 +68,12 @@ struct Repositorio: Sendable {
             .eq("id", value: id).limit(1).execute().value
         return filas.first
     }
-    /// Deja de repetirse en cuanto el lector la ve.
-    func marcarVista(id: String) async throws {
+    /// Al ver una alerta dejan de repetirse todas las que no había visto (las RLS limitan a su titular).
+    /// Sin devolver filas: el lector no tiene permiso para leer todas las columnas.
+    func marcarVistas() async throws {
         struct Vista: Encodable { let vista_en: Date }
-        try await db.from("alertas_emergencia").update(Vista(vista_en: .now)).eq("id", value: id).execute()
+        try await db.from("alertas_emergencia").update(Vista(vista_en: .now), returning: .minimal)
+            .is("vista_en", value: nil).execute()
     }
     func pendientes() async throws -> [Pendiente] {
         try await db.from("transaction_pendings").select("id, concepto, tipo, monto_esperado, monto_cobrado, divisa, fecha_esperada, estado").execute().value

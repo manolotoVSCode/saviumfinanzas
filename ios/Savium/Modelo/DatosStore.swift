@@ -105,7 +105,9 @@ final class DatosStore {
     }
 
     func marcarVista(_ a: AlertaRecibida) async {
-        try? await repo.marcarVista(id: a.id)
+        do { try await repo.marcarVistas() } catch {
+            Logger(subsystem: "com.manoloto.savium", category: "alerta").error("Marcar vista: \(String(describing: error), privacy: .public)")
+        }
     }
 
     // MARK: Pendientes

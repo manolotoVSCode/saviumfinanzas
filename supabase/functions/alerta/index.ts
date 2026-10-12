@@ -81,28 +81,33 @@ async function enviarCorreos(admin: ReturnType<typeof createClient>, ids: string
   const telefono = env("ALERTA_TELEFONO") ? `Teléfono: ${env("ALERTA_TELEFONO")}` : "";
   const cuerpo = [`Alerta de ${nombre} – ${hora}`, "", `«${mensaje}»`, "", ubicacion, telefono, "",
     env("ALERTA_INSTRUCCIONES"), "", "No respondas a este correo."].join("\n");
-  const cliente = new SMTPClient({
-    connection: {
-      hostname: env("ALERTA_SMTP_HOST"),
-      port: Number(env("ALERTA_SMTP_PUERTO") || "465"),
-      tls: true,
-      auth: { username: env("ALERTA_SMTP_USUARIO"), password: env("ALERTA_SMTP_CLAVE") },
-    },
-  });
-  try {
-    await cliente.send({
-      from: env("ALERTA_REMITENTE") || env("ALERTA_SMTP_USUARIO"),
-      to: destinos,
-      // Si la cuenta que envía es del titular, una respuesta llegaría a su iPhone: las respuestas van a quien la recibe.
-      replyTo: destinos[0],
-      subject: `Alerta de ${nombre} – ${hora}`,
-      content: cuerpo,
+  // iCloud por el puerto 465 a veces no responde: hasta 3 intentos, cada uno con una conexión nueva.
+  let ultimoError = "";
+  for (let intento = 1; intento <= 3; intento++) {
+    const cliente = new SMTPClient({
+      connection: {
+        hostname: env("ALERTA_SMTP_HOST"),
+        port: Number(env("ALERTA_SMTP_PUERTO") || "465"),
+        tls: true,
+        auth: { username: env("ALERTA_SMTP_USUARIO"), password: env("ALERTA_SMTP_CLAVE") },
+      },
     });
-    return "enviado";
-  } catch (e) {
-    console.error("SMTP", String(e));
-    return `error: ${String(e).slice(0, 200)}`;
-  } finally {
-    try { await cliente.close(); } catch { /* ya cerrada */ }
+    try {
+      await cliente.send({
+        from: env("ALERTA_REMITENTE") || env("ALERTA_SMTP_USUARIO"),
+        to: destinos,
+        // Si la cuenta que envía es del titular, una respuesta llegaría a su iPhone: las respuestas van a quien la recibe.
+        replyTo: destinos[0],
+        subject: `Alerta de ${nombre} – ${hora}`,
+        content: cuerpo,
+      });
+      return intento === 1 ? "enviado" : `enviado (intento ${intento})`;
+    } catch (e) {
+      ultimoError = String(e).slice(0, 160);
+      console.error("SMTP", intento, ultimoError);
+    } finally {
+      try { await cliente.close(); } catch { /* ya cerrada */ }
+    }
   }
+  return `error tras 3 intentos: ${ultimoError}`;
 }
