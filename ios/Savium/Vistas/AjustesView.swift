@@ -5,6 +5,7 @@ struct AjustesView: View {
     @Environment(AppModel.self) private var app
     @Environment(Sesion.self) private var sesion
     @Environment(Bloqueo.self) private var bloqueo
+    @Environment(DatosStore.self) private var datos
     @Environment(\.dismiss) private var cerrarHoja
     @State private var confirmandoSalida = false
 
@@ -44,9 +45,16 @@ struct AjustesView: View {
                          : "Este iPhone no tiene Face ID ni código configurado.")
                 }
 
-                Section("Cuenta") {
+                Section {
                     LabeledContent("Correo", value: sesion.email ?? "—")
+                    if datos.soloLectura {
+                        Label("Acceso de solo lectura", systemImage: "eye")
+                    }
                     Button("Cerrar sesión", role: .destructive) { confirmandoSalida = true }
+                } header: {
+                    Text("Cuenta")
+                } footer: {
+                    if datos.soloLectura { Text("Puedes ver todos los datos, pero no apuntar, editar, cobrar ni borrar.") }
                 }
 
                 Section {

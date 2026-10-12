@@ -47,22 +47,26 @@ struct PendientesView: View {
                             }
                         }
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                            Button("Cobrar", systemImage: "checkmark.circle") { Task { await cobrar(f.pendiente) } }
-                                .tint(.green)
+                            if !datos.soloLectura {
+                                Button("Cobrar", systemImage: "checkmark.circle") { Task { await cobrar(f.pendiente) } }
+                                    .tint(.green)
+                            }
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button("Borrar", systemImage: "trash", role: .destructive) { aBorrar = f.pendiente }
+                            if !datos.soloLectura {
+                                Button("Borrar", systemImage: "trash", role: .destructive) { aBorrar = f.pendiente }
+                            }
                         }
                     }
                 } footer: {
-                    if !r.filas.isEmpty {
+                    if !r.filas.isEmpty && !datos.soloLectura {
                         Text("Desliza a la derecha para marcarlo como cobrado hoy, o a la izquierda para borrarlo.")
                     }
                 }
             }
-            .confirmationDialog("¿Borrar «\(aBorrar?.concepto ?? "Pendiente")»?",
-                                isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }),
-                                titleVisibility: .visible, presenting: aBorrar) { p in
+            // Aviso centrado: un confirmationDialog sale como globo anclado arriba de la lista, lejos de la fila.
+            .alert("¿Borrar «\(aBorrar?.concepto ?? "Pendiente")»?",
+                   isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }), presenting: aBorrar) { p in
                 Button("Borrar", role: .destructive) {
                     Task { if !(await datos.borrar(p)) { fallo = "No se pudo borrar. Revisa la conexión y vuelve a intentarlo." } }
                 }

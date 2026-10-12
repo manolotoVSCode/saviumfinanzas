@@ -45,6 +45,17 @@ struct Repositorio: Sendable {
         let filas: [Perfil] = try await db.from("profiles").select("divisa_preferida, nombre").limit(1).execute().value
         return filas.first
     }
+    /// Si este usuario es lector de otro titular (acceso de solo lectura), el id del titular.
+    /// Un error de la base (p. ej. la tabla aún no existe) cuenta como «no es lector»; uno de red, no.
+    func titularComoLector(_ yo: String) async throws -> String? {
+        struct Fila: Decodable { let propietario_id: String }
+        do {
+            let filas: [Fila] = try await db.from("lectores").select("propietario_id").eq("lector_id", value: yo).limit(1).execute().value
+            return filas.first?.propietario_id
+        } catch is PostgrestError {
+            return nil
+        }
+    }
     func pendientes() async throws -> [Pendiente] {
         try await db.from("transaction_pendings").select("id, concepto, tipo, monto_esperado, monto_cobrado, divisa, fecha_esperada, estado").execute().value
     }

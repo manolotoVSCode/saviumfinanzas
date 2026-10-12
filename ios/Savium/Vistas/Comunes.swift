@@ -81,11 +81,13 @@ private struct BotonApuntar: ViewModifier {
     func body(content: Content) -> some View {
         content
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { apuntando = true } label: { Image(systemName: "plus") }
-                        .buttonStyle(.glassProminent)
-                        .disabled(!datos.hayDatos)
-                        .accessibilityLabel("Apuntar gasto o ingreso")
+                if !datos.soloLectura {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { apuntando = true } label: { Image(systemName: "plus") }
+                            .buttonStyle(.glassProminent)
+                            .disabled(!datos.hayDatos)
+                            .accessibilityLabel("Apuntar gasto o ingreso")
+                    }
                 }
             }
             .sheet(isPresented: $apuntando) { NuevoMovimientoView() }

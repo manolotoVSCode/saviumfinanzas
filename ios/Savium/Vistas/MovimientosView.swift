@@ -6,6 +6,7 @@ struct MovimientosView: View {
     @Environment(DatosStore.self) private var datos
     @State private var aBorrar: Transaccion?
     @State private var aEditar: Transaccion?
+    @State private var aVer: Transaccion?
     @Environment(AppModel.self) private var app
 
     var body: some View {
@@ -15,11 +16,13 @@ struct MovimientosView: View {
             ForEach(Movimientos.agruparPorDia(store.filas), id: \.dia) { grupo in
                 Section(titulo(grupo.dia)) {
                     ForEach(grupo.movimientos) { t in
-                        Button { aEditar = t } label: { FilaMovimiento(t: t).contentShape(.rect) }
+                        Button { if datos.soloLectura { aVer = t } else { aEditar = t } } label: { FilaMovimiento(t: t).contentShape(.rect) }
                             .buttonStyle(.plain)
                             .onAppear { if t.id == store.filas.last?.id { Task { await store.cargarMas() } } }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button("Borrar", systemImage: "trash", role: .destructive) { aBorrar = t }
+                                if !datos.soloLectura {
+                                    Button("Borrar", systemImage: "trash", role: .destructive) { aBorrar = t }
+                                }
                             }
                     }
                 }
@@ -49,10 +52,12 @@ struct MovimientosView: View {
         .sheet(item: $aEditar) { t in
             NuevoMovimientoView(editando: t, tipoCategoria: datos.categoria(t.subcategoriaId)?.tipo)
         }
+        .sheet(item: $aVer) { t in DetalleMovimientoView(t: t) }
         .refreshable { await store.recargar() }
         .task { if store.filas.isEmpty { await store.recargar() } }
-        .confirmationDialog(textoConfirmacion, isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }),
-                            titleVisibility: .visible, presenting: aBorrar) { t in
+        // Aviso centrado: un confirmationDialog sale como globo anclado arriba de la lista, lejos de la fila.
+        .alert(aBorrar.map(textoConfirmacion) ?? "", isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }),
+               presenting: aBorrar) { t in
             Button("Borrar", role: .destructive) {
                 Task { if await store.borrar(t) { await datos.cargar(app: app) } }
             }
@@ -62,8 +67,7 @@ struct MovimientosView: View {
         }
     }
 
-    private var textoConfirmacion: String {
-        guard let t = aBorrar else { return "" }
+    private func textoConfirmacion(_ t: Transaccion) -> String {
         let dia = Fechas.diaLocal(t.fecha, calendario: .current)?.formatted(.dateTime.day().month().locale(Locale(identifier: "es_MX"))) ?? t.fecha
         return "¿Borrar «\(t.comentario.isEmpty ? "Sin comentario" : t.comentario)» (\(Formato.importe(t.importe, t.divisa)), \(dia))?"
     }
@@ -91,3 +95,26 @@ struct FilaMovimiento: View {
     }
 }
 
+
+/// Solo lectura: lo que ve un lector al tocar un movimiento.
+struct DetalleMovimientoView: View {
+    @Environment(DatosStore.self) private var datos
+    @Environment(\.dismiss) private var cerrar
+    let t: Transaccion
+    var body: some View {
+        NavigationStack {
+            List {
+                Section { Importe(valor: t.importe, divisa: t.divisa, estilo: .title.bold(), color: t.importe > 0 ? .green : .primary) }
+                Section {
+                    LabeledContent("Fecha", value: Fechas.diaLocal(t.fecha, calendario: .current)?
+                        .formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "es_MX"))) ?? t.fecha)
+                    LabeledContent("Cuenta", value: datos.cuenta(t.cuentaId)?.nombre ?? "—")
+                    LabeledContent("Categoría", value: datos.categoria(t.subcategoriaId).map { "\($0.categoria) · \($0.subcategoria)" } ?? "—")
+                    if !t.comentario.isEmpty { LabeledContent("Comentario", value: t.comentario) }
+                }
+            }
+            .navigationTitle("Movimiento").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { cerrar() } } }
+        }
+    }
+}
