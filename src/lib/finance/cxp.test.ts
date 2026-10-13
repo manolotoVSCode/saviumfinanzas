@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Account, Category, Transaction } from '@/types/finance';
-import { computeCxP, CxPSubscription } from './cxp';
+import { computeCxP, CxPProvision, CxPSubscription, siguienteFechaProvision } from './cxp';
 
 // "Hoy" fijo: 15 de septiembre de 2026
 const NOW = new Date(2026, 8, 15);
@@ -204,5 +204,49 @@ describe('computeCxP · orden', () => {
       subscriptions: [sub({ proximo_pago: '2026-10-05' })],                                        // 5 oct
     });
     expect(rows.map((r) => r.tipo)).toEqual(['Préstamo', 'Tarjeta de crédito', 'Suscripción']);
+  });
+});
+
+describe('computeCxP · provisiones', () => {
+  const prov = (over: Partial<CxPProvision>): CxPProvision => ({
+    id: 'p1', concepto: 'Colegiatura', monto: 5000, divisa: 'MXN', fecha: '2026-09-25',
+    frecuencia: 'unica', estado: 'pendiente', fecha_pago: null, notas: null, ...over,
+  });
+
+  it('una provisión única pendiente cuenta en su fecha; pagadas y canceladas no', () => {
+    const rows = computeCxP({ ...base, provisiones: [
+      prov({}),
+      prov({ id: 'p2', estado: 'pagado' }),
+      prov({ id: 'p3', estado: 'cancelado' }),
+      prov({ id: 'p4', fecha: '2026-11-01' }), // fuera de 30 días
+    ] });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ tipo: 'Provisión', concepto: 'Colegiatura', monto: 5000, provisionId: 'p1', esProximoPago: true });
+    expect(rows[0].fechaEstimada).toEqual(new Date(2026, 8, 25));
+  });
+
+  it('una vencida sin marcar como pagada sigue contando', () => {
+    const rows = computeCxP({ ...base, provisiones: [prov({ fecha: '2026-09-01' })] });
+    expect(rows).toHaveLength(1);
+  });
+
+  it('una recurrente aporta cada ocurrencia del horizonte y solo la primera se paga', () => {
+    const rows = computeCxP({ ...base, horizonte: 90, provisiones: [prov({ fecha: '2026-09-30', frecuencia: 'mensual' })] });
+    expect(rows.map((r) => r.fechaEstimada)).toEqual([new Date(2026, 8, 30), new Date(2026, 9, 30), new Date(2026, 10, 30)]);
+    expect(rows.map((r) => r.esProximoPago)).toEqual([true, false, false]);
+  });
+
+  it('las ocurrencias mensuales no pierden el día 31', () => {
+    const rows = computeCxP({ ...base, now: new Date(2027, 0, 1), horizonte: 90, provisiones: [prov({ fecha: '2027-01-31', frecuencia: 'mensual' })] });
+    expect(rows.map((r) => r.fechaEstimada)).toEqual([new Date(2027, 0, 31), new Date(2027, 1, 28), new Date(2027, 2, 31)]);
+  });
+});
+
+describe('siguienteFechaProvision', () => {
+  it('avanza según la frecuencia y no desborda el mes', () => {
+    expect(siguienteFechaProvision(new Date(2026, 0, 31), 'mensual')).toEqual(new Date(2026, 1, 28));
+    expect(siguienteFechaProvision(new Date(2026, 8, 15), 'trimestral')).toEqual(new Date(2026, 11, 15));
+    expect(siguienteFechaProvision(new Date(2026, 8, 15), 'anual')).toEqual(new Date(2027, 8, 15));
+    expect(siguienteFechaProvision(new Date(2026, 8, 15), 'unica')).toBeNull();
   });
 });

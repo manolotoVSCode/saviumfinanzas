@@ -11,6 +11,7 @@ export const financeQueryKeys = (userId: string | undefined) => ({
   subscriptions: ['finance', userId, 'subscriptions'] as const,
   perfil: ['finance', userId, 'perfil'] as const,
   pendientes: ['finance', userId, 'pendientes'] as const,
+  provisionesCxP: ['finance', userId, 'provisionesCxP'] as const,
   inversiones: ['finance', userId, 'inversiones'] as const,
   tiposInversion: ['finance', userId, 'tiposInversion'] as const,
   reglas: ['finance', userId, 'reglas'] as const,

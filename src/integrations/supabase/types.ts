@@ -641,6 +641,51 @@ export type Database = {
         }
         Relationships: []
       }
+      provisiones_cxp: {
+        Row: {
+          concepto: string
+          created_at: string
+          divisa: string
+          estado: string
+          fecha: string
+          fecha_pago: string | null
+          frecuencia: string
+          id: string
+          monto: number
+          notas: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          concepto: string
+          created_at?: string
+          divisa?: string
+          estado?: string
+          fecha: string
+          fecha_pago?: string | null
+          frecuencia?: string
+          id?: string
+          monto: number
+          notas?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          concepto?: string
+          created_at?: string
+          divisa?: string
+          estado?: string
+          fecha?: string
+          fecha_pago?: string | null
+          frecuencia?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscription_services: {
         Row: {
           active: boolean

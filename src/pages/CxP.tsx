@@ -5,14 +5,23 @@ import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useSubscriptionServices } from '@/hooks/useSubscriptionServices';
-import { computeCxP, CxPRow } from '@/lib/finance/cxp';
+import { useProvisionesCxP } from '@/hooks/useProvisionesCxP';
+import { computeCxP, CxPProvision, CxPRow, ETIQUETA_FRECUENCIA } from '@/lib/finance/cxp';
+import { formatFechaCorta, parseFechaLocal } from '@/lib/finance/fechas';
+import { formatNumber } from '@/lib/formatters';
+import { ProvisionForm, PayProvisionDialog } from '@/components/cxp/ProvisionDialogs';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { CurrencyCode } from '@/lib/finance/dashboardMetrics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle, CreditCard, Repeat, CalendarClock, Landmark, TrendingDown, Wallet } from 'lucide-react';
+import { AlertCircle, CreditCard, Repeat, CalendarClock, Landmark, TrendingDown, Wallet, PiggyBank, Plus, CheckCircle2, Pencil, XCircle, Trash2, RotateCcw } from 'lucide-react';
 
 const HORIZONTES = [30, 60, 90] as const;
 
@@ -24,8 +33,16 @@ const CxP = () => {
   const { formatCurrency, config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
   const { subscriptions } = useSubscriptionServices();
+  const { provisiones, addProvision, updateProvision, deleteProvision, markAsPaid } = useProvisionesCxP();
 
   const [horizonte, setHorizonte] = useState<number>(30);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editando, setEditando] = useState<CxPProvision | null>(null);
+  const [pagando, setPagando] = useState<CxPProvision | null>(null);
+  const [borrando, setBorrando] = useState<CxPProvision | null>(null);
+
+  const provisionesPorId = useMemo(() => new Map(provisiones.map((p) => [p.id, p])), [provisiones]);
+  const historial = useMemo(() => provisiones.filter((p) => p.estado !== 'pendiente'), [provisiones]);
 
   const baseCurrency = (config.currency as CurrencyCode) || 'MXN';
 
@@ -36,10 +53,11 @@ const CxP = () => {
         categories: financeData.categories,
         accounts: financeData.accounts,
         subscriptions,
+        provisiones,
         horizonte,
         baseCurrency,
       }),
-    [financeData.transactions, financeData.categories, financeData.accounts, subscriptions, horizonte, baseCurrency]
+    [financeData.transactions, financeData.categories, financeData.accounts, subscriptions, provisiones, horizonte, baseCurrency]
   );
 
   const totalEnBase = useMemo(
@@ -88,6 +106,7 @@ const CxP = () => {
     { key: 'recur', label: 'Recurrentes', icon: Repeat, rows: allRows.filter((r) => r.tipo === 'Recurrente mensual'), tipo: 'Recurrente mensual' },
     { key: 'card', label: 'Tarjetas', icon: CreditCard, rows: allRows.filter((r) => r.tipo === 'Tarjeta de crédito'), tipo: 'Tarjeta de crédito' },
     { key: 'loan', label: 'Préstamos', icon: Landmark, rows: allRows.filter((r) => r.tipo === 'Préstamo'), tipo: 'Préstamo' },
+    { key: 'prov', label: 'Provisiones', icon: PiggyBank, rows: allRows.filter((r) => r.tipo === 'Provisión'), tipo: 'Provisión' },
   ];
 
 
@@ -96,6 +115,10 @@ const CxP = () => {
       <div className="animate-fade-in space-y-6">
 
         <PageHeader title="CxP · Cuentas por Pagar" subtitle="Provisiones estimadas de dinero comprometido. Considéralo antes de gastar." actions={
+          <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setFormOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Nueva provisión
+          </Button>
           <Select value={String(horizonte)} onValueChange={(v) => setHorizonte(parseInt(v))}>
             <SelectTrigger className="w-[180px]">
               <SelectValue />
@@ -108,6 +131,7 @@ const CxP = () => {
               ))}
             </SelectContent>
           </Select>
+          </div>
         } />
 
         {/* KPIs */}
@@ -160,7 +184,7 @@ const CxP = () => {
         </div>
 
         {/* Desglose por tipo */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
           {bloques.map((b) => (
             <Card key={b.key}>
               <CardContent className="p-4">
@@ -208,6 +232,7 @@ const CxP = () => {
                               <TableHead>Fecha estimada</TableHead>
                               <TableHead className="text-right">Monto</TableHead>
                               <TableHead>Divisa</TableHead>
+                              <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -215,6 +240,7 @@ const CxP = () => {
                               const dias = Math.ceil(
                                 (r.fechaEstimada.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
                               );
+                              const prov = r.provisionId ? provisionesPorId.get(r.provisionId) : undefined;
                               return (
                                 <TableRow key={r.id}>
                                   <TableCell>
@@ -228,8 +254,8 @@ const CxP = () => {
                                   </TableCell>
                                   <TableCell>
                                     <div>{formatDate(r.fechaEstimada)}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {dias <= 7 ? `⚠️ en ${dias}d` : `en ${dias} días`}
+                                    <div className={`text-xs ${dias < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                      {dias < 0 ? `⚠️ vencido hace ${-dias}d` : dias <= 7 ? `⚠️ en ${dias}d` : `en ${dias} días`}
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right font-semibold">
@@ -239,6 +265,21 @@ const CxP = () => {
                                     <Badge variant="secondary" className="text-xs">
                                       {r.divisa}
                                     </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {prov && r.esProximoPago && (
+                                      <div className="flex justify-end gap-1">
+                                        <Button size="sm" onClick={() => setPagando(prov)}>
+                                          <CheckCircle2 className="h-3 w-3 mr-1" /> Pagar
+                                        </Button>
+                                        <Button size="sm" variant="ghost" title="Editar" onClick={() => setEditando(prov)}>
+                                          <Pencil className="h-3 w-3" />
+                                        </Button>
+                                        <Button size="sm" variant="ghost" title="Cancelar provisión" onClick={() => updateProvision(prov.id, { estado: 'cancelado' })}>
+                                          <XCircle className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               );
@@ -253,7 +294,99 @@ const CxP = () => {
             </Tabs>
           </CardContent>
         </Card>
+
+        {historial.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Provisiones pagadas y canceladas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Concepto</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {historial.map((p) => (
+                      <TableRow key={p.id}>
+                        <TableCell>
+                          <div className="font-medium">{p.concepto}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {[ETIQUETA_FRECUENCIA[p.frecuencia], p.notas].filter(Boolean).join(' · ')}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {p.estado === 'pagado'
+                            ? <Badge className="bg-green-600 hover:bg-green-700">Pagada</Badge>
+                            : <Badge variant="outline">Cancelada</Badge>}
+                        </TableCell>
+                        <TableCell>{formatFechaCorta(parseFechaLocal(p.fecha_pago ?? p.fecha))}</TableCell>
+                        <TableCell className="text-right font-mono">{formatNumber(p.monto)} {p.divisa}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button size="sm" variant="ghost" title="Volver a pendiente" onClick={() => updateProvision(p.id, { estado: 'pendiente' })}>
+                              <RotateCcw className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" title="Eliminar" onClick={() => setBorrando(p)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
+
+      {(formOpen || editando) && (
+        <ProvisionForm
+          initial={editando}
+          defaultCurrency={baseCurrency}
+          onCancel={() => { setFormOpen(false); setEditando(null); }}
+          onSave={async (data) => {
+            const { error } = editando ? await updateProvision(editando.id, data) : await addProvision(data);
+            if (!error) { setFormOpen(false); setEditando(null); }
+          }}
+        />
+      )}
+
+      {pagando && (
+        <PayProvisionDialog
+          provision={pagando}
+          onCancel={() => setPagando(null)}
+          onConfirm={async (fechaPago) => {
+            const { error } = await markAsPaid(pagando, fechaPago);
+            if (!error) setPagando(null);
+          }}
+        />
+      )}
+
+      <AlertDialog open={!!borrando} onOpenChange={(o) => !o && setBorrando(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar provisión?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se borra «{borrando?.concepto}». No afecta a ningún movimiento ni saldo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (borrando) deleteProvision(borrando.id); setBorrando(null); }}>
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };

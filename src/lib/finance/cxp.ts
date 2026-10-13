@@ -2,7 +2,7 @@ import { Account, Category, Transaction } from '@/types/finance';
 import { CurrencyCode } from './dashboardMetrics';
 import { finMesAnterior, parseFechaLocal } from './fechas';
 
-export type CxPTipo = 'Suscripción' | 'Pago anual' | 'Recurrente mensual' | 'Tarjeta de crédito' | 'Préstamo';
+export type CxPTipo = 'Suscripción' | 'Pago anual' | 'Recurrente mensual' | 'Tarjeta de crédito' | 'Préstamo' | 'Provisión';
 
 export interface CxPRow {
   id: string;
@@ -12,7 +12,49 @@ export interface CxPRow {
   divisa: CurrencyCode;
   fechaEstimada: Date;
   detalle?: string;
+  /** Solo filas 'Provisión': id de la fila en provisiones_cxp (para pagar, editar o borrar). */
+  provisionId?: string;
+  /** Solo filas 'Provisión': true en la primera ocurrencia, la única que se marca como pagada. */
+  esProximoPago?: boolean;
 }
+
+export type ProvisionFrecuencia = 'unica' | 'mensual' | 'bimestral' | 'trimestral' | 'semestral' | 'anual';
+export type ProvisionEstado = 'pendiente' | 'pagado' | 'cancelado';
+
+/** Fila de provisiones_cxp: pago apartado a mano, sin movimiento asociado. */
+export interface CxPProvision {
+  id: string;
+  concepto: string;
+  monto: number;
+  divisa: string;
+  /** Próximo pago previsto, 'YYYY-MM-DD'. */
+  fecha: string;
+  frecuencia: ProvisionFrecuencia;
+  estado: ProvisionEstado;
+  fecha_pago: string | null;
+  notas: string | null;
+}
+
+export const MESES_POR_FRECUENCIA: Record<Exclude<ProvisionFrecuencia, 'unica'>, number> = {
+  mensual: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12,
+};
+
+export const ETIQUETA_FRECUENCIA: Record<ProvisionFrecuencia, string> = {
+  unica: 'Pago único', mensual: 'Mensual', bimestral: 'Bimestral',
+  trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual',
+};
+
+/** Suma meses sin desbordar: 31-ene + 1 mes = 28/29-feb, no 3-mar. */
+const sumarMeses = (d: Date, meses: number): Date => {
+  const r = new Date(d.getFullYear(), d.getMonth() + meses, 1);
+  const ultimoDia = new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate();
+  r.setDate(Math.min(d.getDate(), ultimoDia));
+  return r;
+};
+
+/** Fecha que toma una provisión recurrente tras pagar la de `fecha`; null si es de pago único. */
+export const siguienteFechaProvision = (fecha: Date, frecuencia: ProvisionFrecuencia): Date | null =>
+  frecuencia === 'unica' ? null : sumarMeses(fecha, MESES_POR_FRECUENCIA[frecuencia]);
 
 /** Subconjunto de subscription_services que necesita el cálculo. */
 export interface CxPSubscription {
@@ -29,6 +71,8 @@ export interface CxPInput {
   categories: Category[];
   accounts: Account[];
   subscriptions: CxPSubscription[];
+  /** Provisiones manuales (opcional: la vista móvil no las usa). */
+  provisiones?: CxPProvision[];
   /** Días hacia adelante (30, 60, 90). */
   horizonte: number;
   /** Divisa del perfil: fallback de filas sin divisa y parte de la clave de agrupación de recurrentes. */
@@ -44,7 +88,7 @@ const DIA_MS = 1000 * 60 * 60 * 24;
  * convierte) ordenadas por fecha estimada. Un único `now` para las cinco fuentes.
  */
 export const computeCxP = ({
-  transactions, categories, accounts, subscriptions, horizonte, baseCurrency, now = new Date(),
+  transactions, categories, accounts, subscriptions, provisiones = [], horizonte, baseCurrency, now = new Date(),
 }: CxPInput): CxPRow[] => {
   const limite = new Date(now);
   limite.setDate(now.getDate() + horizonte);
@@ -250,7 +294,32 @@ export const computeCxP = ({
     });
   });
 
-  return [...cxpSuscripciones, ...cxpAnuales, ...cxpRecurrentes, ...cxpTarjetas, ...cxpPrestamos].sort(
+  // 6) Provisiones manuales pendientes. Una vencida sin marcar sigue contando (el dinero
+  //    sigue comprometido); una recurrente aporta cada ocurrencia dentro del horizonte.
+  const cxpProvisiones: CxPRow[] = [];
+  provisiones
+    .filter((p) => p.estado === 'pendiente')
+    .forEach((p) => {
+      const primera = parseFechaLocal(p.fecha);
+      // Cada ocurrencia se cuenta desde la primera: encadenar 31-ene → 28-feb → 28-mar perdería el día 31.
+      const ocurrencia = (i: number): Date | null =>
+        i === 0 ? primera : p.frecuencia === 'unica' ? null : sumarMeses(primera, MESES_POR_FRECUENCIA[p.frecuencia] * i);
+      for (let i = 0, fecha = ocurrencia(0); fecha && fecha <= limite; fecha = ocurrencia(++i)) {
+        cxpProvisiones.push({
+          id: `prov-${p.id}-${i}`,
+          concepto: p.concepto,
+          tipo: 'Provisión',
+          monto: Number(p.monto),
+          divisa: (p.divisa as CurrencyCode) || baseCurrency,
+          fechaEstimada: fecha,
+          detalle: [ETIQUETA_FRECUENCIA[p.frecuencia], p.notas].filter(Boolean).join(' · '),
+          provisionId: p.id,
+          esProximoPago: i === 0,
+        });
+      }
+    });
+
+  return [...cxpSuscripciones, ...cxpAnuales, ...cxpRecurrentes, ...cxpTarjetas, ...cxpPrestamos, ...cxpProvisiones].sort(
     (a, b) => a.fechaEstimada.getTime() - b.fechaEstimada.getTime()
   );
 };
