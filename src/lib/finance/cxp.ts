@@ -323,3 +323,19 @@ export const computeCxP = ({
     (a, b) => a.fechaEstimada.getTime() - b.fechaEstimada.getTime()
   );
 };
+
+/** Umbral en MXN a partir del cual una provisión sale avisada arriba del Dashboard. */
+export const UMBRAL_PAGO_GRANDE_MXN = 100_000;
+
+/**
+ * Provisiones pendientes cuyo próximo pago, convertido a MXN, llega al umbral.
+ * Sin horizonte: un pago grande se avisa aunque falten meses. Ordenadas por fecha.
+ */
+export const pagosGrandes = (
+  provisiones: CxPProvision[],
+  aMXN: (monto: number, divisa: string) => number,
+  umbral: number = UMBRAL_PAGO_GRANDE_MXN,
+): CxPProvision[] =>
+  provisiones
+    .filter((p) => p.estado === 'pendiente' && aMXN(Number(p.monto), p.divisa) >= umbral)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));

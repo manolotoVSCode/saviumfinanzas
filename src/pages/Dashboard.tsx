@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { PendingsWidget } from '@/components/dashboard/PendingsWidget';
+import { PagosGrandesWidget } from '@/components/dashboard/PagosGrandesWidget';
 
 const Dashboard = () => {
   const financeData = useFinanceDataSupabase();
@@ -26,6 +27,7 @@ const Dashboard = () => {
     <Layout>
       <div className="animate-fade-in space-y-6">
         <PageHeader title="Dashboard" />
+        <PagosGrandesWidget />
         <PendingsWidget />
         <DashboardComponent 
           metrics={financeData.dashboardMetrics} 

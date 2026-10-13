@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Account, Category, Transaction } from '@/types/finance';
-import { computeCxP, CxPProvision, CxPSubscription, siguienteFechaProvision } from './cxp';
+import { computeCxP, CxPProvision, CxPSubscription, pagosGrandes, siguienteFechaProvision } from './cxp';
 
 // "Hoy" fijo: 15 de septiembre de 2026
 const NOW = new Date(2026, 8, 15);
@@ -248,5 +248,25 @@ describe('siguienteFechaProvision', () => {
     expect(siguienteFechaProvision(new Date(2026, 8, 15), 'trimestral')).toEqual(new Date(2026, 11, 15));
     expect(siguienteFechaProvision(new Date(2026, 8, 15), 'anual')).toEqual(new Date(2027, 8, 15));
     expect(siguienteFechaProvision(new Date(2026, 8, 15), 'unica')).toBeNull();
+  });
+});
+
+describe('pagosGrandes', () => {
+  const prov = (over: Partial<CxPProvision>): CxPProvision => ({
+    id: 'p1', concepto: 'Fideicomiso', monto: 900000, divisa: 'MXN', fecha: '2026-12-21',
+    frecuencia: 'unica', estado: 'pendiente', fecha_pago: null, notas: null, ...over,
+  });
+  const aMXN = (monto: number, divisa: string) => (divisa === 'USD' ? monto * 20 : monto);
+
+  it('avisa de las pendientes desde 100K MXN sin importar la fecha, convirtiendo la divisa', () => {
+    const r = pagosGrandes([
+      prov({ id: 'lejana', fecha: '2027-06-01' }),
+      prov({ id: 'justa', monto: 100000, fecha: '2026-10-01' }),
+      prov({ id: 'chica', monto: 99999.99 }),
+      prov({ id: 'usd', monto: 6000, divisa: 'USD', fecha: '2026-11-01' }), // 120K MXN
+      prov({ id: 'pagada', estado: 'pagado' }),
+      prov({ id: 'cancelada', estado: 'cancelado' }),
+    ], aMXN);
+    expect(r.map((p) => p.id)).toEqual(['justa', 'usd', 'lejana']);
   });
 });

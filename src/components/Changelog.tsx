@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '9.5',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Bell className="h-4 w-4" />, text: 'Dashboard: aviso arriba del todo con los pagos grandes por realizar (provisiones de CxP de 100,000 MXN o más, sea cual sea su fecha; las de otra divisa se comparan convertidas a pesos)', type: 'feature' },
+    ],
+  },
+  {
     version: '9.4',
     date: 'Octubre 2026',
     changes: [
