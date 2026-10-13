@@ -4,7 +4,7 @@ import { diasDesdeRevision, estadoRevision } from './familia';
 import { finMesAnterior, toFechaISO } from './fechas';
 import { agruparCiclos } from './subscriptions';
 
-export type AlertType = 'pago_anual' | 'suscripcion_sube' | 'categoria_disparada' | 'familia_revision';
+export type AlertType = 'pago_anual' | 'suscripcion_sube' | 'categoria_disparada' | 'familia_revision' | 'cripto_umbral';
 
 export interface Alert {
   /** Clave estable de la ocurrencia; un descarte se guarda por clave. */
@@ -42,7 +42,33 @@ export interface AlertsInput {
   /** Ids de pagos anuales marcados como inactivos por el usuario. */
   inactiveAnnualIds: Set<string>;
   revisionFamilia?: RevisionFamilia | null;
+  /** null = sin umbrales, cargando o error (no alerta). */
+  cripto?: CriptoAlertasInput | null;
   now?: Date;
+}
+
+/** Una compra de la tabla criptomonedas (la fila completa es asignable). */
+export interface CriptoParaAlertas {
+  simbolo: string;
+  cantidad: number;
+  precio_compra: number;
+  divisa_compra: string;
+}
+
+/** Fila de alertas_cripto: % sobre el precio de compra; null = sin aviso en ese sentido. */
+export interface UmbralCripto {
+  simbolo: string;
+  sube_pct: number | null;
+  baja_pct: number | null;
+}
+
+export interface CriptoAlertasInput {
+  criptos: CriptoParaAlertas[];
+  /** Precio actual en USD por símbolo; sin precio no hay alerta. */
+  precios: Record<string, number>;
+  umbrales: UmbralCripto[];
+  /** Importe en la divisa dada → USD. */
+  aUSD: (importe: number, divisa: string) => number;
 }
 
 /** Umbrales. */
@@ -216,9 +242,72 @@ export const familiaRevisionAlerts = (revision: RevisionFamilia | null, now: Dat
   }];
 };
 
-export const computeAlerts = ({ categories, transactions, subscriptions, inactiveAnnualIds, revisionFamilia = null, now = new Date() }: AlertsInput): Alert[] => [
+export interface PosicionCripto {
+  costoUSD: number;
+  valorUSD: number;
+  /** Ganancia (+) o pérdida (−) sobre lo pagado, en %. */
+  pct: number;
+}
+
+/**
+ * Todas las compras de cada símbolo juntas: lo pagado (convertido a USD) frente a lo que
+ * valen hoy. Igual que la tarjeta de Criptomonedas, el % no depende del tipo de cambio
+ * porque compra y valor actual se convierten con la misma tasa.
+ */
+export const posicionesCripto = (criptos: CriptoParaAlertas[], precios: Record<string, number>, aUSD: CriptoAlertasInput['aUSD']): Map<string, PosicionCripto> => {
+  const acumulado = new Map<string, { costoUSD: number; valorUSD: number }>();
+  for (const c of criptos) {
+    const precio = precios[c.simbolo];
+    if (precio === undefined) continue;
+    const a = acumulado.get(c.simbolo) ?? { costoUSD: 0, valorUSD: 0 };
+    a.costoUSD += c.cantidad * aUSD(c.precio_compra, c.divisa_compra);
+    a.valorUSD += c.cantidad * precio;
+    acumulado.set(c.simbolo, a);
+  }
+  const posiciones = new Map<string, PosicionCripto>();
+  for (const [simbolo, a] of acumulado) {
+    if (a.costoUSD > 0) posiciones.set(simbolo, { ...a, pct: (a.valorUSD / a.costoUSD - 1) * 100 });
+  }
+  return posiciones;
+};
+
+const pctConSigno = (n: number, decimales: number) => `${n >= 0 ? '+' : '−'}${Math.abs(n).toFixed(decimales)}%`;
+
+/**
+ * Cripto cuya posición sube ≥ sube_pct o baja ≥ baja_pct respecto a lo pagado.
+ * La clave lleva el umbral: un descarte vale hasta que se cambie el umbral, y si el
+ * precio vuelve a la zona normal la alerta desaparece sola. Orden por símbolo.
+ * Port en Swift: SaviumCore/AlertasCripto.swift (fixture shared/fixtures/alertas_cripto.json).
+ */
+export const criptoAlerts = ({ criptos, precios, umbrales, aUSD }: CriptoAlertasInput, now: Date): Alert[] => {
+  const posiciones = posicionesCripto(criptos, precios, aUSD);
+  return [...umbrales]
+    .sort((a, b) => a.simbolo.localeCompare(b.simbolo))
+    .flatMap(u => {
+      const p = posiciones.get(u.simbolo);
+      if (!p) return [];
+      const sube = u.sube_pct !== null && p.pct >= u.sube_pct;
+      const baja = u.baja_pct !== null && p.pct <= -u.baja_pct;
+      if (!sube && !baja) return [];
+      const umbral = sube ? u.sube_pct! : u.baja_pct!;
+      return [{
+        key: `cripto_${sube ? 'sube' : 'baja'}:${u.simbolo}:${umbral}`,
+        type: 'cripto_umbral' as const,
+        title: `${u.simbolo} ${pctConSigno(p.pct, 1)}`,
+        detail: `${sube ? 'Subió' : 'Bajó'} ${Math.abs(p.pct).toFixed(1)}% sobre tu precio de compra (avisar desde ${sube ? '+' : '−'}${umbral}%)`,
+        amount: p.valorUSD,
+        currency: 'USD',
+        date: now,
+        href: '/inversiones',
+        severity: sube ? 'media' as const : 'alta' as const,
+      }];
+    });
+};
+
+export const computeAlerts = ({ categories, transactions, subscriptions, inactiveAnnualIds, revisionFamilia = null, cripto = null, now = new Date() }: AlertsInput): Alert[] => [
   ...annualPaymentAlerts(categories, transactions, inactiveAnnualIds, now),
   ...subscriptionIncreaseAlerts(subscriptions, transactions),
   ...categorySpikeAlerts(categories, transactions, now),
   ...familiaRevisionAlerts(revisionFamilia, now),
+  ...(cripto ? criptoAlerts(cripto, now) : []),
 ];

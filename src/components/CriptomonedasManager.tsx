@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Edit, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Plus, Edit, Trash2, Bell, BellRing } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -13,6 +13,9 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Criptomoneda } from '@/types/crypto';
 import { toFechaISO } from '@/lib/finance/fechas';
+import { useAlertasCripto } from '@/hooks/useAlertasCripto';
+import { PosicionCripto, posicionesCripto, UmbralCripto } from '@/lib/finance/alerts';
+import { CurrencyCode } from '@/lib/finance/dashboardMetrics';
 
 const CRIPTOMONEDAS_DISPONIBLES = [
   { simbolo: 'BTC', nombre: 'Bitcoin' },
@@ -158,10 +161,90 @@ const CriptoForm: React.FC<CriptoFormProps> = ({ cripto, onSave, onClose }) => {
   );
 };
 
+/** '' → sin aviso; si no, un % positivo (bajada < 100). */
+const leerPct = (texto: string, max?: number): number | null | undefined => {
+  if (texto.trim() === '') return null;
+  const n = Number(texto);
+  return Number.isFinite(n) && n > 0 && (max === undefined || n < max) ? n : undefined;
+};
+
+interface AlertaCriptoFormProps {
+  simbolo: string;
+  umbral?: UmbralCripto;
+  posicion?: PosicionCripto;
+  onSave: (umbral: UmbralCripto) => Promise<void>;
+  onClose: () => void;
+}
+
+const AlertaCriptoForm: React.FC<AlertaCriptoFormProps> = ({ simbolo, umbral, posicion, onSave, onClose }) => {
+  const [sube, setSube] = useState(umbral?.sube_pct?.toString() ?? '');
+  const [baja, setBaja] = useState(umbral?.baja_pct?.toString() ?? '');
+  const subePct = leerPct(sube);
+  const bajaPct = leerPct(baja, 100);
+  const valido = subePct !== undefined && bajaPct !== undefined;
+
+  const guardar = async (u: UmbralCripto) => {
+    try {
+      await onSave(u);
+      onClose();
+    } catch {
+      // el hook ya avisa con un toast
+    }
+  };
+
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); if (valido) guardar({ simbolo, sube_pct: subePct, baja_pct: bajaPct }); }}
+      className="space-y-4"
+    >
+      <p className="text-sm text-muted-foreground">
+        Se calcula con todas tus compras de {simbolo} juntas, sobre lo que pagaste
+        {posicion && <> (hoy vas <span className={posicion.pct >= 0 ? 'text-success font-medium' : 'text-destructive font-medium'}>{posicion.pct >= 0 ? '+' : '−'}{Math.abs(posicion.pct).toFixed(1)}%</span>)</>}.
+        La alerta aparece en Alertas, en el Dashboard y en la app del iPhone.
+      </p>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="sube_pct">Avisar si sube (%)</Label>
+          <Input id="sube_pct" type="number" inputMode="decimal" min="0" step="any" placeholder="Ej: 50"
+            value={sube} onChange={(e) => setSube(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor="baja_pct">Avisar si baja (%)</Label>
+          <Input id="baja_pct" type="number" inputMode="decimal" min="0" max="99.99" step="any" placeholder="Ej: 20"
+            value={baja} onChange={(e) => setBaja(e.target.value)} />
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">Deja un campo vacío para no avisar en ese sentido. Si descartas una alerta, vuelve a avisar cuando cambies su porcentaje.</p>
+      {!valido && <p className="text-sm text-destructive">Pon un porcentaje mayor que 0 (la bajada, menor que 100).</p>}
+      <div className="flex gap-2 pt-2">
+        <Button type="submit" className="flex-1" disabled={!valido}>Guardar alerta</Button>
+        {umbral && (
+          <Button type="button" variant="outline" onClick={() => guardar({ simbolo, sube_pct: null, baja_pct: null })}>Quitar</Button>
+        )}
+        <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+      </div>
+    </form>
+  );
+};
+
+const describirUmbral = (u: UmbralCripto) =>
+  [u.sube_pct !== null && `+${u.sube_pct}%`, u.baja_pct !== null && `−${u.baja_pct}%`].filter(Boolean).join(' / ');
+
 const CriptomonedasManager: React.FC = () => {
-  const { criptomonedas, loading, addCriptomoneda, updateCriptomoneda, deleteCriptomoneda } = useCriptomonedas();
+  const { criptomonedas, precios, loading, addCriptomoneda, updateCriptomoneda, deleteCriptomoneda } = useCriptomonedas();
   const { formatCurrency } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
+  const { umbrales, guardar: guardarUmbral } = useAlertasCripto();
+  const [alertaDe, setAlertaDe] = useState<string | undefined>();
+  const umbralPorSimbolo = useMemo(() => new Map(umbrales.map(u => [u.simbolo, u])), [umbrales]);
+  const posiciones = useMemo(
+    () => posicionesCripto(
+      criptomonedas,
+      Object.fromEntries(Object.entries(precios).map(([s, p]) => [s, p.price])),
+      (importe, divisa) => convertCurrency(importe, divisa as CurrencyCode, 'USD'),
+    ),
+    [criptomonedas, precios, convertCurrency]
+  );
 
   // Función para formatear con decimales usando el formato estándar (coma miles, punto decimales)
   const formatWithDecimals = (amount: number, decimals: number = 2): string => {
@@ -272,8 +355,32 @@ const CriptomonedasManager: React.FC = () => {
                       <p className="text-sm text-muted-foreground">
                         {formatWithDecimals(cripto.cantidad, 2)} {cripto.simbolo}
                       </p>
+                      {umbralPorSimbolo.has(cripto.simbolo) && (
+                        <p className="text-xs text-primary flex items-center gap-1 mt-0.5">
+                          <BellRing className="h-3 w-3" /> Alerta {describirUmbral(umbralPorSimbolo.get(cripto.simbolo)!)}
+                        </p>
+                      )}
                     </div>
                     <div className="flex gap-2">
+                      <Dialog open={alertaDe === cripto.id} onOpenChange={(open) => setAlertaDe(open ? cripto.id : undefined)}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="outline" title={`Alerta de ${cripto.simbolo}`}>
+                            {umbralPorSimbolo.has(cripto.simbolo) ? <BellRing className="h-4 w-4 text-primary" /> : <Bell className="h-4 w-4" />}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Alerta de {cripto.simbolo}</DialogTitle>
+                          </DialogHeader>
+                          <AlertaCriptoForm
+                            simbolo={cripto.simbolo}
+                            umbral={umbralPorSimbolo.get(cripto.simbolo)}
+                            posicion={posiciones.get(cripto.simbolo)}
+                            onSave={guardarUmbral}
+                            onClose={() => setAlertaDe(undefined)}
+                          />
+                        </DialogContent>
+                      </Dialog>
                       <Dialog open={editingCripto?.id === cripto.id} onOpenChange={(open) => !open && setEditingCripto(undefined)}>
                         <DialogTrigger asChild>
                           <Button 

@@ -35,6 +35,33 @@ export type Database = {
         }
         Relationships: []
       }
+      alertas_cripto: {
+        Row: {
+          baja_pct: number | null
+          created_at: string
+          id: string
+          simbolo: string
+          sube_pct: number | null
+          user_id: string
+        }
+        Insert: {
+          baja_pct?: number | null
+          created_at?: string
+          id?: string
+          simbolo: string
+          sube_pct?: number | null
+          user_id: string
+        }
+        Update: {
+          baja_pct?: number | null
+          created_at?: string
+          id?: string
+          simbolo?: string
+          sube_pct?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       categorias: {
         Row: {
           categoria: string

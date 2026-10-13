@@ -16,6 +16,7 @@ export const financeQueryKeys = (userId: string | undefined) => ({
   reglas: ['finance', userId, 'reglas'] as const,
   criptomonedas: ['finance', userId, 'criptomonedas'] as const,
   criptoPrecios: ['finance', userId, 'criptoPrecios'] as const,
+  alertasCripto: ['finance', userId, 'alertasCripto'] as const,
   paymentSkips: ['finance', userId, 'paymentSkips'] as const,
   alertDismissals: ['finance', userId, 'alertDismissals'] as const,
   informacionFamilia: ['finance', userId, 'informacionFamilia'] as const,

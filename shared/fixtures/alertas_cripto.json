@@ -1,0 +1,22 @@
+{
+  "tasas": { "MXN": 1, "USD": 20, "EUR": 22 },
+  "criptos": [
+    { "simbolo": "SHIB", "cantidad": 100, "precio_compra": 0.00004, "divisa_compra": "EUR" },
+    { "simbolo": "SHIB", "cantidad": 100, "precio_compra": 0.00006, "divisa_compra": "EUR" },
+    { "simbolo": "BTC", "cantidad": 1, "precio_compra": 50000, "divisa_compra": "USD" },
+    { "simbolo": "ETH", "cantidad": 2, "precio_compra": 1000, "divisa_compra": "USD" },
+    { "simbolo": "XRP", "cantidad": 10, "precio_compra": 1, "divisa_compra": "USD" },
+    { "simbolo": "SOL", "cantidad": 1, "precio_compra": 10, "divisa_compra": "USD" }
+  ],
+  "precios": { "SHIB": 0.000066, "BTC": 40000, "ETH": 700, "SOL": 100 },
+  "umbrales": [
+    { "simbolo": "SHIB", "sube_pct": 15, "baja_pct": null },
+    { "simbolo": "BTC", "sube_pct": 10, "baja_pct": 25 },
+    { "simbolo": "ETH", "sube_pct": null, "baja_pct": 25 },
+    { "simbolo": "XRP", "sube_pct": 1, "baja_pct": null }
+  ],
+  "esperado": [
+    { "clave": "cripto_baja:ETH:25", "simbolo": "ETH", "sube": false, "pct": -30, "valorUSD": 1400 },
+    { "clave": "cripto_sube:SHIB:15", "simbolo": "SHIB", "sube": true, "pct": 20, "valorUSD": 0.0132 }
+  ]
+}

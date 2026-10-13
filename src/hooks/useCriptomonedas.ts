@@ -10,7 +10,8 @@ import { Criptomoneda, CryptoPrices, CryptoWithPrice } from '@/types/crypto';
 const EMPTY_CRIPTOS: Criptomoneda[] = [];
 const EMPTY_PRECIOS: CryptoPrices = {};
 
-const fetchCriptomonedas = async (): Promise<Criptomoneda[]> => {
+/** Compartidas con useAlerts (misma clave de caché). */
+export const fetchCriptomonedas = async (): Promise<Criptomoneda[]> => {
   const { data, error } = await supabase
     .from('criptomonedas')
     .select('*')
@@ -19,7 +20,7 @@ const fetchCriptomonedas = async (): Promise<Criptomoneda[]> => {
   return (data ?? []) as Criptomoneda[];
 };
 
-const fetchPrecios = async (symbols: string[]): Promise<CryptoPrices> => {
+export const fetchPrecios = async (symbols: string[]): Promise<CryptoPrices> => {
   const { data, error } = await supabase.functions.invoke('crypto-prices', { body: { symbols } });
   if (error) throw error;
   return (data ?? {}) as CryptoPrices;

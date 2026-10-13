@@ -1,11 +1,15 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinanceDataSupabase } from './useFinanceDataSupabase';
 import { useSubscriptionServices } from './useSubscriptionServices';
+import { useAlertasCripto } from './useAlertasCripto';
+import { fetchCriptomonedas, fetchPrecios } from './useCriptomonedas';
+import { useExchangeRates } from './useExchangeRates';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
-import { Alert, computeAlerts, RevisionFamilia } from '@/lib/finance/alerts';
+import { Alert, computeAlerts, CriptoAlertasInput, RevisionFamilia } from '@/lib/finance/alerts';
+import { CurrencyCode } from '@/lib/finance/dashboardMetrics';
 import { readInactiveAnnualIds } from '@/lib/finance/annualPayments';
 
 const fetchDismissals = async (): Promise<string[]> => {
@@ -23,7 +27,8 @@ const fetchRevisionFamilia = async (): Promise<RevisionFamilia | null> => {
 
 /**
  * Alertas calculadas en cliente (pagos anuales próximos, suscripciones que
- * suben, categorías disparadas, revisión de la información familiar) menos las descartadas por el usuario.
+ * suben, categorías disparadas, revisión de la información familiar, criptos que pasan su umbral)
+ * menos las descartadas por el usuario.
  */
 export const useAlerts = () => {
   const { user } = useAuth();
@@ -51,9 +56,39 @@ export const useAlerts = () => {
   });
   const revisionFamilia = revisionQuery.data ?? null;
 
+  // Criptos: solo se piden (y sus precios) si hay algún umbral. Mismas claves que useCriptomonedas,
+  // así que comparten caché con Inversiones. Un fallo no bloquea: sin precios no hay alerta.
+  const { umbrales } = useAlertasCripto();
+  const { convertCurrency } = useExchangeRates();
+  const criptosQuery = useQuery({
+    queryKey: QK.criptomonedas,
+    queryFn: fetchCriptomonedas,
+    staleTime: STALE_TIME,
+    enabled: !!user && umbrales.length > 0,
+  });
+  const simbolos = useMemo(() => [...new Set((criptosQuery.data ?? []).map(c => c.simbolo))].sort(), [criptosQuery.data]);
+  const preciosQuery = useQuery({
+    queryKey: [...QK.criptoPrecios, simbolos.join(',')],
+    queryFn: () => fetchPrecios(simbolos),
+    staleTime: STALE_TIME,
+    placeholderData: keepPreviousData,
+    retry: 1,
+    enabled: !!user && umbrales.length > 0 && simbolos.length > 0,
+  });
+  const cripto = useMemo((): CriptoAlertasInput | null => {
+    if (umbrales.length === 0 || !criptosQuery.data || !preciosQuery.data) return null;
+    const precios = Object.fromEntries(Object.entries(preciosQuery.data).map(([s, p]) => [s, p.price]));
+    return {
+      criptos: criptosQuery.data,
+      precios,
+      umbrales,
+      aUSD: (importe, divisa) => convertCurrency(importe, divisa as CurrencyCode, 'USD'),
+    };
+  }, [umbrales, criptosQuery.data, preciosQuery.data, convertCurrency]);
+
   const allAlerts = useMemo(
-    () => computeAlerts({ categories, transactions, subscriptions, inactiveAnnualIds: inactiveAnnual, revisionFamilia }),
-    [categories, transactions, subscriptions, inactiveAnnual, revisionFamilia]
+    () => computeAlerts({ categories, transactions, subscriptions, inactiveAnnualIds: inactiveAnnual, revisionFamilia, cripto }),
+    [categories, transactions, subscriptions, inactiveAnnual, revisionFamilia, cripto]
   );
 
   const dismissed = useMemo(() => new Set(dismissalsQuery.data ?? []), [dismissalsQuery.data]);

@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '8.8',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Bell className="h-4 w-4" />, text: 'Alerta por criptomoneda: en Inversiones → Criptomonedas, la campana de cada cripto pone un % de subida y otro de bajada sobre tu precio de compra (todas las compras de esa moneda juntas). Al pasarlo sale en Alertas y en el Dashboard, y también en el Inicio de la app del iPhone', type: 'feature' },
+    ],
+  },
+  {
     version: '8.7',
     date: 'Octubre 2026',
     changes: [

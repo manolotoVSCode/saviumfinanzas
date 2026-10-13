@@ -6,6 +6,7 @@ import suscripciones from '../../../shared/fixtures/suscripciones.json';
 import mesAnterior from '../../../shared/fixtures/mes_anterior.json';
 import cxp from '../../../shared/fixtures/cxp.json';
 import inversiones from '../../../shared/fixtures/inversiones.json';
+import alertasCripto from '../../../shared/fixtures/alertas_cripto.json';
 import { parseFechaLocal, toFechaISO } from './fechas';
 import { convertWithRates, Tasas } from './currency';
 import { ConvertCurrency, CurrencyCode, computeDashboardMetrics } from './dashboardMetrics';
@@ -14,6 +15,7 @@ import { computeSubscriptionsSummary, estadoSuscripcion } from './subscriptionsS
 import { computeCxP, CxPSubscription } from './cxp';
 import { investmentReturn, totalesInversiones, valorActualInversion } from './investmentReturn';
 import type { Investment, InvestmentValuation } from '@/types/investments';
+import { criptoAlerts } from './alerts';
 
 // Contrato con la app iOS: ver shared/fixtures/README.md.
 const TOL = 6; // decimales de tolerancia (1e-6)
@@ -139,5 +141,19 @@ describe('fixtures compartidos · inversiones', () => {
     const r = totalesInversiones(conValor, convertir(inversiones.tasas), inversiones.moneda as CurrencyCode);
     expect(r.invertido).toBeCloseTo(inversiones.esperado.totales.invertido, TOL);
     expect(r.valor).toBeCloseTo(inversiones.esperado.totales.valor, TOL);
+  });
+});
+
+describe('fixtures compartidos · alertas cripto', () => {
+  it('claves, % y valor en USD', () => {
+    const r = criptoAlerts({
+      criptos: alertasCripto.criptos,
+      precios: alertasCripto.precios as Record<string, number>,
+      umbrales: alertasCripto.umbrales,
+      aUSD: (importe, divisa) => convertWithRates(importe, divisa as CurrencyCode, 'USD', alertasCripto.tasas),
+    }, new Date());
+    expect(r.map((a) => ({ key: a.key, amount: a.amount, severity: a.severity })))
+      .toEqual(alertasCripto.esperado.map((e) => ({ key: e.clave, amount: expect.closeTo(e.valorUSD, TOL), severity: e.sube ? 'media' : 'alta' })));
+    expect(r.map((a) => a.title)).toEqual(alertasCripto.esperado.map((e) => `${e.simbolo} ${e.pct >= 0 ? '+' : '−'}${Math.abs(e.pct).toFixed(1)}%`));
   });
 });
