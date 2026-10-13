@@ -127,7 +127,7 @@ export const InvestmentTrackingDialog = ({
                     <XAxis dataKey="fecha" fontSize={11} />
                     <YAxis fontSize={11} tickFormatter={(v: number) => formatNumber(v)} width={80} />
                     <RTooltip formatter={(v: number) => [`${investment.moneda} ${formatNumber(v)}`, 'Valor']} />
-                    <Line type="monotone" dataKey="valor" stroke="hsl(var(--primary))" strokeWidth={2} dot />
+                    <Line type="monotone" dataKey="valor" stroke="hsl(var(--grafica))" strokeWidth={2} dot />
                   </RLineChart>
                 </ResponsiveContainer>
               </div>

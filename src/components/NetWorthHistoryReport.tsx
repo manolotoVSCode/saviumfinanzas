@@ -25,7 +25,7 @@ const RANGE_OPTIONS = [
 ];
 
 const chartConfig = {
-  patrimonio: { label: 'Patrimonio neto', color: 'hsl(var(--primary))' },
+  patrimonio: { label: 'Patrimonio neto', color: 'hsl(var(--grafica))' },
   activos: { label: 'Activos', color: 'hsl(var(--success))' },
   pasivos: { label: 'Pasivos', color: 'hsl(var(--destructive))' },
 };
@@ -159,8 +159,8 @@ export const NetWorthHistoryReport = ({ accounts, transactions, formatCurrency }
             <ComposedChart data={points} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
               <defs>
                 <linearGradient id="patrimonioFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor="hsl(var(--grafica))" stopOpacity={0.25} />
+                  <stop offset="100%" stopColor="hsl(var(--grafica))" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
@@ -171,7 +171,7 @@ export const NetWorthHistoryReport = ({ accounts, transactions, formatCurrency }
                 formatter={(value: number, name: string) => [`$${formatCurrency(value)}`, chartConfig[name as keyof typeof chartConfig]?.label ?? name]}
               />
               <ChartLegend content={<ChartLegendContent />} />
-              <Area type="monotone" dataKey="patrimonio" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#patrimonioFill)" dot={false} activeDot={{ r: 5 }} />
+              <Area type="monotone" dataKey="patrimonio" stroke="hsl(var(--grafica))" strokeWidth={2} fill="url(#patrimonioFill)" dot={false} activeDot={{ r: 5 }} />
               <Line type="monotone" dataKey="activos" stroke="hsl(var(--success))" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
               <Line type="monotone" dataKey="pasivos" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
             </ComposedChart>

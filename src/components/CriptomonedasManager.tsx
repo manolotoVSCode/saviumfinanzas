@@ -455,7 +455,7 @@ const CriptomonedasManager: React.FC = () => {
                         </p>
                         {cripto.ganancia_perdida_porcentaje !== undefined && (
                           <span className={`text-xs px-2 py-1 rounded ${
-                            cripto.ganancia_perdida_porcentaje >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            cripto.ganancia_perdida_porcentaje >= 0 ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'
                           }`}>
                             {formatWithDecimals(cripto.ganancia_perdida_porcentaje)}%
                           </span>

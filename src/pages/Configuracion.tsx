@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import Layout from '@/components/Layout';
 import { ProfileEditor } from '@/components/ProfileEditor';
 import { ContactosEmergencia } from '@/components/ContactosEmergencia';
+import { AparienciaSelector } from '@/components/AparienciaSelector';
 import { DataAudit } from '@/components/DataAudit';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 import { useAuth } from '@/contexts/AuthContext';
-import { Settings, LogOut, Trash2, Search, Wallet, Tag, Filter } from 'lucide-react';
+import { Settings, LogOut, Trash2, Search, Wallet, Tag, Filter, SunMoon } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useNavigate } from 'react-router-dom';
 
@@ -56,6 +57,22 @@ const Configuracion = () => {
         {/* EDITOR DE PERFIL */}
         <ProfileEditor />
 
+        {/* APARIENCIA */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SunMoon className="h-5 w-5" />
+              Apariencia
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <AparienciaSelector />
+            <p className="text-muted-foreground text-sm">
+              Automática cambia sola con el modo claro u oscuro de tu Mac o iPhone. Se guarda en este navegador.
+            </p>
+          </CardContent>
+        </Card>
+
         {/* TASAS DE CAMBIO ACTUALES */}
         <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
           <CardHeader>
@@ -71,7 +88,7 @@ const Configuracion = () => {
         <ContactosEmergencia />
 
         {/* AUDITORÍA DE DATOS */}
-        <Card className="border-blue-200 hover:border-blue-400 transition-all duration-300">
+        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="h-5 w-5" />
@@ -109,7 +126,7 @@ const Configuracion = () => {
                 <AlertDialogTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 hover:border-destructive/50"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Eliminar Todas las Transacciones
@@ -124,7 +141,7 @@ const Configuracion = () => {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={financeData.clearAllTransactions} className="bg-red-600 hover:bg-red-700">
+                    <AlertDialogAction onClick={financeData.clearAllTransactions} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                       Eliminar todo
                     </AlertDialogAction>
                   </AlertDialogFooter>

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "next-themes";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Responsive from "@/components/Responsive";
@@ -52,6 +53,8 @@ const PageLoader = () => (
 const queryClient = new QueryClient();
 
 const App = () => (
+  // Apariencia por navegador (Configuración → Apariencia); por defecto sigue al sistema.
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="savium.apariencia" disableTransitionOnChange>
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
@@ -169,6 +172,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

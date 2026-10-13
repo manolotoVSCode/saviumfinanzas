@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Shield, BarChart3, Upload, Wallet, Tag, Globe, Users, Bug, Zap, HeartHandshake, Database, Bell } from 'lucide-react';
+import { Moon, Sparkles, Shield, BarChart3, Upload, Wallet, Tag, Globe, Users, Bug, Zap, HeartHandshake, Database, Bell } from 'lucide-react';
 
 interface ChangelogEntry {
   version: string;
@@ -8,6 +8,13 @@ interface ChangelogEntry {
 }
 
 const changelog: ChangelogEntry[] = [
+  {
+    version: '8.9',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Moon className="h-4 w-4" />, text: 'Modo oscuro: Configuración → Apariencia (Automática, Clara u Oscura, como en la app del iPhone). El oscuro usa los colores de iOS: fondo negro, tarjetas gris grafito y las gráficas en azul', type: 'feature' },
+    ],
+  },
   {
     version: '8.8',
     date: 'Octubre 2026',

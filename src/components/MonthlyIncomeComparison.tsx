@@ -145,7 +145,7 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
   }, [monthlyData]);
 
   const chartConfig = {
-    total: { label: 'Ingresos', color: 'hsl(var(--primary))' }
+    total: { label: 'Ingresos', color: 'hsl(var(--grafica))' }
   };
 
   return (
@@ -230,7 +230,7 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
                 content={<ChartTooltipContent />}
                 formatter={(value: number) => [`$${formatCurrency(value)}`, 'Ingresos']}
               />
-              <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="total" fill="hsl(var(--grafica))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
         </CardContent>

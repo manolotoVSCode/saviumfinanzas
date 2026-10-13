@@ -21,7 +21,7 @@ import { investmentReturn } from '@/lib/finance/investmentReturn';
 import { LineChart, Pencil, Plus, RefreshCw, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
-const COLORS = ['hsl(var(--primary))', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#0088FE'];
+const COLORS = ['hsl(var(--grafica))', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#0088FE'];
 
 const fmtDate = (iso?: string | null) => {
   if (!iso) return '—';

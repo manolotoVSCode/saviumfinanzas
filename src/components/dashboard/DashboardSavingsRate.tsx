@@ -99,9 +99,9 @@ export const DashboardSavingsRate = ({
               <Line
                 type="monotone"
                 dataKey="tasaAhorro"
-                stroke="hsl(var(--primary))"
+                stroke="hsl(var(--grafica))"
                 strokeWidth={2.5}
-                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                dot={{ fill: 'hsl(var(--grafica))', strokeWidth: 2, r: 4 }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>

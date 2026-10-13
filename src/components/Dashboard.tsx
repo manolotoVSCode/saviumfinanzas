@@ -868,9 +868,9 @@ const CategoryItem = ({
                   <Line 
                     type="monotone" 
                     dataKey="balance" 
-                    stroke="hsl(var(--primary))" 
+                    stroke="hsl(var(--grafica))" 
                     strokeWidth={3}
-                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                    dot={{ fill: 'hsl(var(--grafica))', strokeWidth: 2, r: 4 }}
                     name="Balance"
                   />
                   <ReferenceLine 
@@ -887,7 +887,7 @@ const CategoryItem = ({
                   />
                   <ReferenceLine 
                     y={filteredMetrics.avgBalance} 
-                    stroke="hsl(var(--primary))" 
+                    stroke="hsl(var(--grafica))" 
                     strokeDasharray="5 5" 
                     strokeWidth={2}
                   />
@@ -904,7 +904,7 @@ const CategoryItem = ({
                 <span>Gasto <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgGastos, selectedCurrency)})</span></span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--primary))' }}></div>
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--grafica))' }}></div>
                 <span>Balance <span className="text-muted-foreground">(Ø {formatCurrencyTotals(filteredMetrics.avgBalance, selectedCurrency)})</span></span>
               </div>
             </div>
