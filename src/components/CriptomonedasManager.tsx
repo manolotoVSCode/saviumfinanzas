@@ -361,17 +361,24 @@ const CriptomonedasManager: React.FC = () => {
                         {formatWithDecimals(cripto.cantidad, 2)} {cripto.simbolo}
                       </p>
                       {umbralPorSimbolo.has(cripto.simbolo) && (
-                        <p className="text-xs text-primary flex items-center gap-1 mt-0.5">
-                          <BellRing className="h-3 w-3" /> Alerta {describirUmbral(umbralPorSimbolo.get(cripto.simbolo)!)}
+                        <p className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1 mt-0.5">
+                          <BellRing className="h-3 w-3 fill-current" /> Alerta {describirUmbral(umbralPorSimbolo.get(cripto.simbolo)!)}
                         </p>
                       )}
                     </div>
                     <div className="flex gap-2">
                       <Dialog open={alertaDe === cripto.id} onOpenChange={(open) => setAlertaDe(open ? cripto.id : undefined)}>
                         <DialogTrigger asChild>
-                          <Button size="sm" variant="outline" title={`Alerta de ${cripto.simbolo}`}>
-                            {umbralPorSimbolo.has(cripto.simbolo) ? <BellRing className="h-4 w-4 text-primary" /> : <Bell className="h-4 w-4" />}
-                          </Button>
+                          {umbralPorSimbolo.has(cripto.simbolo) ? (
+                            <Button size="sm" variant="outline" title={`Alerta de ${cripto.simbolo}: ${describirUmbral(umbralPorSimbolo.get(cripto.simbolo)!)}`}
+                              className="border-amber-500/60 bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-400">
+                              <BellRing className="h-4 w-4 fill-current" />
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline" title={`Poner alerta a ${cripto.simbolo}`}>
+                              <Bell className="h-4 w-4" />
+                            </Button>
+                          )}
                         </DialogTrigger>
                         <DialogContent className="max-w-md">
                           <DialogHeader>
