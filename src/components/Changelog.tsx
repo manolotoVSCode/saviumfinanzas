@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '9.3',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Wallet className="h-4 w-4" />, text: 'CxP: provisiones manuales para apartar dinero de pagos futuros (únicos o que se repiten cada mes, bimestre, trimestre, semestre o año). Suman en el total por pagar y en el colchón, pero no mueven el saldo de ninguna cuenta; se marcan como pagadas a mano, como los cobros en CxC, y las que se repiten pasan solas al siguiente periodo', type: 'feature' },
+    ],
+  },
+  {
     version: '9.2',
     date: 'Octubre 2026',
     changes: [
