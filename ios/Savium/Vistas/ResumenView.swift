@@ -107,7 +107,7 @@ struct ResumenView: View {
     }
 }
 
-/// Cripto que pasó su umbral (se configura en la web). Deslizar a la izquierda la descarta.
+/// Cripto que llegó a uno de sus niveles (se configuran en la web). Deslizar a la izquierda la descarta.
 private struct FilaAlertaCripto: View {
     let alerta: AlertasCripto.Alerta
     let valor: Double
@@ -118,18 +118,18 @@ private struct FilaAlertaCripto: View {
     }
 
     var body: some View {
-        let color: Color = alerta.sube ? .green : .red
+        let color: Color = alerta.arriba ? .green : .red
         FilaImporte {
             Importe(valor: valor, divisa: divisa)
         } label: {
             Label {
                 VStack(alignment: .leading) {
                     Text("\(alerta.simbolo) \(pct(alerta.pct, decimales: 1))").foregroundStyle(color)
-                    Text("Sobre tu compra · avisar desde \(pct(alerta.sube ? alerta.umbral : -alerta.umbral, decimales: 2))")
+                    Text("Sobre tu compra · \(alerta.arriba ? "avisar al llegar a" : "avisar al caer a") \(pct(alerta.nivel, decimales: 2))")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             } icon: {
-                Image(systemName: alerta.sube ? "chart.line.uptrend.xyaxis" : "chart.line.downtrend.xyaxis").foregroundStyle(color)
+                Image(systemName: alerta.arriba ? "chart.line.uptrend.xyaxis" : "chart.line.downtrend.xyaxis").foregroundStyle(color)
             }
         }
     }

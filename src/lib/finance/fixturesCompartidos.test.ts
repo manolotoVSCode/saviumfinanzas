@@ -153,7 +153,7 @@ describe('fixtures compartidos · alertas cripto', () => {
       aUSD: (importe, divisa) => convertWithRates(importe, divisa as CurrencyCode, 'USD', alertasCripto.tasas),
     }, new Date());
     expect(r.map((a) => ({ key: a.key, amount: a.amount, severity: a.severity })))
-      .toEqual(alertasCripto.esperado.map((e) => ({ key: e.clave, amount: expect.closeTo(e.valorUSD, TOL), severity: e.sube ? 'media' : 'alta' })));
+      .toEqual(alertasCripto.esperado.map((e) => ({ key: e.clave, amount: expect.closeTo(e.valorUSD, TOL), severity: e.arriba ? 'media' : 'alta' })));
     expect(r.map((a) => a.title)).toEqual(alertasCripto.esperado.map((e) => `${e.simbolo} ${e.pct >= 0 ? '+' : '−'}${Math.abs(e.pct).toFixed(1)}%`));
   });
 });

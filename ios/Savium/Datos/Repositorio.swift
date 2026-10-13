@@ -88,7 +88,7 @@ struct Repositorio: Sendable {
     // MARK: Alertas de cripto (umbrales en la web, Inversiones → Criptomonedas)
 
     func umbralesCripto() async throws -> [UmbralCripto] {
-        try await db.from("alertas_cripto").select("simbolo, sube_pct, baja_pct").execute().value
+        try await db.from("alertas_cripto").select("simbolo, nivel_arriba, nivel_abajo").execute().value
     }
     func comprasCripto() async throws -> [CompraCripto] {
         try await db.from("criptomonedas").select("simbolo, cantidad, precio_compra, divisa_compra").execute().value

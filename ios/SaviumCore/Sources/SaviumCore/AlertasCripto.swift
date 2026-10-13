@@ -15,14 +15,15 @@ public struct CompraCripto: Codable, Sendable, Hashable {
     }
 }
 
-/// Fila de alertas_cripto: % sobre el precio de compra; nil = sin aviso en ese sentido.
+/// Fila de alertas_cripto: niveles del % sobre el precio de compra, con signo.
+/// Avisa cuando el % es ≥ nivelArriba o ≤ nivelAbajo; nil = sin ese aviso.
 public struct UmbralCripto: Codable, Sendable, Hashable {
     public let simbolo: String
-    public let subePct: Double?
-    public let bajaPct: Double?
-    enum CodingKeys: String, CodingKey { case simbolo, subePct = "sube_pct", bajaPct = "baja_pct" }
-    public init(simbolo: String, subePct: Double?, bajaPct: Double?) {
-        self.simbolo = simbolo; self.subePct = subePct; self.bajaPct = bajaPct
+    public let nivelArriba: Double?
+    public let nivelAbajo: Double?
+    enum CodingKeys: String, CodingKey { case simbolo, nivelArriba = "nivel_arriba", nivelAbajo = "nivel_abajo" }
+    public init(simbolo: String, nivelArriba: Double?, nivelAbajo: Double?) {
+        self.simbolo = simbolo; self.nivelArriba = nivelArriba; self.nivelAbajo = nivelAbajo
     }
 }
 
@@ -32,10 +33,11 @@ public enum AlertasCripto {
         /// La misma clave que la web: un descarte vale en los dos sitios.
         public let clave: String
         public let simbolo: String
-        public let sube: Bool
+        /// true = llegó a nivelArriba; false = cayó a nivelAbajo.
+        public let arriba: Bool
         /// Ganancia (+) o pérdida (−) sobre lo pagado, en %.
         public let pct: Double
-        public let umbral: Double
+        public let nivel: Double
         public let valorUSD: Double
         public var id: String { clave }
     }
@@ -53,15 +55,15 @@ public enum AlertasCripto {
         return umbrales.sorted { $0.simbolo < $1.simbolo }.compactMap { u in
             guard let a = acumulado[u.simbolo], a.costo > 0 else { return nil }
             let pct = (a.valor / a.costo - 1) * 100
-            let sube = u.subePct.map { pct >= $0 } ?? false
-            let baja = u.bajaPct.map { pct <= -$0 } ?? false
-            guard sube || baja, let umbral = sube ? u.subePct : u.bajaPct else { return nil }
-            return Alerta(clave: "cripto_\(sube ? "sube" : "baja"):\(u.simbolo):\(numeroComoJS(umbral))",
-                          simbolo: u.simbolo, sube: sube, pct: pct, umbral: umbral, valorUSD: a.valor)
+            let arriba = u.nivelArriba.map { pct >= $0 } ?? false
+            let abajo = u.nivelAbajo.map { pct <= $0 } ?? false
+            guard arriba || abajo, let nivel = arriba ? u.nivelArriba : u.nivelAbajo else { return nil }
+            return Alerta(clave: "cripto_\(arriba ? "arriba" : "abajo"):\(u.simbolo):\(numeroComoJS(nivel))",
+                          simbolo: u.simbolo, arriba: arriba, pct: pct, nivel: nivel, valorUSD: a.valor)
         }
     }
 
-    /// Como `${n}` en JavaScript para los umbrales: 15 → «15», 12.5 → «12.5».
+    /// Como `${n}` en JavaScript para los niveles: 15 → «15», -20 → «-20», 12.5 → «12.5».
     static func numeroComoJS(_ n: Double) -> String {
         n == n.rounded() && abs(n) < 1e15 ? String(Int64(n)) : String(n)
     }

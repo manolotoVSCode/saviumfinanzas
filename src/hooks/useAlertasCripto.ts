@@ -8,12 +8,12 @@ import { UmbralCripto } from '@/lib/finance/alerts';
 const EMPTY: UmbralCripto[] = [];
 
 const fetchUmbrales = async (): Promise<UmbralCripto[]> => {
-  const { data, error } = await supabase.from('alertas_cripto').select('simbolo, sube_pct, baja_pct');
+  const { data, error } = await supabase.from('alertas_cripto').select('simbolo, nivel_arriba, nivel_abajo');
   if (error) throw error;
   return data ?? [];
 };
 
-/** Umbrales de alerta por símbolo (tabla alertas_cripto). */
+/** Niveles de alerta por símbolo (tabla alertas_cripto). */
 export const useAlertasCripto = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -37,12 +37,12 @@ export const useAlertasCripto = () => {
 
   /** Sin ningún umbral se borra la fila. */
   const guardar = useMutation({
-    mutationFn: async ({ simbolo, sube_pct, baja_pct }: UmbralCripto) => {
+    mutationFn: async ({ simbolo, nivel_arriba, nivel_abajo }: UmbralCripto) => {
       if (!user) return;
-      const { error } = sube_pct === null && baja_pct === null
+      const { error } = nivel_arriba === null && nivel_abajo === null
         ? await supabase.from('alertas_cripto').delete().eq('simbolo', simbolo)
         : await supabase.from('alertas_cripto')
-          .upsert({ user_id: user.id, simbolo, sube_pct, baja_pct }, { onConflict: 'user_id,simbolo' });
+          .upsert({ user_id: user.id, simbolo, nivel_arriba, nivel_abajo }, { onConflict: 'user_id,simbolo' });
       if (error) throw error;
     },
     onSuccess,

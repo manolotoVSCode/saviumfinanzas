@@ -14,7 +14,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Criptomoneda } from '@/types/crypto';
 import { toFechaISO } from '@/lib/finance/fechas';
 import { useAlertasCripto } from '@/hooks/useAlertasCripto';
-import { PosicionCripto, posicionesCripto, UmbralCripto } from '@/lib/finance/alerts';
+import { nivelConSigno, pctConSigno, PosicionCripto, posicionesCripto, UmbralCripto } from '@/lib/finance/alerts';
 import { CurrencyCode } from '@/lib/finance/dashboardMetrics';
 
 const CRIPTOMONEDAS_DISPONIBLES = [
@@ -161,11 +161,11 @@ const CriptoForm: React.FC<CriptoFormProps> = ({ cripto, onSave, onClose }) => {
   );
 };
 
-/** '' → sin aviso; si no, un % positivo (bajada < 100). */
-const leerPct = (texto: string, max?: number): number | null | undefined => {
+/** '' → sin aviso; si no, un % con signo mayor que −100 (por debajo no se puede perder más). */
+const leerNivel = (texto: string): number | null | undefined => {
   if (texto.trim() === '') return null;
-  const n = Number(texto);
-  return Number.isFinite(n) && n > 0 && (max === undefined || n < max) ? n : undefined;
+  const n = Number(texto.replace('−', '-'));
+  return Number.isFinite(n) && n > -100 ? n : undefined;
 };
 
 interface AlertaCriptoFormProps {
@@ -177,11 +177,15 @@ interface AlertaCriptoFormProps {
 }
 
 const AlertaCriptoForm: React.FC<AlertaCriptoFormProps> = ({ simbolo, umbral, posicion, onSave, onClose }) => {
-  const [sube, setSube] = useState(umbral?.sube_pct?.toString() ?? '');
-  const [baja, setBaja] = useState(umbral?.baja_pct?.toString() ?? '');
-  const subePct = leerPct(sube);
-  const bajaPct = leerPct(baja, 100);
-  const valido = subePct !== undefined && bajaPct !== undefined;
+  const [arriba, setArriba] = useState(umbral?.nivel_arriba?.toString() ?? '');
+  const [abajo, setAbajo] = useState(umbral?.nivel_abajo?.toString() ?? '');
+  const nivelArriba = leerNivel(arriba);
+  const nivelAbajo = leerNivel(abajo);
+  const error = nivelArriba === undefined || nivelAbajo === undefined
+    ? 'Escribe un porcentaje mayor que −100 (con el signo menos si es pérdida).'
+    : nivelArriba !== null && nivelAbajo !== null && nivelAbajo >= nivelArriba
+      ? 'El nivel de abajo tiene que ser menor que el de arriba.'
+      : null;
 
   const guardar = async (u: UmbralCripto) => {
     try {
@@ -194,32 +198,33 @@ const AlertaCriptoForm: React.FC<AlertaCriptoFormProps> = ({ simbolo, umbral, po
 
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); if (valido) guardar({ simbolo, sube_pct: subePct, baja_pct: bajaPct }); }}
+      onSubmit={(e) => { e.preventDefault(); if (!error) guardar({ simbolo, nivel_arriba: nivelArriba!, nivel_abajo: nivelAbajo! }); }}
       className="space-y-4"
     >
       <p className="text-sm text-muted-foreground">
-        Se calcula con todas tus compras de {simbolo} juntas, sobre lo que pagaste
-        {posicion && <> (hoy vas <span className={posicion.pct >= 0 ? 'text-success font-medium' : 'text-destructive font-medium'}>{posicion.pct >= 0 ? '+' : '−'}{Math.abs(posicion.pct).toFixed(1)}%</span>)</>}.
-        La alerta aparece en Alertas, en el Dashboard y en la app del iPhone.
+        Escribe el % que quieres vigilar, con su signo, igual que el que ves en la tarjeta. Se calcula con
+        todas tus compras de {simbolo} juntas, sobre lo que pagaste
+        {posicion && <> (hoy vas <span className={posicion.pct >= 0 ? 'text-success font-medium' : 'text-destructive font-medium'}>{pctConSigno(posicion.pct, 1)}</span>)</>}.
+        La alerta aparece en Alertas y en la app del iPhone.
       </p>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="sube_pct">Avisar si sube (%)</Label>
-          <Input id="sube_pct" type="number" inputMode="decimal" min="0" step="any" placeholder="Ej: 50"
-            value={sube} onChange={(e) => setSube(e.target.value)} />
+          <Label htmlFor="nivel_arriba">Avisar si llega a o supera (%)</Label>
+          <Input id="nivel_arriba" type="number" inputMode="decimal" step="any" placeholder="Ej: -20 o 50"
+            value={arriba} onChange={(e) => setArriba(e.target.value)} />
         </div>
         <div>
-          <Label htmlFor="baja_pct">Avisar si baja (%)</Label>
-          <Input id="baja_pct" type="number" inputMode="decimal" min="0" max="99.99" step="any" placeholder="Ej: 20"
-            value={baja} onChange={(e) => setBaja(e.target.value)} />
+          <Label htmlFor="nivel_abajo">Avisar si cae a o por debajo de (%)</Label>
+          <Input id="nivel_abajo" type="number" inputMode="decimal" step="any" placeholder="Ej: -95"
+            value={abajo} onChange={(e) => setAbajo(e.target.value)} />
         </div>
       </div>
       <p className="text-xs text-muted-foreground">Deja un campo vacío para no avisar en ese sentido. Si descartas una alerta, vuelve a avisar cuando cambies su porcentaje.</p>
-      {!valido && <p className="text-sm text-destructive">Pon un porcentaje mayor que 0 (la bajada, menor que 100).</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex gap-2 pt-2">
-        <Button type="submit" className="flex-1" disabled={!valido}>Guardar alerta</Button>
+        <Button type="submit" className="flex-1" disabled={!!error}>Guardar alerta</Button>
         {umbral && (
-          <Button type="button" variant="outline" onClick={() => guardar({ simbolo, sube_pct: null, baja_pct: null })}>Quitar</Button>
+          <Button type="button" variant="outline" onClick={() => guardar({ simbolo, nivel_arriba: null, nivel_abajo: null })}>Quitar</Button>
         )}
         <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
       </div>
@@ -228,7 +233,7 @@ const AlertaCriptoForm: React.FC<AlertaCriptoFormProps> = ({ simbolo, umbral, po
 };
 
 const describirUmbral = (u: UmbralCripto) =>
-  [u.sube_pct !== null && `+${u.sube_pct}%`, u.baja_pct !== null && `−${u.baja_pct}%`].filter(Boolean).join(' / ');
+  [u.nivel_arriba !== null && `≥ ${nivelConSigno(u.nivel_arriba)}`, u.nivel_abajo !== null && `≤ ${nivelConSigno(u.nivel_abajo)}`].filter(Boolean).join(' · ');
 
 const CriptomonedasManager: React.FC = () => {
   const { criptomonedas, precios, loading, addCriptomoneda, updateCriptomoneda, deleteCriptomoneda } = useCriptomonedas();

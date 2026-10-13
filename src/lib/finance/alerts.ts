@@ -55,11 +55,14 @@ export interface CriptoParaAlertas {
   divisa_compra: string;
 }
 
-/** Fila de alertas_cripto: % sobre el precio de compra; null = sin aviso en ese sentido. */
+/**
+ * Fila de alertas_cripto: niveles del % sobre el precio de compra, con signo (el que se ve en
+ * la tarjeta). Avisa cuando el % es ≥ nivel_arriba o ≤ nivel_abajo; null = sin ese aviso.
+ */
 export interface UmbralCripto {
   simbolo: string;
-  sube_pct: number | null;
-  baja_pct: number | null;
+  nivel_arriba: number | null;
+  nivel_abajo: number | null;
 }
 
 export interface CriptoAlertasInput {
@@ -271,12 +274,15 @@ export const posicionesCripto = (criptos: CriptoParaAlertas[], precios: Record<s
   return posiciones;
 };
 
-const pctConSigno = (n: number, decimales: number) => `${n >= 0 ? '+' : '−'}${Math.abs(n).toFixed(decimales)}%`;
+export const pctConSigno = (n: number, decimales: number) => `${n >= 0 ? '+' : '−'}${Math.abs(n).toFixed(decimales)}%`;
+
+/** Umbral tal cual lo escribió el usuario (sin forzar decimales): +50%, −20%, −12.5%. */
+export const nivelConSigno = (n: number) => `${n >= 0 ? '+' : '−'}${Math.abs(n)}%`;
 
 /**
- * Cripto cuya posición sube ≥ sube_pct o baja ≥ baja_pct respecto a lo pagado.
- * La clave lleva el umbral: un descarte vale hasta que se cambie el umbral, y si el
- * precio vuelve a la zona normal la alerta desaparece sola. Orden por símbolo.
+ * Cripto cuya posición llega a nivel_arriba o cae a nivel_abajo (en % sobre lo pagado).
+ * La clave lleva el nivel: un descarte vale hasta que se cambie, y si el precio vuelve
+ * a la zona normal la alerta desaparece sola. Orden por símbolo.
  * Port en Swift: SaviumCore/AlertasCripto.swift (fixture shared/fixtures/alertas_cripto.json).
  */
 export const criptoAlerts = ({ criptos, precios, umbrales, aUSD }: CriptoAlertasInput, now: Date): Alert[] => {
@@ -286,20 +292,22 @@ export const criptoAlerts = ({ criptos, precios, umbrales, aUSD }: CriptoAlertas
     .flatMap(u => {
       const p = posiciones.get(u.simbolo);
       if (!p) return [];
-      const sube = u.sube_pct !== null && p.pct >= u.sube_pct;
-      const baja = u.baja_pct !== null && p.pct <= -u.baja_pct;
-      if (!sube && !baja) return [];
-      const umbral = sube ? u.sube_pct! : u.baja_pct!;
+      const arriba = u.nivel_arriba !== null && p.pct >= u.nivel_arriba;
+      const abajo = u.nivel_abajo !== null && p.pct <= u.nivel_abajo;
+      if (!arriba && !abajo) return [];
+      const nivel = arriba ? u.nivel_arriba! : u.nivel_abajo!;
       return [{
-        key: `cripto_${sube ? 'sube' : 'baja'}:${u.simbolo}:${umbral}`,
+        key: `cripto_${arriba ? 'arriba' : 'abajo'}:${u.simbolo}:${nivel}`,
         type: 'cripto_umbral' as const,
         title: `${u.simbolo} ${pctConSigno(p.pct, 1)}`,
-        detail: `${sube ? 'Subió' : 'Bajó'} ${Math.abs(p.pct).toFixed(1)}% sobre tu precio de compra (avisar desde ${sube ? '+' : '−'}${umbral}%)`,
+        detail: arriba
+          ? `Llegó a ${pctConSigno(p.pct, 1)} sobre tu precio de compra (avisar al llegar a ${nivelConSigno(nivel)})`
+          : `Cayó a ${pctConSigno(p.pct, 1)} sobre tu precio de compra (avisar al caer a ${nivelConSigno(nivel)})`,
         amount: p.valorUSD,
         currency: 'USD',
         date: now,
         href: '/inversiones',
-        severity: sube ? 'media' as const : 'alta' as const,
+        severity: arriba ? 'media' as const : 'alta' as const,
       }];
     });
 };

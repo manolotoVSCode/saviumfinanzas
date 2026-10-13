@@ -128,7 +128,7 @@ final class DatosStore {
             .filter { !alertasDescartadas.contains($0.clave) }
     }
 
-    /// Como «Descartar» en la web (vuelve a avisar si se cambia el umbral). Si falla, reaparece.
+    /// Como «Descartar» en la web (vuelve a avisar si se cambia el nivel). Si falla, reaparece.
     func descartar(_ a: AlertasCripto.Alerta) async {
         guard let yo = supabase.auth.currentUser?.id else { return }
         alertasDescartadas.insert(a.clave)

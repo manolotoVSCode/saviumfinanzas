@@ -37,27 +37,27 @@ export type Database = {
       }
       alertas_cripto: {
         Row: {
-          baja_pct: number | null
+          nivel_abajo: number | null
           created_at: string
           id: string
           simbolo: string
-          sube_pct: number | null
+          nivel_arriba: number | null
           user_id: string
         }
         Insert: {
-          baja_pct?: number | null
+          nivel_abajo?: number | null
           created_at?: string
           id?: string
           simbolo: string
-          sube_pct?: number | null
+          nivel_arriba?: number | null
           user_id: string
         }
         Update: {
-          baja_pct?: number | null
+          nivel_abajo?: number | null
           created_at?: string
           id?: string
           simbolo?: string
-          sube_pct?: number | null
+          nivel_arriba?: number | null
           user_id?: string
         }
         Relationships: []
