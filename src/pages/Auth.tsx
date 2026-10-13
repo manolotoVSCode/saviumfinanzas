@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { FraseSavium } from '@/components/FraseSavium';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -202,6 +203,10 @@ const Auth = () => {
                 </div>
               </form>
             )}
+
+            <p className="text-center font-mono text-sm text-muted-foreground min-h-5">
+              <FraseSavium maquina />
+            </p>
           </CardContent>
         </Card>
       </div>
