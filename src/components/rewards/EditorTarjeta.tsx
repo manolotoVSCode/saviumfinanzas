@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Codigo } from './Codigo';
 import { completar, MOTIVOS, normalizar, validar } from '@/lib/rewards/codigos';
 import {
-  NOMBRE_TIPO_CODIGO, NOMBRE_TIPO_PROGRAMA, SALDO_MAXIMO, TIPOS_CODIGO, TIPOS_PROGRAMA,
+  NOMBRE_TIPO_CODIGO, NOMBRE_TIPO_PROGRAMA, TIPOS_CODIGO, TIPOS_PROGRAMA,
   type Programa, type Tarjeta, type TipoCodigo,
 } from '@/lib/rewards/tipos';
 import { useGuardarTarjeta } from '@/lib/rewards/datos';
@@ -24,7 +24,6 @@ export function EditorTarjeta({ inicial, nueva, programas, pais, onCerrar }: {
 }) {
   const [t, setT] = useState<Tarjeta>(inicial);
   const [valor, setValor] = useState(inicial.codigo_valor ?? '');
-  const [saldo, setSaldo] = useState(inicial.saldo?.toString() ?? '');
   const [otro, setOtro] = useState(!nueva && !inicial.programa_id);
   const [todos, setTodos] = useState(false);
   const guardar = useGuardarTarjeta();
@@ -33,11 +32,8 @@ export function EditorTarjeta({ inicial, nueva, programas, pais, onCerrar }: {
   const programa = programas.find(p => p.id === t.programa_id);
   const motivo = validar(valor, t.codigo_tipo);
   const sugerido = motivo ? completar(valor, t.codigo_tipo) : null;
-  const digitos = saldo.replace(/\D/g, '');
-  const saldoNumero = digitos === '' ? null : Number(digitos);
-  const saldoValido = saldoNumero === null || saldoNumero <= SALDO_MAXIMO;
   const nombreValido = !!t.programa_id || !!t.nombre?.trim();
-  const puedeGuardar = motivo === null && saldoValido && nombreValido && !guardar.isPending;
+  const puedeGuardar = motivo === null && nombreValido && !guardar.isPending;
   const visibles = useMemo(() => programas.filter(p => p.activo && (todos || p.pais === pais || p.pais === 'INT')), [programas, todos, pais]);
 
   function elegirPrograma(id: string) {
@@ -58,7 +54,6 @@ export function EditorTarjeta({ inicial, nueva, programas, pais, onCerrar }: {
       nombre: t.programa_id ? null : limpio(t.nombre), unidad: limpio(t.unidad), numero_socio: limpio(t.numero_socio),
       titular: limpio(t.titular), notas: limpio(t.notas),
       codigo_valor: t.codigo_tipo === 'ninguno' ? null : normalizar(valor, t.codigo_tipo),
-      saldo: saldoNumero,
     });
     onCerrar();
   }
@@ -94,7 +89,6 @@ export function EditorTarjeta({ inicial, nueva, programas, pais, onCerrar }: {
             {otro && (
               <>
                 <Input placeholder="Nombre de la tarjeta" maxLength={60} value={t.nombre ?? ''} onChange={e => cambiar({ nombre: e.target.value })} />
-                <Input placeholder="Unidad (puntos, millas…)" maxLength={20} value={t.unidad ?? ''} onChange={e => cambiar({ unidad: e.target.value })} />
                 <div className="flex flex-wrap gap-2">
                   {COLORES.map(c => (
                     <button key={c} type="button" aria-label={`Color ${c}`} onClick={() => cambiar({ color: c })}
@@ -123,22 +117,9 @@ export function EditorTarjeta({ inicial, nueva, programas, pais, onCerrar }: {
             <Input className="font-mono" placeholder="Número de socio" maxLength={64} value={t.numero_socio ?? ''} onChange={e => cambiar({ numero_socio: e.target.value })} />
           </section>
 
-          <section className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="rw-saldo">Saldo ({t.unidad || programa?.unidad || 'puntos'})</Label>
-              <Input id="rw-saldo" inputMode="numeric" className="tabular-nums" value={saldo} onChange={e => setSaldo(e.target.value)} />
-              {!saldoValido && <p className="text-xs text-destructive">El saldo no es válido.</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="rw-fsaldo">Saldo a fecha de</Label>
-              <Input id="rw-fsaldo" type="date" value={t.saldo_fecha ?? ''} onChange={e => cambiar({ saldo_fecha: e.target.value || null })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="rw-caduca">Caducidad</Label>
-              <Input id="rw-caduca" type="date" value={t.caducidad ?? ''} onChange={e => cambiar({ caducidad: e.target.value || null })} />
-            </div>
-            <Input className="sm:col-span-2" placeholder="Titular" maxLength={60} value={t.titular ?? ''} onChange={e => cambiar({ titular: e.target.value })} />
-            <Textarea className="sm:col-span-2" rows={3} placeholder="Notas" maxLength={1000} value={t.notas ?? ''} onChange={e => cambiar({ notas: e.target.value })} />
+          <section className="space-y-3">
+            <Input placeholder="Titular" maxLength={60} value={t.titular ?? ''} onChange={e => cambiar({ titular: e.target.value })} />
+            <Textarea rows={3} placeholder="Notas" maxLength={1000} value={t.notas ?? ''} onChange={e => cambiar({ notas: e.target.value })} />
           </section>
 
           <label className="flex items-center justify-between gap-4 rounded-xl border p-4">

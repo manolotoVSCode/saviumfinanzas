@@ -1,6 +1,5 @@
 import { Plane, BedDouble, CreditCard, ShoppingCart, Users, User } from 'lucide-react';
-import { colorDe, dia, titulo, unidadDe, type Programa, type Tarjeta } from '@/lib/rewards/tipos';
-import { formatNumber } from '@/lib/formatters';
+import { colorDe, titulo, type Programa, type Tarjeta } from '@/lib/rewards/tipos';
 
 const ICONOS = { aerolinea: Plane, hotel: BedDouble, tarjeta_credito: CreditCard, comercio: ShoppingCart };
 
@@ -12,7 +11,6 @@ export function TarjetaRewards({ tarjeta, programa, dueno, onClick }: {
   const nombre = titulo(tarjeta, programa);
   const iniciales = nombre.split(/\s+/).filter(p => /\p{L}/u.test(p[0] ?? '')).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   const Icono = programa ? ICONOS[programa.tipo] : null;
-  const caduca = dia(tarjeta.caducidad);
 
   return (
     <button
@@ -32,15 +30,7 @@ export function TarjetaRewards({ tarjeta, programa, dueno, onClick }: {
       </div>
       <div className="relative mt-auto pt-4">
         <div className="truncate text-xl font-bold">{nombre}</div>
-        <div className="flex items-end justify-between gap-2">
-          {tarjeta.saldo !== null ? (
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold tabular-nums">{formatNumber(tarjeta.saldo, 0)}</span>
-              <span className="text-sm font-semibold opacity-85">{unidadDe(tarjeta, programa)}</span>
-            </div>
-          ) : <span className="font-mono opacity-90">{tarjeta.numero_socio}</span>}
-          {caduca && <div className="text-right text-xs font-semibold"><div className="opacity-85">Caduca</div>{caduca}</div>}
-        </div>
+        {tarjeta.numero_socio && <div className="truncate font-mono text-lg font-semibold opacity-90">{tarjeta.numero_socio}</div>}
       </div>
     </button>
   );

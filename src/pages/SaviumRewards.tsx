@@ -18,7 +18,6 @@ import { formatNumber } from '@/lib/formatters';
 import {
   funcion, useFamilias, useGuardarPrograma, useMiembros, usePerfilRewards, useProgramas, useTarjetas, useUso, type Perfil,
 } from '@/lib/rewards/datos';
-import { porUnidad } from '@/lib/rewards/totales';
 import {
   NOMBRE_TIPO_CODIGO, NOMBRE_TIPO_PROGRAMA, TIPOS_CODIGO, TIPOS_PROGRAMA, titulo, type Programa, type Tarjeta,
 } from '@/lib/rewards/tipos';
@@ -40,7 +39,7 @@ const SaviumRewards = () => {
     <Layout>
       <PageHeader
         title={<span className="flex items-center gap-3"><Gift className="h-8 w-8 text-primary" />Savium Rewards</span>}
-        subtitle={p?.familia ?? 'Cartera familiar de tarjetas de puntos, millas y monederos'}
+        subtitle={p?.familia ?? 'Cartera familiar de tarjetas de fidelidad'}
       />
       {perfil.isLoading && <Skeleton className="h-40 w-full" />}
       {perfil.error && <p className="text-destructive">No se pudo cargar Savium Rewards: {(perfil.error as Error).message}</p>}
@@ -83,7 +82,6 @@ function Tarjetas({ usuario, perfil }: { usuario: string; perfil: Perfil }) {
     .some(s => s.toLowerCase().includes(q));
   const mias = todas.filter(t => t.user_id === usuario);
   const familia = todas.filter(t => t.user_id !== usuario);
-  const totales = porUnidad(mias, mapa);
 
   function nueva() {
     const orden = Math.max(-1, ...mias.map(t => t.orden)) + 1;
@@ -105,12 +103,6 @@ function Tarjetas({ usuario, perfil }: { usuario: string; perfil: Perfil }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        {totales.map(t => (
-          <Card key={t.unidad} className="px-4 py-3">
-            <p className="text-2xl font-bold tabular-nums">{numero(t.total)}</p>
-            <p className="text-xs font-medium text-muted-foreground">{t.unidad}</p>
-          </Card>
-        ))}
         <div className="ml-auto flex gap-2">
           <div className="relative w-64">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -127,7 +119,7 @@ function Tarjetas({ usuario, perfil }: { usuario: string; perfil: Perfil }) {
       {!tarjetas.isLoading && todas.length === 0 && (
         <Card><CardContent className="p-10 text-center">
           <p className="text-lg font-semibold">Tu cartera está vacía</p>
-          <p className="text-muted-foreground">Añade tus tarjetas de puntos, millas y monederos.</p>
+          <p className="text-muted-foreground">Añade tus tarjetas de fidelidad para no tener que llevarlas encima.</p>
         </CardContent></Card>
       )}
 

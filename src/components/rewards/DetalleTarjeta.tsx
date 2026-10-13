@@ -3,17 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Codigo } from './Codigo';
 import { TarjetaRewards } from './TarjetaRewards';
-import { dia, titulo, unidadDe, type Programa, type Tarjeta } from '@/lib/rewards/tipos';
-import { formatNumber } from '@/lib/formatters';
+import { titulo, type Programa, type Tarjeta } from '@/lib/rewards/tipos';
 
 export function DetalleTarjeta({ tarjeta, programa, dueno, onEditar, onCerrar }: {
   tarjeta: Tarjeta; programa?: Programa; dueno?: string; onEditar?: () => void; onCerrar: () => void;
 }) {
   const filas: [string, string | null][] = [
     ['Titular', tarjeta.titular],
-    ['Saldo', tarjeta.saldo !== null ? `${formatNumber(tarjeta.saldo, 0)} ${unidadDe(tarjeta, programa)}` : null],
-    ['Saldo a fecha de', dia(tarjeta.saldo_fecha)],
-    ['Caducidad', dia(tarjeta.caducidad)],
     ['Notas', tarjeta.notas],
     ['De', dueno ?? null],
   ];
