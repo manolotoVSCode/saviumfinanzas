@@ -13,12 +13,9 @@ const frases = [
 ];
 
 /** Una frase distinta cada vez que se monta, al estilo de los mensajes de Claude mientras piensa.
- *  Con `sinFecha` se quita «desde 2025». Con `maquina` se escribe letra a letra con un cursor que parpadea (salvo con «reducir movimiento»). */
-export const FraseSavium = ({ maquina = false, sinFecha = false, className }: { maquina?: boolean; sinFecha?: boolean; className?: string }) => {
-  const [frase] = useState(() => {
-    const f = frases[Math.floor(Math.random() * frases.length)];
-    return sinFecha ? f.replace(/ desde 2025$/, '') : f;
-  });
+ *  Con `maquina` se escribe letra a letra con un cursor que parpadea (salvo con «reducir movimiento»). */
+export const FraseSavium = ({ maquina = false, className }: { maquina?: boolean; className?: string }) => {
+  const [frase] = useState(() => frases[Math.floor(Math.random() * frases.length)]);
   const [escritas, setEscritas] = useState(() =>
     maquina && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : frase.length,
   );
