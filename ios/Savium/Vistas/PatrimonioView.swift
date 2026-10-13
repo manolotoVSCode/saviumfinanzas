@@ -30,8 +30,6 @@ struct PatrimonioView: View {
                     aportes: Inversiones.aportesCuenta(i, cuenta: cuenta))
         }
         let activas = invs.filter { $0.0.activa && conImporte($0.valor != 0 ? $0.valor : $0.0.montoInvertido) }
-        let totales = Inversiones.totales(invs, tasas: app.tasas, moneda: app.divisa)
-        let rend = totales.valor - totales.invertido
         return List {
             AvisoEstado()
             Section {
@@ -63,12 +61,7 @@ struct PatrimonioView: View {
             }
             if !activas.isEmpty {
                 Section("Inversiones") {
-                    Linea(titulo: "Valor actual", valor: totales.valor, divisa: d, destacado: true)
-                    Linea(titulo: "Invertido", valor: totales.invertido, divisa: d)
-                    LabeledContent("Rendimiento") {
-                        Text("\(rend >= 0 ? "+" : "")\(Formato.importe(rend, d)) (\(String(format: "%.2f", totales.invertido != 0 ? rend / totales.invertido * 100 : 0))%)")
-                            .monospacedDigit().foregroundStyle(rend >= 0 ? .green : .red)
-                    }
+                    // Sin totales (valor, invertido, rendimiento) hasta que cuadren: la web 9.8 también los quitó.
                     ForEach(activas, id: \.0.id) { par in
                         let r = Inversiones.rendimiento(par.0, valor: par.valor, valuaciones: datos.valuaciones, aportes: par.aportes)
                         FilaImporte {

@@ -34,6 +34,9 @@ final class DatosStore {
     /// Lector: alerta de emergencia que hay que mostrar a pantalla completa.
     var alertaActiva: AlertaRecibida?
     private(set) var cargando = false
+    /// Sube en cada reiniciar (cerrar sesión, entrar o salir del señuelo): una carga que empezó antes descarta su
+    /// resultado, para que una respuesta tardía no pinte datos reales encima del señuelo (ni los de otra cuenta).
+    private var generacion = 0
     private(set) var error: String?
     private(set) var actualizado: Date?
 
@@ -45,16 +48,19 @@ final class DatosStore {
         inversiones = []; valuaciones = []; movimientosPorPagar = []; movimientosMesAnterior = []; recientes = []
         umbralesCripto = []; comprasCripto = []; preciosCripto = [:]; alertasDescartadas = []
         error = nil; actualizado = nil; soloLectura = false; tieneLectores = false; alertaActiva = nil
+        generacion += 1
     }
     var cal: Calendar { .current }
 
     func cargar(app: AppModel) async {
-        guard !cargando else { return }
+        // El señuelo va antes que «ya está cargando»: una carga real en vuelo no debe impedir mostrarlo.
         if let s = ModoSenuelo.datos { cargarSenuelo(s); return }
+        guard !cargando else { return }
+        let mia = generacion
         cargando = true
         defer { cargando = false }
         async let tasas: Void = app.cargarTasas()
-        async let cripto: Void = cargarCripto()
+        async let cripto: Void = cargarCripto(generacion: mia)
         do {
             let ahora = Date()
             let mes = MesAnterior.rango(now: ahora, calendario: cal)
@@ -82,6 +88,7 @@ final class DatosStore {
             CodigoGuardado.guardar(try await codigo)
             let divisaPerfil = nuevoPerfil?.divisaPreferida
             let conMovs = try await repo.cuentasConMovimientos(nc.map(\.id))
+            guard mia == generacion, !ModoSenuelo.activo else { return }
             cuentas = nc; cuentasConMovimientos = conMovs; filasPatrimonio = np; categorias = cats; pendientes = npe
             suscripciones = ns; provisiones = npr; inversiones = ni; valuaciones = nv
             movimientosMesAnterior = nma; recientes = nre; movimientosPorPagar = pp
@@ -98,17 +105,18 @@ final class DatosStore {
             if tieneLectores && !soloLectura { AlertaEmergencia.compartida.prepararPermiso() }
         } catch {
             Logger(subsystem: "com.manoloto.savium", category: "datos").error("Error al cargar: \(String(describing: error), privacy: .public)")
-            self.error = "Sin conexión"
+            if mia == generacion, !ModoSenuelo.activo { self.error = "Sin conexión" }
         }
         await tasas
         await cripto
     }
 
     /// Aparte de la carga principal: si falla (CoinGecko, sin red…) se quedan las alertas de antes
-    /// y no se marca «Sin conexión». Sin umbrales no pide nada más (el lector no ve los del titular).
-    private func cargarCripto() async {
+    /// y no se marca «Sin conexión». Sin umbrales no pide nada más. El lector ve las del titular, sin descartarlas.
+    private func cargarCripto(generacion mia: Int) async {
         do {
             let umbrales = try await repo.umbralesCripto()
+            guard mia == generacion, !ModoSenuelo.activo else { return }
             guard !umbrales.isEmpty else {
                 umbralesCripto = []; comprasCripto = []; preciosCripto = [:]
                 return
@@ -117,7 +125,9 @@ final class DatosStore {
             let compras = try await repo.comprasCripto()
             let simbolos = Array(Set(compras.map(\.simbolo))).sorted()
             let precios = simbolos.isEmpty ? [:] : try await repo.preciosCripto(simbolos)
-            alertasDescartadas = try await descartadas
+            let nuevasDescartadas = try await descartadas
+            guard mia == generacion, !ModoSenuelo.activo else { return }
+            alertasDescartadas = nuevasDescartadas
             umbralesCripto = umbrales; comprasCripto = compras; preciosCripto = precios
         } catch {
             Logger(subsystem: "com.manoloto.savium", category: "cripto").error("Alertas cripto: \(String(describing: error), privacy: .public)")
