@@ -47,6 +47,12 @@ Deno.serve(async (req) => {
   const ids = (lectores ?? []).map((l) => l.lector_id as string);
   if (ids.length === 0) return json({ ok: true });
 
+  // Pausa de pruebas (secreto ALERTA_PAUSA=1): se registra, marcada como vista para que no se repita, y no se avisa a nadie.
+  if (env("ALERTA_PAUSA") === "1") {
+    await admin.from("alertas_emergencia").update({ correo: "pausada (prueba)", vista_en: new Date().toISOString() }).eq("id", alerta.id);
+    return json({ ok: true });
+  }
+
   const hora = horaMexico(new Date(p.momento ?? alerta.creada));
   const mapa = lat !== null && lon !== null ? `https://maps.google.com/?q=${lat},${lon}` : null;
 

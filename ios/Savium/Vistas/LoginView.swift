@@ -62,7 +62,8 @@ struct LoginView: View {
                         HStack {
                             Text(Saludo.correoOculto(recordado.email)).foregroundStyle(.secondary)
                             Spacer()
-                            Button("¿No eres tú?") { olvidar() }.font(.callout)
+                            // Borderless: si no, tocar cualquier punto de la fila (p. ej. al ir a la contraseña) lo activa.
+                            Button("¿No eres tú?") { olvidar() }.font(.callout).buttonStyle(.borderless)
                         }
                     } else {
                         TextField("Correo", text: $email).textContentType(.username).keyboardType(.emailAddress)
