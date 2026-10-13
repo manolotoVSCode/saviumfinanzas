@@ -30,8 +30,12 @@ hecha en la web 9.2. Esto es lo que queda para la app.
   portarlo al servidor o al PDF (a decidir al implementar).
 - Generación del PDF: en el servidor (p. ej. `pdf-lib` por npm en Deno) para que correo y app tengan el mismo.
 
-## Por decidir con el usuario
+## Decidido con el usuario (2026-10-13)
 
-1. ¿Avisar al titular (correo a su Gmail) cada vez que alguien lo abre? Recomendado: si fue sin motivo, lo sabe.
-2. ¿Pedir la fecha cada vez, o solo la primera (y después reabrir el último PDF guardado en el iPhone)?
-3. Destinatarios del correo: solo el lector que lo abre, o también los contactos de emergencia.
+1. **Aviso al titular cada vez que se abre**: por correo a su Gmail **y además en su app**. En la app, como
+   mínimo un aviso al abrirla («Ana Gabriela abrió "Para mi familia" el …», hasta que lo descarte). Si se quiere
+   también notificación push, el titular tendría que aceptar notificaciones (hoy la app no se las pide para no
+   delatar la alerta de emergencia): decidir al implementar.
+2. **El PDF se genera de nuevo en cada apertura** (puede haber información nueva del titular o del patrimonio),
+   y la fecha de fallecimiento se pide **cada vez**.
+3. **El correo con el PDF va solo a la lectora** que lo abre (su esposa), no a los contactos de emergencia.
