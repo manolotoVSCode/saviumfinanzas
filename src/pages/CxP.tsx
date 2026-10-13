@@ -7,7 +7,8 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useSubscriptionServices } from '@/hooks/useSubscriptionServices';
 import { useProvisionesCxP } from '@/hooks/useProvisionesCxP';
 import { computeCxP, CxPProvision, CxPRow, ETIQUETA_FRECUENCIA } from '@/lib/finance/cxp';
-import { formatFechaCorta, parseFechaLocal } from '@/lib/finance/fechas';
+import { diasHasta, formatFechaCorta, parseFechaLocal } from '@/lib/finance/fechas';
+import { toast } from '@/hooks/use-toast';
 import { formatNumber } from '@/lib/formatters';
 import { ProvisionForm, PayProvisionDialog } from '@/components/cxp/ProvisionDialogs';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,13 @@ const CxP = () => {
   const [borrando, setBorrando] = useState<CxPProvision | null>(null);
 
   const provisionesPorId = useMemo(() => new Map(provisiones.map((p) => [p.id, p])), [provisiones]);
-  const historial = useMemo(() => provisiones.filter((p) => p.estado !== 'pendiente'), [provisiones]);
+  // Todas, sin importar el horizonte: una provisión recién creada para dentro de 3 meses
+  // no sale en la tabla de «Próximos 30 días» y tiene que verse en algún sitio.
+  const provisionesOrdenadas = useMemo(
+    () => [...provisiones].sort((a, b) =>
+      (a.estado === 'pendiente' ? 0 : 1) - (b.estado === 'pendiente' ? 0 : 1) || a.fecha.localeCompare(b.fecha)),
+    [provisiones]
+  );
 
   const baseCurrency = (config.currency as CurrencyCode) || 'MXN';
 
@@ -295,10 +302,13 @@ const CxP = () => {
           </CardContent>
         </Card>
 
-        {historial.length > 0 && (
+        {provisionesOrdenadas.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Provisiones pagadas y canceladas</CardTitle>
+              <CardTitle className="text-base">Mis provisiones</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Todas las que has creado. Solo las pendientes dentro de los próximos {horizonte} días suman arriba.
+              </p>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -313,7 +323,7 @@ const CxP = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {historial.map((p) => (
+                    {provisionesOrdenadas.map((p) => (
                       <TableRow key={p.id}>
                         <TableCell>
                           <div className="font-medium">{p.concepto}</div>
@@ -322,17 +332,40 @@ const CxP = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {p.estado === 'pagado'
-                            ? <Badge className="bg-green-600 hover:bg-green-700">Pagada</Badge>
-                            : <Badge variant="outline">Cancelada</Badge>}
+                          {p.estado === 'pendiente' && <Badge>Pendiente</Badge>}
+                          {p.estado === 'pagado' && <Badge className="bg-green-600 hover:bg-green-700">Pagada</Badge>}
+                          {p.estado === 'cancelado' && <Badge variant="outline">Cancelada</Badge>}
                         </TableCell>
-                        <TableCell>{formatFechaCorta(parseFechaLocal(p.fecha_pago ?? p.fecha))}</TableCell>
+                        <TableCell>
+                          {p.estado === 'pendiente' ? (
+                            <>
+                              <div>{formatFechaCorta(parseFechaLocal(p.fecha))}</div>
+                              {p.fecha_pago && (
+                                <div className="text-xs text-muted-foreground">Último pago: {formatFechaCorta(parseFechaLocal(p.fecha_pago))}</div>
+                              )}
+                            </>
+                          ) : formatFechaCorta(parseFechaLocal(p.fecha_pago ?? p.fecha))}
+                        </TableCell>
                         <TableCell className="text-right font-mono">{formatNumber(p.monto)} {p.divisa}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
-                            <Button size="sm" variant="ghost" title="Volver a pendiente" onClick={() => updateProvision(p.id, { estado: 'pendiente' })}>
-                              <RotateCcw className="h-3 w-3" />
-                            </Button>
+                            {p.estado === 'pendiente' ? (
+                              <>
+                                <Button size="sm" onClick={() => setPagando(p)}>
+                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Pagar
+                                </Button>
+                                <Button size="sm" variant="ghost" title="Editar" onClick={() => setEditando(p)}>
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button size="sm" variant="ghost" title="Cancelar provisión" onClick={() => updateProvision(p.id, { estado: 'cancelado' })}>
+                                  <XCircle className="h-3 w-3" />
+                                </Button>
+                              </>
+                            ) : (
+                              <Button size="sm" variant="ghost" title="Volver a pendiente" onClick={() => updateProvision(p.id, { estado: 'pendiente' })}>
+                                <RotateCcw className="h-3 w-3" />
+                              </Button>
+                            )}
                             <Button size="sm" variant="ghost" title="Eliminar" onClick={() => setBorrando(p)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -355,7 +388,15 @@ const CxP = () => {
           onCancel={() => { setFormOpen(false); setEditando(null); }}
           onSave={async (data) => {
             const { error } = editando ? await updateProvision(editando.id, data) : await addProvision(data);
-            if (!error) { setFormOpen(false); setEditando(null); }
+            if (error) return;
+            const dias = diasHasta(data.fecha);
+            toast({
+              title: editando ? 'Provisión actualizada' : 'Provisión guardada',
+              description: dias > horizonte
+                ? `Es para dentro de ${dias} días: sumará cuando entre en el horizonte. Mientras, la ves en «Mis provisiones».`
+                : undefined,
+            });
+            setFormOpen(false); setEditando(null);
           }}
         />
       )}

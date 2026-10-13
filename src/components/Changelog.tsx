@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '9.4',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Bug className="h-4 w-4" />, text: 'CxP: «Mis provisiones» lista todas las provisiones aunque caigan fuera de los próximos 30, 60 o 90 días (antes una provisión para dentro de 3 meses parecía no haberse guardado), y al guardar sale un aviso', type: 'fix' },
+    ],
+  },
+  {
     version: '9.3',
     date: 'Octubre 2026',
     changes: [
