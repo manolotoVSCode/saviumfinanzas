@@ -56,15 +56,20 @@ Deno.serve(async (req) => {
   const hora = horaMexico(new Date(p.momento ?? alerta.creada));
   const mapa = lat !== null && lon !== null ? `https://maps.google.com/?q=${lat},${lon}` : null;
 
-  // Notificaciones y correo a la vez; un fallo en uno no frena al otro.
-  const [n, c] = await Promise.allSettled([
-    notificar(admin, ids, { alertaId: alerta.id, titulo: `Alerta de ${nombre}`, cuerpo: `${mensaje} (${hora})`, latitud: lat, longitud: lon }),
-    enviarCorreos(admin, ids, nombre, mensaje, hora, mapa, precision),
-  ]);
-  const enviadas = n.status === "fulfilled" ? n.value : 0;
-  const correo = c.status === "fulfilled" ? c.value : `error: ${String(c.reason).slice(0, 200)}`;
-  if (n.status === "rejected") console.error("APNs", String(n.reason));
-  await admin.from("alertas_emergencia").update({ notificaciones: enviadas, correo }).eq("id", alerta.id);
+  // Se contesta a la app al instante y se avisa por detrás (el correo por iCloud puede tardar): así la app del
+  // titular no se queda esperando ni guarda la alerta como pendiente. waitUntil mantiene viva la función.
+  const avisar = async () => {
+    const [n, c] = await Promise.allSettled([
+      notificar(admin, ids, { alertaId: alerta.id, titulo: `Alerta de ${nombre}`, cuerpo: `${mensaje} (${hora})`, latitud: lat, longitud: lon }),
+      enviarCorreos(admin, ids, nombre, mensaje, hora, mapa, precision),
+    ]);
+    const enviadas = n.status === "fulfilled" ? n.value : 0;
+    const correo = c.status === "fulfilled" ? c.value : `error: ${String(c.reason).slice(0, 200)}`;
+    if (n.status === "rejected") console.error("APNs", String(n.reason));
+    await admin.from("alertas_emergencia").update({ notificaciones: enviadas, correo }).eq("id", alerta.id);
+  };
+  // @ts-ignore EdgeRuntime existe en Supabase Edge Functions
+  EdgeRuntime.waitUntil(avisar());
   return json({ ok: true });
 });
 
