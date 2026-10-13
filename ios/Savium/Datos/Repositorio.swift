@@ -18,7 +18,7 @@ struct Repositorio: Sendable {
     private static let columnasMovimiento = "id, fecha, comentario, ingreso, gasto, divisa, cuenta_id, subcategoria_id"
 
     func cuentas() async throws -> [Cuenta] {
-        try await db.from("saldos_cuentas").select("id, nombre, tipo, divisa, vendida, saldo_inicial, saldo_actual").execute().value
+        try await db.from("saldos_cuentas").select("id, nombre, tipo, divisa, vendida, saldo_inicial, saldo_actual, capital_neto").execute().value
     }
     /// Ids de las cuentas que tienen al menos un movimiento (una consulta de una fila por cuenta).
     func cuentasConMovimientos(_ ids: [String]) async throws -> Set<String> {

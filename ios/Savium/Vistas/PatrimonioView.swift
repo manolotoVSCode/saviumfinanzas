@@ -23,9 +23,11 @@ struct PatrimonioView: View {
         let pasivos = Rubro.allCases.filter { $0.esPasivo && conImporte(p.porRubro[$0] ?? 0) }
         // Se ocultan las vendidas y las de saldo residual, como ResumenMovil.
         let visibles = datos.cuentas.filter { !$0.vendida && conImporte($0.saldoActual) }
-        let saldos = Dictionary(datos.cuentas.map { ($0.id, $0.saldoActual) }, uniquingKeysWith: { a, _ in a })
+        let cuentasPorId = Dictionary(datos.cuentas.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let invs = datos.inversiones.map { i in
-            (i, valor: Inversiones.valorActual(i, valuaciones: datos.valuaciones, saldoCuenta: i.cuentaId.flatMap { saldos[$0] }))
+            let cuenta = i.cuentaId.flatMap { cuentasPorId[$0] }
+            return (i, valor: Inversiones.valorActual(i, valuaciones: datos.valuaciones, saldoCuenta: cuenta?.saldoActual),
+                    aportes: Inversiones.aportesCuenta(i, cuenta: cuenta))
         }
         let activas = invs.filter { $0.0.activa && conImporte($0.valor != 0 ? $0.valor : $0.0.montoInvertido) }
         let totales = Inversiones.totales(invs, tasas: app.tasas, moneda: app.divisa)
@@ -68,8 +70,7 @@ struct PatrimonioView: View {
                             .monospacedDigit().foregroundStyle(rend >= 0 ? .green : .red)
                     }
                     ForEach(activas, id: \.0.id) { par in
-                        let r = Inversiones.rendimiento(par.0, valor: par.valor, valuaciones: datos.valuaciones,
-                                                        saldoCuenta: par.0.cuentaId.flatMap { saldos[$0] })
+                        let r = Inversiones.rendimiento(par.0, valor: par.valor, valuaciones: datos.valuaciones, aportes: par.aportes)
                         FilaImporte {
                             VStack(alignment: .trailing) {
                                 Importe(valor: r.valor, divisa: par.0.moneda)

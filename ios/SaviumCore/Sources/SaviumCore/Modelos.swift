@@ -9,13 +9,26 @@ public struct Cuenta: Codable, Sendable, Identifiable, Hashable {
     public let vendida: Bool
     public let saldoInicial: Double
     public let saldoActual: Double
+    /// Aportaciones − retiros (capital_neto de la vista saldos_cuentas); 0 si no viene (cachés viejas).
+    public let capitalNeto: Double
     enum CodingKeys: String, CodingKey {
         case id, nombre, tipo, divisa, vendida
-        case saldoInicial = "saldo_inicial", saldoActual = "saldo_actual"
+        case saldoInicial = "saldo_inicial", saldoActual = "saldo_actual", capitalNeto = "capital_neto"
     }
-    public init(id: String, nombre: String, tipo: String, divisa: String, vendida: Bool, saldoInicial: Double, saldoActual: Double) {
+    public init(id: String, nombre: String, tipo: String, divisa: String, vendida: Bool, saldoInicial: Double, saldoActual: Double, capitalNeto: Double = 0) {
         self.id = id; self.nombre = nombre; self.tipo = tipo; self.divisa = divisa
-        self.vendida = vendida; self.saldoInicial = saldoInicial; self.saldoActual = saldoActual
+        self.vendida = vendida; self.saldoInicial = saldoInicial; self.saldoActual = saldoActual; self.capitalNeto = capitalNeto
+    }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        nombre = try c.decode(String.self, forKey: .nombre)
+        tipo = try c.decode(String.self, forKey: .tipo)
+        divisa = try c.decode(String.self, forKey: .divisa)
+        vendida = try c.decode(Bool.self, forKey: .vendida)
+        saldoInicial = try c.decode(Double.self, forKey: .saldoInicial)
+        saldoActual = try c.decode(Double.self, forKey: .saldoActual)
+        capitalNeto = try c.decodeIfPresent(Double.self, forKey: .capitalNeto) ?? 0
     }
 }
 
