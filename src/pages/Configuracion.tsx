@@ -8,6 +8,7 @@ import Layout from '@/components/Layout';
 import { ProfileEditor } from '@/components/ProfileEditor';
 
 import { ContactosEmergencia } from '@/components/ContactosEmergencia';
+import { TarjetaFamilia } from '@/components/familia/TarjetaFamilia';
 
 import { AparienciaSelector } from '@/components/AparienciaSelector';
 
@@ -84,6 +85,9 @@ const Configuracion = () => {
         {/* TASAS DE CAMBIO ACTUALES */}
         <ExchangeRates />
 
+
+        {/* PARA MI FAMILIA (ya no está en el menú) */}
+        <TarjetaFamilia />
 
         {/* ALERTA DE EMERGENCIA (app iOS) */}
         <ContactosEmergencia />

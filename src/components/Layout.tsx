@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, HeartHandshake } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell } from 'lucide-react';
 import { usePendings } from '@/hooks/usePendings';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,7 +49,6 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/ingresos-recurrentes', icon: Repeat, label: 'Ingresos Recurrentes' },
     { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales' },
     { path: '/informes', icon: FileText, label: 'Informes Financieros' },
-    { path: '/familia', icon: HeartHandshake, label: 'Para mi familia', danger: true },
     { path: '/alertas', icon: Bell, label: 'Alertas', badge: alertCount || undefined },
   ];
 

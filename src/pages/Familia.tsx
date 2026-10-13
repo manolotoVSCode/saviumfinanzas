@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { HeartHandshake, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { useEditorFamilia } from '@/hooks/useEditorFamilia';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useCriptomonedas } from '@/hooks/useCriptomonedas';
@@ -93,7 +93,7 @@ const ContenidoFamilia = () => {
 
   return (
       <div className="animate-fade-in space-y-6 max-w-4xl mx-auto">
-        <PageHeader title="Para mi familia" subtitle="Lo que necesitaríais saber si un día no estoy. Se guarda solo mientras escribes." />
+        <PageHeader title="Para mi familia" back="/configuracion" subtitle="Lo que necesitaríais saber si un día no estoy. Se guarda solo mientras escribes." />
 
         <Card>
           <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
@@ -233,22 +233,11 @@ const ContenidoFamilia = () => {
   );
 };
 
-/** Portada: el contenido (y sus consultas) solo se carga al pulsar el botón; se vuelve a cerrar al salir de la página. */
-const Familia = () => {
-  const [abierto, setAbierto] = useState(false);
-  return (
-    <Layout>
-      {abierto ? <ContenidoFamilia /> : (
-        <div className="animate-fade-in flex flex-col items-center justify-center gap-6 min-h-[60vh] text-center">
-          <HeartHandshake className="h-12 w-12 text-destructive" />
-          <h1 className="text-3xl font-bold">Para mi familia</h1>
-          <Button size="lg" variant="destructive" onClick={() => setAbierto(true)}>
-            Abrir solo en caso de que ya no esté
-          </Button>
-        </div>
-      )}
-    </Layout>
-  );
-};
+/** Se edita desde Configuración (ya no hay portada ni entrada en el menú). */
+const Familia = () => (
+  <Layout>
+    <ContenidoFamilia />
+  </Layout>
+);
 
 export default Familia;

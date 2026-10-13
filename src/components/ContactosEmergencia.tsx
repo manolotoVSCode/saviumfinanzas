@@ -144,7 +144,7 @@ export const ContactosEmergencia = () => {
           <h3 className="font-semibold">Código de emergencia</h3>
           <p className="text-sm text-muted-foreground">
             Escrito en la pantalla de acceso de la app en lugar de tu contraseña, entra mostrando datos ficticios y
-            manda la alerta en silencio. Solo se guarda cifrado. {actualizado
+            manda la alerta en silencio. Solo se guarda cifrado. {codigoGuardado.isLoading ? '' : actualizado
               ? `Configurado el ${new Date(actualizado).toLocaleDateString('es-MX', { dateStyle: 'medium' })}.`
               : 'Ahora mismo no tienes ninguno.'}
           </p>

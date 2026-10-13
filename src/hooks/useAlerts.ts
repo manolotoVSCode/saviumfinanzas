@@ -19,7 +19,7 @@ const fetchDismissals = async (): Promise<string[]> => {
 };
 
 /** Solo revisado_at: useAlerts se monta en todas las páginas y no debe traer el documento. */
-const fetchRevisionFamilia = async (): Promise<RevisionFamilia | null> => {
+export const fetchRevisionFamilia = async (): Promise<RevisionFamilia | null> => {
   const { data, error } = await supabase.from('informacion_familia').select('revisado_at').maybeSingle();
   if (error) throw error;
   return data ? { revisadoAt: data.revisado_at } : null;
