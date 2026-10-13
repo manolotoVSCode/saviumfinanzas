@@ -57,7 +57,7 @@ const Layout = ({ children }: LayoutProps) => {
   // Paneles de las otras apps de Savium: solo existen en el menú del administrador.
   const appsNavItems = esAdmin(user?.id) ? [
     { path: '/savium-share', icon: UsersRound, label: 'Savium Share' },
-    { path: '', icon: Gift, label: 'Savium Rewards' }, // Aún sin pantalla.
+    { path: '/savium-rewards', icon: Gift, label: 'Savium Rewards' },
   ] : [];
 
   const todosConfig = [

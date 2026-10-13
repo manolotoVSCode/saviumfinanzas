@@ -1,0 +1,190 @@
+{
+  "_nota": "Casos compartidos por RewardsCore (Swift) y web/src/lib/codigos.ts. motivo: null si es válido.",
+  "validacion": [
+    {
+      "tipo": "ean13",
+      "valor": "4006381333931",
+      "motivo": null
+    },
+    {
+      "tipo": "ean13",
+      "valor": "5901234123457",
+      "motivo": null
+    },
+    {
+      "tipo": "ean13",
+      "valor": " 4006381333931 ",
+      "motivo": null
+    },
+    {
+      "tipo": "ean13",
+      "valor": "4006381333932",
+      "motivo": "digitoControl"
+    },
+    {
+      "tipo": "ean13",
+      "valor": "400638133393",
+      "motivo": "longitud"
+    },
+    {
+      "tipo": "ean13",
+      "valor": "400638133393a",
+      "motivo": "caracteres"
+    },
+    {
+      "tipo": "ean13",
+      "valor": "",
+      "motivo": "vacio"
+    },
+    {
+      "tipo": "ean8",
+      "valor": "96385074",
+      "motivo": null
+    },
+    {
+      "tipo": "ean8",
+      "valor": "96385075",
+      "motivo": "digitoControl"
+    },
+    {
+      "tipo": "upca",
+      "valor": "036000291452",
+      "motivo": null
+    },
+    {
+      "tipo": "upca",
+      "valor": "036000291453",
+      "motivo": "digitoControl"
+    },
+    {
+      "tipo": "upca",
+      "valor": "03600029145",
+      "motivo": "longitud"
+    },
+    {
+      "tipo": "code39",
+      "valor": "ABC-123",
+      "motivo": null
+    },
+    {
+      "tipo": "code39",
+      "valor": "SOCIO 42/A",
+      "motivo": null
+    },
+    {
+      "tipo": "code39",
+      "valor": "abc",
+      "motivo": "caracteres"
+    },
+    {
+      "tipo": "code39",
+      "valor": "A*B",
+      "motivo": "caracteres"
+    },
+    {
+      "tipo": "code128",
+      "valor": "Socio-123 abc",
+      "motivo": null
+    },
+    {
+      "tipo": "code128",
+      "valor": "Peña",
+      "motivo": "caracteres"
+    },
+    {
+      "tipo": "qr",
+      "valor": "https://ejemplo.com/socio?id=Peña",
+      "motivo": null
+    },
+    {
+      "tipo": "qr",
+      "valor": "   ",
+      "motivo": "vacio"
+    },
+    {
+      "tipo": "pdf417",
+      "valor": "1234",
+      "motivo": null
+    },
+    {
+      "tipo": "aztec",
+      "valor": "1234",
+      "motivo": null
+    },
+    {
+      "tipo": "ninguno",
+      "valor": "",
+      "motivo": null
+    },
+    {
+      "tipo": "ninguno",
+      "valor": "123",
+      "motivo": "noAdmiteValor"
+    },
+    {
+      "tipo": "qr",
+      "valor": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+      "motivo": "demasiadoLargo"
+    },
+    {
+      "tipo": "qr",
+      "valor": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+      "motivo": null
+    }
+  ],
+  "digitoControl": [
+    {
+      "digitos": "400638133393",
+      "esperado": 1
+    },
+    {
+      "digitos": "590123412345",
+      "esperado": 7
+    },
+    {
+      "digitos": "9638507",
+      "esperado": 4
+    },
+    {
+      "digitos": "03600029145",
+      "esperado": 2
+    }
+  ],
+  "barras": [
+    {
+      "tipo": "ean13",
+      "valor": "4006381333931",
+      "modulos": "10100011010100111010111101111010001001011001101010100001010000101000010111010010000101100110101"
+    },
+    {
+      "tipo": "ean13",
+      "valor": "5901234123457",
+      "modulos": "10100010110100111011001100100110111101001110101010110011011011001000010101110010011101000100101"
+    },
+    {
+      "tipo": "ean13",
+      "valor": "0036000291452",
+      "modulos": "10100011010111101010111100011010001101000110101010110110011101001100110101110010011101101100101"
+    },
+    {
+      "tipo": "ean8",
+      "valor": "96385074",
+      "modulos": "1010001011010111101111010110111010101001110111001010001001011100101"
+    },
+    {
+      "tipo": "upca",
+      "valor": "036000291452",
+      "modulos": "10100011010111101010111100011010001101000110101010110110011101001100110101110010011101101100101"
+    },
+    {
+      "tipo": "code39",
+      "valor": "ABC-123",
+      "modulos": "100010111011101011101010001011101011101000101110111011101000101010001010111011101110100010101110101110001010111011101110001010101000101110111010"
+    },
+    {
+      "tipo": "code39",
+      "valor": "SOCIO 42/A",
+      "modulos": "100010111011101010111010111000101110101110100010111011101000101010111010001110101110101110100010100011101011101010100011101011101011100010101110100010001010001011101010001011101000101110111010"
+    }
+  ]
+}

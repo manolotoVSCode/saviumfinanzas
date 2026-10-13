@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.1',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Wallet className="h-4 w-4" />, text: 'Savium Rewards en el menú Apps: tus tarjetas de fidelidad y las compartidas de la familia (con su código), y para el administrador miembros e invitaciones, uso y catálogo de programas', type: 'feature' },
+    ],
+  },
+  {
     version: '10.0',
     date: 'Octubre 2026',
     changes: [
