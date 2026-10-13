@@ -117,6 +117,26 @@ public struct Pendiente: Codable, Sendable, Identifiable, Hashable {
     }
 }
 
+/// Provisión manual de CxP (tabla provisiones_cxp): un pago apartado de antemano. Se crea en la web;
+/// la App solo la muestra. No es un movimiento, así que no toca ningún saldo.
+public struct ProvisionCxP: Codable, Sendable, Identifiable, Hashable {
+    public let id: String
+    public let concepto: String
+    public let monto: Double
+    public let divisa: String
+    /// Próximo pago previsto, 'YYYY-MM-DD'.
+    public let fecha: String
+    /// unica, mensual, bimestral, trimestral, semestral o anual.
+    public let frecuencia: String
+    /// pendiente, pagado o cancelado.
+    public let estado: String
+    public let notas: String?
+    public init(id: String, concepto: String, monto: Double, divisa: String, fecha: String, frecuencia: String, estado: String, notas: String?) {
+        self.id = id; self.concepto = concepto; self.monto = monto; self.divisa = divisa
+        self.fecha = fecha; self.frecuencia = frecuencia; self.estado = estado; self.notas = notas
+    }
+}
+
 public struct Suscripcion: Codable, Sendable, Identifiable, Hashable {
     public let id: String
     public let serviceName: String

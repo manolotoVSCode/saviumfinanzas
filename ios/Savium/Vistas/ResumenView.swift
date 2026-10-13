@@ -25,8 +25,12 @@ struct ResumenView: View {
         let pendientes = datos.resumenPendientes(app)
         let vencidos = pendientes.filas.filter(\.vencido)
         let hoy = Calendar.current.startOfDay(for: .now)
-        let proximos = datos.porPagar(app, horizonte: 30).filter {
-            (Calendar.current.dateComponents([.day], from: hoy, to: $0.fechaEstimada).day ?? 99) <= 7
+        let grandes = datos.pagosGrandes(app)
+        let idsGrandes = Set(grandes.map(\.id))
+        // Una provisión grande ya sale arriba: no se repite entre los próximos 7 días.
+        let proximos = datos.porPagar(app, horizonte: 30).filter { f in
+            (Calendar.current.dateComponents([.day], from: hoy, to: f.fechaEstimada).day ?? 99) <= 7
+                && !(f.tipo == .provision && idsGrandes.contains { f.id.hasPrefix("prov-\($0)-") })
         }
         let mes = datos.mesAnterior(app)
         let cripto = datos.alertasCripto(app)
@@ -49,8 +53,11 @@ struct ResumenView: View {
                 Button { app.pestana = .patrimonio } label: { Linea(titulo: "Activos", valor: p.activos, divisa: d) }.tint(.primary)
                 Button { app.pestana = .patrimonio } label: { Linea(titulo: "Pasivos", valor: p.pasivos, divisa: d) }.tint(.primary)
             }
-            if !vencidos.isEmpty || !proximos.isEmpty || !cripto.isEmpty {
+            if !vencidos.isEmpty || !proximos.isEmpty || !cripto.isEmpty || !grandes.isEmpty {
                 Section("Atención") {
+                    ForEach(grandes) { p in
+                        Button { app.pestana = .pendientes } label: { FilaPagoGrande(provision: p) }.tint(.primary)
+                    }
                     ForEach(cripto) { a in
                         FilaAlertaCripto(alerta: a, valor: app.convertir(a.valorUSD, de: "USD"), divisa: d)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -102,6 +109,31 @@ struct ResumenView: View {
                                            subcategorias: resto.map { .init(nombre: $0.nombre, total: $0.total) })
                     }
                 }
+            }
+        }
+    }
+}
+
+/// Provisión de CxP desde 100K MXN (aviso de «Pagos grandes» del Dashboard de la web), con su fecha.
+private struct FilaPagoGrande: View {
+    let provision: ProvisionCxP
+
+    var body: some View {
+        let cal = Calendar.current
+        let fecha = Fechas.diaLocal(provision.fecha, calendario: cal) ?? .now
+        let dias = cal.dateComponents([.day], from: cal.startOfDay(for: .now), to: fecha).day ?? 0
+        let color: Color = dias < 0 ? .red : .orange
+        FilaImporte {
+            Importe(valor: provision.monto, divisa: provision.divisa)
+        } label: {
+            Label {
+                VStack(alignment: .leading) {
+                    Text(provision.concepto)
+                    Text("Pago grande · \(fecha.formatted(.dateTime.day().month().year().locale(Locale(identifier: "es_MX")))) · \(PendientesView.cuando(dias))")
+                        .font(.caption).foregroundStyle(dias <= 7 ? color : .secondary)
+                }
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(color)
             }
         }
     }

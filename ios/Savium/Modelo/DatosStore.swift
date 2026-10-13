@@ -15,6 +15,8 @@ final class DatosStore {
     private(set) var categorias: [Categoria] = []
     private(set) var pendientes: [Pendiente] = []
     private(set) var suscripciones: [Suscripcion] = []
+    /// Provisiones pendientes de CxP (se crean y se marcan pagadas en la web).
+    private(set) var provisiones: [ProvisionCxP] = []
     private(set) var inversiones: [Inversion] = []
     private(set) var valuaciones: [Valuacion] = []
     private(set) var movimientosPorPagar: [Transaccion] = []
@@ -39,7 +41,7 @@ final class DatosStore {
 
     /// Al cerrar sesión: nada de la cuenta anterior se queda en memoria.
     func reiniciar() {
-        cuentas = []; cuentasConMovimientos = []; filasPatrimonio = []; categorias = []; pendientes = []; suscripciones = []
+        cuentas = []; cuentasConMovimientos = []; filasPatrimonio = []; categorias = []; pendientes = []; suscripciones = []; provisiones = []
         inversiones = []; valuaciones = []; movimientosPorPagar = []; movimientosMesAnterior = []; recientes = []
         umbralesCripto = []; comprasCripto = []; preciosCripto = [:]; alertasDescartadas = []
         error = nil; actualizado = nil; soloLectura = false; tieneLectores = false; alertaActiva = nil
@@ -62,6 +64,7 @@ final class DatosStore {
             async let p = repo.patrimonio()
             async let pe = repo.pendientes()
             async let s = repo.suscripcionesActivas()
+            async let pr = repo.provisiones()
             async let i = repo.inversiones()
             async let v = repo.valuaciones()
             async let ma = repo.movimientos(desde: mes.desde, hasta: mes.hasta)
@@ -73,14 +76,14 @@ final class DatosStore {
             let cats = try await repo.categorias()
             let pp = try await repo.movimientos(deSubcategorias: PorPagar.subcategoriasRelevantes(cats))
             let (nc, np, npe, ns, ni, nv) = try await (c, p, pe, s, i, v)
-            let (nma, nre) = try await (ma, re)
+            let (nma, nre, npr) = try await (ma, re, pr)
             let nuevoPerfil = try await perfil
             let nuevosAccesos = try await accesos
             CodigoGuardado.guardar(try await codigo)
             let divisaPerfil = nuevoPerfil?.divisaPreferida
             let conMovs = try await repo.cuentasConMovimientos(nc.map(\.id))
             cuentas = nc; cuentasConMovimientos = conMovs; filasPatrimonio = np; categorias = cats; pendientes = npe
-            suscripciones = ns; inversiones = ni; valuaciones = nv
+            suscripciones = ns; provisiones = npr; inversiones = ni; valuaciones = nv
             movimientosMesAnterior = nma; recientes = nre; movimientosPorPagar = pp
             soloLectura = nuevosAccesos.titular != nil
             tieneLectores = nuevosAccesos.tieneLectores
@@ -139,7 +142,7 @@ final class DatosStore {
     private func cargarSenuelo(_ s: Senuelo.Datos) {
         let mes = MesAnterior.rango(now: .now, calendario: cal)
         cuentas = s.cuentas; cuentasConMovimientos = Set(s.cuentas.map(\.id)); filasPatrimonio = s.filasPatrimonio
-        categorias = s.categorias; pendientes = []; suscripciones = s.suscripciones; inversiones = []; valuaciones = []
+        categorias = s.categorias; pendientes = []; suscripciones = s.suscripciones; provisiones = []; inversiones = []; valuaciones = []
         movimientosPorPagar = []; recientes = s.movimientos
         umbralesCripto = []; comprasCripto = []; preciosCripto = [:]; alertasDescartadas = []
         movimientosMesAnterior = s.movimientos.filter { $0.fecha >= mes.desde && $0.fecha <= mes.hasta }
@@ -200,7 +203,12 @@ final class DatosStore {
 
     func porPagar(_ app: AppModel, horizonte: Int) -> [FilaPorPagar] {
         PorPagar.calcular(movimientos: movimientosPorPagar, categorias: categorias, cuentas: cuentas, suscripciones: suscripciones,
-                          horizonte: horizonte, monedaBase: app.divisa, now: .now, calendario: cal)
+                          provisiones: provisiones, horizonte: horizonte, monedaBase: app.divisa, now: .now, calendario: cal)
+    }
+
+    /// Provisiones desde 100K MXN, sin importar la fecha (el aviso del Dashboard de la web).
+    func pagosGrandes(_ app: AppModel) -> [ProvisionCxP] {
+        PorPagar.pagosGrandes(provisiones, tasas: app.tasas)
     }
 
     func mesAnterior(_ app: AppModel) -> MesAnterior.Totales {

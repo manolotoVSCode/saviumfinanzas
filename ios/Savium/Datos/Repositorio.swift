@@ -114,6 +114,16 @@ struct Repositorio: Sendable {
     func pendientes() async throws -> [Pendiente] {
         try await db.from("transaction_pendings").select("id, concepto, tipo, monto_esperado, monto_cobrado, divisa, fecha_esperada, estado").execute().value
     }
+    /// Provisiones de CxP (se crean en la web). Un error de la base (la tabla aún no existe
+    /// o el lector no tiene permiso) cuenta como «ninguna»; uno de red, no.
+    func provisiones() async throws -> [ProvisionCxP] {
+        do {
+            return try await db.from("provisiones_cxp").select("id, concepto, monto, divisa, fecha, frecuencia, estado, notas")
+                .eq("estado", value: "pendiente").order("fecha").execute().value
+        } catch is PostgrestError {
+            return []
+        }
+    }
     func suscripcionesActivas() async throws -> [Suscripcion] {
         try await db.from("subscription_services").select("id, service_name, active, frecuencia, proximo_pago, ultimo_pago_monto")
             .eq("active", value: true).execute().value

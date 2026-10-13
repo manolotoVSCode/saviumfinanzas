@@ -96,10 +96,32 @@ struct PendientesView: View {
                         } label: {
                             VStack(alignment: .leading) {
                                 Text(f.concepto)
-                                Text("\(f.fechaEstimada.formatted(.dateTime.day().month().locale(Locale(identifier: "es_MX")))) · \(cuando(dias)) · \(f.tipo.rawValue)")
-                                    .font(.caption).foregroundStyle(dias <= 7 ? .orange : .secondary)
+                                Text("\(f.fechaEstimada.formatted(.dateTime.day().month().locale(Locale(identifier: "es_MX")))) · \(Self.cuando(dias)) · \(f.tipo.rawValue)")
+                                    .font(.caption).foregroundStyle(dias < 0 ? .red : dias <= 7 ? .orange : .secondary)
                             }
                         }
+                    }
+                }
+                // Todas las provisiones pendientes, aunque caigan fuera del horizonte (como «Mis provisiones» en la web).
+                if !datos.provisiones.isEmpty {
+                    Section {
+                        ForEach(datos.provisiones) { p in
+                            let fecha = Fechas.diaLocal(p.fecha, calendario: Calendar.current) ?? hoy
+                            let dias = Calendar.current.dateComponents([.day], from: hoy, to: fecha).day ?? 0
+                            FilaImporte {
+                                Importe(valor: p.monto, divisa: p.divisa)
+                            } label: {
+                                VStack(alignment: .leading) {
+                                    Text(p.concepto)
+                                    Text("\(fecha.formatted(.dateTime.day().month().year().locale(Locale(identifier: "es_MX")))) · \(Self.cuando(dias))")
+                                        .font(.caption).foregroundStyle(dias < 0 ? .red : dias <= 7 ? .orange : .secondary)
+                                }
+                            }
+                        }
+                    } header: {
+                        Text("Provisiones")
+                    } footer: {
+                        Text("Todas las pendientes, sea cual sea su fecha. Se crean y se marcan como pagadas en la web.")
                     }
                 }
             }
@@ -110,8 +132,9 @@ struct PendientesView: View {
         if !(await datos.cobrar(p)) { fallo = "No se pudo marcar como cobrado. Revisa la conexión y vuelve a intentarlo." }
     }
 
-    private func cuando(_ dias: Int) -> String {
+    static func cuando(_ dias: Int) -> String {
         switch dias {
+        case ..<0: "vencido hace \(-dias) d"
         case 0: "hoy"
         case 1: "mañana"
         default: "en \(dias) d"
