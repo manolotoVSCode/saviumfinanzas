@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
   const avisar = async () => {
     const [n, c] = await Promise.allSettled([
       notificar(admin, ids, { alertaId: alerta.id, titulo: `Alerta de ${nombre}`, cuerpo: `${mensaje} (${hora})`, latitud: lat, longitud: lon }),
-      enviarCorreos(admin, ids, nombre, mensaje, hora, mapa, precision),
+      enviarCorreos(admin, user.id, ids, nombre, mensaje, hora, mapa, precision),
     ]);
     const enviadas = n.status === "fulfilled" ? n.value : 0;
     const correo = c.status === "fulfilled" ? c.value : `error: ${String(c.reason).slice(0, 200)}`;
@@ -77,13 +77,19 @@ function capitalizar(s: string) {
   return s.trim().toLowerCase().split(/\s+/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 }
 
-async function enviarCorreos(admin: ReturnType<typeof createClient>, ids: string[], nombre: string, mensaje: string,
-                             hora: string, mapa: string | null, precision: number | null): Promise<string> {
+async function enviarCorreos(admin: ReturnType<typeof createClient>, titular: string, ids: string[], nombre: string,
+                             mensaje: string, hora: string, mapa: string | null, precision: number | null): Promise<string> {
   if (!env("ALERTA_SMTP_HOST")) return "sin configurar";
+  // Lectores (siempre) y los contactos extra que el titular puso en la web (Configuración → Contactos de emergencia).
   const destinos: string[] = [];
   for (const id of ids) {
     const { data } = await admin.auth.admin.getUserById(id);
-    if (data.user?.email) destinos.push(data.user.email);
+    if (data.user?.email) destinos.push(data.user.email.toLowerCase());
+  }
+  const { data: contactos } = await admin.from("contactos_alerta").select("email").eq("user_id", titular);
+  for (const c of contactos ?? []) {
+    const e = (c.email as string).toLowerCase();
+    if (!destinos.includes(e)) destinos.push(e);
   }
   if (destinos.length === 0) return "sin destinatarios";
   const ubicacion = mapa
@@ -106,7 +112,9 @@ async function enviarCorreos(admin: ReturnType<typeof createClient>, ids: string
     try {
       await cliente.send({
         from: env("ALERTA_REMITENTE") || env("ALERTA_SMTP_USUARIO"),
-        to: destinos,
+        // En copia oculta: cada destinatario no ve a los demás.
+        to: destinos[0],
+        ...(destinos.length > 1 ? { bcc: destinos.slice(1) } : {}),
         // Si la cuenta que envía es del titular, una respuesta llegaría a su iPhone: las respuestas van a quien la recibe.
         replyTo: destinos[0],
         subject: `Alerta de ${nombre} – ${hora}`,
