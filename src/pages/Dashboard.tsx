@@ -28,7 +28,7 @@ const Dashboard = () => {
     <Layout>
       <div className="animate-fade-in space-y-6">
         <PageHeader
-          title={<>Dashboard <span className="text-muted-foreground font-normal text-xl">· <FraseSavium /></span></>}
+          title={<>Dashboard <span className="text-muted-foreground font-normal text-xl">· <FraseSavium sinFecha /></span></>}
         />
         <PagosGrandesWidget />
         <PendingsWidget />

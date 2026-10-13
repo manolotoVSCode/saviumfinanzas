@@ -12,7 +12,7 @@ const changelog: ChangelogEntry[] = [
     version: '9.9',
     date: 'Octubre 2026',
     changes: [
-      { icon: <Sparkles className="h-4 w-4" />, text: 'Login: debajo del botón Entrar se escribe a máquina una de las frases de la app («Cuadrando cuentas desde 2025»…), distinta cada vez; en el Dashboard aparece otra junto al título', type: 'improvement' },
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Login: debajo del botón Entrar se escribe a máquina una de las frases de la app («Cuadrando cuentas desde 2025»…), distinta cada vez; en el Dashboard aparece otra junto al título, sin «desde 2025»', type: 'improvement' },
     ],
   },
   {
