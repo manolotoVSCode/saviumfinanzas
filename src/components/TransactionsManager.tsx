@@ -28,6 +28,8 @@ interface TransactionsManagerProps {
   onUpdateTransaction: (id: string, updates: Partial<Transaction>, autoContribution?: { targetAccountId: string; targetAccountType: 'Aportación' | 'Retiro' }) => void;
   onDeleteTransaction: (id: string) => void;
   onClearAllTransactions: () => void;
+  /** Lectora: solo consulta, sin alta, edición, selección ni acciones en grupo. */
+  soloLectura?: boolean;
 }
 
 type SortField = 'fecha' | 'cuenta' | 'categoria' | 'comentario' | 'monto' | 'divisa' | 'tipo';
@@ -40,7 +42,8 @@ export const TransactionsManager = ({
   onAddTransaction,
   onUpdateTransaction,
   onDeleteTransaction,
-  onClearAllTransactions
+  onClearAllTransactions,
+  soloLectura = false
 }: TransactionsManagerProps) => {
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -548,6 +551,7 @@ export const TransactionsManager = ({
 
   return (
     <div className="space-y-6">
+      {!soloLectura && <>
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div />
         <div className="flex gap-2">
@@ -1278,6 +1282,7 @@ export const TransactionsManager = ({
           </DialogContent>
         </Dialog>
       </div>
+      </>}
 
       {/* Filtros */}
       <Card>
@@ -1651,13 +1656,13 @@ export const TransactionsManager = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">
+                {!soloLectura && <TableHead className="w-12">
                   <Checkbox
                     checked={selectedTransactions.size === sortedTransactions.length && sortedTransactions.length > 0}
                     onCheckedChange={handleSelectAll}
                     aria-label="Seleccionar todas"
                   />
-                </TableHead>
+                </TableHead>}
                 <TableHead>
                   <Button
                     variant="ghost"
@@ -1742,19 +1747,19 @@ export const TransactionsManager = ({
                     </div>
                   </Button>
                 </TableHead>
-                <TableHead>Acciones</TableHead>
+                {!soloLectura && <TableHead>Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell>
+                  {!soloLectura && <TableCell>
                     <Checkbox
                       checked={selectedTransactions.has(transaction.id)}
                       onCheckedChange={(checked) => handleSelectTransaction(transaction.id, checked as boolean)}
                       aria-label={`Seleccionar transacción ${transaction.comentario}`}
                     />
-                  </TableCell>
+                  </TableCell>}
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -1812,7 +1817,7 @@ export const TransactionsManager = ({
                       })()}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  {!soloLectura && <TableCell>
                     <div className="flex space-x-2">
                       <Button 
                         variant="outline" 
@@ -1861,7 +1866,7 @@ export const TransactionsManager = ({
                         </AlertDialogContent>
                       </AlertDialog>
                     </div>
-                  </TableCell>
+                  </TableCell>}
                 </TableRow>
               ))}
             </TableBody>

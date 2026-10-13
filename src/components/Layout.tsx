@@ -10,6 +10,7 @@ import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
 import { APP_VERSION } from '@/components/Changelog';
 import { GlobalSearch, GlobalSearchTrigger } from '@/components/GlobalSearch';
+import { RUTAS_LECTORA } from '@/components/ProtectedRoute';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,7 +19,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, soloLectura } = useAuth();
   const { profile } = useUserProfile();
   const [searchOpen, setSearchOpen] = useState(false);
   const { activeCount, overdueCount } = usePendings();
@@ -39,7 +40,7 @@ const Layout = ({ children }: LayoutProps) => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const mainNavItems = [
+  const todosMain = [
     { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
     { path: '/transacciones', icon: ArrowUpDown, label: 'Transacciones' },
     { path: '/inversiones', icon: TrendingUp, label: 'Inversiones' },
@@ -52,12 +53,16 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/alertas', icon: Bell, label: 'Alertas', badge: alertCount || undefined },
   ];
 
-  const configNavItems = [
+  const todosConfig = [
     { path: '/cuentas', icon: Wallet, label: 'Cuentas' },
     { path: '/categorias', icon: Tag, label: 'Categorías' },
     { path: '/reglas-clasificacion', icon: Filter, label: 'Reglas' },
     { path: '/configuracion', icon: Settings, label: 'Configuración' },
   ];
+
+  // La lectora solo ve las pantallas de consulta (sin alertas, reglas, cuentas ni categorías).
+  const mainNavItems = soloLectura ? todosMain.filter(i => RUTAS_LECTORA.includes(i.path)) : todosMain;
+  const configNavItems = soloLectura ? todosConfig.filter(i => RUTAS_LECTORA.includes(i.path)) : todosConfig;
 
   return (
       <div className="min-h-screen flex">
@@ -134,7 +139,7 @@ const Layout = ({ children }: LayoutProps) => {
                 <p className="text-sm font-medium truncate">
                   {profile.nombre} {profile.apellidos}
                 </p>
-                <p className="text-xs text-muted-foreground">v{APP_VERSION} · Proyecto personal de MT</p>
+                <p className="text-xs text-muted-foreground">v{APP_VERSION} · {soloLectura ? 'Solo lectura' : 'Proyecto personal de MT'}</p>
               </div>
             )}
             <div className="flex items-center gap-3 px-3">

@@ -10,6 +10,7 @@ import CriptomonedasManager from '@/components/CriptomonedasManager';
 import { InvestmentTypesManager } from '@/components/investments/InvestmentTypesManager';
 import { InvestmentDialog } from '@/components/investments/InvestmentDialog';
 import { InvestmentTrackingDialog } from '@/components/investments/InvestmentTrackingDialog';
+import { useAuth } from '@/contexts/AuthContext';
 import { useInvestments } from '@/hooks/useInvestments';
 import { useInvestmentTypes } from '@/hooks/useInvestmentTypes';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -39,6 +40,7 @@ const Inversiones = (): JSX.Element => {
   const { config } = useAppConfig();
   const { convertCurrency } = useExchangeRates();
   const { criptomonedas } = useCriptomonedas();
+  const { soloLectura } = useAuth();
 
   const prefCurrency = config.currency;
 
@@ -195,7 +197,7 @@ const Inversiones = (): JSX.Element => {
                   )}
                 </div>
 
-                <div className="flex gap-1">
+                {!soloLectura && <div className="flex gap-1">
                   {esManual ? (
                     <Button variant="outline" size="sm" onClick={() => setTracking(i)}>
                       <LineChart className="h-4 w-4 mr-1" /> Actualizar valor
@@ -211,7 +213,7 @@ const Inversiones = (): JSX.Element => {
                   <Button variant="ghost" size="icon" title="Eliminar" onClick={() => setToDelete(i)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                </div>
+                </div>}
               </div>
             </div>
           );
@@ -237,7 +239,7 @@ const Inversiones = (): JSX.Element => {
   return (
     <Layout>
       <div className="space-y-6">
-        <PageHeader title="Inversiones" actions={<Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nueva inversión</Button>} />
+        <PageHeader title="Inversiones" actions={soloLectura ? undefined : <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nueva inversión</Button>} />
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card>
@@ -320,7 +322,7 @@ const Inversiones = (): JSX.Element => {
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <p>Aún no tienes inversiones registradas.</p>
-                  <Button className="mt-4" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Agregar la primera</Button>
+                  {!soloLectura && <Button className="mt-4" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Agregar la primera</Button>}
                 </CardContent>
               </Card>
             )}

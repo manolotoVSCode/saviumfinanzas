@@ -1,5 +1,6 @@
 import { CalendarClock, CreditCard, TrendingUp, HeartHandshake, Bitcoin } from 'lucide-react';
 import { useAlerts } from '@/hooks/useAlerts';
+import { useAuth } from '@/contexts/AuthContext';
 import { AlertType } from '@/lib/finance/alerts';
 import { Card, CardContent } from '@/components/ui/card';
 import { Importe, Seccion } from '@/components/movil/ui';
@@ -19,7 +20,9 @@ const ICONO: Record<AlertType, typeof CalendarClock> = {
  */
 export const AlertasResumen = () => {
   const { alerts, loading } = useAlerts();
-  if (loading || alerts.length === 0) return null;
+  // Una lectora no ve alertas: los descartes son del titular y no los puede leer.
+  const { soloLectura } = useAuth();
+  if (soloLectura || loading || alerts.length === 0) return null;
 
   return (
     <Seccion titulo={`Alertas (${alerts.length})`}>

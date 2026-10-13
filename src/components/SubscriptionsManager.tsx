@@ -77,7 +77,7 @@ const getFrequencyBadgeVariant = (frequency: string) => {
 
 export const SubscriptionsManager = () => {
   const { formatCurrency } = useAppConfig();
-  const { user } = useAuth();
+  const { user, soloLectura } = useAuth();
   const queryClient = useQueryClient();
   const { transactions, loading: loadingTx } = useFinanceDataSupabase();
   const { subscriptions, loading: loadingSubs } = useSubscriptionServices();
@@ -91,9 +91,10 @@ export const SubscriptionsManager = () => {
   const [mergeTargetId, setMergeTargetId] = useState<string>('');
 
   // Disparador (a): detectar al montar, una vez por identidad del array de transacciones de la caché.
+  // Una lectora no sincroniza: escribiría suscripciones a su nombre.
   useEffect(() => {
-    if (!loadingTx && transactions.length > 0) syncIfChanged();
-  }, [transactions, loadingTx, syncIfChanged]);
+    if (!soloLectura && !loadingTx && transactions.length > 0) syncIfChanged();
+  }, [transactions, loadingTx, syncIfChanged, soloLectura]);
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: financeQueryKeys(user?.id).subscriptions });
 
@@ -306,6 +307,7 @@ export const SubscriptionsManager = () => {
                   <div className="flex items-center gap-3 flex-1">
                     <Checkbox
                       checked={service.active}
+                      disabled={soloLectura}
                       onCheckedChange={(checked) => toggleActive.mutate({ id: service.id, active: checked as boolean })}
                       aria-label={`${service.active ? 'Desactivar' : 'Activar'} suscripción de ${service.serviceName}`}
                     />
@@ -335,6 +337,7 @@ export const SubscriptionsManager = () => {
                             <h3 className={`font-semibold text-lg ${!service.active ? 'text-muted-foreground' : ''}`}>
                               {service.serviceName}
                             </h3>
+                            {!soloLectura && <>
                             <Button
                               size="sm"
                               variant="ghost"
@@ -354,6 +357,7 @@ export const SubscriptionsManager = () => {
                             >
                               <Merge className="h-3 w-3" />
                             </Button>
+                            </>}
                           </div>
                         )}
                         {editingFrequencyId === service.id ? (
@@ -375,9 +379,9 @@ export const SubscriptionsManager = () => {
                         ) : (
                           <Badge
                             variant={getFrequencyBadgeVariant(service.frecuencia)}
-                            className="text-xs cursor-pointer hover:ring-1 hover:ring-primary/50"
-                            onClick={() => setEditingFrequencyId(service.id)}
-                            title="Clic para cambiar frecuencia"
+                            className={soloLectura ? 'text-xs' : 'text-xs cursor-pointer hover:ring-1 hover:ring-primary/50'}
+                            onClick={soloLectura ? undefined : () => setEditingFrequencyId(service.id)}
+                            title={soloLectura ? undefined : 'Clic para cambiar frecuencia'}
                           >
                             {service.frecuencia}
                           </Badge>

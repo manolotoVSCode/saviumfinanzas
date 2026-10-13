@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+
+/** Lo que puede abrir una lectora en la web: lo mismo que ve en la app del iPhone. */
+export const RUTAS_LECTORA = ['/', '/dashboard', '/transacciones', '/transacciones-categoria', '/inversiones', '/pendientes', '/cxp', '/suscripciones', '/configuracion'];
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,8 +11,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallbackPath = '/auth' }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, soloLectura } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -30,6 +34,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallbackPath 
 
   if (!user) {
     return null;
+  }
+
+  if (soloLectura && !RUTAS_LECTORA.includes(pathname)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

@@ -37,7 +37,7 @@ const fetchInvestments = async (userId: string): Promise<InvestmentsData> => {
 };
 
 export const useInvestments = () => {
-  const { user } = useAuth();
+  const { user, datosId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   // saldo_cuenta sale de la caché de cuentas (saldoActual), no de consultas propias:
@@ -47,9 +47,9 @@ export const useInvestments = () => {
 
   const query = useQuery({
     queryKey: QK.inversiones,
-    queryFn: () => fetchInvestments(user!.id),
+    queryFn: () => fetchInvestments(datosId!),
     staleTime: STALE_TIME,
-    enabled: !!user,
+    enabled: !!datosId,
   });
 
   useEffect(() => {

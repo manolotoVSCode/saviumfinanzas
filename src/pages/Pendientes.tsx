@@ -33,6 +33,7 @@ import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { formatNumber } from '@/lib/formatters';
 import { filtrarPendientes, FiltroPendientes, isPendingActive, isPendingOverdue } from '@/lib/finance/pendingsSummary';
+import { useAuth } from '@/contexts/AuthContext';
 import { parseFechaLocal, toFechaISO } from '@/lib/finance/fechas';
 
 type Filter = FiltroPendientes;
@@ -41,6 +42,7 @@ const Pendientes = () => {
   const { pendings, loading, addPending, updatePending, deletePending, markAsPaid, totalPendientePorCobrar, overdueCount } = usePendings();
   const { accounts, categories, transactions } = useFinanceDataSupabase();
   const { config } = useAppConfig();
+  const { soloLectura } = useAuth();
 
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<Pending | null>(null);
@@ -53,7 +55,7 @@ const Pendientes = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <PageHeader title="Pendientes de cobro" subtitle="Reembolsos e ingresos esperados. No afectan tus balances hasta que los marques como cobrados." actions={
+        <PageHeader title="Pendientes de cobro" subtitle="Reembolsos e ingresos esperados. No afectan tus balances hasta que los marques como cobrados." actions={soloLectura ? undefined :
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Nuevo pendiente
           </Button>
@@ -142,7 +144,7 @@ const Pendientes = () => {
                                 {p.estado === 'cancelado' && <Badge variant="outline">Cancelado</Badge>}
                               </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex justify-end gap-1">
+                                {!soloLectura && <div className="flex justify-end gap-1">
                                   {(p.estado === 'pendiente' || p.estado === 'cobrado_parcial') && (
                                     <>
                                       <Button size="sm" variant="default" onClick={() => setPayingPending(p)}>
@@ -159,7 +161,7 @@ const Pendientes = () => {
                                   <Button size="sm" variant="ghost" onClick={() => setDeleting(p)}>
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
-                                </div>
+                                </div>}
                               </TableCell>
                             </TableRow>
                           );

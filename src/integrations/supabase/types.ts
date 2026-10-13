@@ -567,6 +567,24 @@ export type Database = {
         }
         Relationships: []
       }
+      lectores: {
+        Row: {
+          created_at: string
+          lector_id: string
+          propietario_id: string
+        }
+        Insert: {
+          created_at?: string
+          lector_id: string
+          propietario_id: string
+        }
+        Update: {
+          created_at?: string
+          lector_id?: string
+          propietario_id?: string
+        }
+        Relationships: []
+      }
       payment_skips: {
         Row: {
           categoria_id: string

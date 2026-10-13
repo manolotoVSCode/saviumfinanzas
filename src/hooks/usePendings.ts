@@ -50,15 +50,15 @@ const fetchPendings = async (userId: string): Promise<Pending[]> => {
  * una petición por sesión; cada mutación invalida `pendientes`.
  */
 export const usePendings = () => {
-  const { user } = useAuth();
+  const { user, datosId } = useAuth();
   const queryClient = useQueryClient();
   const QK = financeQueryKeys(user?.id);
 
   const query = useQuery({
     queryKey: QK.pendientes,
-    queryFn: () => fetchPendings(user!.id),
+    queryFn: () => fetchPendings(datosId!),
     staleTime: STALE_TIME,
-    enabled: !!user,
+    enabled: !!datosId,
   });
   const pendings = query.data ?? EMPTY;
 

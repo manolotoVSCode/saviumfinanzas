@@ -2,6 +2,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,7 @@ const TransaccionesCategoria = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const financeData = useFinanceDataSupabase();
+  const { soloLectura } = useAuth();
   const { formatCurrency } = useAppConfig();
 
   // Estado para el diálogo de edición
@@ -289,8 +291,8 @@ const TransaccionesCategoria = () => {
                     {filteredTransactions.map((t) => (
                       <TableRow 
                         key={t.id} 
-                        className="hover:bg-muted/50 cursor-pointer group"
-                        onClick={() => handleEditClick(t)}
+                        className={soloLectura ? undefined : 'hover:bg-muted/50 cursor-pointer group'}
+                        onClick={soloLectura ? undefined : () => handleEditClick(t)}
                       >
                         <TableCell className="font-medium whitespace-nowrap">
                           {new Date(t.fecha).toLocaleDateString('es-ES', { 

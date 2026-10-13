@@ -22,13 +22,66 @@ import { ExchangeRates } from '@/components/ExchangeRates';
 
 import { useAuth } from '@/contexts/AuthContext';
 
-import { LogOut, Trash2, Search, Wallet, Tag, Filter, SunMoon } from 'lucide-react';
+import { LogOut, Trash2, Search, Wallet, Tag, Filter, SunMoon, Eye } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 import { useNavigate } from 'react-router-dom';
 
 
+/** La apariencia: lo único que una lectora puede tocar. */
+const TarjetaApariencia = () => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <SunMoon className="h-5 w-5" />
+        Apariencia
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-3">
+      <AparienciaSelector />
+      <p className="text-muted-foreground text-sm">
+        Automática cambia sola con el modo claro u oscuro de tu Mac o iPhone. Se guarda en este navegador.
+      </p>
+    </CardContent>
+  </Card>
+);
+
+/** Configuración de una lectora: sin perfil, familia, emergencias, auditoría ni borrados. */
+const ConfiguracionLectora = () => {
+  const { signOut } = useAuth();
+  return (
+    <Layout>
+      <div className="space-y-6 animate-fade-in">
+        <PageHeader title="Configuración" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Acceso de solo lectura
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground text-sm">
+              Puedes consultar los movimientos, el patrimonio, las inversiones, las suscripciones y lo que hay por cobrar y por pagar. No puedes apuntar, cambiar ni borrar nada.
+            </p>
+          </CardContent>
+        </Card>
+        <TarjetaApariencia />
+        <Button variant="destructive" onClick={signOut} className="w-full flex items-center gap-2">
+          <LogOut className="h-4 w-4" />
+          Cerrar Sesión
+        </Button>
+      </div>
+    </Layout>
+  );
+};
+
 const Configuracion = () => {
+  const { soloLectura } = useAuth();
+  return soloLectura ? <ConfiguracionLectora /> : <ConfiguracionTitular />;
+};
+
+const ConfiguracionTitular = () => {
   const financeData = useFinanceDataSupabase();
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -67,20 +120,7 @@ const Configuracion = () => {
         <ProfileEditor />
 
         {/* APARIENCIA */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <SunMoon className="h-5 w-5" />
-              Apariencia
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <AparienciaSelector />
-            <p className="text-muted-foreground text-sm">
-              Automática cambia sola con el modo claro u oscuro de tu Mac o iPhone. Se guarda en este navegador.
-            </p>
-          </CardContent>
-        </Card>
+        <TarjetaApariencia />
 
         {/* TASAS DE CAMBIO ACTUALES */}
         <ExchangeRates />

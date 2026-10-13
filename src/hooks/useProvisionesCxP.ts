@@ -26,15 +26,15 @@ const fetchProvisiones = async (userId: string): Promise<CxPProvision[]> => {
  * tocan saldos: solo suman en el total por pagar hasta marcarlas como pagadas.
  */
 export const useProvisionesCxP = () => {
-  const { user } = useAuth();
+  const { user, datosId } = useAuth();
   const queryClient = useQueryClient();
   const QK = financeQueryKeys(user?.id);
 
   const query = useQuery({
     queryKey: QK.provisionesCxP,
-    queryFn: () => fetchProvisiones(user!.id),
+    queryFn: () => fetchProvisiones(datosId!),
     staleTime: STALE_TIME,
-    enabled: !!user,
+    enabled: !!datosId,
   });
 
   useEffect(() => {

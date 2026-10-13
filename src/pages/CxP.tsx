@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
+import { useAuth } from '@/contexts/AuthContext';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
@@ -32,6 +33,7 @@ const formatDate = (d: Date) =>
 const CxP = () => {
   const financeData = useFinanceDataSupabase();
   const { formatCurrency, config } = useAppConfig();
+  const { soloLectura } = useAuth();
   const { convertCurrency } = useExchangeRates();
   const { subscriptions } = useSubscriptionServices();
   const { provisiones, addProvision, updateProvision, deleteProvision, markAsPaid } = useProvisionesCxP();
@@ -123,9 +125,9 @@ const CxP = () => {
 
         <PageHeader title="CxP · Cuentas por Pagar" subtitle="Provisiones estimadas de dinero comprometido. Considéralo antes de gastar." actions={
           <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setFormOpen(true)}>
+          {!soloLectura && <Button onClick={() => setFormOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Nueva provisión
-          </Button>
+          </Button>}
           <Select value={String(horizonte)} onValueChange={(v) => setHorizonte(parseInt(v))}>
             <SelectTrigger className="w-[180px]">
               <SelectValue />
@@ -274,7 +276,7 @@ const CxP = () => {
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    {prov && r.esProximoPago && (
+                                    {prov && r.esProximoPago && !soloLectura && (
                                       <div className="flex justify-end gap-1">
                                         <Button size="sm" onClick={() => setPagando(prov)}>
                                           <CheckCircle2 className="h-3 w-3 mr-1" /> Pagar
@@ -348,7 +350,7 @@ const CxP = () => {
                         </TableCell>
                         <TableCell className="text-right font-mono">{formatNumber(p.monto)} {p.divisa}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
+                          {!soloLectura && <div className="flex justify-end gap-1">
                             {p.estado === 'pendiente' ? (
                               <>
                                 <Button size="sm" onClick={() => setPagando(p)}>
@@ -369,7 +371,7 @@ const CxP = () => {
                             <Button size="sm" variant="ghost" title="Eliminar" onClick={() => setBorrando(p)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
-                          </div>
+                          </div>}
                         </TableCell>
                       </TableRow>
                     ))}

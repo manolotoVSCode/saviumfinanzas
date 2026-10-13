@@ -1,3 +1,4 @@
+import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { TransactionsManager } from '@/components/TransactionsManager';
 import { ExcelExporter } from '@/components/ExcelExporter';
@@ -68,6 +69,7 @@ const ImportFormatInfo = () => (
 
 const Transacciones = () => {
   const financeData = useFinanceDataSupabase();
+  const { soloLectura } = useAuth();
 
   if (financeData.loading) {
     return (
@@ -85,7 +87,7 @@ const Transacciones = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <PageHeader title="Transacciones" actions={<>
+        <PageHeader title="Transacciones" actions={soloLectura ? undefined : <>
           <ExcelExporter
             transactions={financeData.transactions}
             accounts={financeData.accounts}
@@ -108,6 +110,7 @@ const Transacciones = () => {
           onUpdateTransaction={(id, updates, autoContribution) => financeData.updateTransaction(id, updates, autoContribution)}
           onDeleteTransaction={financeData.deleteTransaction}
           onClearAllTransactions={financeData.clearAllTransactions}
+          soloLectura={soloLectura}
         />
       </div>
     </Layout>

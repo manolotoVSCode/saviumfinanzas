@@ -7,6 +7,10 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /** Lectora de otra cuenta (tabla lectores): la web solo deja consultar. */
+  soloLectura: boolean;
+  /** Dueño de los datos que se muestran: el titular si es lectora, si no el propio usuario. */
+  datosId: string | null;
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: any }>;
   signUp: (email: string, password: string, userData?: {
     nombre: string;
@@ -31,6 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  // undefined = aún sin consultar; null = no es lectora de nadie.
+  const [titularId, setTitularId] = useState<string | null | undefined>(undefined);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -52,6 +58,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // ¿Soy lectora de alguien? Mismo criterio que la app del iPhone (Repositorio.accesos).
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) { setTitularId(undefined); return; }
+    let cancelado = false;
+    setTitularId(undefined);
+    supabase
+      .from('lectores')
+      .select('propietario_id')
+      .eq('lector_id', userId)
+      .limit(1)
+      .then(({ data, error }) => {
+        if (cancelado) return;
+        // Ante un error no se puede saber: se trata como lectora (lo prudente) hasta recargar.
+        if (error) { console.error('Error comprobando acceso de lectura:', error); setTitularId(userId); return; }
+        setTitularId(data?.[0]?.propietario_id ?? null);
+      });
+    return () => { cancelado = true; };
+  }, [userId]);
 
   const signIn = async (email: string, password: string, rememberMe: boolean = true) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -110,7 +136,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     user,
     session,
-    loading,
+    loading: loading || (!!user && titularId === undefined),
+    soloLectura: !!user && titularId !== null,
+    datosId: titularId ?? user?.id ?? null,
     signIn,
     signUp,
     signOut,
