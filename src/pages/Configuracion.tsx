@@ -1,17 +1,31 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Button } from '@/components/ui/button';
+
+import { PageHeader } from '@/components/PageHeader';
+
 import Layout from '@/components/Layout';
 import { ProfileEditor } from '@/components/ProfileEditor';
+
 import { ContactosEmergencia } from '@/components/ContactosEmergencia';
+
 import { AparienciaSelector } from '@/components/AparienciaSelector';
+
 import { DataAudit } from '@/components/DataAudit';
+
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
+
 import { useAppConfig } from '@/hooks/useAppConfig';
+
 import { ExchangeRates } from '@/components/ExchangeRates';
+
 import { useAuth } from '@/contexts/AuthContext';
-import { Settings, LogOut, Trash2, Search, Wallet, Tag, Filter, SunMoon } from 'lucide-react';
+
+import { LogOut, Trash2, Search, Wallet, Tag, Filter, SunMoon } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 import { useNavigate } from 'react-router-dom';
+
 
 const Configuracion = () => {
   const financeData = useFinanceDataSupabase();
@@ -33,12 +47,7 @@ const Configuracion = () => {
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <Settings className="h-6 w-6" />
-            <h1 className="text-3xl font-bold">Configuración</h1>
-          </div>
-          <div className="flex gap-2">
+        <PageHeader title="Configuración" actions={<>
             <Button variant="outline" size="sm" onClick={() => navigate('/cuentas')}>
               <Wallet className="h-4 w-4 mr-1" />
               Cuentas
@@ -51,8 +60,7 @@ const Configuracion = () => {
               <Filter className="h-4 w-4 mr-1" />
               Reglas de Clasificación
             </Button>
-          </div>
-        </div>
+          </>} />
 
         {/* EDITOR DE PERFIL */}
         <ProfileEditor />
@@ -74,21 +82,14 @@ const Configuracion = () => {
         </Card>
 
         {/* TASAS DE CAMBIO ACTUALES */}
-        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Tasas de Cambio Actuales</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ExchangeRates />
-          </CardContent>
-        </Card>
+        <ExchangeRates />
 
 
         {/* ALERTA DE EMERGENCIA (app iOS) */}
         <ContactosEmergencia />
 
         {/* AUDITORÍA DE DATOS */}
-        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="h-5 w-5" />
@@ -108,7 +109,7 @@ const Configuracion = () => {
         </Card>
 
         {/* CONFIGURACIÓN DE SESIÓN */}
-        <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LogOut className="h-5 w-5 text-destructive" />

@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '9.1',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Más Mac: todas las páginas con el mismo título grande a la izquierda (y «‹ Volver» como en iOS), sin tarjetas dentro de tarjetas, tablas como listas de macOS (filas alternas y cabecera fija), puntero de flecha, barras de desplazamiento finas, cifras alineadas y pantalla de acceso de cristal', type: 'improvement' },
+      { icon: <Bug className="h-4 w-4" />, text: 'El Dashboard se marca en el menú al abrir la web, y las cifras de arriba de Inversiones ya no se cortan', type: 'fix' },
+      { icon: <Globe className="h-4 w-4" />, text: 'Lista para guardarla en el Dock (Safari → Archivo → Añadir al Dock): la ventana toma el gris o el negro del fondo según la apariencia', type: 'improvement' },
+    ],
+  },
+  {
     version: '9.0',
     date: 'Octubre 2026',
     changes: [

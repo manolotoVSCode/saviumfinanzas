@@ -50,7 +50,7 @@ export const DashboardSavingsRate = ({
   };
 
   return (
-    <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">

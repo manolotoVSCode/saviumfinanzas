@@ -549,7 +549,7 @@ export const TransactionsManager = ({
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-xl font-semibold">Gestión de Transacciones</h2>
+        <div />
         <div className="flex gap-2">
           <Dialog open={isAddingTransaction} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>

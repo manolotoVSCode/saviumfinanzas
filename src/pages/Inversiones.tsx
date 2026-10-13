@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -235,32 +236,29 @@ const Inversiones = (): JSX.Element => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 sm:p-6 space-y-6">
-        <div className="flex flex-wrap justify-between items-center gap-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Inversiones</h1>
-          <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nueva inversión</Button>
-        </div>
+      <div className="space-y-6">
+        <PageHeader title="Inversiones" actions={<Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nueva inversión</Button>} />
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card>
             <CardHeader className="pb-2"><CardDescription>Invertido</CardDescription></CardHeader>
-            <CardContent className="text-2xl font-bold">{prefCurrency} {formatNumber(totals.invertido)}</CardContent>
+            <CardContent className="text-xl 2xl:text-2xl font-bold tracking-tight">{formatNumber(totals.invertido)} <span className="text-sm font-semibold text-muted-foreground">{prefCurrency}</span></CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2"><CardDescription>Valor actual</CardDescription></CardHeader>
-            <CardContent className="text-2xl font-bold">{prefCurrency} {formatNumber(totals.valor)}</CardContent>
+            <CardContent className="text-xl 2xl:text-2xl font-bold tracking-tight">{formatNumber(totals.valor)} <span className="text-sm font-semibold text-muted-foreground">{prefCurrency}</span></CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2"><CardDescription>Rendimiento</CardDescription></CardHeader>
-            <CardContent className={`text-2xl font-bold flex items-center gap-2 ${rendimiento >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+            <CardContent className={`text-xl 2xl:text-2xl font-bold tracking-tight flex flex-wrap items-center gap-x-2 ${rendimiento >= 0 ? 'text-success' : 'text-destructive'}`}>
               {rendimiento >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
               {formatNumber(rendimiento)}
-              <span className="text-sm font-normal">({rendimientoPct.toFixed(2)}%)</span>
+              <span className="text-sm font-semibold">({rendimientoPct.toFixed(2)}%)</span>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2"><CardDescription>Cobrado este año</CardDescription></CardHeader>
-            <CardContent className="text-2xl font-bold">{prefCurrency} {formatNumber(cobrosAnio)}</CardContent>
+            <CardContent className="text-xl 2xl:text-2xl font-bold tracking-tight">{formatNumber(cobrosAnio)} <span className="text-sm font-semibold text-muted-foreground">{prefCurrency}</span></CardContent>
           </Card>
         </div>
 
@@ -329,10 +327,7 @@ const Inversiones = (): JSX.Element => {
           </TabsContent>
 
           <TabsContent value="cripto">
-            <Card>
-              <CardHeader><CardTitle>Criptomonedas</CardTitle></CardHeader>
-              <CardContent><CriptomonedasManager /></CardContent>
-            </Card>
+            <CriptomonedasManager />
           </TabsContent>
 
           <TabsContent value="raices" className="space-y-6">

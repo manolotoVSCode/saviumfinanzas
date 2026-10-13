@@ -62,7 +62,7 @@ export const DashboardDonutChart = ({
 
   if (data.length === 0) {
     return (
-      <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+      <Card>
         <CardHeader>
           <CardTitle className="text-center text-base">
             Distribución {MONTHS[selectedMonth]} {selectedMonthYear}
@@ -78,7 +78,7 @@ export const DashboardDonutChart = ({
   }
 
   return (
-    <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <CardTitle className="text-center sm:text-left text-base">

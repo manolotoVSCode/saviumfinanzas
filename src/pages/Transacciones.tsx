@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TransactionsManager } from '@/components/TransactionsManager';
 import { ExcelExporter } from '@/components/ExcelExporter';
 import BankStatementImporter from '@/components/import/BankStatementImporter';
+import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { Button } from '@/components/ui/button';
@@ -84,7 +85,7 @@ const Transacciones = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <div className="flex items-center justify-end gap-2">
+        <PageHeader title="Transacciones" actions={<>
           <ExcelExporter
             transactions={financeData.transactions}
             accounts={financeData.accounts}
@@ -97,7 +98,7 @@ const Transacciones = () => {
             onImportTransactions={financeData.addTransactionsBatch}
           />
           <ImportFormatInfo />
-        </div>
+        </>} />
         
         <TransactionsManager
           transactions={financeData.transactions}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,10 +93,7 @@ const ContenidoFamilia = () => {
 
   return (
       <div className="animate-fade-in space-y-6 max-w-4xl mx-auto">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Para mi familia</h1>
-          <p className="text-muted-foreground">Lo que necesitaríais saber si un día no estoy. Se guarda solo mientras escribes.</p>
-        </div>
+        <PageHeader title="Para mi familia" subtitle="Lo que necesitaríais saber si un día no estoy. Se guarda solo mientras escribes." />
 
         <Card>
           <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">

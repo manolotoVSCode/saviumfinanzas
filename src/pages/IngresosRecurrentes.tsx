@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -23,10 +24,7 @@ const IngresosRecurrentes = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold">Ingresos Recurrentes</h1>
-          <p className="text-muted-foreground">Control de pagos e ingresos recurrentes mes a mes</p>
-        </div>
+        <PageHeader title="Ingresos Recurrentes" subtitle={<>Control de pagos e ingresos recurrentes mes a mes</>} />
         <MonthlyPaymentsControl
           transactions={financeData.transactions}
           formatCurrency={formatCurrency}

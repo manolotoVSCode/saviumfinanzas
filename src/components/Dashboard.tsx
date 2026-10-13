@@ -819,7 +819,7 @@ const CategoryItem = ({
       />
 
       {/* 1. GRÁFICA DE INGRESOS VS GASTOS - ÚLTIMOS 12 MESES CON MEDIAS */}
-        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+        <Card>
           <CardHeader>
             <CardTitle className="text-center">Ingresos vs Gastos - Últimos 12 Meses<br className="sm:hidden" /><strong className="block sm:inline"> {selectedCurrency}</strong></CardTitle>
           </CardHeader>
@@ -929,7 +929,7 @@ const CategoryItem = ({
       </div>
 
       {/* 2. TOP 10 CATEGORÍAS - ÚLTIMOS 12 MESES */}
-      <Card id="top10-categorias" className="border-primary/20 hover:border-primary/40 transition-all duration-300 scroll-mt-20">
+      <Card id="top10-categorias" className="scroll-mt-20">
         <CardHeader>
           <div className="flex flex-col gap-4">
             <CardTitle className="text-center">Top 10 Categorías de Gastos</CardTitle>
@@ -983,7 +983,7 @@ const CategoryItem = ({
       </Card>
 
       {/* 4. ACTIVOS */}
-      <Card className="border-success/20 hover:border-success/40 transition-all duration-300">
+      <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
             <CardTitle className="text-success">
@@ -1205,7 +1205,7 @@ const CategoryItem = ({
       </Card>
 
       {/* 5. PASIVOS */}
-      <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+      <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
             <CardTitle className="text-destructive">

@@ -211,7 +211,7 @@ const TransaccionesCategoria = () => {
                 <span className="text-foreground">{categoria}</span>
               )}
             </div>
-            <h1 className="text-2xl font-bold">{title}</h1>
+            <h1 className="text-[2rem] font-bold leading-tight">{title}</h1>
             <div className="flex items-center gap-2 text-muted-foreground text-sm mt-1">
               <Badge variant="outline">{divisa}</Badge>
               <span>•</span>

@@ -1,4 +1,5 @@
 import { Dashboard as DashboardComponent } from '@/components/Dashboard';
+import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -23,7 +24,8 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="animate-fade-in">
+      <div className="animate-fade-in space-y-6">
+        <PageHeader title="Dashboard" />
         <PendingsWidget />
         <DashboardComponent 
           metrics={financeData.dashboardMetrics} 

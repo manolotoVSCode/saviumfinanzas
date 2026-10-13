@@ -61,9 +61,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-primary/5 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <Card className="border-border/50 shadow-xl backdrop-blur-sm">
+    <div className="relative min-h-screen overflow-hidden flex items-center justify-center p-6">
+      {/* Manchas de color detrás del cristal (como el fondo de pantalla en iOS). */}
+      <div aria-hidden className="pointer-events-none absolute -top-32 -left-24 h-[28rem] w-[28rem] rounded-full bg-primary/25 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-40 -right-24 h-[32rem] w-[32rem] rounded-full bg-[hsl(var(--grafica)/0.22)] blur-3xl" />
+      <div className="relative w-full max-w-md">
+        <Card className="vidrio rounded-[1.75rem]">
           <CardHeader className="pb-6 px-8 pt-10">
             <div className="flex items-center justify-center gap-3">
               <img

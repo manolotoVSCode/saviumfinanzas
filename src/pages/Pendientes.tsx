@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,17 +53,11 @@ const Pendientes = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <div className="flex items-start justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">Pendientes de cobro</h1>
-            <p className="text-sm text-muted-foreground">
-              Reembolsos e ingresos esperados. No afectan tus balances hasta que los marques como cobrados.
-            </p>
-          </div>
+        <PageHeader title="Pendientes de cobro" subtitle="Reembolsos e ingresos esperados. No afectan tus balances hasta que los marques como cobrados." actions={
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Nuevo pendiente
           </Button>
-        </div>
+        } />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>

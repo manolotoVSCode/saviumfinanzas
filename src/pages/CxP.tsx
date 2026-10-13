@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -94,13 +95,7 @@ const CxP = () => {
     <Layout>
       <div className="animate-fade-in space-y-6">
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold">CxP · Cuentas por Pagar</h1>
-            <p className="text-muted-foreground text-sm">
-              Provisiones estimadas de dinero comprometido. Considéralo antes de gastar.
-            </p>
-          </div>
+        <PageHeader title="CxP · Cuentas por Pagar" subtitle="Provisiones estimadas de dinero comprometido. Considéralo antes de gastar." actions={
           <Select value={String(horizonte)} onValueChange={(v) => setHorizonte(parseInt(v))}>
             <SelectTrigger className="w-[180px]">
               <SelectValue />
@@ -113,7 +108,7 @@ const CxP = () => {
               ))}
             </SelectContent>
           </Select>
-        </div>
+        } />
 
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

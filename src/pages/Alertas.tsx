@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,12 +71,7 @@ const Alertas = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold">Alertas</h1>
-          <p className="text-muted-foreground">
-            Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días o vencidos hasta 30 días antes del cierre del último mes importado, suscripciones que suben de precio, categorías cuyo gasto del último mes cerrado supera en un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% su media de los 12 meses anteriores, la información para tu familia si lleva más de {DIAS_REVISION} días sin revisar, y las criptomonedas que llegan al % sobre tu precio de compra que pusiste en su alerta (Inversiones → Criptomonedas)
-          </p>
-        </div>
+        <PageHeader title="Alertas" subtitle={<>Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días o vencidos hasta 30 días antes del cierre del último mes importado, suscripciones que suben de precio, categorías cuyo gasto del último mes cerrado supera en un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% su media de los 12 meses anteriores, la información para tu familia si lleva más de {DIAS_REVISION} días sin revisar, y las criptomonedas que llegan al % sobre tu precio de compra que pusiste en su alerta (Inversiones → Criptomonedas)</>} />
 
         {loading ? (
           <div className="flex items-center justify-center h-40">

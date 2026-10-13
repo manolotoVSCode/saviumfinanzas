@@ -1,13 +1,15 @@
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Wallet } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { PageHeader } from '@/components/PageHeader';
+
 import Layout from '@/components/Layout';
 import { AccountsManager } from '@/components/AccountsManager';
+
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 
+
 const Cuentas = () => {
-  const navigate = useNavigate();
   const financeData = useFinanceDataSupabase();
 
   if (financeData.loading) {
@@ -26,17 +28,9 @@ const Cuentas = () => {
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/configuracion')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Wallet className="h-6 w-6" />
-            <h1 className="text-3xl font-bold">Gestión de Cuentas</h1>
-          </div>
-        </div>
+        <PageHeader title="Gestión de Cuentas" back="/configuracion" />
 
-        <Card className="border-secondary/20 hover:border-secondary/40 transition-all duration-300">
+        <Card>
           <CardContent className="pt-6">
             <AccountsManager
               accounts={financeData.accounts}

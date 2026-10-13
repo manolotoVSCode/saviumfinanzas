@@ -1,10 +1,15 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Tag, Calendar, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
+import { Calendar, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { PageHeader } from '@/components/PageHeader';
+
 import Layout from '@/components/Layout';
 import { CategoriesManager } from '@/components/CategoriesManager';
+
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
+
 
 const Categorias = () => {
   const navigate = useNavigate();
@@ -34,20 +39,12 @@ const Categorias = () => {
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/configuracion')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Tag className="h-6 w-6" />
-            <h1 className="text-3xl font-bold">Gestión de Categorías</h1>
-          </div>
-        </div>
+        <PageHeader title="Gestión de Categorías" back="/configuracion" />
 
         {/* Tracking buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card
-            className="cursor-pointer border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-md"
+            className="cursor-pointer hover:shadow-md"
             onClick={() => navigate('/seguimiento-gastos')}
           >
             <CardHeader className="pb-2">
@@ -69,7 +66,7 @@ const Categorias = () => {
           </Card>
 
           <Card
-            className="cursor-pointer border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-md"
+            className="cursor-pointer hover:shadow-md"
             onClick={() => navigate('/seguimiento-ingresos')}
           >
             <CardHeader className="pb-2">
@@ -91,7 +88,7 @@ const Categorias = () => {
           </Card>
         </div>
 
-        <Card className="border-accent/20 hover:border-accent/40 transition-all duration-300">
+        <Card>
           <CardContent className="pt-6">
             <CategoriesManager
               categories={financeData.categories}

@@ -1,18 +1,26 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Info, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
+
+import { Info, Search } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Switch } from '@/components/ui/switch';
+
 import { Input } from '@/components/ui/input';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
+import { PageHeader } from '@/components/PageHeader';
+
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 
+
 const SeguimientoGastos = () => {
-  const navigate = useNavigate();
   const financeData = useFinanceDataSupabase();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategoria, setFilterCategoria] = useState<string>('all');
@@ -65,15 +73,7 @@ const SeguimientoGastos = () => {
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/categorias')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-6 w-6" />
-            <h1 className="text-3xl font-bold">Seguimiento de Pagos Recurrentes</h1>
-          </div>
-        </div>
+        <PageHeader title="Seguimiento de Pagos Recurrentes" back="/categorias" />
 
         <Alert className="border-primary/30 bg-primary/5">
           <Info className="h-4 w-4" />

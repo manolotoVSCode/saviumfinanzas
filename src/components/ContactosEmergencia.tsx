@@ -100,7 +100,7 @@ export const ContactosEmergencia = () => {
   const actualizado = codigoGuardado.data?.actualizado;
 
   return (
-    <Card className="border-destructive/20 hover:border-destructive/40 transition-all duration-300">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldAlert className="h-5 w-5" />

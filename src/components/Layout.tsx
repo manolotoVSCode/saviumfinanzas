@@ -24,7 +24,8 @@ const Layout = ({ children }: LayoutProps) => {
   const { activeCount, overdueCount } = usePendings();
   const { count: alertCount } = useAlerts();
 
-  const isActive = (path: string) => location.pathname === path;
+  // «/» abre el Dashboard: su entrada del menú también se marca ahí.
+  const isActive = (path: string) => location.pathname === path || (path === '/dashboard' && location.pathname === '/');
 
   // Ctrl+K / Cmd+K shortcut
   useEffect(() => {
@@ -158,7 +159,7 @@ const Layout = ({ children }: LayoutProps) => {
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 ml-[17.5rem]">
+        <main className="flex-1 min-w-0 ml-[17.5rem]">
           <div className="container mx-auto px-6 py-8">
             <div className="space-y-6">
               {children}

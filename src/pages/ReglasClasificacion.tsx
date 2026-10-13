@@ -1,23 +1,42 @@
 import { useState, useMemo, KeyboardEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Button } from '@/components/ui/button';
+
 import { Input } from '@/components/ui/input';
+
 import { Label } from '@/components/ui/label';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 import { Switch } from '@/components/ui/switch';
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 import { Badge } from '@/components/ui/badge';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Plus, Pencil, Trash2, Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, ChevronDown, ChevronRight, Layers, Stethoscope } from 'lucide-react';
+
+import { Plus, Pencil, Trash2, Search, X, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, ChevronDown, ChevronRight, Layers, Stethoscope } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+
 import Layout from '@/components/Layout';
 import { useClassificationRules, ClassificationRule } from '@/hooks/useClassificationRules';
+
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
+
 import { conPalabraCompleta, matchesClassificationRule, normalizeRuleText, parseKeyword, splitClassificationKeywords } from '@/lib/classificationRules';
+
 import { classifyOverlap, computeRuleOutcomes, computeRulesHealth, OverlapSeverity } from '@/lib/finance/rulesAudit';
+
 import { Transaction } from '@/types/finance';
+
 
 const MATCH_TYPE_LABELS: Record<string, string> = {
   exact: 'Exacta',
@@ -56,7 +75,6 @@ const SortableHead = ({ label, k, sortKey, sortDir, onSort, align = 'left' }: So
 type StatusFilter = 'all' | 'used' | 'unused' | 'inactive';
 
 const ReglasClasificacion = () => {
-  const navigate = useNavigate();
   const { rules, loading, addRule, updateRule, deleteRule } = useClassificationRules();
   const { categories, transactions, accounts, loading: loadingFinance, updateTransaction } = useFinanceDataSupabase();
 
@@ -356,19 +374,12 @@ const ReglasClasificacion = () => {
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/configuracion')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <Filter className="h-6 w-6" />
-            <h1 className="text-2xl md:text-3xl font-bold">Reglas de Clasificación</h1>
-          </div>
+        <PageHeader title="Reglas de Clasificación" back="/configuracion" actions={
           <Button onClick={openNew} size="sm">
             <Plus className="h-4 w-4 mr-1" />
             Nueva Regla
           </Button>
-        </div>
+        } />
 
         {/* Stats mini-KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

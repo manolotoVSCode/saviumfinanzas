@@ -162,7 +162,7 @@ export const ProfileEditor = () => {
   }
 
   return (
-    <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <User className="h-5 w-5 text-primary" />

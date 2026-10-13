@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/PageHeader';
 import Layout from '@/components/Layout';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -27,10 +28,7 @@ const Informes = () => {
     <Layout>
       <div className="animate-fade-in space-y-6">
 
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold">Informes Financieros</h1>
-          <p className="text-muted-foreground">Reportes detallados de tu situación financiera</p>
-        </div>
+        <PageHeader title="Informes Financieros" subtitle={<>Reportes detallados de tu situación financiera</>} />
 
         <Tabs defaultValue="comparativo-ingresos" className="w-full">
           <TabsList className="flex flex-wrap w-full justify-center gap-2 h-auto p-2 bg-muted rounded-lg">

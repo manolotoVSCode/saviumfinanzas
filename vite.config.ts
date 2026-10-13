@@ -28,8 +28,9 @@ export default defineConfig({
         scope: "/",
         display: "standalone",
         orientation: "portrait",
-        background_color: "#ffffff",
-        theme_color: "#16a34a",
+        // Fondo de iOS: la ventana de la app (Dock en Mac, pantalla de inicio en iPhone) no destaca del contenido.
+        background_color: "#F2F2F7",
+        theme_color: "#F2F2F7",
         icons: [
           { src: "icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" },

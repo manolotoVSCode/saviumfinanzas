@@ -39,7 +39,7 @@ All colors MUST be HSL.
 
     --border: 240 6% 88%;
     --input: 240 6% 85%;
-    --ring: 107 93% 29%;
+    --ring: 107 93% 29% / 0.5;
 
     --radius: 1rem;
 
@@ -98,7 +98,7 @@ All colors MUST be HSL.
 
     --border: 240 2% 23%;
     --input: 240 2% 23%;
-    --ring: 107 64% 46%;
+    --ring: 107 64% 46% / 0.55;
 
     --vidrio: 240 3% 14% / 0.7;
     --vidrio-borde: 0 0% 100% / 0.1;
@@ -127,6 +127,24 @@ All colors MUST be HSL.
       radial-gradient(60rem 40rem at 0% 0%, hsl(var(--primary) / 0.07), transparent 70%),
       radial-gradient(50rem 40rem at 100% 100%, hsl(var(--grafica) / 0.06), transparent 70%);
     background-attachment: fixed;
+  }
+
+  /* Detalles de macOS: cifras del mismo ancho (columnas de importes alineadas), puntero de flecha
+     en los controles (la mano queda para los enlaces), barras de desplazamiento finas y selección
+     de texto en el color de acento. */
+  body {
+    font-variant-numeric: tabular-nums;
+  }
+  button, [role="button"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"],
+  [role="menuitem"], [role="option"], [role="combobox"], select, summary, label {
+    cursor: default;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--foreground) / 0.25) transparent;
+  }
+  ::selection {
+    background-color: hsl(var(--primary) / 0.25);
   }
 
   /* Títulos con el apretado de los títulos grandes de iOS. */

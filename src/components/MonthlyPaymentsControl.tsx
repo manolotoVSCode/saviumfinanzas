@@ -238,7 +238,7 @@ export const MonthlyPaymentsControl = ({ transactions, formatCurrency, categorie
   };
 
   return (
-    <Card className="border-muted/30 hover:border-muted/50 transition-all duration-300 bg-muted/20">
+    <Card className="bg-muted/20">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <CalendarDays className="h-4 w-4" />
