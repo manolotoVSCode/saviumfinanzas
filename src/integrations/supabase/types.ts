@@ -236,6 +236,48 @@ export type Database = {
         }
         Relationships: []
       }
+      codigos_emergencia: {
+        Row: {
+          actualizado: string
+          hash: string
+          user_id: string
+        }
+        Insert: {
+          actualizado?: string
+          hash: string
+          user_id: string
+        }
+        Update: {
+          actualizado?: string
+          hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contactos_alerta: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nombre: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          nombre?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nombre?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       informacion_familia: {
         Row: {
           contenido: Json

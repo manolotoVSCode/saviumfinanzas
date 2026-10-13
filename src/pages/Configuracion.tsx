@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Layout from '@/components/Layout';
 import { ProfileEditor } from '@/components/ProfileEditor';
+import { ContactosEmergencia } from '@/components/ContactosEmergencia';
 import { DataAudit } from '@/components/DataAudit';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
@@ -65,6 +66,9 @@ const Configuracion = () => {
           </CardContent>
         </Card>
 
+
+        {/* ALERTA DE EMERGENCIA (app iOS) */}
+        <ContactosEmergencia />
 
         {/* AUDITORÍA DE DATOS */}
         <Card className="border-blue-200 hover:border-blue-400 transition-all duration-300">

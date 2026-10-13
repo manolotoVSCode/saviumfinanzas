@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '8.7',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Shield className="h-4 w-4" />, text: 'Configuración → Contactos de emergencia: los correos que reciben el aviso de seguridad de la app del iPhone, y el código de emergencia (se guarda cifrado)', type: 'feature' },
+    ],
+  },
+  {
     version: '8.6',
     date: 'Octubre 2026',
     changes: [
