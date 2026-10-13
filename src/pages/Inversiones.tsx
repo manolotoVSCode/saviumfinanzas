@@ -16,12 +16,11 @@ import { useInvestmentTypes } from '@/hooks/useInvestmentTypes';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useCriptomonedas } from '@/hooks/useCriptomonedas';
-import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 
 import { formatNumber } from '@/lib/formatters';
 import { Investment } from '@/types/investments';
-import { cobradoInversionesAnio, investmentReturn, totalesInversiones } from '@/lib/finance/investmentReturn';
-import { LineChart, Pencil, Plus, RefreshCw, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
+import { investmentReturn } from '@/lib/finance/investmentReturn';
+import { LineChart, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const COLORS = ['hsl(var(--grafica))', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#0088FE'];
@@ -42,9 +41,7 @@ const Inversiones = (): JSX.Element => {
   const { convertCurrency } = useExchangeRates();
   const { criptomonedas } = useCriptomonedas();
   const { soloLectura } = useAuth();
-  const { transactions } = useFinanceDataSupabase();
 
-  const prefCurrency = config.currency;
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Investment | null>(null);
@@ -57,12 +54,8 @@ const Inversiones = (): JSX.Element => {
 
   const activas = useMemo(() => investments.filter((i) => i.activa !== false), [investments]);
 
-  const totals = totalesInversiones(activas, convertCurrency, prefCurrency as 'MXN' | 'USD' | 'EUR');
-  const rendimiento = totals.valor - totals.invertido;
-  const rendimientoPct = totals.invertido ? (rendimiento / totals.invertido) * 100 : 0;
-
-  // Intereses y repartos apuntados como movimientos (categoría Inversiones, tipo Ingreso).
-  const cobrosAnio = cobradoInversionesAnio(transactions, new Date().getFullYear(), convertCurrency, prefCurrency as 'MXN' | 'USD' | 'EUR');
+  // Las tarjetas de totales (invertido, valor, rendimiento, cobrado) se quitaron en la 9.8
+  // hasta cuadrar las cifras; los cálculos siguen en lib/finance/investmentReturn.ts.
 
   const usageCount = useMemo(() => {
     const map: Record<string, number> = {};
@@ -231,29 +224,6 @@ const Inversiones = (): JSX.Element => {
     <Layout>
       <div className="space-y-6">
         <PageHeader title="Inversiones" actions={soloLectura ? undefined : <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Nueva inversión</Button>} />
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2"><CardDescription>Invertido</CardDescription></CardHeader>
-            <CardContent className="text-xl 2xl:text-2xl font-bold tracking-tight">{formatNumber(totals.invertido)} <span className="text-sm font-semibold text-muted-foreground">{prefCurrency}</span></CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2"><CardDescription>Valor actual</CardDescription></CardHeader>
-            <CardContent className="text-xl 2xl:text-2xl font-bold tracking-tight">{formatNumber(totals.valor)} <span className="text-sm font-semibold text-muted-foreground">{prefCurrency}</span></CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2"><CardDescription>Rendimiento</CardDescription></CardHeader>
-            <CardContent className={`text-xl 2xl:text-2xl font-bold tracking-tight flex flex-wrap items-center gap-x-2 ${rendimiento >= 0 ? 'text-success' : 'text-destructive'}`}>
-              {rendimiento >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-              {formatNumber(rendimiento)}
-              <span className="text-sm font-semibold">({rendimientoPct.toFixed(2)}%)</span>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2"><CardDescription>Cobrado este año</CardDescription></CardHeader>
-            <CardContent className="text-xl 2xl:text-2xl font-bold tracking-tight">{formatNumber(cobrosAnio)} <span className="text-sm font-semibold text-muted-foreground">{prefCurrency}</span></CardContent>
-          </Card>
-        </div>
 
         <Tabs defaultValue="portafolio">
           <TabsList>
