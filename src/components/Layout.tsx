@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, UsersRound } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, UsersRound, Gift } from 'lucide-react';
 import { usePendings } from '@/hooks/usePendings';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,9 +52,13 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales' },
     { path: '/informes', icon: FileText, label: 'Informes Financieros' },
     { path: '/alertas', icon: Bell, label: 'Alertas', badge: alertCount || undefined },
-    // Panel de uso de Savium Share: solo existe en el menú del administrador.
-    ...(esAdmin(user?.id) ? [{ path: '/savium-share', icon: UsersRound, label: 'Savium Share' }] : []),
   ];
+
+  // Paneles de las otras apps de Savium: solo existen en el menú del administrador.
+  const appsNavItems = esAdmin(user?.id) ? [
+    { path: '/savium-share', icon: UsersRound, label: 'Savium Share' },
+    { path: '', icon: Gift, label: 'Savium Rewards' }, // Aún sin pantalla.
+  ] : [];
 
   const todosConfig = [
     { path: '/cuentas', icon: Wallet, label: 'Cuentas' },
@@ -114,26 +118,35 @@ const Layout = ({ children }: LayoutProps) => {
               </button>
             ))}
 
-            <div className="pt-3 mt-3 border-t border-border/60">
-              <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Configuración
-              </p>
-              {configNavItems.map(({ path, icon: Icon, label }) => (
-                <button
-                  key={path}
-                  onClick={() => navigate(path)}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
-                    isActive(path)
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
-                  )}
-                >
-                  <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={isActive(path) ? 2.25 : 1.75} />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
+            {[
+              { titulo: 'Apps', items: appsNavItems },
+              { titulo: 'Configuración', items: configNavItems },
+            ].filter(g => g.items.length > 0).map(({ titulo, items }) => (
+              <div key={titulo} className="pt-3 mt-3 border-t border-border/60">
+                <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {titulo}
+                </p>
+                {items.map(({ path, icon: Icon, label }) => (
+                  <button
+                    key={label}
+                    onClick={() => navigate(path)}
+                    disabled={!path}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
+                      !path
+                        ? 'text-muted-foreground/50 cursor-default'
+                        : isActive(path)
+                          ? 'bg-primary/10 text-primary font-semibold'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
+                    )}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={path && isActive(path) ? 2.25 : 1.75} />
+                    <span className="flex-1 text-left">{label}</span>
+                    {!path && <span className="text-[10px] uppercase tracking-wider">Pronto</span>}
+                  </button>
+                ))}
+              </div>
+            ))}
           </nav>
 
           <div className="p-3 border-t border-border/60 space-y-2">
