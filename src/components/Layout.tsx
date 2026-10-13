@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, UsersRound } from 'lucide-react';
 import { usePendings } from '@/hooks/usePendings';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { APP_VERSION } from '@/components/Changelog';
 import { GlobalSearch, GlobalSearchTrigger } from '@/components/GlobalSearch';
 import { RUTAS_LECTORA } from '@/components/ProtectedRoute';
+import { esAdmin } from '@/lib/admin';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,7 +20,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut, soloLectura } = useAuth();
+  const { user, signOut, soloLectura } = useAuth();
   const { profile } = useUserProfile();
   const [searchOpen, setSearchOpen] = useState(false);
   const { activeCount, overdueCount } = usePendings();
@@ -51,6 +52,8 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales' },
     { path: '/informes', icon: FileText, label: 'Informes Financieros' },
     { path: '/alertas', icon: Bell, label: 'Alertas', badge: alertCount || undefined },
+    // Panel de uso de Savium Share: solo existe en el menú del administrador.
+    ...(esAdmin(user?.id) ? [{ path: '/savium-share', icon: UsersRound, label: 'Savium Share' }] : []),
   ];
 
   const todosConfig = [

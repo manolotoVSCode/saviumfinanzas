@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.0',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <BarChart3 className="h-4 w-4" />, text: 'Panel de uso de Savium Share para el administrador: grupos, personas, movimientos, actividad diaria, categorías, divisas, repartos y grupos recientes (sin nombres)', type: 'feature' },
+    ],
+  },
+  {
     version: '9.9',
     date: 'Octubre 2026',
     changes: [

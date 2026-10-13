@@ -33,6 +33,8 @@ const CxP = lazy(() => import("./pages/CxP"));
 const ChangelogPage = lazy(() => import("./pages/ChangelogPage"));
 const Alertas = lazy(() => import("./pages/Alertas"));
 const Familia = lazy(() => import("./pages/Familia"));
+// Solo para el administrador (el menú solo lo muestra a él y share_panel rechaza a los demás).
+const SaviumShare = lazy(() => import("./pages/SaviumShare"));
 
 // Versión móvil (< 768px), solo lectura.
 const SoloEscritorio = lazy(() => import("./pages/movil/SoloEscritorio"));
@@ -164,6 +166,11 @@ const App = () => (
               <Route path="/changelog" element={
                 <ProtectedRoute>
                   <Responsive desktop={ChangelogPage} mobile={SoloEscritorio} />
+                </ProtectedRoute>
+              } />
+              <Route path="/savium-share" element={
+                <ProtectedRoute>
+                  <Responsive desktop={SaviumShare} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
