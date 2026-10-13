@@ -60,7 +60,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/configuracion', icon: Settings, label: 'Configuración' },
   ];
 
-  // La lectora solo ve las pantallas de consulta (sin alertas, reglas, cuentas ni categorías).
+  // La lectora solo ve las pantallas de consulta (sin reglas, cuentas ni categorías).
   const mainNavItems = soloLectura ? todosMain.filter(i => RUTAS_LECTORA.includes(i.path)) : todosMain;
   const configNavItems = soloLectura ? todosConfig.filter(i => RUTAS_LECTORA.includes(i.path)) : todosConfig;
 

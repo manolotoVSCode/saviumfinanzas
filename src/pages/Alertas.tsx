@@ -1,3 +1,5 @@
+import { useAuth } from '@/contexts/AuthContext';
+import { RUTAS_LECTORA } from '@/components/ProtectedRoute';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/PageHeader';
@@ -26,6 +28,7 @@ const AlertRow = ({ alert, action, onAction, formatCurrency }: {
   formatCurrency: (n: number) => string;
 }) => {
   const navigate = useNavigate();
+  const { soloLectura } = useAuth();
   const meta = TYPE_META[alert.type];
   const isHigh = alert.severity === 'alta' && action === 'dismiss';
   return (
@@ -44,20 +47,25 @@ const AlertRow = ({ alert, action, onAction, formatCurrency }: {
             {alert.amount !== undefined && (
               <span className="text-sm font-semibold tabular-nums">${formatCurrency(alert.amount)} {alert.currency}</span>
             )}
-            <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => navigate(alert.href)}>
-              Ver <ArrowRight className="h-3 w-3 ml-1" />
-            </Button>
+            {(!soloLectura || RUTAS_LECTORA.includes(alert.href)) && (
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => navigate(alert.href)}>
+                Ver <ArrowRight className="h-3 w-3 ml-1" />
+              </Button>
+            )}
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0 text-muted-foreground"
-          title={action === 'dismiss' ? 'Descartar' : 'Restaurar'}
-          onClick={() => onAction(alert)}
-        >
-          {action === 'dismiss' ? <X className="h-4 w-4" /> : <Undo2 className="h-4 w-4" />}
-        </Button>
+        {/* La lectora ve las alertas del titular, pero descartar o restaurar es cosa de él. */}
+        {!soloLectura && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-muted-foreground"
+            title={action === 'dismiss' ? 'Descartar' : 'Restaurar'}
+            onClick={() => onAction(alert)}
+          >
+            {action === 'dismiss' ? <X className="h-4 w-4" /> : <Undo2 className="h-4 w-4" />}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

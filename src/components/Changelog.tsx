@@ -12,7 +12,7 @@ const changelog: ChangelogEntry[] = [
     version: '9.6',
     date: 'Octubre 2026',
     changes: [
-      { icon: <Shield className="h-4 w-4" />, text: 'Acceso de solo lectura también en la web: una lectora ve Dashboard, Transacciones, Inversiones, CxC, CxP y Suscripciones del titular sin poder apuntar, editar, borrar, importar ni exportar; sin alertas, reglas, cuentas, categorías ni «Para mi familia», y en Configuración solo la apariencia y cerrar sesión', type: 'fix' },
+      { icon: <Shield className="h-4 w-4" />, text: 'Acceso de solo lectura también en la web: una lectora ve las mismas cifras que el titular (Dashboard, Transacciones, Inversiones con cripto, CxC, CxP, Suscripciones y sus alertas sin las descartadas) sin poder apuntar, editar, borrar, descartar, importar ni exportar; sin reglas, cuentas, categorías ni «Para mi familia», y en Configuración solo la apariencia y cerrar sesión', type: 'fix' },
     ],
   },
   {

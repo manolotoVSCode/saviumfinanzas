@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 /** Lo que puede abrir una lectora en la web: lo mismo que ve en la app del iPhone. */
-export const RUTAS_LECTORA = ['/', '/dashboard', '/transacciones', '/transacciones-categoria', '/inversiones', '/pendientes', '/cxp', '/suscripciones', '/configuracion'];
+export const RUTAS_LECTORA = ['/', '/dashboard', '/transacciones', '/transacciones-categoria', '/inversiones', '/pendientes', '/cxp', '/suscripciones', '/alertas', '/configuracion'];
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

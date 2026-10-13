@@ -20,16 +20,16 @@ const fetchTypes = async (userId: string): Promise<InvestmentType[]> => {
 };
 
 export const useInvestmentTypes = () => {
-  const { user } = useAuth();
+  const { user, datosId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const QK = financeQueryKeys(user?.id);
 
   const query = useQuery({
     queryKey: QK.tiposInversion,
-    queryFn: () => fetchTypes(user!.id),
+    queryFn: () => fetchTypes(datosId!),
     staleTime: STALE_TIME,
-    enabled: !!user,
+    enabled: !!datosId,
   });
   const types = query.data ?? EMPTY;
 
