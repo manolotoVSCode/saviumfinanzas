@@ -329,7 +329,7 @@ export const ProfileEditor = () => {
         )}
         
         {/* Sección de copia de seguridad */}
-        <div className="pt-6 border-t">
+        <div className="pt-8">
           <DatabaseBackup />
         </div>
       </CardContent>
