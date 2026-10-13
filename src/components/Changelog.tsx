@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '9.8',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Bug className="h-4 w-4" />, text: 'Inversiones: «Cobrado este año» suma los intereses y repartos que apuntas como movimientos (categoría Inversiones, tipo Ingreso, en cualquier cuenta); antes solo contaba cobros registrados a mano en la inversión y salía en 0', type: 'fix' },
+    ],
+  },
+  {
     version: '9.7',
     date: 'Octubre 2026',
     changes: [

@@ -76,3 +76,21 @@ export const totalesInversiones = (
       },
       { invertido: 0, valor: 0 },
     );
+
+/**
+ * Rendimientos cobrados en `anio`: movimientos de categoría «Inversiones» y tipo Ingreso
+ * (intereses, repartos) en cualquier cuenta, netos y convertidos a `currency`.
+ */
+export const cobradoInversionesAnio = (
+  txs: { fecha: Date; ingreso: number; gasto: number; divisa: string; categoria?: string; tipo?: string }[],
+  anio: number,
+  convertCurrency: ConvertCurrency,
+  currency: CurrencyCode,
+): number =>
+  txs
+    .filter((t) => t.tipo === 'Ingreso' && t.categoria === 'Inversiones' && t.fecha.getFullYear() === anio)
+    .reduce((sum, t) => {
+      const de = toCurrencyCode(t.divisa, currency);
+      const neto = (t.ingreso || 0) - (t.gasto || 0);
+      return sum + (de === currency ? neto : convertCurrency(neto, de, currency));
+    }, 0);

@@ -16,10 +16,11 @@ import { useInvestmentTypes } from '@/hooks/useInvestmentTypes';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useCriptomonedas } from '@/hooks/useCriptomonedas';
+import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 
 import { formatNumber } from '@/lib/formatters';
 import { Investment } from '@/types/investments';
-import { investmentReturn, totalesInversiones } from '@/lib/finance/investmentReturn';
+import { cobradoInversionesAnio, investmentReturn, totalesInversiones } from '@/lib/finance/investmentReturn';
 import { LineChart, Pencil, Plus, RefreshCw, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -41,6 +42,7 @@ const Inversiones = (): JSX.Element => {
   const { convertCurrency } = useExchangeRates();
   const { criptomonedas } = useCriptomonedas();
   const { soloLectura } = useAuth();
+  const { transactions } = useFinanceDataSupabase();
 
   const prefCurrency = config.currency;
 
@@ -55,16 +57,12 @@ const Inversiones = (): JSX.Element => {
 
   const activas = useMemo(() => investments.filter((i) => i.activa !== false), [investments]);
 
-  const toPref = (amount: number, divisa: string) =>
-    divisa === prefCurrency ? amount : convertCurrency(amount, divisa as 'MXN' | 'USD' | 'EUR', prefCurrency);
-
   const totals = totalesInversiones(activas, convertCurrency, prefCurrency as 'MXN' | 'USD' | 'EUR');
   const rendimiento = totals.valor - totals.invertido;
   const rendimientoPct = totals.invertido ? (rendimiento / totals.invertido) * 100 : 0;
 
-  const cobrosAnio = payouts
-    .filter((p) => p.fecha.startsWith(String(new Date().getFullYear())))
-    .reduce((sum, p) => sum + toPref(p.monto, p.divisa), 0);
+  // Intereses y repartos apuntados como movimientos (categoría Inversiones, tipo Ingreso).
+  const cobrosAnio = cobradoInversionesAnio(transactions, new Date().getFullYear(), convertCurrency, prefCurrency as 'MXN' | 'USD' | 'EUR');
 
   const usageCount = useMemo(() => {
     const map: Record<string, number> = {};

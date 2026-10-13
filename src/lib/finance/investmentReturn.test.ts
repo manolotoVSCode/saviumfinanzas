@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Investment, InvestmentValuation } from '@/types/investments';
-import { aportesCuenta, investmentReturn, totalesInversiones, valorActualInversion } from './investmentReturn';
+import { aportesCuenta, cobradoInversionesAnio, investmentReturn, totalesInversiones, valorActualInversion } from './investmentReturn';
 
 const inv = (over: Partial<Investment>): Investment => ({
   id: 'i1', user_id: 'u', nombre: 'Cetes', tipo: 'Renta fija', tipo_id: null,
@@ -134,5 +134,23 @@ describe('aportesCuenta', () => {
   });
   it('sin monto_invertido suma también el saldo inicial', () => {
     expect(aportesCuenta(0, { saldoInicial: 300, capitalNeto: 100 })).toBe(400);
+  });
+});
+
+describe('cobradoInversionesAnio', () => {
+  const RATES = { MXN: 1, USD: 20, EUR: 22 };
+  const convert = (a: number, f: 'MXN' | 'USD' | 'EUR', t: 'MXN' | 'USD' | 'EUR') => (f === t ? a : (a * RATES[f]) / RATES[t]);
+  const t = (fecha: string, ingreso: number, over: Partial<{ divisa: string; categoria: string; tipo: string; gasto: number }> = {}) => ({
+    fecha: new Date(`${fecha}T00:00:00`), ingreso, gasto: 0, divisa: 'MXN', categoria: 'Inversiones', tipo: 'Ingreso', ...over,
+  });
+  it('suma los ingresos de Inversiones del año, convertidos', () => {
+    const r = cobradoInversionesAnio([
+      t('2026-01-01', 1000),
+      t('2026-03-31', 50, { divisa: 'USD' }),
+      t('2025-12-31', 999),                                  // otro año
+      t('2026-02-01', 500, { tipo: 'Aportación' }),         // capital, no rendimiento
+      t('2026-02-01', 700, { categoria: 'Sueldo' }),        // otro ingreso
+    ], 2026, convert, 'MXN');
+    expect(r).toBe(2000);
   });
 });
