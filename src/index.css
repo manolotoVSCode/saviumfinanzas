@@ -126,7 +126,6 @@ All colors MUST be HSL.
     background-image:
       radial-gradient(60rem 40rem at 0% 0%, hsl(var(--primary) / 0.07), transparent 70%),
       radial-gradient(50rem 40rem at 100% 100%, hsl(var(--grafica) / 0.06), transparent 70%);
-    background-attachment: fixed;
   }
 
   /* Detalles de macOS: cifras del mismo ancho (columnas de importes alineadas), puntero de flecha

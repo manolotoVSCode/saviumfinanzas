@@ -294,7 +294,7 @@ const Inversiones = (): JSX.Element => {
                             label={({ percent }) => `${(percent * 100).toFixed(1)}%`} labelLine={false} fontSize={12}>
                             {pieData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                           </Pie>
-                          <Tooltip formatter={(v: number) => [`${viewCurrency} ${formatNumber(v)}`, 'Valor actual']} />
+                          <Tooltip isAnimationActive={false} formatter={(v: number) => [`${viewCurrency} ${formatNumber(v)}`, 'Valor actual']} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>

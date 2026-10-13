@@ -82,7 +82,7 @@ export const DashboardSavingsRate = ({
                 width={40}
                 tickFormatter={(v) => `${v}%`}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip />} isAnimationActive={false} />
               <ReferenceLine
                 y={20}
                 stroke="hsl(var(--success))"

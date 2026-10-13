@@ -123,7 +123,7 @@ export const DashboardDonutChart = ({
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip />} isAnimationActive={false} />
             </RechartsPieChart>
           </ResponsiveContainer>
         </div>

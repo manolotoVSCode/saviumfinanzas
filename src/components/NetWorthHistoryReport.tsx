@@ -166,7 +166,7 @@ export const NetWorthHistoryReport = ({ accounts, transactions, formatCurrency }
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
               <XAxis dataKey="label" className="text-xs" tickLine={false} axisLine={false} minTickGap={24} />
               <YAxis tickFormatter={(v) => `$${formatNumber(v, 0)}`} className="text-xs" tickLine={false} axisLine={false} width={90} />
-              <ChartTooltip
+              <ChartTooltip isAnimationActive={false}
                 content={<ChartTooltipContent indicator="line" />}
                 formatter={(value: number, name: string) => [`$${formatCurrency(value)}`, chartConfig[name as keyof typeof chartConfig]?.label ?? name]}
               />

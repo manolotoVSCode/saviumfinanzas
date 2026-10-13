@@ -226,7 +226,7 @@ export const MonthlyIncomeComparison = ({ transactions, categories, formatCurren
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis dataKey="shortLabel" className="text-xs" />
               <YAxis tickFormatter={(v) => `$${formatNumber(v, 0)}`} className="text-xs" />
-              <ChartTooltip
+              <ChartTooltip isAnimationActive={false}
                 content={<ChartTooltipContent />}
                 formatter={(value: number) => [`$${formatCurrency(value)}`, 'Ingresos']}
               />

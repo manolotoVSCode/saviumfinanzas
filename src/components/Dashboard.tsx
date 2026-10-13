@@ -841,7 +841,7 @@ const CategoryItem = ({
                     className="text-muted-foreground"
                     width={0}
                   />
-                  <Tooltip 
+                  <Tooltip isAnimationActive={false}
                     formatter={(value: any, name: string) => [
                       formatCurrencyConsistent(Number(value), selectedCurrency), 
                       name === 'ingresos' ? 'Ingreso' : name === 'gastos' ? 'Gasto' : 'Balance'
