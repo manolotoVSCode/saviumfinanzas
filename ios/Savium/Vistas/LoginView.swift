@@ -128,7 +128,9 @@ struct LoginView: View {
                     if recordado == nil, let e = sesion.email { recordado = UsuarioRecordado(email: e, nombre: nil) }
                     conFaceID = bloqueo.disponible
                 } else {
-                    conFaceID = recordado.map { ClaveConFaceID.hayGuardada(email: $0.email) } ?? false
+                    // Siempre que haya Face ID: con la contraseña guardada entra directo; sin ella, el icono lleva a
+                    // la sugerencia de Contraseñas de iCloud (dominio asociado savium.manoloto.com).
+                    conFaceID = recordado != nil && ClaveConFaceID.disponible
                 }
                 // Face ID nunca salta solo: con el iPhone en manos de otro, abrir la app no debe bastar.
             }
@@ -144,10 +146,13 @@ struct LoginView: View {
             return
         }
         guard let recordado else { return }
-        guard let guardada = await ClaveConFaceID.leer(email: recordado.email) else {
-            conFaceID = ClaveConFaceID.hayGuardada(email: recordado.email)
+        guard ClaveConFaceID.hayGuardada(email: recordado.email) else {
+            // Aún no la tiene la app: al poner el foco, iOS ofrece la de Contraseñas de iCloud (con Face ID).
+            // Al entrar con ella, la app la guarda y la próxima vez el icono entra directo.
+            campo = .clave
             return
         }
+        guard let guardada = await ClaveConFaceID.leer(email: recordado.email) else { return }
         clave = guardada
         entrar(con: guardada, desdeFaceID: true)
     }
@@ -174,9 +179,8 @@ struct LoginView: View {
                 ClaveConFaceID.guardar(clave, email: correo)
             }
             if !ok, desdeFaceID {
-                // La contraseña cambió en la web: se olvida la guardada y se pide a mano.
+                // La contraseña cambió en la web: se olvida la guardada (el icono pasa a ofrecer la de iCloud).
                 ClaveConFaceID.borrar()
-                conFaceID = false
                 self.clave = ""
             }
             entrando = false
