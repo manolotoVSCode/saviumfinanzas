@@ -17,6 +17,7 @@ export interface Account {
   tipo: AccountType;
   saldoInicial: number;
   saldoActual: number; // calculado
+  capitalNeto?: number; // aportaciones − retiros (vista saldos_cuentas)
   divisa: 'MXN' | 'USD' | 'EUR';
   valorMercado?: number; // solo para inversiones - valor actual del mercado
   rendimientoMensual?: number; // rendimiento mensual manual para inversiones

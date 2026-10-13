@@ -12,3 +12,5 @@ Convenciones:
   días locales: medianoche local (`parseFechaLocal` en la web, `Fechas.diaLocal` en Swift).
 - Fechas de salida: día local `YYYY-MM-DD` (`toFechaISO` / `Fechas.isoLocal`).
 - `tasas`: MXN por unidad. Importes con tolerancia de 1e-6.
+- `inversiones.json` · `capitalCuenta`: saldo inicial y `capital_neto` (aportaciones − retiros,
+  vista `saldos_cuentas`) de cada cuenta vinculada; entran en el invertido vía `aportesCuenta`.

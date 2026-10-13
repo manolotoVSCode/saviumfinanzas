@@ -13,6 +13,7 @@ export const mapAccounts = (cuentasData: Row[]): Account[] => {
     tipo: cuenta.tipo as AccountType,
     saldoInicial: Number(cuenta.saldo_inicial),
     saldoActual: Number(cuenta.saldo_actual ?? cuenta.saldo_inicial), // de la vista saldos_cuentas
+    capitalNeto: Number(cuenta.capital_neto ?? 0),
     divisa: cuenta.divisa as 'MXN' | 'USD' | 'EUR',
     valorMercado: cuenta.valor_mercado ? Number(cuenta.valor_mercado) : undefined,
     rendimientoMensual: cuenta.rendimiento_mensual ? Number(cuenta.rendimiento_mensual) : undefined,

@@ -73,6 +73,8 @@ export interface Investment {
   activa: boolean;
   /** Saldo calculado de la cuenta vinculada (saldo inicial + movimientos). */
   saldo_cuenta?: number | null;
+  /** Capital que entró por la cuenta vinculada (ver aportesCuenta). */
+  aportes_cuenta?: number | null;
 }
 
 export interface InvestmentValuation {

@@ -13,7 +13,7 @@ import { ConvertCurrency, CurrencyCode, computeDashboardMetrics } from './dashbo
 import { computePendingsSummary, PendingForSummary } from './pendingsSummary';
 import { computeSubscriptionsSummary, estadoSuscripcion } from './subscriptionsSummary';
 import { computeCxP, CxPSubscription } from './cxp';
-import { investmentReturn, totalesInversiones, valorActualInversion } from './investmentReturn';
+import { aportesCuenta, investmentReturn, totalesInversiones, valorActualInversion } from './investmentReturn';
 import type { Investment, InvestmentValuation } from '@/types/investments';
 import { criptoAlerts } from './alerts';
 
@@ -122,10 +122,12 @@ describe('fixtures compartidos · por pagar', () => {
 
 describe('fixtures compartidos · inversiones', () => {
   const saldos = inversiones.saldosCuenta as Record<string, number>;
+  const capital = inversiones.capitalCuenta as Record<string, { saldoInicial: number; capitalNeto: number }>;
   const conValor = inversiones.inversiones.map((i) => ({
     ...i,
     valor_actual: valorActualInversion(i, inversiones.valuaciones, i.cuenta_id ? saldos[i.cuenta_id] : undefined),
     saldo_cuenta: i.cuenta_id ? saldos[i.cuenta_id] : null,
+    aportes_cuenta: aportesCuenta(i.monto_invertido, i.cuenta_id ? capital[i.cuenta_id] : undefined),
   }));
   conValor.forEach((i) => {
     it(`rendimiento de ${i.id}`, () => {

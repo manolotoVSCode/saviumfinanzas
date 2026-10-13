@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 import { Investment, InvestmentPayout, InvestmentValuation } from '@/types/investments';
-import { valorActualInversion } from '@/lib/finance/investmentReturn';
+import { aportesCuenta, valorActualInversion } from '@/lib/finance/investmentReturn';
 import { toFechaISO } from '@/lib/finance/fechas';
 
 interface InvestmentsData {
@@ -63,11 +63,15 @@ export const useInvestments = () => {
 
   const investments = useMemo(() => {
     const raw = query.data?.investments ?? EMPTY_INVESTMENTS;
-    const saldoPorCuenta = new Map(accounts.map((a) => [a.id, a.saldoActual]));
+    const cuentaPorId = new Map(accounts.map((a) => [a.id, a]));
     return raw.map((i) => {
-      const saldoCuenta = i.cuenta_id ? saldoPorCuenta.get(i.cuenta_id) : undefined;
+      const cuenta = i.cuenta_id ? cuentaPorId.get(i.cuenta_id) : undefined;
+      const saldoCuenta = cuenta?.saldoActual;
       const valor = valorActualInversion(i, valuations, saldoCuenta);
-      return { ...i, saldo_cuenta: saldoCuenta ?? null, valor_actual: valor } as Investment;
+      const aportes = cuenta
+        ? aportesCuenta(i.monto_invertido, { saldoInicial: cuenta.saldoInicial, capitalNeto: cuenta.capitalNeto ?? 0 })
+        : null;
+      return { ...i, saldo_cuenta: saldoCuenta ?? null, aportes_cuenta: aportes, valor_actual: valor } as Investment;
     });
   }, [query.data, accounts, valuations]);
 

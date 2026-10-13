@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Investment, InvestmentValuation } from '@/types/investments';
-import { investmentReturn, totalesInversiones, valorActualInversion } from './investmentReturn';
+import { aportesCuenta, investmentReturn, totalesInversiones, valorActualInversion } from './investmentReturn';
 
 const inv = (over: Partial<Investment>): Investment => ({
   id: 'i1', user_id: 'u', nombre: 'Cetes', tipo: 'Renta fija', tipo_id: null,
@@ -56,11 +56,27 @@ describe('investmentReturn', () => {
     expect(r.pct).toBe(0);
   });
 
-  it('sin monto_invertido ni valuaciones usa saldo_cuenta', () => {
-    const r = investmentReturn(inv({ monto_invertido: 0, valor_actual: 800, saldo_cuenta: 800 }), []);
+  it('sin monto_invertido ni valuaciones el invertido es lo aportado por la cuenta', () => {
+    const r = investmentReturn(inv({ monto_invertido: 0, valor_actual: 800, saldo_cuenta: 800, aportes_cuenta: 800 }), []);
     expect(r.invertido).toBe(800);
     expect(r.delta).toBe(0);
     expect(r.ultima).toBeUndefined();
+  });
+
+  it('las aportaciones por la cuenta suben el invertido, no el rendimiento', () => {
+    // Como QUANT: 7.5M iniciales, +9M aportados, saldo 16.5M.
+    const r = investmentReturn(inv({ monto_invertido: 7_500_000, valor_actual: 16_500_000, aportes_cuenta: 9_000_000 }), []);
+    expect(r.invertido).toBe(16_500_000);
+    expect(r.delta).toBe(0);
+  });
+
+  it('con aportes por la cuenta la base es invertido aunque haya varias valuaciones', () => {
+    const r = investmentReturn(
+      inv({ monto_invertido: 1000, valor_actual: 1600, aportes_cuenta: 500 }),
+      [val({ id: 'v1', fecha: '2026-01-01', valor: 1000 }), val({ id: 'v2', fecha: '2026-06-01', valor: 1600 })],
+    );
+    expect(r.invertido).toBe(1500);
+    expect(r.delta).toBe(100);
   });
 
   it('con base cero el porcentaje es 0 y no NaN', () => {
@@ -99,5 +115,24 @@ describe('totalesInversiones', () => {
       { activa: false, moneda: 'EUR', monto_invertido: 100, valor_actual: 150 },
     ], convert, 'MXN');
     expect(r).toEqual({ invertido: 11000, valor: 13200 });
+  });
+
+  it('suma los aportes por la cuenta al invertido', () => {
+    const r = totalesInversiones([
+      { moneda: 'USD', monto_invertido: 500, valor_actual: 700, aportes_cuenta: 100 },
+    ], convert, 'MXN');
+    expect(r).toEqual({ invertido: 12000, valor: 14000 });
+  });
+});
+
+describe('aportesCuenta', () => {
+  it('sin cuenta vinculada es 0', () => {
+    expect(aportesCuenta(1000, undefined)).toBe(0);
+  });
+  it('con monto_invertido solo cuenta aportaciones − retiros', () => {
+    expect(aportesCuenta(1000, { saldoInicial: 1000, capitalNeto: -200 })).toBe(-200);
+  });
+  it('sin monto_invertido suma también el saldo inicial', () => {
+    expect(aportesCuenta(0, { saldoInicial: 300, capitalNeto: 100 })).toBe(400);
   });
 });

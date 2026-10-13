@@ -19,7 +19,7 @@ import { useCriptomonedas } from '@/hooks/useCriptomonedas';
 
 import { formatNumber } from '@/lib/formatters';
 import { Investment } from '@/types/investments';
-import { investmentReturn } from '@/lib/finance/investmentReturn';
+import { investmentReturn, totalesInversiones } from '@/lib/finance/investmentReturn';
 import { LineChart, Pencil, Plus, RefreshCw, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -58,14 +58,7 @@ const Inversiones = (): JSX.Element => {
   const toPref = (amount: number, divisa: string) =>
     divisa === prefCurrency ? amount : convertCurrency(amount, divisa as 'MXN' | 'USD' | 'EUR', prefCurrency);
 
-  const totals = activas.reduce(
-    (acc, i) => {
-      acc.invertido += toPref(i.monto_invertido || 0, i.moneda);
-      acc.valor += toPref(i.valor_actual || i.monto_invertido || 0, i.moneda);
-      return acc;
-    },
-    { invertido: 0, valor: 0 },
-  );
+  const totals = totalesInversiones(activas, convertCurrency, prefCurrency as 'MXN' | 'USD' | 'EUR');
   const rendimiento = totals.valor - totals.invertido;
   const rendimientoPct = totals.invertido ? (rendimiento / totals.invertido) * 100 : 0;
 

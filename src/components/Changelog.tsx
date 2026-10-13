@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '9.7',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Bug className="h-4 w-4" />, text: 'Inversiones: el dinero que metes o sacas de la cuenta vinculada (categorías de tipo Aportación o Retiro) cuenta como capital invertido, no como rendimiento; antes las aportaciones a QUANT inflaban el rendimiento en más de 9 millones', type: 'fix' },
+    ],
+  },
+  {
     version: '9.6',
     date: 'Octubre 2026',
     changes: [

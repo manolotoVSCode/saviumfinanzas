@@ -907,6 +907,7 @@ export type Database = {
       }
       saldos_cuentas: {
         Row: {
+          capital_neto: number
           created_at: string
           divisa: string
           fecha_inicio: string | null
