@@ -226,7 +226,12 @@ const SaviumShare = () => {
     <Layout>
       <div className="animate-fade-in space-y-6">
         <PageHeader
-          title="Savium Share"
+          title={
+            <span className="flex items-center gap-3">
+              <img src="/images/savium-share.png" alt="" className="h-10 w-10 rounded-[22%] shadow-sm" />
+              Savium Share
+            </span>
+          }
           subtitle={
             data
               ? <>Uso de la app de gastos compartidos · actualizado {hace(data.generado)}</>
