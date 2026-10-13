@@ -60,12 +60,13 @@ const Layout = ({ children }: LayoutProps) => {
   ];
 
   return (
-      <div className="min-h-screen bg-background flex">
+      <div className="min-h-screen flex">
         <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
         {/* SIDEBAR */}
-        <aside className="w-64 fixed top-0 left-0 bottom-0 bg-card border-r flex flex-col z-50">
-          <div className="p-4 border-b">
+        {/* Panel de cristal flotante, como la barra de pestañas de la app del iPhone. */}
+        <aside className="w-64 fixed top-3 left-3 bottom-3 vidrio rounded-[1.75rem] flex flex-col z-50 overflow-hidden">
+          <div className="p-4 border-b border-border/60">
             <button
               onClick={() => navigate('/dashboard')}
               className="hover:opacity-80 transition-opacity"
@@ -85,17 +86,17 @@ const Layout = ({ children }: LayoutProps) => {
                 key={path}
                 onClick={() => navigate(path)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative',
+                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors relative',
                   danger
                     ? isActive(path)
                       ? 'bg-destructive/10 text-destructive'
                       : 'text-destructive hover:bg-destructive/10'
                     : isActive(path)
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      ? 'bg-primary/10 text-primary font-semibold'
+                      : 'text-foreground/80 hover:text-foreground hover:bg-foreground/5'
                 )}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
+                <Icon className="h-5 w-5 flex-shrink-0" strokeWidth={isActive(path) ? 2.25 : 1.75} />
                 <span className="flex-1 text-left">{label}</span>
                 {badge ? (
                   <span className="ml-auto bg-destructive text-destructive-foreground text-xs font-semibold rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center">
@@ -105,7 +106,7 @@ const Layout = ({ children }: LayoutProps) => {
               </button>
             ))}
 
-            <div className="pt-3 mt-3 border-t">
+            <div className="pt-3 mt-3 border-t border-border/60">
               <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Configuración
               </p>
@@ -114,20 +115,20 @@ const Layout = ({ children }: LayoutProps) => {
                   key={path}
                   onClick={() => navigate(path)}
                   className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
                     isActive(path)
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      ? 'bg-primary/10 text-primary font-semibold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
                   )}
                 >
-                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={isActive(path) ? 2.25 : 1.75} />
                   <span>{label}</span>
                 </button>
               ))}
             </div>
           </nav>
 
-          <div className="p-3 border-t space-y-2">
+          <div className="p-3 border-t border-border/60 space-y-2">
             {profile && (
               <div className="px-3 py-2">
                 <p className="text-sm font-medium truncate">
@@ -157,7 +158,7 @@ const Layout = ({ children }: LayoutProps) => {
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 ml-64">
+        <main className="flex-1 ml-[17.5rem]">
           <div className="container mx-auto px-6 py-8">
             <div className="space-y-6">
               {children}

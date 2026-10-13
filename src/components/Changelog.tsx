@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '9.0',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Aspecto de la app del iPhone: fondo gris de iOS, tarjetas blancas redondeadas sin borde, el verde de la App en botones y menú, botones en cápsula, y barra lateral, diálogos y menús de cristal translúcido (en claro y en oscuro)', type: 'improvement' },
+    ],
+  },
+  {
     version: '8.9',
     date: 'Octubre 2026',
     changes: [
