@@ -29,6 +29,7 @@ struct ResumenView: View {
             (Calendar.current.dateComponents([.day], from: hoy, to: $0.fechaEstimada).day ?? 99) <= 7
         }
         let mes = datos.mesAnterior(app)
+        let cripto = datos.alertasCripto(app)
         let d = app.divisa.rawValue
         return List {
             AvisoEstado()
@@ -48,8 +49,16 @@ struct ResumenView: View {
                 Button { app.pestana = .patrimonio } label: { Linea(titulo: "Activos", valor: p.activos, divisa: d) }.tint(.primary)
                 Button { app.pestana = .patrimonio } label: { Linea(titulo: "Pasivos", valor: p.pasivos, divisa: d) }.tint(.primary)
             }
-            if !vencidos.isEmpty || !proximos.isEmpty {
+            if !vencidos.isEmpty || !proximos.isEmpty || !cripto.isEmpty {
                 Section("Atención") {
+                    ForEach(cripto) { a in
+                        FilaAlertaCripto(alerta: a, valor: app.convertir(a.valorUSD, de: "USD"), divisa: d)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                if !datos.soloLectura {
+                                    Button("Descartar") { Task { await datos.descartar(a) } }.tint(.gray)
+                                }
+                            }
+                    }
                     ForEach(vencidos) { f in
                         Button { app.pestana = .pendientes } label: {
                             FilaImporte {
@@ -93,6 +102,34 @@ struct ResumenView: View {
                                            subcategorias: resto.map { .init(nombre: $0.nombre, total: $0.total) })
                     }
                 }
+            }
+        }
+    }
+}
+
+/// Cripto que pasó su umbral (se configura en la web). Deslizar a la izquierda la descarta.
+private struct FilaAlertaCripto: View {
+    let alerta: AlertasCripto.Alerta
+    let valor: Double
+    let divisa: String
+
+    private func pct(_ n: Double, decimales: Int) -> String {
+        (n >= 0 ? "+" : "−") + abs(n).formatted(.number.precision(.fractionLength(0...decimales)).locale(Locale(identifier: "en_US"))) + "%"
+    }
+
+    var body: some View {
+        let color: Color = alerta.sube ? .green : .red
+        FilaImporte {
+            Importe(valor: valor, divisa: divisa)
+        } label: {
+            Label {
+                VStack(alignment: .leading) {
+                    Text("\(alerta.simbolo) \(pct(alerta.pct, decimales: 1))").foregroundStyle(color)
+                    Text("Sobre tu compra · avisar desde \(pct(alerta.sube ? alerta.umbral : -alerta.umbral, decimales: 2))")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } icon: {
+                Image(systemName: alerta.sube ? "chart.line.uptrend.xyaxis" : "chart.line.downtrend.xyaxis").foregroundStyle(color)
             }
         }
     }

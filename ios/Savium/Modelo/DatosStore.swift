@@ -20,6 +20,10 @@ final class DatosStore {
     private(set) var movimientosPorPagar: [Transaccion] = []
     private(set) var movimientosMesAnterior: [Transaccion] = []
     private(set) var recientes: [Transaccion] = []
+    private(set) var umbralesCripto: [UmbralCripto] = []
+    private(set) var comprasCripto: [CompraCripto] = []
+    private(set) var preciosCripto: [String: Double] = [:]
+    private(set) var alertasDescartadas: Set<String> = []
     /// Lector de la cuenta de otro (p. ej. la familia): ve todo y no puede apuntar, editar, cobrar ni borrar.
     /// La base lo impide igualmente; esto solo quita los botones.
     private(set) var soloLectura = false
@@ -37,6 +41,7 @@ final class DatosStore {
     func reiniciar() {
         cuentas = []; cuentasConMovimientos = []; filasPatrimonio = []; categorias = []; pendientes = []; suscripciones = []
         inversiones = []; valuaciones = []; movimientosPorPagar = []; movimientosMesAnterior = []; recientes = []
+        umbralesCripto = []; comprasCripto = []; preciosCripto = [:]; alertasDescartadas = []
         error = nil; actualizado = nil; soloLectura = false; tieneLectores = false; alertaActiva = nil
     }
     var cal: Calendar { .current }
@@ -47,6 +52,7 @@ final class DatosStore {
         cargando = true
         defer { cargando = false }
         async let tasas: Void = app.cargarTasas()
+        async let cripto: Void = cargarCripto()
         do {
             let ahora = Date()
             let mes = MesAnterior.rango(now: ahora, calendario: cal)
@@ -92,6 +98,41 @@ final class DatosStore {
             self.error = "Sin conexión"
         }
         await tasas
+        await cripto
+    }
+
+    /// Aparte de la carga principal: si falla (CoinGecko, sin red…) se quedan las alertas de antes
+    /// y no se marca «Sin conexión». Sin umbrales no pide nada más (el lector no ve los del titular).
+    private func cargarCripto() async {
+        do {
+            let umbrales = try await repo.umbralesCripto()
+            guard !umbrales.isEmpty else {
+                umbralesCripto = []; comprasCripto = []; preciosCripto = [:]
+                return
+            }
+            async let descartadas = repo.alertasDescartadas()
+            let compras = try await repo.comprasCripto()
+            let simbolos = Array(Set(compras.map(\.simbolo))).sorted()
+            let precios = simbolos.isEmpty ? [:] : try await repo.preciosCripto(simbolos)
+            alertasDescartadas = try await descartadas
+            umbralesCripto = umbrales; comprasCripto = compras; preciosCripto = precios
+        } catch {
+            Logger(subsystem: "com.manoloto.savium", category: "cripto").error("Alertas cripto: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    // MARK: Alertas de cripto
+
+    func alertasCripto(_ app: AppModel) -> [AlertasCripto.Alerta] {
+        AlertasCripto.calcular(compras: comprasCripto, precios: preciosCripto, umbrales: umbralesCripto, tasas: app.tasas)
+            .filter { !alertasDescartadas.contains($0.clave) }
+    }
+
+    /// Como «Descartar» en la web (vuelve a avisar si se cambia el umbral). Si falla, reaparece.
+    func descartar(_ a: AlertasCripto.Alerta) async {
+        guard let yo = supabase.auth.currentUser?.id else { return }
+        alertasDescartadas.insert(a.clave)
+        do { try await repo.descartarAlerta(a.clave, usuario: yo) } catch { alertasDescartadas.remove(a.clave) }
     }
 
     /// Modo señuelo: los datos ficticios, sin tocar la red.
@@ -100,6 +141,7 @@ final class DatosStore {
         cuentas = s.cuentas; cuentasConMovimientos = Set(s.cuentas.map(\.id)); filasPatrimonio = s.filasPatrimonio
         categorias = s.categorias; pendientes = []; suscripciones = s.suscripciones; inversiones = []; valuaciones = []
         movimientosPorPagar = []; recientes = s.movimientos
+        umbralesCripto = []; comprasCripto = []; preciosCripto = [:]; alertasDescartadas = []
         movimientosMesAnterior = s.movimientos.filter { $0.fecha >= mes.desde && $0.fecha <= mes.hasta }
         soloLectura = false; error = nil; actualizado = .now
     }

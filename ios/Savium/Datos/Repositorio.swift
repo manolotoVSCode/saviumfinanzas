@@ -85,6 +85,32 @@ struct Repositorio: Sendable {
             return nil
         }
     }
+    // MARK: Alertas de cripto (umbrales en la web, Inversiones → Criptomonedas)
+
+    func umbralesCripto() async throws -> [UmbralCripto] {
+        try await db.from("alertas_cripto").select("simbolo, sube_pct, baja_pct").execute().value
+    }
+    func comprasCripto() async throws -> [CompraCripto] {
+        try await db.from("criptomonedas").select("simbolo, cantidad, precio_compra, divisa_compra").execute().value
+    }
+    /// Precio en USD por símbolo (la misma Edge Function que la web, que pregunta a CoinGecko).
+    func preciosCripto(_ simbolos: [String]) async throws -> [String: Double] {
+        struct Peticion: Encodable { let symbols: [String] }
+        struct Precio: Decodable { let price: Double }
+        let r: [String: Precio] = try await db.functions.invoke("crypto-prices", options: FunctionInvokeOptions(body: Peticion(symbols: simbolos)))
+        return r.mapValues(\.price)
+    }
+    /// Claves descartadas (tabla compartida con la página Alertas de la web).
+    func alertasDescartadas() async throws -> Set<String> {
+        struct Fila: Decodable { let alert_key: String }
+        let filas: [Fila] = try await db.from("alert_dismissals").select("alert_key").execute().value
+        return Set(filas.map(\.alert_key))
+    }
+    func descartarAlerta(_ clave: String, usuario: UUID) async throws {
+        struct Fila: Encodable { let user_id: UUID; let alert_key: String }
+        try await db.from("alert_dismissals").upsert(Fila(user_id: usuario, alert_key: clave), onConflict: "user_id,alert_key").execute()
+    }
+
     func pendientes() async throws -> [Pendiente] {
         try await db.from("transaction_pendings").select("id, concepto, tipo, monto_esperado, monto_cobrado, divisa, fecha_esperada, estado").execute().value
     }
