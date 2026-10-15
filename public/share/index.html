@@ -39,7 +39,7 @@
   </main>
   <script>
     // Si la app está instalada, iOS abre el enlace directamente en ella y esta página no se ve.
-    const APP_STORE = "https://apps.apple.com/app/id0000000000"; // TODO: id de Savium Share en App Store Connect
+    const APP_STORE = "https://apps.apple.com/app/id6822409433";
     const ALFABETO = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/;
     const crudo = (new URLSearchParams(location.search).get("c") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
     const codigo = ALFABETO.test(crudo) ? crudo : null;
