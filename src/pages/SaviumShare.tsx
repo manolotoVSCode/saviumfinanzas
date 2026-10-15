@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { eachDayOfInterval, format, formatDistanceToNow, parseISO, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Users, UsersRound, Receipt, Activity, Image as ImageIcon, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { Users, UsersRound, Receipt, Activity, Image as ImageIcon, ShieldAlert, AlertTriangle, Smartphone, MessageSquare, Check, Trash2, RotateCcw } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import Layout from '@/components/Layout';
 import { PageHeader } from '@/components/PageHeader';
@@ -11,6 +11,10 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLe
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { esAdmin } from '@/lib/admin';
@@ -35,6 +39,16 @@ interface PanelShare {
   tipos: { tipo: string; movimientos: number }[];
   repartos: { modo: string; movimientos: number }[];
   tamano_grupos: { personas: number; grupos: number }[];
+  // share_panel_v2 (Savium Share 2.0)
+  version_minima: string;
+  dispositivos: { hoy: number; media_7d: number; media_30d: number };
+  uso_por_dia: { dia: string; dispositivos: number }[];
+  paises_grupos: { pais: string; grupos: number }[];
+  paises_uso: { pais: string; dispositivos: number }[];
+  idiomas: { idioma: string; dispositivos: number }[];
+  versiones: { version: string; dispositivos: number }[];
+  comentarios: Comentario[];
+  comentarios_sin_leer: number;
   grupos_recientes: {
     emoji: string | null;
     divisa: string;
@@ -45,7 +59,46 @@ interface PanelShare {
   }[];
 }
 
+interface Comentario {
+  id: string;
+  creado: string;
+  tipo: 'idea' | 'error' | 'otro';
+  texto: string;
+  contacto: string | null;
+  pais: string | null;
+  idioma: string | null;
+  version_app: string | null;
+  leido: boolean;
+}
+
 const PERIODOS = [30, 90, 365] as const;
+
+const TIPOS_COMENTARIO: Record<string, string> = { idea: 'Idea', error: 'Error', otro: 'Otro' };
+
+const nombresPais = new Intl.DisplayNames(['es'], { type: 'region' });
+const nombresIdioma = new Intl.DisplayNames(['es'], { type: 'language' });
+
+/** «MX» → «🇲🇽 México». La app manda la región del iPhone, no la ubicación. */
+const pais = (codigo: string | null) => {
+  if (!codigo || codigo === '--') return 'Sin país';
+  const bandera = String.fromCodePoint(...[...codigo].map(c => 0x1f1a5 + c.charCodeAt(0)));
+  try { return `${bandera} ${nombresPais.of(codigo)}`; } catch { return codigo; }
+};
+
+const idioma = (codigo: string) => {
+  if (codigo === '--') return 'Sin idioma';
+  try { const n = nombresIdioma.of(codigo) ?? codigo; return n.charAt(0).toUpperCase() + n.slice(1); } catch { return codigo; }
+};
+
+const usoConfig = {
+  dispositivos: { label: 'iPhone activos', color: 'hsl(var(--grafica))' },
+};
+
+/** Llama a una función de administración de Savium Share (fuera de los tipos generados). */
+async function rpcAdmin(nombre: string, params: Record<string, unknown>) {
+  const { error } = await supabase.rpc(nombre as never, params as never);
+  if (error) throw new Error(error.message);
+}
 
 // Mismos identificadores que las categorías de la app Savium Share.
 const CATEGORIAS: Record<string, string> = {
@@ -172,6 +225,10 @@ const SaviumShare = () => {
   const { user } = useAuth();
   const admin = esAdmin(user?.id);
   const [dias, setDias] = useState<number>(90);
+  const [nuevaMinima, setNuevaMinima] = useState('');
+  const [verLeidos, setVerLeidos] = useState(false);
+  const queryClient = useQueryClient();
+  const recargar = () => queryClient.invalidateQueries({ queryKey: ['share_panel'] });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['share_panel', dias],
@@ -179,7 +236,7 @@ const SaviumShare = () => {
     retry: (intentos, err) => !(err instanceof SinPermiso) && intentos < 2,
     queryFn: async () => {
       // share_panel no está en los tipos generados de Supabase (vive en la base de Savium Share).
-      const { data, error } = await supabase.rpc('share_panel' as never, { p_dias: dias } as never);
+      const { data, error } = await supabase.rpc('share_panel_v2' as never, { p_dias: dias } as never);
       if (error) {
         if (error.code === '42501') throw new SinPermiso(error.message);
         throw new Error(error.message);
@@ -196,6 +253,35 @@ const SaviumShare = () => {
     () => (data ? rellenarDias(data.grupos_por_dia ?? [], dias, { n: 0 }) : []),
     [data, dias],
   );
+  const uso = useMemo(
+    () => (data ? rellenarDias(data.uso_por_dia ?? [], dias, { dispositivos: 0 }) : []),
+    [data, dias],
+  );
+  const comentarios = useMemo(
+    () => (data?.comentarios ?? []).filter(c => verLeidos || !c.leido),
+    [data, verLeidos],
+  );
+
+  const marcar = async (c: Comentario) => {
+    try { await rpcAdmin('share_admin_comentario', { p_id: c.id, p_leido: !c.leido }); recargar(); }
+    catch (e) { toast({ title: 'No se pudo guardar', description: (e as Error).message, variant: 'destructive' }); }
+  };
+  const borrar = async (c: Comentario) => {
+    if (!confirm('¿Borrar este comentario?')) return;
+    try { await rpcAdmin('share_admin_borrar_comentario', { p_id: c.id }); recargar(); }
+    catch (e) { toast({ title: 'No se pudo borrar', description: (e as Error).message, variant: 'destructive' }); }
+  };
+  const guardarMinima = async () => {
+    const v = nuevaMinima.trim();
+    if (!/^[0-9]{1,3}(\.[0-9]{1,3}){0,2}$/.test(v)) {
+      toast({ title: 'Versión no válida', description: 'Usa el formato 2.0 o 2.0.1', variant: 'destructive' });
+      return;
+    }
+    if (!confirm(`Todos los iPhone con una versión anterior a la ${v} quedarán bloqueados hasta actualizar. ¿Seguro?`)) return;
+    try { await rpcAdmin('share_admin_version_minima', { p_version: v }); setNuevaMinima(''); recargar(); toast({ title: `Versión mínima: ${v}` }); }
+    catch (e) { toast({ title: 'No se pudo guardar', description: (e as Error).message, variant: 'destructive' }); }
+  };
+
   const categorias = useMemo(
     () =>
       (data?.categorias ?? [])
@@ -256,7 +342,7 @@ const SaviumShare = () => {
         ) : (
           <>
             {/* CIFRAS */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
               <Kpi
                 icon={UsersRound}
                 titulo="Grupos"
@@ -272,6 +358,56 @@ const SaviumShare = () => {
                 detalle={`7 días · ${numero(data.totales.activos_30d)} en 30 días`}
               />
               <Kpi icon={ImageIcon} titulo="Tickets" valor={numero(data.totales.tickets)} />
+              <Kpi
+                icon={Smartphone}
+                titulo="iPhone activos hoy"
+                valor={numero(data.dispositivos?.hoy ?? 0)}
+                detalle={`Media: ${data.dispositivos?.media_7d ?? 0} (7 días) · ${data.dispositivos?.media_30d ?? 0} (30 días)`}
+              />
+              <Kpi
+                icon={MessageSquare}
+                titulo="Sugerencias sin leer"
+                valor={numero(data.comentarios_sin_leer ?? 0)}
+                detalle={`${numero(data.comentarios?.length ?? 0)} en total`}
+              />
+            </div>
+
+            {/* USO DIARIO (iPhone distintos que abrieron la app cada día, sin identificarlos) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">iPhone activos por día</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={usoConfig} className="h-[220px] w-full">
+                  <BarChart data={uso} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                    <XAxis dataKey="dia" tickFormatter={etiquetaDia} className="text-xs" tickLine={false} axisLine={false} minTickGap={24} />
+                    <YAxis allowDecimals={false} className="text-xs" tickLine={false} axisLine={false} width={32} />
+                    <ChartTooltip isAnimationActive={false} content={<ChartTooltipContent labelFormatter={(_, p) => etiquetaDia(p?.[0]?.payload?.dia ?? '')} />} />
+                    <Bar dataKey="dispositivos" fill="hsl(var(--grafica))" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* DÓNDE SE USA */}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <Desglose
+                titulo="Grupos creados por país"
+                filas={(data.paises_grupos ?? []).map(p => ({ etiqueta: pais(p.pais), valor: p.grupos }))}
+              />
+              <Desglose
+                titulo="Uso por país (iPhone·día)"
+                filas={(data.paises_uso ?? []).map(p => ({ etiqueta: pais(p.pais), valor: p.dispositivos }))}
+              />
+              <Desglose
+                titulo="Idiomas"
+                filas={(data.idiomas ?? []).map(i => ({ etiqueta: idioma(i.idioma), valor: i.dispositivos }))}
+              />
+              <Desglose
+                titulo="Versiones (últimos 7 días)"
+                filas={(data.versiones ?? []).map(v => ({ etiqueta: `v${v.version}`, valor: v.dispositivos }))}
+              />
             </div>
 
             {/* ACTIVIDAD DIARIA */}
@@ -363,6 +499,62 @@ const SaviumShare = () => {
                   .map(t => ({ etiqueta: `${t.personas} ${t.personas === 1 ? 'persona' : 'personas'}`, valor: t.grupos }))}
               />
             </div>
+
+            {/* SUGERENCIAS («Ayúdanos a mejorar» en la app) */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base">Ayúdanos a mejorar</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setVerLeidos(v => !v)}>
+                  {verLeidos ? 'Ocultar leídos' : 'Ver también leídos'}
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {comentarios.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{verLeidos ? 'Todavía no hay sugerencias' : 'Nada pendiente de leer'}</p>
+                ) : (
+                  comentarios.map(c => (
+                    <div key={c.id} className={`rounded-xl border p-4 space-y-2 ${c.leido ? 'opacity-60' : ''}`}>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Badge variant={c.tipo === 'error' ? 'destructive' : 'secondary'}>{TIPOS_COMENTARIO[c.tipo] ?? c.tipo}</Badge>
+                        <span>{hace(c.creado)}</span>
+                        <span>· {pais(c.pais)}</span>
+                        {c.version_app && <span>· v{c.version_app}</span>}
+                        <span className="ml-auto flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title={c.leido ? 'Marcar como no leído' : 'Marcar como leído'} onClick={() => marcar(c)}>
+                            {c.leido ? <RotateCcw className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Borrar" onClick={() => borrar(c)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{c.texto}</p>
+                      {c.contacto && (
+                        <a className="text-sm text-primary underline" href={`mailto:${c.contacto}`}>{c.contacto}</a>
+                      )}
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ACTUALIZACIÓN OBLIGATORIA */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Versión mínima de la app</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Ahora: <strong className="text-foreground">v{data.version_minima ?? '1.0'}</strong>. Los iPhone con una versión anterior
+                  muestran «Hay una nueva versión» y no dejan seguir hasta actualizar (desde la 2.0; la 1.0 no lo sabe hacer).
+                  Súbela solo cuando la nueva versión ya esté publicada en la App Store.
+                </p>
+                <div className="flex gap-2 max-w-sm">
+                  <Input placeholder="2.0" value={nuevaMinima} onChange={e => setNuevaMinima(e.target.value)} />
+                  <Button onClick={guardarMinima} disabled={!nuevaMinima.trim()}>Guardar</Button>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* GRUPOS RECIENTES (sin nombres a propósito) */}
             <Card>

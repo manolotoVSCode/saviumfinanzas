@@ -41,8 +41,9 @@ export default defineConfig({
         // Solo el "cascarón" de la app se cachea; los datos siempre van a Supabase.
         globPatterns: ["**/*.{js,css,html,ico,svg,png}"],
         navigateFallback: "/index.html",
-        // La política de privacidad (enlazada desde la App Store) se sirve tal cual, no la app.
-        navigateFallbackDenylist: [/^\/privacidad/],
+        // La política de privacidad (enlazada desde la App Store) y las invitaciones de Savium Share
+        // se sirven tal cual, no la app.
+        navigateFallbackDenylist: [/^\/privacidad/, /^\/share\//],
       },
     }),
   ],

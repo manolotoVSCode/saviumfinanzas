@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Únete en Savium Share</title>
+  <meta name="description" content="Te han invitado a un grupo de Savium Share para repartir gastos.">
+  <meta property="og:title" content="Únete a mi grupo en Savium Share">
+  <meta property="og:description" content="Reparte gastos con amigos. Sin cuentas ni registros.">
+  <meta name="robots" content="noindex">
+  <style>
+    :root { color-scheme: light dark; --verde: #239005; }
+    * { box-sizing: border-box; }
+    body { font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; min-height: 100vh;
+           display: grid; place-items: center; padding: 32px 16px; background: Canvas; color: CanvasText; text-align: center; }
+    main { max-width: 420px; width: 100%; }
+    h1 { font-size: 26px; margin: 16px 0 8px; }
+    p { color: GrayText; margin: 0 0 20px; }
+    .codigo { font: 700 34px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 2px; margin: 8px 0 24px; }
+    .boton { display: block; width: 100%; padding: 15px; border-radius: 14px; border: 0; font: 600 17px inherit;
+             text-decoration: none; cursor: pointer; margin-bottom: 12px; }
+    .principal { background: var(--verde); color: #fff; }
+    .secundario { background: color-mix(in srgb, CanvasText 8%, transparent); color: CanvasText; }
+    .nota { font-size: 14px; margin-top: 16px; }
+    .logo { font-size: 56px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo" aria-hidden="true">👥</div>
+    <h1 data-es="Te invitaron a un grupo" data-en="You're invited to a group">Te invitaron a un grupo</h1>
+    <p data-es="Reparte los gastos en Savium Share. Nadie necesita cuenta."
+       data-en="Split expenses with Savium Share. No account needed.">Reparte los gastos en Savium Share. Nadie necesita cuenta.</p>
+    <div class="codigo" id="codigo">—</div>
+    <a class="boton principal" id="descargar" href="#" data-es="Descargar Savium Share" data-en="Get Savium Share">Descargar Savium Share</a>
+    <a class="boton secundario" id="abrir" href="#" data-es="Ya la tengo: abrir el grupo" data-en="I have it: open the group">Ya la tengo: abrir el grupo</a>
+    <p class="nota" data-es="Al descargarla, abre la app: el grupo aparecerá solo. Si no, entra en «Unirme con un código»."
+       data-en="After installing, open the app and the group will appear. If not, tap “Join with a code”.">Al descargarla, abre la app: el grupo aparecerá solo. Si no, entra en «Unirme con un código».</p>
+  </main>
+  <script>
+    // Si la app está instalada, iOS abre el enlace directamente en ella y esta página no se ve.
+    const APP_STORE = "https://apps.apple.com/app/id0000000000"; // TODO: id de Savium Share en App Store Connect
+    const ALFABETO = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/;
+    const crudo = (new URLSearchParams(location.search).get("c") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const codigo = ALFABETO.test(crudo) ? crudo : null;
+    const en = !navigator.language.toLowerCase().startsWith("es");
+    if (en) {
+      document.documentElement.lang = "en";
+      document.title = "Join on Savium Share";
+      document.querySelectorAll("[data-en]").forEach(e => e.textContent = e.dataset.en);
+    }
+    document.getElementById("codigo").textContent = codigo ? codigo.slice(0, 4) + "-" + codigo.slice(4) : "—";
+    const enlace = location.origin + "/share/?c=" + (codigo || "");
+    document.getElementById("abrir").href = codigo ? "saviumshare://unirse/" + codigo : "saviumshare://";
+    // Antes de ir a la App Store se copia la invitación: la app la recoge en su primera apertura.
+    document.getElementById("descargar").addEventListener("click", async (ev) => {
+      ev.preventDefault();
+      if (codigo) { try { await navigator.clipboard.writeText(enlace); } catch (_) {} }
+      location.href = APP_STORE;
+    });
+  </script>
+</body>
+</html>

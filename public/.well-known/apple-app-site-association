@@ -1,4 +1,12 @@
 {
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["FY5F6RR37J.com.savium.share"],
+        "components": [{ "/": "/share/*", "comment": "Invitaciones de Savium Share" }]
+      }
+    ]
+  },
   "webcredentials": {
     "apps": ["FY5F6RR37J.com.manoloto.savium"]
   }
