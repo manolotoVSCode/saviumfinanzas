@@ -20,7 +20,7 @@
 
   <section id="es" lang="es">
   <h1>Política de privacidad de Savium Share</h1>
-  <p class="fecha">Última actualización: 15 de octubre de 2026</p>
+  <p class="fecha">Última actualización: 21 de octubre de 2026</p>
 
   <p>Savium Share es una app para iPhone que sirve para repartir gastos en grupo. La crea y mantiene Manuel de la Torre. Esta política explica qué datos trata la app y para qué.</p>
 
@@ -30,7 +30,11 @@
   <h2>Qué datos se tratan</h2>
   <ul>
     <li><strong>Lo que escribes en los grupos:</strong> nombre y emoji del grupo, nombres o iniciales de las personas, y los gastos (concepto, importe, divisa, fecha, categoría, quién pagó, cómo se reparte y una nota opcional).</li>
-    <li><strong>Fotos de tickets:</strong> solo si decides añadir una a un gasto, desde la cámara o tu fototeca. La app solo accede a la foto que eliges.</li>
+    <li><strong>Fotos de tickets:</strong> solo si decides añadir una a un gasto, desde la cámara o tu fototeca. La app solo accede a la foto que eliges. Si usas «Escanear ticket», el texto de la foto se lee en tu propio iPhone para proponer el importe, el comercio y la fecha; ese texto no se envía a ningún sitio.</li>
+    <li><strong>Cámara para el QR:</strong> si eliges «Escanear QR» para unirte a un grupo, la cámara solo lee el código y no guarda imágenes.</li>
+    <li><strong>Identificador de instalación:</strong> un número aleatorio que la app crea al instalarse. Se guarda con cada grupo al que perteneces, junto con la persona que eliges ser en ese grupo, para saber qué iPhone están en cada grupo, avisar a los demás y pedir que confirme un pago quien lo recibe. No está ligado a tu nombre real, tu Apple ID ni tu dispositivo, y cambia si reinstalas la app.</li>
+    <li><strong>Notificaciones:</strong> solo si das permiso. Apple entrega a la app un código para enviarte avisos (por ejemplo, «Ana se unió al grupo» o «Ana dice que te pagó»), que se guarda con ese identificador. Puedes desactivarlas por grupo en la app o en los Ajustes del iPhone.</li>
+    <li><strong>Pagos por confirmar:</strong> cuando alguien marca que te pagó, el pago (quién, a quién, importe y divisa) espera en el servidor a que lo confirmes.</li>
     <li><strong>Tu nombre</strong>, que guardas en tu iPhone para proponerlo al crear o unirte a un grupo.</li>
   </ul>
   <p>La app no usa tu ubicación, tus contactos ni el micrófono, no muestra publicidad y no te rastrea entre apps ni sitios web. No usa identificadores publicitarios ni herramientas de analítica de terceros.</p>
@@ -49,10 +53,12 @@
   <ul>
     <li><strong>Supabase</strong> aloja la base de datos y las fotos de los grupos.</li>
     <li><strong>exchangerate-api.com</strong> proporciona los tipos de cambio. La consulta solo indica las divisas, sin ningún dato personal.</li>
+    <li><strong>Apple Push Notification service</strong> entrega las notificaciones si las activas. El aviso lleva el nombre del grupo y de la persona.</li>
   </ul>
 
   <h2>Conservación y borrado</h2>
   <p>Los datos de un grupo se conservan mientras el grupo exista. Desde la app puedes eliminar gastos, salir de un grupo (se borra de tu iPhone) o borrar el grupo para todos: entonces se eliminan del servidor el grupo, sus personas, sus gastos y sus fotos de tickets. Si no puedes hacerlo desde la app, escribe a <a href="mailto:manoloto@hotmail.com">manoloto@hotmail.com</a> indicando el código del grupo y se borrará en un plazo máximo de 30 días. Al desinstalar la app se borran los datos guardados en tu iPhone.</p>
+  <p>Cuando el último iPhone sale de un grupo, el grupo se borra del servidor por completo a los 7 días si nadie vuelve a entrar. Los avisos se borran a los 30 días y los pagos ya confirmados o rechazados, a los 30 días de resolverse.</p>
 
   <h2>Menores</h2>
   <p>Savium Share no está dirigida a menores de 13 años y no recopila a sabiendas datos de menores.</p>
@@ -68,7 +74,7 @@
 
   <section id="en" lang="en">
   <h1>Savium Share Privacy Policy</h1>
-  <p class="fecha">Last updated: October 15, 2026</p>
+  <p class="fecha">Last updated: October 21, 2026</p>
 
   <p>Savium Share is an iPhone app for splitting expenses in a group. It is made and maintained by Manuel de la Torre. This policy explains what data the app handles and why.</p>
 
@@ -78,7 +84,11 @@
   <h2>What data is handled</h2>
   <ul>
     <li><strong>What you enter in groups:</strong> the group's name and emoji, people's names or initials, and expenses (description, amount, currency, date, category, who paid, how it is split and an optional note).</li>
-    <li><strong>Receipt photos:</strong> only if you choose to add one to an expense, from the camera or your photo library. The app only accesses the photo you pick.</li>
+    <li><strong>Receipt photos:</strong> only if you choose to add one to an expense, from the camera or your photo library. The app only accesses the photo you pick. If you use “Scan receipt”, the text in the photo is read on your own iPhone to suggest the amount, merchant and date; that text is not sent anywhere.</li>
+    <li><strong>Camera for QR codes:</strong> if you choose “Scan QR” to join a group, the camera only reads the code and stores no images.</li>
+    <li><strong>Installation identifier:</strong> a random number the app creates when installed. It is stored with each group you belong to, along with the person you choose to be in that group, to know which iPhones are in each group, notify the others and ask the person receiving a payment to confirm it. It is not linked to your real name, Apple ID or device, and changes if you reinstall the app.</li>
+    <li><strong>Notifications:</strong> only if you allow them. Apple gives the app a code to send you notices (for example, “Ana joined the group” or “Ana says they paid you”), which is stored with that identifier. You can turn them off per group in the app or in iPhone Settings.</li>
+    <li><strong>Payments awaiting confirmation:</strong> when someone marks that they paid you, the payment (who, to whom, amount and currency) waits on the server until you confirm it.</li>
     <li><strong>Your name</strong>, stored on your iPhone to suggest it when you create or join a group.</li>
   </ul>
   <p>The app does not use your location, contacts or microphone, shows no ads and does not track you across apps or websites. It uses no advertising identifiers or third-party analytics.</p>
@@ -97,10 +107,12 @@
   <ul>
     <li><strong>Supabase</strong> hosts the groups' database and photos.</li>
     <li><strong>exchangerate-api.com</strong> provides exchange rates. The request only includes currency codes, with no personal data.</li>
+    <li><strong>Apple Push Notification service</strong> delivers notifications if you turn them on. The notice includes the group's and the person's name.</li>
   </ul>
 
   <h2>Retention and deletion</h2>
   <p>A group's data is kept while the group exists. In the app you can delete expenses, leave a group (it is removed from your iPhone) or delete the group for everyone, which removes the group, its people, its expenses and its receipt photos from the server. If you can't do it from the app, write to <a href="mailto:manoloto@hotmail.com">manoloto@hotmail.com</a> with the group's code and it will be deleted within 30 days. Deleting the app removes the data stored on your iPhone.</p>
+  <p>When the last iPhone leaves a group, the group is fully deleted from the server after 7 days unless someone rejoins. Notices are deleted after 30 days, and confirmed or declined payments 30 days after they are resolved.</p>
 
   <h2>Children</h2>
   <p>Savium Share is not directed at children under 13 and does not knowingly collect data from children.</p>
