@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { eachDayOfInterval, format, formatDistanceToNow, parseISO, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Users, UsersRound, Receipt, Activity, Image as ImageIcon, ShieldAlert, AlertTriangle, Smartphone, MessageSquare, Check, Trash2, RotateCcw } from 'lucide-react';
+import { Users, UsersRound, Receipt, Activity, Image as ImageIcon, ShieldAlert, AlertTriangle, Smartphone, MessageSquare, Check, Trash2, RotateCcw, Moon, Download, UserPlus } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import Layout from '@/components/Layout';
 import { PageHeader } from '@/components/PageHeader';
@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { esAdmin } from '@/lib/admin';
 import { formatNumber } from '@/lib/formatters';
+import { CLAVE_COMENTARIOS_APPS } from '@/hooks/useComentariosApps';
 
 /** Respuesta de la función share_panel (uso de la app Savium Share, sin nombres a propósito). */
 interface PanelShare {
@@ -57,6 +58,15 @@ interface PanelShare {
     movimientos: number;
     ultima_actividad: string | null;
   }[];
+  // share_panel_v3 (cifras de hoy y descargas); ausentes si la base aún no tiene la v3.
+  hoy?: { movimientos: number; grupos_nuevos: number; grupos_activos: number };
+  grupos_dormidos?: { total: number; sin_movimientos: number };
+  iphones?: { en_grupos: number; instalaciones_30d: number; sin_grupos: number };
+  descargas?: {
+    aperturas: { hoy: number; semana: number; total: number; desde: string | null };
+    tienda: { ultimo_dia: string | null; ultimo: number; semana: number; total: number; redescargas: number };
+    por_dia: { dia: string; tienda: number; aperturas: number }[];
+  };
 }
 
 interface Comentario {
@@ -131,6 +141,11 @@ const REPARTOS: Record<string, string> = {
 const actividadConfig = {
   movimientos: { label: 'Movimientos', color: 'hsl(var(--grafica))' },
   grupos: { label: 'Grupos activos', color: 'hsl(var(--success))' },
+};
+
+const descargasConfig = {
+  tienda: { label: 'App Store', color: 'hsl(var(--grafica))' },
+  aperturas: { label: 'Primeras aperturas', color: 'hsl(var(--success))' },
 };
 
 const gruposConfig = {
@@ -228,7 +243,10 @@ const SaviumShare = () => {
   const [nuevaMinima, setNuevaMinima] = useState('');
   const [verLeidos, setVerLeidos] = useState(false);
   const queryClient = useQueryClient();
-  const recargar = () => queryClient.invalidateQueries({ queryKey: ['share_panel'] });
+  const recargar = () => {
+    queryClient.invalidateQueries({ queryKey: ['share_panel'] });
+    queryClient.invalidateQueries({ queryKey: CLAVE_COMENTARIOS_APPS });
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['share_panel', dias],
@@ -236,7 +254,9 @@ const SaviumShare = () => {
     retry: (intentos, err) => !(err instanceof SinPermiso) && intentos < 2,
     queryFn: async () => {
       // share_panel no está en los tipos generados de Supabase (vive en la base de Savium Share).
-      const { data, error } = await supabase.rpc('share_panel_v2' as never, { p_dias: dias } as never);
+      // Mientras la base no tenga la v3 (PGRST202: no existe), se usa la v2 sin las cifras nuevas.
+      let { data, error } = await supabase.rpc('share_panel_v3' as never, { p_dias: dias } as never);
+      if (error?.code === 'PGRST202') ({ data, error } = await supabase.rpc('share_panel_v2' as never, { p_dias: dias } as never));
       if (error) {
         if (error.code === '42501') throw new SinPermiso(error.message);
         throw new Error(error.message);
@@ -251,6 +271,10 @@ const SaviumShare = () => {
   );
   const gruposNuevos = useMemo(
     () => (data ? rellenarDias(data.grupos_por_dia ?? [], dias, { n: 0 }) : []),
+    [data, dias],
+  );
+  const descargasDia = useMemo(
+    () => (data?.descargas ? rellenarDias(data.descargas.por_dia ?? [], dias, { tienda: 0, aperturas: 0 }) : []),
     [data, dias],
   );
   const uso = useMemo(
@@ -341,6 +365,61 @@ const SaviumShare = () => {
           <Aviso icon={UsersRound} texto="Todavía no hay grupos en Savium Share" />
         ) : (
           <>
+            {/* AVISO DE COMENTARIOS */}
+            {(data.comentarios_sin_leer ?? 0) > 0 && (
+              <button
+                onClick={() => document.getElementById('comentarios')?.scrollIntoView({ behavior: 'smooth' })}
+                className="w-full flex items-center gap-3 rounded-[1.25rem] border border-destructive/30 bg-destructive/10 px-4 py-3 text-left text-sm hover:bg-destructive/15 transition-colors"
+              >
+                <MessageSquare className="h-5 w-5 text-destructive flex-shrink-0" />
+                <span className="flex-1">
+                  <strong>{numero(data.comentarios_sin_leer)} {data.comentarios_sin_leer === 1 ? 'comentario sin leer' : 'comentarios sin leer'}</strong>
+                  {' '}en «Ayúdanos a mejorar»
+                </span>
+                <span className="text-muted-foreground">Ver</span>
+              </button>
+            )}
+
+            {/* HOY */}
+            {data.hoy && (
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                <Kpi
+                  icon={Receipt}
+                  titulo="Movimientos hoy"
+                  valor={numero(data.hoy.movimientos)}
+                  detalle="Creados o editados"
+                />
+                <Kpi
+                  icon={UsersRound}
+                  titulo="Grupos hoy"
+                  valor={numero(data.hoy.grupos_nuevos)}
+                  detalle={`Nuevos · ${numero(data.hoy.grupos_activos)} con movimientos`}
+                />
+                <Kpi
+                  icon={Moon}
+                  titulo="Grupos dormidos"
+                  valor={numero(data.grupos_dormidos?.total ?? 0)}
+                  detalle={`Sin movimientos en 7 días · ${numero(data.grupos_dormidos?.sin_movimientos ?? 0)} nunca usados`}
+                />
+                <Kpi
+                  icon={UserPlus}
+                  titulo="iPhone sin grupos"
+                  valor={data.iphones?.instalaciones_30d ? numero(data.iphones.sin_grupos) : '—'}
+                  detalle={data.iphones?.instalaciones_30d
+                    ? `De ${numero(data.iphones.instalaciones_30d)} vistos en 30 días`
+                    : `Desde la 4.1 · ${numero(data.iphones?.en_grupos ?? 0)} iPhone en grupos`}
+                />
+                <Kpi
+                  icon={Download}
+                  titulo="Descargas"
+                  valor={data.descargas?.tienda.ultimo_dia ? numero(data.descargas.tienda.total) : numero(data.descargas?.aperturas.total ?? 0)}
+                  detalle={data.descargas?.tienda.ultimo_dia
+                    ? `App Store · ${numero(data.descargas.tienda.semana)} en 7 días`
+                    : `Primeras aperturas · ${numero(data.descargas?.aperturas.hoy ?? 0)} hoy`}
+                />
+              </div>
+            )}
+
             {/* CIFRAS */}
             <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
               <Kpi
@@ -389,6 +468,67 @@ const SaviumShare = () => {
                 </ChartContainer>
               </CardContent>
             </Card>
+
+            {/* DESCARGAS: App Store Connect (un día de retraso) y primeras aperturas de la app (desde la 4.1) */}
+            {data.descargas && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Descargas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {[
+                      {
+                        titulo: 'App Store',
+                        nota: data.descargas.tienda.ultimo_dia
+                          ? `Oficial, hasta el ${format(parseISO(data.descargas.tienda.ultimo_dia), 'd MMM', { locale: es })} · ${numero(data.descargas.tienda.redescargas)} redescargas aparte`
+                          : 'Falta configurar la clave de App Store Connect',
+                        cifras: [
+                          ['Último día', data.descargas.tienda.ultimo],
+                          ['7 días', data.descargas.tienda.semana],
+                          ['Total', data.descargas.tienda.total],
+                        ],
+                      },
+                      {
+                        titulo: 'Primeras aperturas',
+                        nota: data.descargas.aperturas.desde
+                          ? `En tiempo real, desde el ${format(parseISO(data.descargas.aperturas.desde), 'd MMM yyyy', { locale: es })}`
+                          : 'Empiezan a contar con la versión 4.1 de la app',
+                        cifras: [
+                          ['Hoy', data.descargas.aperturas.hoy],
+                          ['7 días', data.descargas.aperturas.semana],
+                          ['Total', data.descargas.aperturas.total],
+                        ],
+                      },
+                    ].map(b => (
+                      <div key={b.titulo} className="rounded-xl border p-4 space-y-3">
+                        <p className="text-sm font-medium">{b.titulo}</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {b.cifras.map(([etiqueta, n]) => (
+                            <div key={etiqueta as string}>
+                              <p className="text-xl font-bold tabular-nums">{numero(n as number)}</p>
+                              <p className="text-xs text-muted-foreground">{etiqueta}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{b.nota}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <ChartContainer config={descargasConfig} className="h-[220px] w-full">
+                    <BarChart data={descargasDia} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                      <XAxis dataKey="dia" tickFormatter={etiquetaDia} className="text-xs" tickLine={false} axisLine={false} minTickGap={24} />
+                      <YAxis allowDecimals={false} className="text-xs" tickLine={false} axisLine={false} width={32} />
+                      <ChartTooltip isAnimationActive={false} content={<ChartTooltipContent labelFormatter={(_, p) => etiquetaDia(p?.[0]?.payload?.dia ?? '')} />} />
+                      <ChartLegend content={<ChartLegendContent />} />
+                      <Bar dataKey="tienda" fill="hsl(var(--grafica))" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="aperturas" fill="hsl(var(--success))" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+            )}
 
             {/* DÓNDE SE USA */}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -501,7 +641,7 @@ const SaviumShare = () => {
             </div>
 
             {/* SUGERENCIAS («Ayúdanos a mejorar» en la app) */}
-            <Card>
+            <Card id="comentarios" className="scroll-mt-6">
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-base">Ayúdanos a mejorar</CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => setVerLeidos(v => !v)}>

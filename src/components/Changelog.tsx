@@ -9,6 +9,14 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.3',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <BarChart3 className="h-4 w-4" />, text: 'Panel de Savium Share: cifras de hoy (movimientos, grupos nuevos), grupos dormidos, iPhone sin grupos y descargas (App Store Connect y primeras aperturas)', type: 'feature' },
+      { icon: <Bell className="h-4 w-4" />, text: 'Menú Apps: número rojo con los comentarios sin leer de Savium Share y Savium Piggy Bank, también con el grupo plegado', type: 'improvement' },
+    ],
+  },
+  {
     version: '10.2',
     date: 'Octubre 2026',
     changes: [
