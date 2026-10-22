@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, UsersRound, Gift, PiggyBank } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, Gift, PiggyBank, ChevronDown } from 'lucide-react';
 import { usePendings } from '@/hooks/usePendings';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +23,15 @@ const Layout = ({ children }: LayoutProps) => {
   const { user, signOut, soloLectura } = useAuth();
   const { profile } = useUserProfile();
   const [searchOpen, setSearchOpen] = useState(false);
+  // Grupos del menú plegados por el usuario (se recuerda en este navegador).
+  const [plegados, setPlegados] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('menu-plegados') ?? '[]'); } catch { return []; }
+  });
+  const alternarGrupo = (titulo: string) => {
+    const nuevos = plegados.includes(titulo) ? plegados.filter(t => t !== titulo) : [...plegados, titulo];
+    setPlegados(nuevos);
+    try { localStorage.setItem('menu-plegados', JSON.stringify(nuevos)); } catch { /* sin almacenamiento */ }
+  };
   const { activeCount, overdueCount } = usePendings();
   const { count: alertCount } = useAlerts();
 
@@ -56,7 +65,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   // Paneles de las otras apps de Savium: solo existen en el menú del administrador.
   const appsNavItems = esAdmin(user?.id) ? [
-    { path: '/savium-share', icon: UsersRound, label: 'Savium Share' },
+    { path: '/savium-share', imagen: '/images/savium-share.png', label: 'Savium Share' },
     { path: '/savium-rewards', icon: Gift, label: 'Savium Rewards' },
     { path: '/savium-piggybank', icon: PiggyBank, label: 'Savium Piggy Bank' },
   ] : [];
@@ -120,14 +129,28 @@ const Layout = ({ children }: LayoutProps) => {
             ))}
 
             {[
-              { titulo: 'Apps', items: appsNavItems },
-              { titulo: 'Configuración', items: configNavItems },
-            ].filter(g => g.items.length > 0).map(({ titulo, items }) => (
+              { titulo: 'Apps', items: appsNavItems, plegable: true },
+              { titulo: 'Configuración', items: configNavItems, plegable: false },
+            ].filter(g => g.items.length > 0).map(({ titulo, items, plegable }) => {
+              // Plegado no esconde la página en la que estás.
+              const plegado = plegable && plegados.includes(titulo) && !items.some(i => i.path && isActive(i.path));
+              return (
               <div key={titulo} className="pt-3 mt-3 border-t border-border/60">
-                <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {titulo}
-                </p>
-                {items.map(({ path, icon: Icon, label }) => (
+                {plegable ? (
+                  <button
+                    onClick={() => alternarGrupo(titulo)}
+                    aria-expanded={!plegado}
+                    className="w-full flex items-center justify-between px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                  >
+                    {titulo}
+                    <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', plegado && '-rotate-90')} />
+                  </button>
+                ) : (
+                  <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {titulo}
+                  </p>
+                )}
+                {!plegado && items.map(({ path, icon: Icon, imagen, label }: { path: string; icon?: React.ElementType; imagen?: string; label: string }) => (
                   <button
                     key={label}
                     onClick={() => navigate(path)}
@@ -141,13 +164,16 @@ const Layout = ({ children }: LayoutProps) => {
                           : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
                     )}
                   >
-                    <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={path && isActive(path) ? 2.25 : 1.75} />
+                    {imagen
+                      ? <img src={imagen} alt="" className="h-4 w-4 flex-shrink-0 rounded-[22%]" />
+                      : Icon && <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={path && isActive(path) ? 2.25 : 1.75} />}
                     <span className="flex-1 text-left">{label}</span>
                     {!path && <span className="text-[10px] uppercase tracking-wider">Pronto</span>}
                   </button>
                 ))}
               </div>
-            ))}
+              );
+            })}
           </nav>
 
           <div className="p-3 border-t border-border/60 space-y-2">
