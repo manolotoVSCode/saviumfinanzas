@@ -26,35 +26,47 @@ const ImportFormatInfo = () => (
         <div>
           <p className="font-semibold text-foreground mb-1">✅ Formatos aceptados</p>
           <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-            <li>CSV (.csv) — separado por comas o punto y coma</li>
-            <li>Excel (.xls, .xlsx)</li>
-            <li>Codificación UTF-8 o Latin-1</li>
+            <li>CSV (.csv) — separado por comas, punto y coma, tabulador o barra vertical (se detecta solo)</li>
+            <li>Excel (.xls, .xlsx) — se lee la primera hoja</li>
+            <li>Codificación UTF-8 o Latin-1 (se detecta sola)</li>
           </ul>
         </div>
         <div>
           <p className="font-semibold text-foreground mb-1">📋 Columnas requeridas</p>
           <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-            <li><strong>Fecha</strong> — DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY o serial de Excel</li>
+            <li><strong>Fecha</strong> — DD/MM/AAAA, MM/DD/AAAA (con /, - o .), AAAA-MM-DD, "15 ene 2026" o fecha de Excel. Si no se distingue día y mes, te pregunta cuál es</li>
             <li><strong>Descripción / Concepto</strong> — texto del movimiento</li>
-            <li><strong>Monto</strong> — una columna (positivo/negativo) o dos (cargo/abono)</li>
+            <li><strong>Importe</strong> — una columna con signo (importe, monto, cantidad) o dos (cargo/abono, debe/haber, retiro/depósito)</li>
+            <li><strong>Tarjetahabiente</strong> (opcional) — si viene la columna titular o cardholder, se guarda en cada movimiento</li>
           </ul>
         </div>
         <div>
           <p className="font-semibold text-foreground mb-1">🔍 Detección automática</p>
           <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-            <li>Columnas detectadas por nombre (fecha, date, descripción, concepto, monto, cargo, abono...)</li>
-            <li>Montos negativos = gastos (o ingresos en tarjeta de crédito)</li>
-            <li>Se aplican reglas de clasificación automática</li>
+            <li>Se saltan las filas de título antes de la cabecera (ej: BBVA)</li>
+            <li>Columnas detectadas por nombre; sin cabecera, se deducen de los datos</li>
+            <li>Con fecha de operación y fecha valor, usa la de operación; la columna Saldo se ignora</li>
+            <li>Importes con $, €, MXN, USD o EUR, en formato 1,234.56 o 1.234,56</li>
+            <li>Cuentas bancarias: negativo = gasto. Tarjetas de crédito: positivo = gasto, negativo = pago</li>
+            <li>Categoría sugerida por tus reglas y tu historial; los abonos con categoría de gasto se marcan como reembolso</li>
+          </ul>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground mb-1">👀 En la vista previa</p>
+          <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+            <li>Los posibles duplicados (mismo importe, ±2 días) entran desmarcados</li>
+            <li>Las filas descartadas se listan con su motivo (sin fecha, importe 0 o no numérico)</li>
+            <li>Los ingresos pueden vincularse a un pendiente por cobrar</li>
           </ul>
         </div>
         <div>
           <p className="font-semibold text-foreground mb-1">❌ No funcionará si...</p>
           <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
             <li>El archivo es un PDF (exporta a CSV/Excel desde tu banco)</li>
-            <li>Las columnas no tienen encabezados reconocibles</li>
-            <li>Hay múltiples tablas sin estructura clara</li>
-            <li>Los montos incluyen texto (ej: "1,500 MXN")</li>
             <li>El archivo está protegido con contraseña</li>
+            <li>Los movimientos no están en la primera hoja del Excel, o hay varias tablas en la misma hoja</li>
+            <li>Las fechas tienen año de 2 dígitos (15/01/26) o no tienen año</li>
+            <li>Los importes llevan otro texto (ej: "1,500 pesos")</li>
           </ul>
         </div>
         <div className="pt-2 border-t">
