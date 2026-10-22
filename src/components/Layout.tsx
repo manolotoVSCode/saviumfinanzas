@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, UsersRound, Gift } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, UsersRound, Gift, PiggyBank } from 'lucide-react';
 import { usePendings } from '@/hooks/usePendings';
 import { useAlerts } from '@/hooks/useAlerts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +58,7 @@ const Layout = ({ children }: LayoutProps) => {
   const appsNavItems = esAdmin(user?.id) ? [
     { path: '/savium-share', icon: UsersRound, label: 'Savium Share' },
     { path: '/savium-rewards', icon: Gift, label: 'Savium Rewards' },
+    { path: '/savium-piggybank', icon: PiggyBank, label: 'Savium Piggy Bank' },
   ] : [];
 
   const todosConfig = [
