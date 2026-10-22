@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { esAdmin } from '@/lib/admin';
 import { formatNumber } from '@/lib/formatters';
+import { CLAVE_COMENTARIOS_APPS } from '@/hooks/useComentariosApps';
 
 /**
  * Cifras que manda la app una vez al día por iPhone (Uso.metricas en SaviumPiggyBank). Las de «foto»
@@ -191,7 +192,10 @@ const SaviumPiggyBank = () => {
   const [dias, setDias] = useState<number>(90);
   const [verLeidos, setVerLeidos] = useState(false);
   const queryClient = useQueryClient();
-  const recargar = () => queryClient.invalidateQueries({ queryKey: ['piggy_panel'] });
+  const recargar = () => {
+    queryClient.invalidateQueries({ queryKey: ['piggy_panel'] });
+    queryClient.invalidateQueries({ queryKey: CLAVE_COMENTARIOS_APPS });
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['piggy_panel', dias],

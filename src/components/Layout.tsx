@@ -12,6 +12,7 @@ import { APP_VERSION } from '@/components/Changelog';
 import { GlobalSearch, GlobalSearchTrigger } from '@/components/GlobalSearch';
 import { RUTAS_LECTORA } from '@/components/ProtectedRoute';
 import { esAdmin } from '@/lib/admin';
+import { useComentariosApps } from '@/hooks/useComentariosApps';
 
 /** Logo de Savium Share (el cubo descolocado de la app) dibujado en línea, como los íconos de lucide. */
 const CuboShare = ({ className, strokeWidth = 2 }: { className?: string; strokeWidth?: number }) => (
@@ -21,6 +22,14 @@ const CuboShare = ({ className, strokeWidth = 2 }: { className?: string; strokeW
     <polygon points="13.5,13.5 21,9 21.8,17.6 14.3,22" />
   </svg>
 );
+
+/** Entrada de los grupos del menú (Apps, Configuración); badge: comentarios sin leer. */
+interface ItemMenu {
+  path: string;
+  icon: React.ElementType;
+  label: string;
+  badge?: number;
+}
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -43,6 +52,7 @@ const Layout = ({ children }: LayoutProps) => {
   };
   const { activeCount, overdueCount } = usePendings();
   const { count: alertCount } = useAlerts();
+  const comentarios = useComentariosApps();
 
   // «/» abre el Dashboard: su entrada del menú también se marca ahí.
   const isActive = (path: string) => location.pathname === path || (path === '/dashboard' && location.pathname === '/');
@@ -73,10 +83,11 @@ const Layout = ({ children }: LayoutProps) => {
   ];
 
   // Paneles de las otras apps de Savium: solo existen en el menú del administrador.
-  const appsNavItems = esAdmin(user?.id) ? [
-    { path: '/savium-share', icon: CuboShare, label: 'Savium Share' },
+  // El número es lo que queda por leer de «Ayúdanos a mejorar».
+  const appsNavItems: ItemMenu[] = esAdmin(user?.id) ? [
+    { path: '/savium-share', icon: CuboShare, label: 'Savium Share', badge: comentarios.share || undefined },
     { path: '/savium-rewards', icon: Gift, label: 'Savium Rewards' },
-    { path: '/savium-piggybank', icon: PiggyBank, label: 'Savium Piggy Bank' },
+    { path: '/savium-piggybank', icon: PiggyBank, label: 'Savium Piggy Bank', badge: comentarios.piggy || undefined },
   ] : [];
 
   const todosConfig = [
@@ -137,10 +148,11 @@ const Layout = ({ children }: LayoutProps) => {
               </button>
             ))}
 
-            {[
+            {([
               { titulo: 'Apps', items: appsNavItems, plegable: true },
               { titulo: 'Configuración', items: configNavItems, plegable: false },
-            ].filter(g => g.items.length > 0).map(({ titulo, items, plegable }) => {
+            ] as { titulo: string; items: ItemMenu[]; plegable: boolean }[]).filter(g => g.items.length > 0).map(({ titulo, items, plegable }) => {
+              const pendientes = items.reduce((s, i) => s + (i.badge ?? 0), 0);
               const plegado = plegable && plegados.includes(titulo);
               return (
               <div key={titulo} className="pt-3 mt-3 border-t border-border/60">
@@ -151,14 +163,21 @@ const Layout = ({ children }: LayoutProps) => {
                     className="w-full flex items-center justify-between px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
                   >
                     {titulo}
-                    <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', plegado && '-rotate-90')} />
+                    <span className="flex items-center gap-2">
+                      {plegado && pendientes > 0 && (
+                        <span className="bg-destructive text-destructive-foreground text-[10px] font-semibold rounded-full min-w-4 h-4 px-1 flex items-center justify-center normal-case tracking-normal">
+                          {pendientes}
+                        </span>
+                      )}
+                      <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', plegado && '-rotate-90')} />
+                    </span>
                   </button>
                 ) : (
                   <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {titulo}
                   </p>
                 )}
-                {!plegado && items.map(({ path, icon: Icon, label }) => (
+                {!plegado && items.map(({ path, icon: Icon, label, badge }) => (
                   <button
                     key={label}
                     onClick={() => navigate(path)}
@@ -174,6 +193,11 @@ const Layout = ({ children }: LayoutProps) => {
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={path && isActive(path) ? 2.25 : 1.75} />
                     <span className="flex-1 text-left">{label}</span>
+                    {badge ? (
+                      <span className="bg-destructive text-destructive-foreground text-xs font-semibold rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center" title="Comentarios sin leer">
+                        {badge}
+                      </span>
+                    ) : null}
                     {!path && <span className="text-[10px] uppercase tracking-wider">Pronto</span>}
                   </button>
                 ))}
