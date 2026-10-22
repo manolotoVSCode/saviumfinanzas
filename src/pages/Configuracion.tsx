@@ -21,6 +21,7 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { ExchangeRates } from '@/components/ExchangeRates';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { esAdmin } from '@/lib/admin';
 
 import { LogOut, Trash2, Search, Wallet, Tag, Filter, SunMoon, Eye } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -83,8 +84,9 @@ const Configuracion = () => {
 
 const ConfiguracionTitular = () => {
   const financeData = useFinanceDataSupabase();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const admin = esAdmin(user?.id);
   if (financeData.loading) {
     return (
       <Layout>
@@ -126,11 +128,9 @@ const ConfiguracionTitular = () => {
         <ExchangeRates />
 
 
-        {/* PARA MI FAMILIA (ya no está en el menú) */}
-        <TarjetaFamilia />
-
-        {/* ALERTA DE EMERGENCIA (app iOS) */}
-        <ContactosEmergencia />
+        {/* PARA MI FAMILIA (ya no está en el menú) y ALERTA DE EMERGENCIA (app iOS): solo el administrador */}
+        {admin && <TarjetaFamilia />}
+        {admin && <ContactosEmergencia />}
 
         {/* AUDITORÍA DE DATOS */}
         <Card>

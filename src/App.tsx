@@ -33,7 +33,7 @@ const CxP = lazy(() => import("./pages/CxP"));
 const ChangelogPage = lazy(() => import("./pages/ChangelogPage"));
 const Alertas = lazy(() => import("./pages/Alertas"));
 const Familia = lazy(() => import("./pages/Familia"));
-// Solo para el administrador (el menú solo lo muestra a él y share_panel rechaza a los demás).
+// Solo para el administrador (ProtectedRoute soloAdmin, el menú solo lo muestra a él y share_panel rechaza a los demás).
 const SaviumShare = lazy(() => import("./pages/SaviumShare"));
 const SaviumRewards = lazy(() => import("./pages/SaviumRewards"));
 const SaviumPiggyBank = lazy(() => import("./pages/SaviumPiggyBank"));
@@ -156,7 +156,7 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/familia" element={
-                <ProtectedRoute>
+                <ProtectedRoute soloAdmin>
                   <Responsive desktop={Familia} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
@@ -171,17 +171,17 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/savium-share" element={
-                <ProtectedRoute>
+                <ProtectedRoute soloAdmin>
                   <Responsive desktop={SaviumShare} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/savium-rewards" element={
-                <ProtectedRoute>
+                <ProtectedRoute soloAdmin>
                   <Responsive desktop={SaviumRewards} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/savium-piggybank" element={
-                <ProtectedRoute>
+                <ProtectedRoute soloAdmin>
                   <Responsive desktop={SaviumPiggyBank} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />

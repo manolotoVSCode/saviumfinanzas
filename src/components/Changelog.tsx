@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.2',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Users className="h-4 w-4" />, text: 'Cuentas de amigos: tienen toda la app salvo lo personal del administrador (Para mi familia, contactos y código de emergencia, paneles de las apps), que ni sale en Configuración ni se abre por su dirección', type: 'feature' },
+    ],
+  },
+  {
     version: '10.1',
     date: 'Octubre 2026',
     changes: [

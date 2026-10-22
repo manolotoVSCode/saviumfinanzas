@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { RUTAS_LECTORA } from '@/components/ProtectedRoute';
+import { esAdmin } from '@/lib/admin';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/PageHeader';
@@ -74,12 +75,13 @@ const AlertRow = ({ alert, action, onAction, formatCurrency }: {
 const Alertas = () => {
   const { alerts, dismissedAlerts, loading, dismiss, restore } = useAlerts();
   const { formatCurrency } = useAppConfig();
+  const { datosId } = useAuth();
   const [showDismissed, setShowDismissed] = useState(false);
 
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <PageHeader title="Alertas" subtitle={<>Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días o vencidos hasta 30 días antes del cierre del último mes importado, suscripciones que suben de precio, categorías cuyo gasto del último mes cerrado supera en un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% su media de los 12 meses anteriores, la información para tu familia si lleva más de {DIAS_REVISION} días sin revisar, y las criptomonedas que llegan al % sobre tu precio de compra que pusiste en su alerta (Inversiones → Criptomonedas)</>} />
+        <PageHeader title="Alertas" subtitle={<>Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días o vencidos hasta 30 días antes del cierre del último mes importado, suscripciones que suben de precio, categorías cuyo gasto del último mes cerrado supera en un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% su media de los 12 meses anteriores, {esAdmin(datosId) && <>la información para tu familia si lleva más de {DIAS_REVISION} días sin revisar, </>}y las criptomonedas que llegan al % sobre tu precio de compra que pusiste en su alerta (Inversiones → Criptomonedas)</>} />
 
         {loading ? (
           <div className="flex items-center justify-center h-40">

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { esAdmin } from '@/lib/admin';
 
 /** Lo que puede abrir una lectora en la web: lo mismo que ve en la app del iPhone. */
 export const RUTAS_LECTORA = ['/', '/dashboard', '/transacciones', '/transacciones-categoria', '/inversiones', '/pendientes', '/cxp', '/suscripciones', '/alertas', '/configuracion'];
@@ -8,9 +9,11 @@ export const RUTAS_LECTORA = ['/', '/dashboard', '/transacciones', '/transaccion
 interface ProtectedRouteProps {
   children: React.ReactNode;
   fallbackPath?: string;
+  /** Lo hecho solo para el administrador (Para mi familia, paneles de las apps): nadie más lo abre. */
+  soloAdmin?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallbackPath = '/auth' }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallbackPath = '/auth', soloAdmin = false }) => {
   const { user, loading, soloLectura } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -36,7 +39,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallbackPath 
     return null;
   }
 
-  if (soloLectura && !RUTAS_LECTORA.includes(pathname)) {
+  if ((soloLectura && !RUTAS_LECTORA.includes(pathname)) || (soloAdmin && !esAdmin(user.id))) {
     return <Navigate to="/dashboard" replace />;
   }
 
