@@ -13,6 +13,15 @@ import { GlobalSearch, GlobalSearchTrigger } from '@/components/GlobalSearch';
 import { RUTAS_LECTORA } from '@/components/ProtectedRoute';
 import { esAdmin } from '@/lib/admin';
 
+/** Logo de Savium Share (el cubo descolocado de la app) dibujado en línea, como los íconos de lucide. */
+const CuboShare = ({ className, strokeWidth = 2 }: { className?: string; strokeWidth?: number }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <polygon points="4.1,6.9 11.3,2 19.6,4.4 12.4,9.3" />
+    <polygon points="3.3,8.6 10.6,13.3 9.5,21.9 2.2,17.2" />
+    <polygon points="13.5,13.5 21,9 21.8,17.6 14.3,22" />
+  </svg>
+);
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -65,7 +74,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   // Paneles de las otras apps de Savium: solo existen en el menú del administrador.
   const appsNavItems = esAdmin(user?.id) ? [
-    { path: '/savium-share', imagen: '/images/savium-share.png', label: 'Savium Share' },
+    { path: '/savium-share', icon: CuboShare, label: 'Savium Share' },
     { path: '/savium-rewards', icon: Gift, label: 'Savium Rewards' },
     { path: '/savium-piggybank', icon: PiggyBank, label: 'Savium Piggy Bank' },
   ] : [];
@@ -132,8 +141,7 @@ const Layout = ({ children }: LayoutProps) => {
               { titulo: 'Apps', items: appsNavItems, plegable: true },
               { titulo: 'Configuración', items: configNavItems, plegable: false },
             ].filter(g => g.items.length > 0).map(({ titulo, items, plegable }) => {
-              // Plegado no esconde la página en la que estás.
-              const plegado = plegable && plegados.includes(titulo) && !items.some(i => i.path && isActive(i.path));
+              const plegado = plegable && plegados.includes(titulo);
               return (
               <div key={titulo} className="pt-3 mt-3 border-t border-border/60">
                 {plegable ? (
@@ -150,7 +158,7 @@ const Layout = ({ children }: LayoutProps) => {
                     {titulo}
                   </p>
                 )}
-                {!plegado && items.map(({ path, icon: Icon, imagen, label }: { path: string; icon?: React.ElementType; imagen?: string; label: string }) => (
+                {!plegado && items.map(({ path, icon: Icon, label }) => (
                   <button
                     key={label}
                     onClick={() => navigate(path)}
@@ -164,9 +172,7 @@ const Layout = ({ children }: LayoutProps) => {
                           : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
                     )}
                   >
-                    {imagen
-                      ? <img src={imagen} alt="" className="h-4 w-4 flex-shrink-0 rounded-[22%]" />
-                      : Icon && <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={path && isActive(path) ? 2.25 : 1.75} />}
+                    <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={path && isActive(path) ? 2.25 : 1.75} />
                     <span className="flex-1 text-left">{label}</span>
                     {!path && <span className="text-[10px] uppercase tracking-wider">Pronto</span>}
                   </button>
