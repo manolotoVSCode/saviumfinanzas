@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.4',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Users className="h-4 w-4" />, text: 'Panel de Savium Share: los comentarios de «Ayúdanos a mejorar» muestran el nombre de quien escribe (desde Savium Share 4.2)', type: 'improvement' },
+    ],
+  },
+  {
     version: '10.3',
     date: 'Octubre 2026',
     changes: [

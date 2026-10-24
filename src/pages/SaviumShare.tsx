@@ -75,6 +75,7 @@ interface Comentario {
   tipo: 'idea' | 'error' | 'otro';
   texto: string;
   contacto: string | null;
+  nombre?: string | null;
   pais: string | null;
   idioma: string | null;
   version_app: string | null;
@@ -669,6 +670,7 @@ const SaviumShare = () => {
                         </span>
                       </div>
                       <p className="text-sm whitespace-pre-wrap">{c.texto}</p>
+                      {c.nombre && <p className="text-sm font-medium">{c.nombre}</p>}
                       {c.contacto && (
                         <a className="text-sm text-primary underline" href={`mailto:${c.contacto}`}>{c.contacto}</a>
                       )}
