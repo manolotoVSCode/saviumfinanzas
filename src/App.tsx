@@ -7,6 +7,7 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
 import { ColorVentana } from "@/components/ColorVentana";
+import { AvisoApp } from "@/components/AvisoApp";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Responsive from "@/components/Responsive";
@@ -66,6 +67,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <AvisoApp />
         <HashRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>

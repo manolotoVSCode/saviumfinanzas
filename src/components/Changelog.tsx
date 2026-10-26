@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.5',
+    date: 'Octubre 2026',
+    changes: [
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Al entrar desde el navegador de un iPhone o iPad, Savium propone descargar la app (una vez por visita) y Safari muestra su banner del App Store', type: 'feature' },
+    ],
+  },
+  {
     version: '10.4',
     date: 'Octubre 2026',
     changes: [
