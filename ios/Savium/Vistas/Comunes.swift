@@ -134,5 +134,4 @@ private struct CuboForma: Shape {
 extension Bundle {
     /// «1.2»
     var versionCorta: String { infoDictionary?["CFBundleShortVersionString"] as? String ?? "?" }
-    var build: String { infoDictionary?["CFBundleVersion"] as? String ?? "?" }
 }

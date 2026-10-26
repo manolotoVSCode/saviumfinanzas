@@ -56,8 +56,19 @@ struct AjustesView: View {
                     if datos.soloLectura { Text("Puedes ver todos los datos, pero no apuntar, editar, cobrar ni borrar.") }
                 }
 
+                // Solo manoloto@gmail.com y nunca en el señuelo (las funciones de la base también rechazan a los demás).
+                if sesion.userId == Config.adminId && !ModoSenuelo.activo {
+                    Section {
+                        NavigationLink { PanelAppsView() } label: {
+                            Label("Panel de las apps", systemImage: "chart.bar")
+                        }
+                    } footer: {
+                        Text("Descargas y uso de Savium Share, Piggy Bank y Rewards.")
+                    }
+                }
+
                 Section {
-                    LabeledContent("Versión", value: Self.version)
+                    LabeledContent("Versión", value: Bundle.main.versionCorta)
                 }
             }
             .navigationTitle("Ajustes")
@@ -75,6 +86,4 @@ struct AjustesView: View {
             }
         }
     }
-
-    private static var version: String { "\(Bundle.main.versionCorta) (\(Bundle.main.build))" }
 }

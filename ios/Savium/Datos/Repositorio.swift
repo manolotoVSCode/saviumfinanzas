@@ -191,6 +191,19 @@ struct Repositorio: Sendable {
         try await db.from("transacciones").delete().eq("id", value: id).execute()
     }
 
+    // MARK: Panel de las apps (solo el administrador: cada función de la base rechaza a los demás con 42501)
+
+    private struct Dias: Encodable { let p_dias: Int }
+    func panelShare() async throws -> PanelShare {
+        try await db.rpc("share_panel_v3", params: Dias(p_dias: 30)).execute().value
+    }
+    func panelPiggy() async throws -> PanelPiggy {
+        try await db.rpc("piggy_panel", params: Dias(p_dias: 30)).execute().value
+    }
+    func panelRewards() async throws -> PanelRewards {
+        try await db.rpc("rewards_uso").execute().value
+    }
+
     private func todas(_ pagina: (Int, Int) async throws -> [Transaccion]) async throws -> [Transaccion] {
         var todas: [Transaccion] = []
         var desde = 0
