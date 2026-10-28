@@ -1,4 +1,5 @@
 import SwiftUI
+import SaviumCore
 
 // Lo esencial de los paneles de la web (Apps → Savium Share, Piggy Bank, Rewards): descargas y uso.
 // Las mismas funciones de la base; solo se piden los campos que se enseñan aquí.
@@ -58,7 +59,8 @@ struct PanelAppsView: View {
                 Text("Savium Share")
             } footer: {
                 if case let .success(s) = share, let dia = s.descargas.tienda.ultimo_dia {
-                    Text("App Store Connect llega con un día de retraso: último día \(dia).")
+                    let fecha = Fechas.diaLocal(dia, calendario: .current)?.formatted(.dateTime.day().month().locale(Locale(identifier: "es_MX"))) ?? dia
+                    Text("App Store Connect llega con un día de retraso: último día \(fecha).")
                 }
             }
 
