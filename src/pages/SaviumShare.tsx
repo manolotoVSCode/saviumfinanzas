@@ -47,7 +47,7 @@ interface PanelShare {
   paises_grupos: { pais: string; grupos: number }[];
   paises_uso: { pais: string; dispositivos: number }[];
   idiomas: { idioma: string; dispositivos: number }[];
-  versiones: { version: string; dispositivos: number }[];
+  versiones: { version: string; plataforma?: Plataforma; dispositivos: number }[];
   comentarios: Comentario[];
   comentarios_sin_leer: number;
   grupos_recientes: {
@@ -67,6 +67,48 @@ interface PanelShare {
     tienda: { ultimo_dia: string | null; ultimo: number; semana: number; total: number; redescargas: number };
     por_dia: { dia: string; tienda: number; aperturas: number }[];
   };
+  // share_panel_v4 (iPhone y Android por separado, Google Play). En la v4, versiones lleva plataforma.
+  plataformas?: {
+    uso_hoy: PorPlataforma<number>;
+    uso_por_dia: { dia: string; ios: number | null; android: number | null }[];
+    grupos: PorPlataforma<number>;
+    en_grupos: PorPlataforma<number>;
+    instalaciones: PorPlataforma<{ hoy: number; semana: number; total: number; vistas_30d: number; sin_grupos: number }>;
+  };
+  play?: {
+    ultimo_dia: string | null;
+    ultimo: number;
+    semana: number;
+    total: number;
+    desinstalaciones: number;
+    desinstalaciones_semana: number;
+    activas: number;
+    nota: number | null;
+    cierres_7d: number;
+    anr_7d: number;
+    por_dia: { dia: string; instalaciones: number; desinstalaciones: number; activas: number; cierres: number | null; anr: number | null }[];
+    paises: { pais: string; instalaciones: number }[];
+    resenas: Resena[];
+    resenas_sin_leer: number;
+  };
+}
+
+type Plataforma = 'ios' | 'android';
+type PorPlataforma<T> = Record<Plataforma, T>;
+
+const PLATAFORMAS: Record<Plataforma, string> = { ios: 'iPhone', android: 'Android' };
+
+interface Resena {
+  id: string;
+  enviada: string;
+  estrellas: number | null;
+  titulo: string | null;
+  texto: string | null;
+  idioma: string | null;
+  version_app: string | null;
+  dispositivo: string | null;
+  respondida: boolean;
+  leida: boolean;
 }
 
 interface Comentario {
@@ -79,6 +121,7 @@ interface Comentario {
   pais: string | null;
   idioma: string | null;
   version_app: string | null;
+  plataforma?: Plataforma;
   leido: boolean;
 }
 
@@ -102,7 +145,13 @@ const idioma = (codigo: string) => {
 };
 
 const usoConfig = {
-  dispositivos: { label: 'iPhone activos', color: 'hsl(var(--grafica))' },
+  ios: { label: 'iPhone', color: 'hsl(var(--grafica))' },
+  android: { label: 'Android', color: 'hsl(var(--success))' },
+};
+
+const playConfig = {
+  instalaciones: { label: 'Instalaciones', color: 'hsl(var(--success))' },
+  desinstalaciones: { label: 'Desinstalaciones', color: 'hsl(var(--destructive))' },
 };
 
 /** Llama a una función de administración de Savium Share (fuera de los tipos generados). */
@@ -146,7 +195,8 @@ const actividadConfig = {
 
 const descargasConfig = {
   tienda: { label: 'App Store', color: 'hsl(var(--grafica))' },
-  aperturas: { label: 'Primeras aperturas', color: 'hsl(var(--success))' },
+  play: { label: 'Google Play', color: 'hsl(var(--success))' },
+  aperturas: { label: 'Primeras aperturas', color: 'hsl(var(--muted-foreground))' },
 };
 
 const gruposConfig = {
@@ -255,8 +305,9 @@ const SaviumShare = () => {
     retry: (intentos, err) => !(err instanceof SinPermiso) && intentos < 2,
     queryFn: async () => {
       // share_panel no está en los tipos generados de Supabase (vive en la base de Savium Share).
-      // Mientras la base no tenga la v3 (PGRST202: no existe), se usa la v2 sin las cifras nuevas.
-      let { data, error } = await supabase.rpc('share_panel_v3' as never, { p_dias: dias } as never);
+      // Mientras la base no tenga la versión más nueva (PGRST202: no existe), se usa la anterior sin las cifras nuevas.
+      let { data, error } = await supabase.rpc('share_panel_v4' as never, { p_dias: dias } as never);
+      if (error?.code === 'PGRST202') ({ data, error } = await supabase.rpc('share_panel_v3' as never, { p_dias: dias } as never));
       if (error?.code === 'PGRST202') ({ data, error } = await supabase.rpc('share_panel_v2' as never, { p_dias: dias } as never));
       if (error) {
         if (error.code === '42501') throw new SinPermiso(error.message);
@@ -274,13 +325,34 @@ const SaviumShare = () => {
     () => (data ? rellenarDias(data.grupos_por_dia ?? [], dias, { n: 0 }) : []),
     [data, dias],
   );
-  const descargasDia = useMemo(
-    () => (data?.descargas ? rellenarDias(data.descargas.por_dia ?? [], dias, { tienda: 0, aperturas: 0 }) : []),
+  const descargasDia = useMemo(() => {
+    if (!data?.descargas) return [];
+    const porDia = new Map<string, { dia: string; tienda: number; play: number; aperturas: number }>();
+    for (const f of data.descargas.por_dia ?? []) {
+      const dia = f.dia.slice(0, 10);
+      porDia.set(dia, { dia, tienda: f.tienda, play: 0, aperturas: f.aperturas });
+    }
+    for (const f of data.play?.por_dia ?? []) {
+      const dia = f.dia.slice(0, 10);
+      porDia.set(dia, { ...(porDia.get(dia) ?? { dia, tienda: 0, aperturas: 0 }), play: f.instalaciones });
+    }
+    return rellenarDias([...porDia.values()], dias, { tienda: 0, play: 0, aperturas: 0 });
+  }, [data, dias]);
+  const playDia = useMemo(
+    () => (data?.play ? rellenarDias(data.play.por_dia ?? [], dias, { instalaciones: 0, desinstalaciones: 0, activas: 0, cierres: 0, anr: 0 }) : []),
     [data, dias],
   );
-  const uso = useMemo(
-    () => (data ? rellenarDias(data.uso_por_dia ?? [], dias, { dispositivos: 0 }) : []),
-    [data, dias],
+  const uso = useMemo(() => {
+    if (!data) return [];
+    // Sin la v4 todo el uso es de iPhone.
+    const filas = data.plataformas
+      ? data.plataformas.uso_por_dia.map(f => ({ dia: f.dia, ios: f.ios ?? 0, android: f.android ?? 0 }))
+      : (data.uso_por_dia ?? []).map(f => ({ dia: f.dia, ios: f.dispositivos, android: 0 }));
+    return rellenarDias(filas, dias, { ios: 0, android: 0 });
+  }, [data, dias]);
+  const resenas = useMemo(
+    () => (data?.play?.resenas ?? []).filter(r => verLeidos || !r.leida),
+    [data, verLeidos],
   );
   const comentarios = useMemo(
     () => (data?.comentarios ?? []).filter(c => verLeidos || !c.leido),
@@ -289,6 +361,10 @@ const SaviumShare = () => {
 
   const marcar = async (c: Comentario) => {
     try { await rpcAdmin('share_admin_comentario', { p_id: c.id, p_leido: !c.leido }); recargar(); }
+    catch (e) { toast({ title: 'No se pudo guardar', description: (e as Error).message, variant: 'destructive' }); }
+  };
+  const marcarResena = async (r: Resena) => {
+    try { await rpcAdmin('share_admin_resena', { p_id: r.id, p_leida: !r.leida }); recargar(); }
     catch (e) { toast({ title: 'No se pudo guardar', description: (e as Error).message, variant: 'destructive' }); }
   };
   const borrar = async (c: Comentario) => {
@@ -302,7 +378,7 @@ const SaviumShare = () => {
       toast({ title: 'Versión no válida', description: 'Usa el formato 2.0 o 2.0.1', variant: 'destructive' });
       return;
     }
-    if (!confirm(`Todos los iPhone con una versión anterior a la ${v} quedarán bloqueados hasta actualizar. ¿Seguro?`)) return;
+    if (!confirm(`Todos los teléfonos (iPhone y Android) con una versión anterior a la ${v} quedarán bloqueados hasta actualizar. ¿Seguro?`)) return;
     try { await rpcAdmin('share_admin_version_minima', { p_version: v }); setNuevaMinima(''); recargar(); toast({ title: `Versión mínima: ${v}` }); }
     catch (e) { toast({ title: 'No se pudo guardar', description: (e as Error).message, variant: 'destructive' }); }
   };
@@ -402,22 +478,40 @@ const SaviumShare = () => {
                   valor={numero(data.grupos_dormidos?.total ?? 0)}
                   detalle={`Sin movimientos en 7 días · ${numero(data.grupos_dormidos?.sin_movimientos ?? 0)} nunca usados`}
                 />
-                <Kpi
-                  icon={UserPlus}
-                  titulo="iPhone sin grupos"
-                  valor={data.iphones?.instalaciones_30d ? numero(data.iphones.sin_grupos) : '—'}
-                  detalle={data.iphones?.instalaciones_30d
-                    ? `De ${numero(data.iphones.instalaciones_30d)} vistos en 30 días`
-                    : `Desde la 4.1 · ${numero(data.iphones?.en_grupos ?? 0)} iPhone en grupos`}
-                />
-                <Kpi
-                  icon={Download}
-                  titulo="Descargas"
-                  valor={data.descargas?.tienda.ultimo_dia ? numero(data.descargas.tienda.total) : numero(data.descargas?.aperturas.total ?? 0)}
-                  detalle={data.descargas?.tienda.ultimo_dia
-                    ? `App Store · ${numero(data.descargas.tienda.semana)} en 7 días`
-                    : `Primeras aperturas · ${numero(data.descargas?.aperturas.hoy ?? 0)} hoy`}
-                />
+                {data.plataformas ? (
+                  <Kpi
+                    icon={UserPlus}
+                    titulo="Teléfonos sin grupos"
+                    valor={numero(data.plataformas.instalaciones.ios.sin_grupos + data.plataformas.instalaciones.android.sin_grupos)}
+                    detalle={`${numero(data.plataformas.instalaciones.ios.sin_grupos)} iPhone · ${numero(data.plataformas.instalaciones.android.sin_grupos)} Android · de ${numero(data.plataformas.instalaciones.ios.vistas_30d + data.plataformas.instalaciones.android.vistas_30d)} vistos en 30 días`}
+                  />
+                ) : (
+                  <Kpi
+                    icon={UserPlus}
+                    titulo="iPhone sin grupos"
+                    valor={data.iphones?.instalaciones_30d ? numero(data.iphones.sin_grupos) : '—'}
+                    detalle={data.iphones?.instalaciones_30d
+                      ? `De ${numero(data.iphones.instalaciones_30d)} vistos en 30 días`
+                      : `Desde la 4.1 · ${numero(data.iphones?.en_grupos ?? 0)} iPhone en grupos`}
+                  />
+                )}
+                {data.play ? (
+                  <Kpi
+                    icon={Download}
+                    titulo="Descargas"
+                    valor={numero((data.descargas?.tienda.total ?? 0) + data.play.total)}
+                    detalle={`App Store ${numero(data.descargas?.tienda.total ?? 0)} · Google Play ${numero(data.play.total)}`}
+                  />
+                ) : (
+                  <Kpi
+                    icon={Download}
+                    titulo="Descargas"
+                    valor={data.descargas?.tienda.ultimo_dia ? numero(data.descargas.tienda.total) : numero(data.descargas?.aperturas.total ?? 0)}
+                    detalle={data.descargas?.tienda.ultimo_dia
+                      ? `App Store · ${numero(data.descargas.tienda.semana)} en 7 días`
+                      : `Primeras aperturas · ${numero(data.descargas?.aperturas.hoy ?? 0)} hoy`}
+                  />
+                )}
               </div>
             )}
 
@@ -440,9 +534,11 @@ const SaviumShare = () => {
               <Kpi icon={ImageIcon} titulo="Tickets" valor={numero(data.totales.tickets)} />
               <Kpi
                 icon={Smartphone}
-                titulo="iPhone activos hoy"
+                titulo={data.plataformas ? 'Teléfonos activos hoy' : 'iPhone activos hoy'}
                 valor={numero(data.dispositivos?.hoy ?? 0)}
-                detalle={`Media: ${data.dispositivos?.media_7d ?? 0} (7 días) · ${data.dispositivos?.media_30d ?? 0} (30 días)`}
+                detalle={data.plataformas
+                  ? `${numero(data.plataformas.uso_hoy.ios)} iPhone · ${numero(data.plataformas.uso_hoy.android)} Android · media 7 días: ${data.dispositivos?.media_7d ?? 0}`
+                  : `Media: ${data.dispositivos?.media_7d ?? 0} (7 días) · ${data.dispositivos?.media_30d ?? 0} (30 días)`}
               />
               <Kpi
                 icon={MessageSquare}
@@ -452,10 +548,10 @@ const SaviumShare = () => {
               />
             </div>
 
-            {/* USO DIARIO (iPhone distintos que abrieron la app cada día, sin identificarlos) */}
+            {/* USO DIARIO (teléfonos distintos que abrieron la app cada día, sin identificarlos) */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">iPhone activos por día</CardTitle>
+                <CardTitle className="text-base">{data.plataformas ? 'Teléfonos activos por día' : 'iPhone activos por día'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ChartContainer config={usoConfig} className="h-[220px] w-full">
@@ -464,7 +560,9 @@ const SaviumShare = () => {
                     <XAxis dataKey="dia" tickFormatter={etiquetaDia} className="text-xs" tickLine={false} axisLine={false} minTickGap={24} />
                     <YAxis allowDecimals={false} className="text-xs" tickLine={false} axisLine={false} width={32} />
                     <ChartTooltip isAnimationActive={false} content={<ChartTooltipContent labelFormatter={(_, p) => etiquetaDia(p?.[0]?.payload?.dia ?? '')} />} />
-                    <Bar dataKey="dispositivos" fill="hsl(var(--grafica))" radius={[3, 3, 0, 0]} />
+                    {data.plataformas && <ChartLegend content={<ChartLegendContent />} />}
+                    <Bar dataKey="ios" stackId="uso" fill="hsl(var(--grafica))" />
+                    {data.plataformas && <Bar dataKey="android" stackId="uso" fill="hsl(var(--success))" />}
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -477,7 +575,7 @@ const SaviumShare = () => {
                   <CardTitle className="text-base">Descargas</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className={`grid gap-4 ${data.play ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
                     {[
                       {
                         titulo: 'App Store',
@@ -490,9 +588,24 @@ const SaviumShare = () => {
                           ['Total', data.descargas.tienda.total],
                         ],
                       },
+                      ...(data.play
+                        ? [{
+                            titulo: 'Google Play',
+                            nota: data.play.ultimo_dia
+                              ? `Oficial, hasta el ${format(parseISO(data.play.ultimo_dia), 'd MMM', { locale: es })} · ${numero(data.play.desinstalaciones)} desinstalaciones`
+                              : 'Falta configurar el acceso a los informes de Play Console',
+                            cifras: [
+                              ['Último día', data.play.ultimo],
+                              ['7 días', data.play.semana],
+                              ['Total', data.play.total],
+                            ],
+                          }]
+                        : []),
                       {
                         titulo: 'Primeras aperturas',
-                        nota: data.descargas.aperturas.desde
+                        nota: data.plataformas
+                          ? `En tiempo real · ${numero(data.plataformas.instalaciones.ios.total)} iPhone · ${numero(data.plataformas.instalaciones.android.total)} Android`
+                          : data.descargas.aperturas.desde
                           ? `En tiempo real, desde el ${format(parseISO(data.descargas.aperturas.desde), 'd MMM yyyy', { locale: es })}`
                           : 'Empiezan a contar con la versión 4.1 de la app',
                         cifras: [
@@ -524,9 +637,54 @@ const SaviumShare = () => {
                       <ChartTooltip isAnimationActive={false} content={<ChartTooltipContent labelFormatter={(_, p) => etiquetaDia(p?.[0]?.payload?.dia ?? '')} />} />
                       <ChartLegend content={<ChartLegendContent />} />
                       <Bar dataKey="tienda" fill="hsl(var(--grafica))" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="aperturas" fill="hsl(var(--success))" radius={[3, 3, 0, 0]} />
+                      {data.play && <Bar dataKey="play" fill="hsl(var(--success))" radius={[3, 3, 0, 0]} />}
+                      <Bar dataKey="aperturas" fill="hsl(var(--muted-foreground))" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ChartContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* GOOGLE PLAY: informes de Play Console (dos o tres días de retraso) */}
+            {data.play && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Google Play</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {!data.play.ultimo_dia ? (
+                    <p className="text-sm text-muted-foreground">
+                      Todavía no hay informes. Llegan con dos o tres días de retraso una vez configurado el acceso al bucket de Play Console.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[
+                          ['Instaladas ahora', numero(data.play.activas), 'Dispositivos con la app'],
+                          ['Desinstalaciones', numero(data.play.desinstalaciones_semana), `7 días · ${numero(data.play.desinstalaciones)} en total`],
+                          ['Valoración', data.play.nota != null ? `${formatNumber(data.play.nota, 2)} ★` : '—', `${numero(data.play.resenas.length)} reseñas con texto`],
+                          ['Cierres inesperados', numero(data.play.cierres_7d), `7 días · ${numero(data.play.anr_7d)} sin responder (ANR)`],
+                        ].map(([titulo, valor, detalle]) => (
+                          <div key={titulo} className="rounded-xl border p-4">
+                            <p className="text-xs text-muted-foreground">{titulo}</p>
+                            <p className="text-xl font-bold tabular-nums">{valor}</p>
+                            <p className="text-xs text-muted-foreground">{detalle}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <ChartContainer config={playConfig} className="h-[220px] w-full">
+                        <BarChart data={playDia} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                          <XAxis dataKey="dia" tickFormatter={etiquetaDia} className="text-xs" tickLine={false} axisLine={false} minTickGap={24} />
+                          <YAxis allowDecimals={false} className="text-xs" tickLine={false} axisLine={false} width={32} />
+                          <ChartTooltip isAnimationActive={false} content={<ChartTooltipContent labelFormatter={(_, p) => etiquetaDia(p?.[0]?.payload?.dia ?? '')} />} />
+                          <ChartLegend content={<ChartLegendContent />} />
+                          <Bar dataKey="instalaciones" fill="hsl(var(--success))" radius={[3, 3, 0, 0]} />
+                          <Bar dataKey="desinstalaciones" fill="hsl(var(--destructive))" radius={[3, 3, 0, 0]} />
+                        </BarChart>
+                      </ChartContainer>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -538,7 +696,7 @@ const SaviumShare = () => {
                 filas={(data.paises_grupos ?? []).map(p => ({ etiqueta: pais(p.pais), valor: p.grupos }))}
               />
               <Desglose
-                titulo="Uso por país (iPhone·día)"
+                titulo={data.plataformas ? 'Uso por país (teléfono·día)' : 'Uso por país (iPhone·día)'}
                 filas={(data.paises_uso ?? []).map(p => ({ etiqueta: pais(p.pais), valor: p.dispositivos }))}
               />
               <Desglose
@@ -547,9 +705,30 @@ const SaviumShare = () => {
               />
               <Desglose
                 titulo="Versiones (últimos 7 días)"
-                filas={(data.versiones ?? []).map(v => ({ etiqueta: `v${v.version}`, valor: v.dispositivos }))}
+                filas={(data.versiones ?? []).map(v => ({
+                  etiqueta: v.plataforma ? `${PLATAFORMAS[v.plataforma]} v${v.version}` : `v${v.version}`,
+                  valor: v.dispositivos,
+                }))}
               />
             </div>
+
+            {/* PLATAFORMAS (v4) */}
+            {data.plataformas && (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <Desglose
+                  titulo="Grupos por plataforma (de quien lo creó)"
+                  filas={(['ios', 'android'] as const).map(p => ({ etiqueta: PLATAFORMAS[p], valor: data.plataformas!.grupos[p] }))}
+                />
+                <Desglose
+                  titulo="Teléfonos en grupos"
+                  filas={(['ios', 'android'] as const).map(p => ({ etiqueta: PLATAFORMAS[p], valor: data.plataformas!.en_grupos[p] }))}
+                />
+                <Desglose
+                  titulo="Google Play por país"
+                  filas={(data.play?.paises ?? []).map(p => ({ etiqueta: pais(p.pais), valor: p.instalaciones }))}
+                />
+              </div>
+            )}
 
             {/* ACTIVIDAD DIARIA */}
             <Card>
@@ -659,6 +838,7 @@ const SaviumShare = () => {
                         <Badge variant={c.tipo === 'error' ? 'destructive' : 'secondary'}>{TIPOS_COMENTARIO[c.tipo] ?? c.tipo}</Badge>
                         <span>{hace(c.creado)}</span>
                         <span>· {pais(c.pais)}</span>
+                        {c.plataforma && <span>· {PLATAFORMAS[c.plataforma]}</span>}
                         {c.version_app && <span>· v{c.version_app}</span>}
                         <span className="ml-auto flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" title={c.leido ? 'Marcar como no leído' : 'Marcar como leído'} onClick={() => marcar(c)}>
@@ -680,6 +860,48 @@ const SaviumShare = () => {
               </CardContent>
             </Card>
 
+            {/* RESEÑAS DE GOOGLE PLAY (solo las que traen texto; las respondes en Play Console) */}
+            {data.play && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="text-base">Reseñas de Google Play</CardTitle>
+                  {(data.play.resenas_sin_leer ?? 0) > 0 && <Badge variant="destructive">{numero(data.play.resenas_sin_leer)} sin leer</Badge>}
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {resenas.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{verLeidos ? 'Todavía no hay reseñas' : 'Nada pendiente de leer'}</p>
+                  ) : (
+                    resenas.map(r => (
+                      <div key={r.id} className={`rounded-xl border p-4 space-y-2 ${r.leida ? 'opacity-60' : ''}`}>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          {r.estrellas != null && (
+                            <span className="text-sm text-amber-500" aria-label={`${r.estrellas} estrellas`}>
+                              {'★'.repeat(r.estrellas)}{'☆'.repeat(5 - r.estrellas)}
+                            </span>
+                          )}
+                          <span>{hace(r.enviada)}</span>
+                          {r.idioma && <span>· {r.idioma}</span>}
+                          {r.version_app && <span>· v{r.version_app}</span>}
+                          {r.dispositivo && <span>· {r.dispositivo}</span>}
+                          {r.respondida && <Badge variant="secondary">Respondida</Badge>}
+                          <span className="ml-auto">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" title={r.leida ? 'Marcar como no leída' : 'Marcar como leída'} onClick={() => marcarResena(r)}>
+                              {r.leida ? <RotateCcw className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                            </Button>
+                          </span>
+                        </div>
+                        {r.titulo && <p className="text-sm font-medium">{r.titulo}</p>}
+                        {r.texto && <p className="text-sm whitespace-pre-wrap">{r.texto}</p>}
+                        {r.id.startsWith('http') && (
+                          <a className="text-sm text-primary underline" href={r.id} target="_blank" rel="noreferrer">Responder en Play Console</a>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* ACTUALIZACIÓN OBLIGATORIA */}
             <Card>
               <CardHeader>
@@ -687,9 +909,9 @@ const SaviumShare = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Ahora: <strong className="text-foreground">v{data.version_minima ?? '1.0'}</strong>. Los iPhone con una versión anterior
+                  Ahora: <strong className="text-foreground">v{data.version_minima ?? '1.0'}</strong>. Los teléfonos con una versión anterior
                   muestran «Hay una nueva versión» y no dejan seguir hasta actualizar (desde la 2.0; la 1.0 no lo sabe hacer).
-                  Súbela solo cuando la nueva versión ya esté publicada en la App Store.
+                  Es la misma para iPhone y Android: súbela solo cuando la nueva versión ya esté publicada en la App Store y en Google Play.
                 </p>
                 <div className="flex gap-2 max-w-sm">
                   <Input placeholder="2.0" value={nuevaMinima} onChange={e => setNuevaMinima(e.target.value)} />
