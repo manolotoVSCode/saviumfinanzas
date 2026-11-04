@@ -17,9 +17,9 @@ describe('código de emergencia', () => {
   });
 
   it('valida correos', () => {
-    expect(validarEmail('ana@hotmail.com')).toBe(true);
-    expect(validarEmail(' ana@hotmail.com ')).toBe(true);
-    expect(validarEmail('ana@hotmail')).toBe(false);
+    expect(validarEmail('ana@example.com')).toBe(true);
+    expect(validarEmail(' ana@example.com ')).toBe(true);
+    expect(validarEmail('ana@example')).toBe(false);
     expect(validarEmail('ana hotmail.com')).toBe(false);
   });
 });

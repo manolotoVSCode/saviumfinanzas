@@ -12,4 +12,4 @@ El módulo de Inversiones es independiente de Cuentas.
 
 Tipos por defecto sembrados por `create_default_investment_types`: valuación manual, interés fijo reinversión, interés fijo cobro mensual, participación/fideicomiso a plazo, bien raíz, criptomoneda.
 
-Datos migrados desde cuentas tipo 'Inversiones' (QUANT, Tortracs, RL365, ING Ahorro, Rakennus).
+Datos migrados desde cuentas tipo 'Inversiones'.
