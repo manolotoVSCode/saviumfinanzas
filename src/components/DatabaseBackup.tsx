@@ -1,127 +1,109 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { valorCSV } from '@/lib/csv';
-import { Download, Database } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Download, Database, Upload } from 'lucide-react';
 import { toFechaISO } from '@/lib/finance/fechas';
+import {
+  crearRespaldo, restaurarRespaldo, resumirRespaldo, validarRespaldo,
+  type EscribirLote, type Fila, type LeerPagina, type Respaldo,
+} from '@/lib/backup/respaldo';
 
-interface TableSelection {
-  transacciones: boolean;
-  cuentas: boolean;
-  categorias: boolean;
-  inversiones: boolean;
-  criptomonedas: boolean;
-  profiles: boolean;
-  informacion_familia: boolean;
-}
+const PALABRA_CONFIRMACION = 'RESTAURAR';
+
+const contarFilas = (r: Respaldo) => resumirRespaldo(r).reduce((total, t) => total + t.filas, 0);
 
 export const DatabaseBackup = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [tables, setTables] = useState<TableSelection>({
-    transacciones: true,
-    cuentas: true,
-    categorias: true,
-    inversiones: true,
-    criptomonedas: true,
-    profiles: true,
-    informacion_familia: true,
-  });
+  const [ocupado, setOcupado] = useState(false);
+  const [resultado, setResultado] = useState<string | null>(null);
+  const [aRestaurar, setARestaurar] = useState<Respaldo | null>(null);
+  const [confirmacion, setConfirmacion] = useState('');
+  const archivo = useRef<HTMLInputElement>(null);
+  const { user, soloLectura } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const handleTableToggle = (table: keyof TableSelection) => {
-    setTables(prev => ({
-      ...prev,
-      [table]: !prev[table]
-    }));
-  };
+  const avisarError = (descripcion: string) =>
+    toast({ title: 'Error', description: descripcion, variant: 'destructive' });
 
-  const exportToCSV = async () => {
-    setIsLoading(true);
-    
+  const exportar = async () => {
+    if (!user) return;
+    setOcupado(true);
+    setResultado(null);
     try {
-      const selectedTables = Object.entries(tables)
-        .filter(([_, selected]) => selected)
-        .map(([table, _]) => table);
-
-      if (selectedTables.length === 0) {
-        toast({
-          title: "Error",
-          description: "Debes seleccionar al menos una tabla para exportar",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      let csvContent = '';
-      const timestamp = toFechaISO(new Date());
-
-      for (const tableName of selectedTables) {
-        // Obtener datos de cada tabla
+      // Tablas distintas a las del tipo generado: la lista vive en lib/backup y su prueba la cruza con el esquema.
+      const leer: LeerPagina = async (tabla, clave, desde, hasta) => {
         const { data, error } = await supabase
-          .from(tableName as any)
-          .select('*');
+          .from(tabla as never)
+          .select('*')
+          .eq('user_id', user.id)
+          .order(clave)
+          .range(desde, hasta);
+        if (error) throw new Error(error.message);
+        return (data ?? []) as unknown as Fila[];
+      };
+      const respaldo = await crearRespaldo(leer, user.id);
 
-        if (error) {
-          console.error(`Error fetching ${tableName}:`, error);
-          continue;
-        }
-
-        if (data && data.length > 0) {
-          // Agregar encabezado de la tabla
-          csvContent += `\n=== ${tableName.toUpperCase()} ===\n`;
-
-          // Agregar encabezados de columnas
-          const headers = Object.keys(data[0]);
-          csvContent += headers.join(',') + '\n';
-
-          // Agregar datos
-          (data as unknown as Record<string, unknown>[]).forEach(row => {
-            csvContent += headers.map(header => valorCSV(row[header])).join(',') + '\n';
-          });
-          
-          csvContent += '\n';
-        }
-      }
-
-      // Crear y descargar el archivo
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      const blob = new Blob([JSON.stringify(respaldo)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `savium_backup_${timestamp}.csv`);
-      link.style.visibility = 'hidden';
-      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `savium_respaldo_${toFechaISO(new Date())}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-      // Success - no toast needed
-
+      setResultado(`Copia descargada: ${contarFilas(respaldo).toLocaleString('es-MX')} filas de ${resumirRespaldo(respaldo).length} tablas.`);
     } catch (error) {
       console.error('Error creating backup:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear la copia de seguridad",
-        variant: "destructive"
-      });
+      avisarError(error instanceof Error ? error.message : 'No se pudo crear la copia de seguridad');
     } finally {
-      setIsLoading(false);
+      setOcupado(false);
     }
   };
 
-  const tableLabels = {
-    transacciones: 'Transacciones',
-    cuentas: 'Cuentas',
-    categorias: 'Categorías',
-    inversiones: 'Inversiones',
-    criptomonedas: 'Criptomonedas',
-    profiles: 'Perfil',
-    informacion_familia: 'Información para la familia'
+  const elegirArchivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const elegido = e.target.files?.[0];
+    e.target.value = '';
+    if (!elegido || !user) return;
+    setResultado(null);
+    try {
+      const validacion = validarRespaldo(JSON.parse(await elegido.text()), user.id);
+      if (validacion.ok === false) {
+        avisarError(validacion.motivo);
+        return;
+      }
+      setConfirmacion('');
+      setARestaurar(validacion.respaldo);
+    } catch {
+      avisarError('El archivo no se pudo leer.');
+    }
+  };
+
+  const restaurar = async () => {
+    if (!aRestaurar) return;
+    setOcupado(true);
+    try {
+      const escribir: EscribirLote = async (tabla, clave, filas) => {
+        const { error } = await supabase.from(tabla as never).upsert(filas as never, { onConflict: clave });
+        if (error) throw new Error(error.message);
+      };
+      const hechas = await restaurarRespaldo(aRestaurar, escribir);
+      const total = hechas.reduce((suma, t) => suma + t.filas, 0);
+      setResultado(`Restauración terminada: ${total.toLocaleString('es-MX')} filas de ${hechas.length} tablas.`);
+      setARestaurar(null);
+    } catch (error) {
+      console.error('Error restoring backup:', error);
+      avisarError(error instanceof Error ? error.message : 'No se pudo restaurar la copia');
+    } finally {
+      await queryClient.invalidateQueries();
+      setOcupado(false);
+    }
   };
 
   return (
@@ -130,52 +112,67 @@ export const DatabaseBackup = () => {
         <Database className="h-5 w-5 text-primary" />
         <h3 className="text-lg font-semibold">Copia de Seguridad</h3>
       </div>
-      
+
       <p className="text-sm text-muted-foreground">
-        Descarga una copia de seguridad de tus datos en formato CSV
+        Descarga todos tus datos en un archivo. Si una tabla falla, no se descarga nada.
+        El archivo no está cifrado: guárdalo en un lugar seguro.
       </p>
 
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="outline" className="w-full">
-            <Download className="h-4 w-4 mr-2" />
-            Crear Copia de Seguridad
-          </Button>
-        </AlertDialogTrigger>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Button variant="outline" onClick={exportar} disabled={ocupado || soloLectura}>
+          <Download className="h-4 w-4 mr-2" />
+          {ocupado ? 'Trabajando...' : 'Crear copia completa'}
+        </Button>
+        <Button variant="outline" onClick={() => archivo.current?.click()} disabled={ocupado || soloLectura}>
+          <Upload className="h-4 w-4 mr-2" />
+          Restaurar copia
+        </Button>
+      </div>
+      <input ref={archivo} type="file" accept="application/json,.json" className="hidden" aria-label="Archivo de copia de seguridad" onChange={elegirArchivo} />
+
+      {resultado && <p role="status" className="text-sm text-muted-foreground">{resultado}</p>}
+
+      <AlertDialog open={aRestaurar !== null} onOpenChange={abierto => { if (!abierto && !ocupado) setARestaurar(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Seleccionar Tablas para Exportar</AlertDialogTitle>
+            <AlertDialogTitle>Restaurar copia</AlertDialogTitle>
             <AlertDialogDescription>
-              Elige qué datos quieres incluir en tu copia de seguridad.
-              <span className="block mt-2">El archivo contiene tus datos personales sin cifrar: guárdalo en un lugar seguro.</span>
+              Copia del {aRestaurar ? new Date(aRestaurar.creado).toLocaleString('es-MX') : ''}.
+              Las filas del archivo sustituyen a las actuales con el mismo identificador.
+              Lo que no esté en el archivo no se borra, y lo editado después de la copia se perderá.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
-          <div className="space-y-3 my-4">
-            {Object.entries(tables).map(([table, selected]) => (
-              <div key={table} className="flex items-center space-x-2">
-                <Checkbox
-                  id={table}
-                  checked={selected}
-                  onCheckedChange={() => handleTableToggle(table as keyof TableSelection)}
-                />
-                <label
-                  htmlFor={table}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {tableLabels[table as keyof typeof tableLabels]}
-                </label>
-              </div>
-            ))}
+
+          {aRestaurar && (
+            <ul className="max-h-48 overflow-y-auto text-sm space-y-1">
+              {resumirRespaldo(aRestaurar).map(t => (
+                <li key={t.tabla} className="flex justify-between gap-4">
+                  <span className="font-mono">{t.tabla}</span>
+                  <span>{t.filas.toLocaleString('es-MX')}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="space-y-2">
+            <label htmlFor="confirmar-restaurar" className="text-sm">
+              Escribe {PALABRA_CONFIRMACION} para continuar
+            </label>
+            <Input
+              id="confirmar-restaurar"
+              autoComplete="off"
+              value={confirmacion}
+              onChange={e => setConfirmacion(e.target.value)}
+            />
           </div>
 
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={exportToCSV}
-              disabled={isLoading}
+            <AlertDialogCancel disabled={ocupado}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={ocupado || confirmacion !== PALABRA_CONFIRMACION}
+              onClick={e => { e.preventDefault(); void restaurar(); }}
             >
-              {isLoading ? 'Exportando...' : 'Descargar CSV'}
+              {ocupado ? 'Restaurando...' : 'Restaurar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
