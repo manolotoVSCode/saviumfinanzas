@@ -1,17 +1,8 @@
 project_id = "alexhdutnvlxwhziudnr"
 
-[functions.admin-create-user]
-verify_jwt = true
-
-[functions.analyze-subscriptions]
-verify_jwt = true
-
 [functions.crypto-prices]
 verify_jwt = false
 # Auth is validated in code via getUser()
-
-[functions.send-welcome-email]
-verify_jwt = false
 
 [functions.keepalive]
 verify_jwt = false
