@@ -115,6 +115,7 @@ export const TransactionsManager = ({
   
   // Estado para el selector de cuentas en el formulario
   const [accountFormOpen, setAccountFormOpen] = useState(false);
+  const [envioIncompleto, setEnvioIncompleto] = useState(false);
   
   // Estado para el selector de categorías en cambio masivo
   const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
@@ -274,6 +275,7 @@ export const TransactionsManager = ({
   };
 
   const resetForm = () => {
+    setEnvioIncompleto(false);
     setFormData({
       cuentaId: '',
       fecha: toFechaISO(new Date()),
@@ -320,8 +322,13 @@ export const TransactionsManager = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.cuentaId || !formData.subcategoriaId) return;
-    
+    const faltan = [!formData.cuentaId && 'cuenta', !formData.subcategoriaId && 'categoría'].filter(Boolean);
+    if (faltan.length > 0) {
+      setEnvioIncompleto(true);
+      toast({ title: 'Faltan datos', description: `Selecciona: ${faltan.join(' y ')}.`, variant: 'destructive' });
+      return;
+    }
+
     // Validar que si el checkbox está marcado, haya una cuenta destino seleccionada
     if (autoContribution.enabled && !autoContribution.targetAccountId) {
       alert('Debes seleccionar una cuenta destino para la aportación automática');
@@ -572,7 +579,7 @@ export const TransactionsManager = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="cuentaId">Cuenta</Label>
-                    <Popover open={accountFormOpen} onOpenChange={setAccountFormOpen}>
+                    <Popover modal={true} open={accountFormOpen} onOpenChange={setAccountFormOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -620,6 +627,9 @@ export const TransactionsManager = ({
                         </Command>
                       </PopoverContent>
                     </Popover>
+                    {envioIncompleto && !formData.cuentaId && (
+                      <p className="text-xs text-destructive mt-1">Selecciona una cuenta</p>
+                    )}
                   </div>
 
                   <div>
@@ -696,7 +706,7 @@ export const TransactionsManager = ({
 
                 <div>
                   <Label htmlFor="subcategoriaId">Categoría</Label>
-                  <Popover open={categoryFormOpen} onOpenChange={setCategoryFormOpen}>
+                  <Popover modal={true} open={categoryFormOpen} onOpenChange={setCategoryFormOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -750,6 +760,9 @@ export const TransactionsManager = ({
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  {envioIncompleto && !formData.subcategoriaId && (
+                    <p className="text-xs text-destructive mt-1">Selecciona una categoría</p>
+                  )}
                 </div>
 
                 <div>
@@ -1082,7 +1095,7 @@ export const TransactionsManager = ({
 
               <div>
                 <Label htmlFor="bulk-categoria">Nueva Categoría</Label>
-                <Popover open={bulkCategoryOpen} onOpenChange={setBulkCategoryOpen}>
+                <Popover modal={true} open={bulkCategoryOpen} onOpenChange={setBulkCategoryOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"

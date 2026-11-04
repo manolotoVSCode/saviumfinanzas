@@ -9,6 +9,14 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.7',
+    date: 'Noviembre 2026',
+    changes: [
+      { icon: <Upload className="h-4 w-4" />, text: 'Importar: vuelven a leerse los movimientos de ING (cabecera «F. VALOR»)', type: 'fix' },
+      { icon: <Bug className="h-4 w-4" />, text: 'Nueva transacción: la lista de cuentas y categorías hace scroll, y si falta la cuenta o la categoría se indica cuál', type: 'fix' },
+    ],
+  },
+  {
     version: '10.6',
     date: 'Octubre 2026',
     changes: [
