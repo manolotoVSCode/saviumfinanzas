@@ -41,11 +41,15 @@ Deno.serve(async (req) => {
       nombre, mensaje, telefono: env("ALERTA_TELEFONO") || null,
     })
     .select("id, creada").single();
-  if (errAlta) return json({ ok: true, repetida: errAlta.code === "23505" });
+  if (errAlta?.code === "23505") return json({ ok: true, repetida: true });
+  if (errAlta) {
+    // Sin registro no hay aviso: un 503 hace que la app conserve la alerta y la reintente con el mismo id.
+    console.error("alta", errAlta.code, errAlta.message);
+    return json({ ok: false }, 503);
+  }
 
   const { data: lectores } = await admin.from("lectores").select("lector_id").eq("propietario_id", user.id);
   const ids = (lectores ?? []).map((l) => l.lector_id as string);
-  if (ids.length === 0) return json({ ok: true });
 
   // Pausa de pruebas (secreto ALERTA_PAUSA=1): se registra, marcada como vista para que no se repita, y no se avisa a nadie.
   if (env("ALERTA_PAUSA") === "1") {
@@ -60,7 +64,10 @@ Deno.serve(async (req) => {
   // titular no se queda esperando ni guarda la alerta como pendiente. waitUntil mantiene viva la función.
   const avisar = async () => {
     const [n, c] = await Promise.allSettled([
-      notificar(admin, ids, { alertaId: alerta.id, titulo: `Alerta de ${nombre}`, cuerpo: `${mensaje} (${hora})`, latitud: lat, longitud: lon }),
+      // Sin lectores no hay a quién notificar, pero los contactos extra sí reciben el correo.
+      ids.length > 0
+        ? notificar(admin, ids, { alertaId: alerta.id, titulo: `Alerta de ${nombre}`, cuerpo: `${mensaje} (${hora})`, latitud: lat, longitud: lon })
+        : Promise.resolve(0),
       enviarCorreos(admin, user.id, ids, nombre, mensaje, hora, mapa, precision),
     ]);
     const enviadas = n.status === "fulfilled" ? n.value : 0;
@@ -68,7 +75,7 @@ Deno.serve(async (req) => {
     if (n.status === "rejected") console.error("APNs", String(n.reason));
     await admin.from("alertas_emergencia").update({ notificaciones: enviadas, correo }).eq("id", alerta.id);
   };
-  // @ts-ignore EdgeRuntime existe en Supabase Edge Functions
+  // @ts-expect-error EdgeRuntime existe en Supabase Edge Functions
   EdgeRuntime.waitUntil(avisar());
   return json({ ok: true });
 });
