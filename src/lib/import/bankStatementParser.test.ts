@@ -138,6 +138,25 @@ describe('parseBankStatement', () => {
     expect(r.movements[0].fecha).toEqual(local(2026, 8, 5));
   });
 
+  it('XLS de ING: bloque de cuenta arriba y cabecera F. VALOR / IMPORTE (€)', async () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['Movimientos de la Cuenta', null, '  Número de cuenta:', '1234 5678 9012 3456'],
+      [null, null, '  Titular:', 'TITULAR DE PRUEBA'],
+      [null, null, '  Fecha exportación:', '04/11/2026 16:59h'],
+      ['F. VALOR', 'CATEGORÍA', 'SUBCATEGORÍA', 'DESCRIPCIÓN', 'COMENTARIO', 'IMPORTE (€)', 'SALDO (€)'],
+      ['02/11/2026', 'Otros gastos', 'Transferencias', 'Transferencia emitida periódica', null, -61.77, 21535.86],
+      ['25/10/2026', 'Otros ingresos', 'Alquiler', 'Transferencia recibida', null, 500, 21597.63],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
+    const buf = XLSX.write(wb, { type: 'array', bookType: 'biff8' }) as ArrayBuffer;
+    const r = await parseBankStatement(buf, 'movements.xls');
+    expect(r.skipped).toHaveLength(0);
+    expect(r.movements.map(m => m.montoOriginal)).toEqual([-61.77, 500]);
+    expect(r.movements[0].descripcion).toBe('Transferencia emitida periódica');
+    expect(r.movements[0].fecha).toEqual(local(2026, 11, 2));
+  });
+
   it('CSV UTF-8 con BOM: la cabecera Fecha se reconoce igual', async () => {
     const r = await parseBankStatement(utf8('﻿Fecha,Concepto,Importe\n25/08/2026,OK,10\n'), 'x.csv');
     expect(r.meta.encoding).toBe('utf-8');

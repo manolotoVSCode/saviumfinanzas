@@ -138,7 +138,8 @@ export function stripPreamble(rows: string[][]): string[][] {
   const limit = Math.min(rows.length, 15);
   for (let i = 0; i < limit; i++) {
     const cells = rows[i].map(norm);
-    const hasDate = cells.some(c => c === 'fecha' || c === 'date' || c.startsWith('fecha '));
+    // ING España no pone "Fecha": su cabecera es "F. VALOR".
+    const hasDate = cells.some(c => c === 'fecha' || c === 'date' || c.startsWith('fecha ') || /^f\.? ?(valor|operacion|mov)/.test(c));
     const hasOther = cells.some(c =>
       ['descripcion', 'description', 'concepto', 'detalle', 'importe', 'amount', 'monto', 'cargo', 'abono', 'debe', 'haber', 'credito', 'debito', 'retiro', 'deposito'].includes(c)
     );
