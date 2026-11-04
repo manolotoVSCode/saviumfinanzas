@@ -5,10 +5,15 @@ on:
     paths-ignore:
       - 'ios/**'
       - 'shared/**'
+  # Volver a publicar main a mano, por ejemplo tras un revert.
+  workflow_dispatch:
 permissions:
   contents: read
   pages: write
   id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -21,6 +26,9 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
+      # Si fallan tipos o pruebas no se publica nada.
+      - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: npm test
       - run: npm run build
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
