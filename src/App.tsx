@@ -8,6 +8,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
 import { ColorVentana } from "@/components/ColorVentana";
 import { AvisoApp } from "@/components/AvisoApp";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Recuperacion } from "@/components/Recuperacion";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Responsive from "@/components/Responsive";
@@ -68,6 +70,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AvisoApp />
+        <Recuperacion>
+        <ErrorBoundary>
         <HashRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -192,6 +196,8 @@ const App = () => (
             </Routes>
           </Suspense>
         </HashRouter>
+        </ErrorBoundary>
+        </Recuperacion>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

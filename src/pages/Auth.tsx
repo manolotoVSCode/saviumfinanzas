@@ -15,6 +15,7 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [enlaceEnviado, setEnlaceEnviado] = useState(false);
   const { signIn, resetPassword, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ const Auth = () => {
         variant: 'destructive',
       });
     } else {
+      setEnlaceEnviado(true);
       setShowForgotPassword(false);
     }
 
@@ -85,6 +87,11 @@ const Auth = () => {
           <CardContent className="space-y-8 px-8 pb-10">
             {!showForgotPassword ? (
               <form onSubmit={handleSignIn} method="post" className="space-y-6">
+                {enlaceEnviado && (
+                  <p role="status" className="text-sm text-muted-foreground text-center">
+                    Si el correo está registrado, recibirás un enlace para crear una contraseña nueva.
+                  </p>
+                )}
                 <div className="space-y-3">
                   <Label htmlFor="signin-email" className="text-sm font-semibold">
                     Email

@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { modoRecuperacionInicial, type ModoRecuperacion } from '@/lib/recuperacion';
 
 interface AuthContextType {
   user: User | null;
@@ -19,6 +20,9 @@ interface AuthContextType {
   }) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
+  /** Se llegó desde el correo de recuperación: la app pide la contraseña nueva antes de mostrar nada más. */
+  recuperacion: ModoRecuperacion | null;
+  terminarRecuperacion: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,12 +41,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   // undefined = aún sin consultar; null = no es lectora de nadie.
   const [titularId, setTitularId] = useState<string | null | undefined>(undefined);
+  const [recuperacion, setRecuperacion] = useState<ModoRecuperacion | null>(modoRecuperacionInicial);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') setRecuperacion('nueva');
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -128,10 +134,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      // A la raíz: la app usa HashRouter y Pages no sirve otras rutas. El token llega en el fragmento.
+      redirectTo: `${window.location.origin}/`,
     });
     return { error };
   };
+
+  const terminarRecuperacion = useCallback(() => {
+    setRecuperacion(null);
+    window.location.hash = '#/';
+  }, []);
 
   const value = {
     user,
@@ -143,6 +155,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     resetPassword,
+    recuperacion,
+    terminarRecuperacion,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
