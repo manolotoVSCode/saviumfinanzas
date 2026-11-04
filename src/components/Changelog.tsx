@@ -9,6 +9,15 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.8',
+    date: 'Noviembre 2026',
+    changes: [
+      { icon: <Database className="h-4 w-4" />, text: 'Copia de seguridad completa: todas las tablas y páginas en un archivo JSON, sin descarga si algo falla, y opción de restaurar', type: 'improvement' },
+      { icon: <Shield className="h-4 w-4" />, text: 'Recuperar contraseña: el enlace del correo abre una pantalla para crear la nueva y se confirma el envío', type: 'fix' },
+      { icon: <Bug className="h-4 w-4" />, text: 'Si una pantalla falla al cargar se ofrece recargar, en lugar de quedar en blanco', type: 'fix' },
+    ],
+  },
+  {
     version: '10.7',
     date: 'Noviembre 2026',
     changes: [
