@@ -3,23 +3,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
-import { ChecklistItem } from '@/lib/finance/checklist';
+import { cambiosAlMarcar, ChecklistItem } from '@/lib/finance/checklist';
+import { formatFechaCorta, parseFechaLocal } from '@/lib/finance/fechas';
 
 const EMPTY: ChecklistItem[] = [];
 
 export const fetchChecklist = async (): Promise<ChecklistItem[]> => {
   const { data, error } = await supabase
     .from('checklist_items')
-    .select('id, texto, fecha, transaccion_id, completada, completada_at, created_at')
+    .select('id, texto, fecha, transaccion_id, repetir, completada, completada_at, created_at')
     .order('created_at');
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map(r => ({ ...r, repetir: r.repetir === 'mensual' ? 'mensual' : null }));
 };
 
 export interface ChecklistDatos {
   texto: string;
   fecha: string | null;
   transaccion_id: string | null;
+  repetir: 'mensual' | null;
 }
 
 /** Tareas del Checklist (tabla checklist_items). Optimista al marcar; el resto recarga. */
@@ -64,19 +66,19 @@ export const useChecklist = () => {
     onError,
   });
 
+  // Las mensuales no se completan: avanzan un mes (cambiosAlMarcar) y se avisa la próxima fecha.
   const marcar = useMutation({
-    mutationFn: async ({ id, completada }: { id: string; completada: boolean }) => {
-      const { error } = await supabase
-        .from('checklist_items')
-        .update({ completada, completada_at: completada ? new Date().toISOString() : null })
-        .eq('id', id);
+    mutationFn: async ({ id, cambios }: { id: string; cambios: ReturnType<typeof cambiosAlMarcar> }) => {
+      const { error } = await supabase.from('checklist_items').update(cambios).eq('id', id);
       if (error) throw error;
     },
-    onMutate: async ({ id, completada }) => {
+    onMutate: async ({ id, cambios }) => {
       await queryClient.cancelQueries({ queryKey: QK.checklist });
-      const completada_at = completada ? new Date().toISOString() : null;
       queryClient.setQueryData<ChecklistItem[]>(QK.checklist, prev =>
-        (prev ?? []).map(i => (i.id === id ? { ...i, completada, completada_at } : i)));
+        (prev ?? []).map(i => (i.id === id ? { ...i, ...cambios } : i)));
+    },
+    onSuccess: (_d, { cambios }) => {
+      if (cambios.fecha) toast({ title: 'Hecha este mes', description: `Vuelve el ${formatFechaCorta(parseFechaLocal(cambios.fecha))}` });
     },
     onError,
   });
@@ -99,7 +101,8 @@ export const useChecklist = () => {
     error: query.isError,
     crear: crear.mutateAsync,
     actualizar: actualizar.mutateAsync,
-    marcar: marcar.mutate,
+    marcar: (item: ChecklistItem, completada: boolean) =>
+      marcar.mutate({ id: item.id, cambios: cambiosAlMarcar(item, completada) }),
     borrar: borrar.mutate,
     guardando: crear.isPending || actualizar.isPending,
   };

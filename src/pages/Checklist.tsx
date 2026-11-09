@@ -34,7 +34,7 @@ const Checklist = () => {
       key={item.id}
       item={item}
       tx={item.transaccion_id ? porId.get(item.transaccion_id) : undefined}
-      onMarcar={c => marcar({ id: item.id, completada: c })}
+      onMarcar={c => marcar(item, c)}
       // Las abiertas se borran en Configuración; las completadas, solo aquí.
       onBorrar={item.completada ? () => setABorrar(item) : undefined}
     />

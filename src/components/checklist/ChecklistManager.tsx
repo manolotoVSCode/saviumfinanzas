@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useChecklist } from '@/hooks/useChecklist';
 import { agruparChecklist, ChecklistItem } from '@/lib/finance/checklist';
@@ -27,24 +28,27 @@ export const ChecklistManager = ({ transactions }: Props) => {
   const [texto, setTexto] = useState('');
   const [fecha, setFecha] = useState('');
   const [transaccionId, setTransaccionId] = useState<string | null>(null);
+  const [repetir, setRepetir] = useState<'mensual' | null>(null);
   const [aBorrar, setABorrar] = useState<ChecklistItem | null>(null);
 
   const porId = useMemo(() => new Map(transactions.map(t => [t.id, t])), [transactions]);
   const grupos = useMemo(() => agruparChecklist(items), [items]);
   const abiertas = [...grupos.vencidas, ...grupos.proximas, ...grupos.sinFecha];
 
-  const limpiar = () => { setEditando(null); setTexto(''); setFecha(''); setTransaccionId(null); };
+  const limpiar = () => { setEditando(null); setTexto(''); setFecha(''); setTransaccionId(null); setRepetir(null); };
 
   const editar = (item: ChecklistItem) => {
     setEditando(item.id);
     setTexto(item.texto);
     setFecha(item.fecha ?? '');
     setTransaccionId(item.transaccion_id);
+    setRepetir(item.repetir);
   };
 
   const guardar = async (e: React.FormEvent) => {
     e.preventDefault();
-    const datos = { texto: texto.trim(), fecha: fecha || null, transaccion_id: transaccionId };
+    // Repetir necesita fecha: sin ella se guarda como tarea normal.
+    const datos = { texto: texto.trim(), fecha: fecha || null, transaccion_id: transaccionId, repetir: fecha ? repetir : null };
     if (!datos.texto) return;
     try {
       if (editando) await actualizar({ id: editando, ...datos });
@@ -68,7 +72,7 @@ export const ChecklistManager = ({ transactions }: Props) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-muted-foreground text-sm">
-          Apunta lo que tienes que actualizar en tus transacciones. Si le pones fecha y pasa sin marcarla como completada, aparece en Alertas.
+          Apunta lo que tienes que actualizar en tus transacciones. Si le pones fecha y pasa sin marcarla como completada, aparece en Alertas. Las que se repiten cada mes pasan solas al mes siguiente al marcarlas.
         </p>
 
         <form onSubmit={guardar} className="space-y-3 rounded-lg border p-3">
@@ -82,10 +86,22 @@ export const ChecklistManager = ({ transactions }: Props) => {
               onChange={e => setTexto(e.target.value)}
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-[11rem_1fr]">
+          <div className="grid gap-3 sm:grid-cols-[11rem_9rem_1fr]">
             <div className="space-y-1.5">
               <Label htmlFor="checklist-fecha">Fecha (opcional)</Label>
               <Input id="checklist-fecha" type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="checklist-repetir">Se repite</Label>
+              <Select value={fecha ? (repetir ?? 'no') : 'no'} onValueChange={v => setRepetir(v === 'mensual' ? 'mensual' : null)} disabled={!fecha}>
+                <SelectTrigger id="checklist-repetir" title={fecha ? undefined : 'Pon una fecha para repetirla'}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no">No</SelectItem>
+                  <SelectItem value="mensual">Cada mes</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5 min-w-0">
               <Label>Transacción</Label>
@@ -113,7 +129,7 @@ export const ChecklistManager = ({ transactions }: Props) => {
                 key={item.id}
                 item={item}
                 tx={item.transaccion_id ? porId.get(item.transaccion_id) : undefined}
-                onMarcar={c => marcar({ id: item.id, completada: c })}
+                onMarcar={c => marcar(item, c)}
                 onEditar={() => editar(item)}
                 onBorrar={() => setABorrar(item)}
               />

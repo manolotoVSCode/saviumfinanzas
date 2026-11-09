@@ -105,6 +105,7 @@ export type Database = {
           created_at: string
           fecha: string | null
           id: string
+          repetir: string | null
           texto: string
           transaccion_id: string | null
           user_id: string
@@ -115,6 +116,7 @@ export type Database = {
           created_at?: string
           fecha?: string | null
           id?: string
+          repetir?: string | null
           texto: string
           transaccion_id?: string | null
           user_id: string
@@ -125,6 +127,7 @@ export type Database = {
           created_at?: string
           fecha?: string | null
           id?: string
+          repetir?: string | null
           texto?: string
           transaccion_id?: string | null
           user_id?: string

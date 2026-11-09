@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agruparChecklist, checklistAlerts, ChecklistItem, estaVencida } from './checklist';
+import { agruparChecklist, cambiosAlMarcar, checklistAlerts, ChecklistItem, estaVencida, siguienteFechaMensual } from './checklist';
 import { computeAlerts } from './alerts';
 
 const NOW = new Date(2026, 10, 9, 15, 0); // 9 nov 2026, 15:00 local
@@ -9,6 +9,7 @@ const item = (over: Partial<ChecklistItem>): ChecklistItem => ({
   texto: 'Actualizar transacción',
   fecha: null,
   transaccion_id: null,
+  repetir: null,
   completada: false,
   completada_at: null,
   created_at: '2026-11-01T10:00:00Z',
@@ -61,5 +62,35 @@ describe('checklistAlerts', () => {
       checklist: [item({ fecha: '2026-11-01' })], now: NOW,
     });
     expect(alerts.map(a => a.type)).toEqual(['checklist']);
+  });
+});
+
+describe('siguienteFechaMensual', () => {
+  it('mismo día del mes siguiente, cruzando el año', () => {
+    expect(siguienteFechaMensual('2026-11-09')).toBe('2026-12-09');
+    expect(siguienteFechaMensual('2026-12-15')).toBe('2027-01-15');
+  });
+  it('si el día no existe usa el último; el último día sigue en el último', () => {
+    expect(siguienteFechaMensual('2027-01-30')).toBe('2027-02-28');
+    expect(siguienteFechaMensual('2027-01-31')).toBe('2027-02-28');
+    expect(siguienteFechaMensual('2027-02-28')).toBe('2027-03-31');
+    expect(siguienteFechaMensual('2028-01-31')).toBe('2028-02-29');
+  });
+});
+
+describe('cambiosAlMarcar', () => {
+  it('la mensual sigue abierta, avanza un mes y guarda cuándo se hizo', () => {
+    expect(cambiosAlMarcar({ fecha: '2026-11-08', repetir: 'mensual' }, true, NOW))
+      .toEqual({ completada: false, completada_at: NOW.toISOString(), fecha: '2026-12-08' });
+  });
+  it('la normal se completa y se desmarca sin tocar la fecha', () => {
+    expect(cambiosAlMarcar({ fecha: '2026-11-08', repetir: null }, true, NOW))
+      .toEqual({ completada: true, completada_at: NOW.toISOString() });
+    expect(cambiosAlMarcar({ fecha: '2026-11-08', repetir: null }, false, NOW))
+      .toEqual({ completada: false, completada_at: null });
+  });
+  it('tras marcar la mensual vencida deja de avisar', () => {
+    const c = cambiosAlMarcar({ fecha: '2026-11-08', repetir: 'mensual' }, true, NOW);
+    expect(checklistAlerts([item({ ...c, repetir: 'mensual' })], NOW)).toEqual([]);
   });
 });

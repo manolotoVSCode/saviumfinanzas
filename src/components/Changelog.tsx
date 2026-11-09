@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.11',
+    date: 'Noviembre 2026',
+    changes: [
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Checklist: una tarea con fecha puede repetirse cada mes; al marcarla queda hecha ese mes y su fecha pasa sola al mes siguiente', type: 'feature' },
+    ],
+  },
+  {
     version: '10.10',
     date: 'Noviembre 2026',
     changes: [

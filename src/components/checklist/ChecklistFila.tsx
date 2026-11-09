@@ -5,7 +5,7 @@ import { ChecklistItem, estaVencida } from '@/lib/finance/checklist';
 import { diasHasta, formatFechaCorta, parseFechaLocal } from '@/lib/finance/fechas';
 import { Transaction } from '@/types/finance';
 import { useAppConfig } from '@/hooks/useAppConfig';
-import { ArrowUpDown, CalendarDays, Pencil, Trash2 } from 'lucide-react';
+import { ArrowUpDown, CalendarDays, Pencil, Repeat, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** «Hoy», «Mañana», «En 3 días», «Hace 2 días» junto a la fecha. */
@@ -50,7 +50,7 @@ export const ChecklistFila = ({ item, tx, onMarcar, onEditar, onBorrar }: Props)
         className="mt-0.5"
         checked={item.completada}
         onCheckedChange={v => onMarcar(v === true)}
-        aria-label={item.completada ? 'Marcar como pendiente' : 'Marcar como completada'}
+        aria-label={item.completada ? 'Marcar como pendiente' : item.repetir ? 'Marcar como hecha este mes' : 'Marcar como completada'}
       />
       <div className="flex-1 min-w-0 space-y-1">
         <p className={cn('text-sm font-medium break-words', item.completada && 'line-through text-muted-foreground')}>
@@ -62,6 +62,13 @@ export const ChecklistFila = ({ item, tx, onMarcar, onEditar, onBorrar }: Props)
               <CalendarDays className="h-3 w-3" />
               {formatFechaCorta(parseFechaLocal(item.fecha))}
               {!item.completada && <> · {cuandoTexto(item.fecha)}</>}
+            </span>
+          )}
+          {item.repetir === 'mensual' && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <Repeat className="h-3 w-3" />
+              Cada mes
+              {item.completada_at && <> · hecha el {formatFechaCorta(new Date(item.completada_at))}</>}
             </span>
           )}
           {vencida && <Badge variant="destructive" className="text-[10px] h-4 px-1.5">Vencida</Badge>}

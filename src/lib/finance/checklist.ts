@@ -1,5 +1,5 @@
 import type { Alert } from './alerts';
-import { diasHasta, parseFechaLocal } from './fechas';
+import { diasHasta, parseFechaLocal, toFechaISO } from './fechas';
 
 /** Fila de checklist_items (la fila completa es asignable). */
 export interface ChecklistItem {
@@ -8,10 +8,42 @@ export interface ChecklistItem {
   /** 'YYYY-MM-DD' o null si no tiene fecha. */
   fecha: string | null;
   transaccion_id: string | null;
+  /** 'mensual': al marcarla sigue abierta y su fecha pasa al mes siguiente. */
+  repetir: 'mensual' | null;
   completada: boolean;
+  /** Cuándo se completó; en las mensuales, la última vez que se hizo. */
   completada_at: string | null;
   created_at: string;
 }
+
+const finDeMes = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
+
+/**
+ * Misma fecha del mes siguiente. Si el día no existe se usa el último del mes,
+ * y una fecha en el último día de su mes pasa al último del siguiente (31 ene → 28 feb → 31 mar).
+ */
+export const siguienteFechaMensual = (iso: string): string => {
+  const d = parseFechaLocal(iso);
+  const y = d.getFullYear(), m = d.getMonth(), dia = d.getDate();
+  const ultimo = dia === finDeMes(y, m);
+  const diaNuevo = ultimo ? finDeMes(y, m + 1) : Math.min(dia, finDeMes(y, m + 1));
+  return toFechaISO(new Date(y, m + 1, diaNuevo));
+};
+
+/**
+ * Cambios al marcar o desmarcar. Una tarea mensual no se completa: sigue abierta,
+ * avanza un mes y guarda cuándo se hizo. Desmarcarla no aplica (nunca está marcada).
+ */
+export const cambiosAlMarcar = (
+  item: Pick<ChecklistItem, 'fecha' | 'repetir'>,
+  completada: boolean,
+  ahora: Date = new Date(),
+): Pick<ChecklistItem, 'completada' | 'completada_at'> & { fecha?: string } => {
+  if (completada && item.repetir === 'mensual' && item.fecha) {
+    return { completada: false, completada_at: ahora.toISOString(), fecha: siguienteFechaMensual(item.fecha) };
+  }
+  return { completada, completada_at: completada ? ahora.toISOString() : null };
+};
 
 export type GrupoChecklist = 'vencidas' | 'proximas' | 'sinFecha' | 'completadas';
 
