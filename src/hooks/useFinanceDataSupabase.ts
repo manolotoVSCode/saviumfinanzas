@@ -91,6 +91,7 @@ export const useFinanceDataSupabase = () => {
         tipo: account.tipo,
         saldo_inicial: account.saldoInicial,
         divisa: account.divisa,
+        clabe: account.clabe || null,
         user_id: user.id
       };
 
@@ -149,6 +150,8 @@ export const useFinanceDataSupabase = () => {
       if (updates.saldoInicial !== undefined) updateData.saldo_inicial = updates.saldoInicial;
       if (updates.divisa) updateData.divisa = updates.divisa;
       if (updates.vendida !== undefined) updateData.vendida = updates.vendida;
+      // '' borra la CLABE; undefined no la toca.
+      if (updates.clabe !== undefined) updateData.clabe = updates.clabe || null;
 
       // Mapear campos específicos de inversión
       if (updates.tipo_inversion) updateData.tipo_inversion = updates.tipo_inversion;

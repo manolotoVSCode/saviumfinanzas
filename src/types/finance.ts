@@ -30,6 +30,8 @@ export interface Account {
   ultimo_pago?: string;
   // Campo para marcar propiedades como vendidas
   vendida?: boolean;
+  /** CLABE interbancaria, 18 dígitos sin espacios. */
+  clabe?: string;
 }
 
 export interface Transaction {

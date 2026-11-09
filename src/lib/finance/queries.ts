@@ -18,6 +18,7 @@ export const mapAccounts = (cuentasData: Row[]): Account[] => {
     valorMercado: cuenta.valor_mercado ? Number(cuenta.valor_mercado) : undefined,
     rendimientoMensual: cuenta.rendimiento_mensual ? Number(cuenta.rendimiento_mensual) : undefined,
     vendida: cuenta.vendida || false,
+    clabe: cuenta.clabe || undefined,
     // Nuevos campos de inversión
     tipo_inversion: cuenta.tipo_inversion as 'Interés fijo' | 'Fondo variable' | 'Criptomoneda' | undefined,
     modalidad: cuenta.modalidad as 'Reinversión' | 'Pago mensual' | 'Pago trimestral' | undefined,

@@ -249,6 +249,7 @@ export type Database = {
       }
       cuentas: {
         Row: {
+          clabe: string | null
           created_at: string
           divisa: string
           fecha_inicio: string | null
@@ -268,6 +269,7 @@ export type Database = {
           vendida: boolean
         }
         Insert: {
+          clabe?: string | null
           created_at?: string
           divisa?: string
           fecha_inicio?: string | null
@@ -287,6 +289,7 @@ export type Database = {
           vendida?: boolean
         }
         Update: {
+          clabe?: string | null
           created_at?: string
           divisa?: string
           fecha_inicio?: string | null
@@ -951,6 +954,7 @@ export type Database = {
       }
       saldos_cuentas: {
         Row: {
+          clabe: string | null
           capital_neto: number
           created_at: string
           divisa: string

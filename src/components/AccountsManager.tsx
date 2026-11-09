@@ -9,7 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Account, AccountType } from '@/types/finance';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, Search, Copy } from 'lucide-react';
+import { errorClabe, formatearClabe, limpiarClabe } from '@/lib/finance/clabe';
+
+/** Tipos sin número de cuenta: no se les pide CLABE. */
+const SIN_CLABE: AccountType[] = ['Efectivo', 'Bien Raíz'];
 import { toast } from 'sonner';
 
 interface AccountsManagerProps {
@@ -43,6 +47,7 @@ export const AccountsManager = ({
     saldoInicial: 0,
     divisa: 'MXN' as 'MXN' | 'USD' | 'EUR',
     vendida: false,
+    clabe: '',
     // Campos específicos de inversión
     tipo_inversion: '' as 'Interés fijo' | 'Fondo variable' | 'Criptomoneda' | '',
     modalidad: '' as 'Reinversión' | 'Pago mensual' | 'Pago trimestral' | '',
@@ -75,6 +80,7 @@ export const AccountsManager = ({
       saldoInicial: 0, 
       divisa: 'MXN',
       vendida: false,
+      clabe: '',
       tipo_inversion: '',
       modalidad: '',
       rendimiento_bruto: 0,
@@ -111,13 +117,20 @@ export const AccountsManager = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre || !formData.tipo || !formData.divisa) return;
+    const clabeError = SIN_CLABE.includes(formData.tipo) ? null : errorClabe(formData.clabe);
+    if (clabeError) {
+      toast.error(clabeError);
+      return;
+    }
 
     // Preparar datos según el tipo de cuenta
     const accountData: any = {
       nombre: formData.nombre,
       tipo: formData.tipo,
       saldoInicial: formData.saldoInicial,
-      divisa: formData.divisa
+      divisa: formData.divisa,
+      // '' borra la que hubiera; los tipos sin CLABE no la guardan.
+      clabe: SIN_CLABE.includes(formData.tipo) ? '' : limpiarClabe(formData.clabe),
     };
 
     // Solo agregar campos de inversión si es una cuenta de inversión y están llenos
@@ -146,6 +159,7 @@ export const AccountsManager = ({
       saldoInicial: account.saldoInicial,
       divisa: account.divisa || 'MXN',
       vendida: account.vendida || false,
+      clabe: account.clabe ? formatearClabe(account.clabe) : '',
       tipo_inversion: account.tipo_inversion || '',
       modalidad: account.modalidad || '',
       rendimiento_bruto: account.rendimiento_bruto || 0,
@@ -191,7 +205,8 @@ export const AccountsManager = ({
     if (filterType !== 'all' && account.tipo !== filterType) return false;
     if (filterCurrency !== 'all' && (account.divisa || 'MXN') !== filterCurrency) return false;
     if (filterPositiveBalance && account.saldoActual !== 0) return false;
-    if (searchQuery.length >= 3 && !account.nombre.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (searchQuery.length >= 3 && !account.nombre.toLowerCase().includes(searchQuery.toLowerCase())
+      && !(account.clabe && limpiarClabe(searchQuery) && account.clabe.includes(limpiarClabe(searchQuery)))) return false;
     return true;
   });
 
@@ -369,6 +384,29 @@ export const AccountsManager = ({
                 />
               </div>
 
+              {formData.tipo && !SIN_CLABE.includes(formData.tipo) && (
+                <div>
+                  <Label htmlFor="clabe">CLABE (opcional)</Label>
+                  <Input
+                    id="clabe"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    className="font-mono"
+                    value={formData.clabe}
+                    onChange={(e) => setFormData({ ...formData, clabe: e.target.value })}
+                    onBlur={() => {
+                      const limpia = limpiarClabe(formData.clabe);
+                      if (limpia.length === 18) setFormData(f => ({ ...f, clabe: formatearClabe(limpia) }));
+                    }}
+                    placeholder="18 dígitos"
+                    disabled={editingAccount?.vendida}
+                  />
+                  {formData.clabe && errorClabe(formData.clabe) && (
+                    <p className="text-xs text-destructive mt-1">{errorClabe(formData.clabe)}</p>
+                  )}
+                </div>
+              )}
+
               {/* Campos específicos de inversión */}
               {formData.tipo === 'Inversiones' && (
                 <>
@@ -539,6 +577,24 @@ export const AccountsManager = ({
                         </Badge>
                       )}
                     </div>
+                    {account.clabe && (
+                      <button
+                        type="button"
+                        className="mt-0.5 inline-flex items-center gap-1 whitespace-nowrap font-mono text-xs font-normal text-muted-foreground hover:text-foreground"
+                        title="Copiar CLABE"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(account.clabe!);
+                            toast.success('CLABE copiada');
+                          } catch {
+                            toast.error('No se pudo copiar');
+                          }
+                        }}
+                      >
+                        CLABE {formatearClabe(account.clabe)}
+                        <Copy className="h-3 w-3" />
+                      </button>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant={getAccountTypeBadgeVariant(account.tipo)}>

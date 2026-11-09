@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.12',
+    date: 'Noviembre 2026',
+    changes: [
+      { icon: <Wallet className="h-4 w-4" />, text: 'Cuentas: CLABE opcional en cada cuenta, con comprobación del dígito de control, visible en la lista y con botón para copiarla', type: 'feature' },
+    ],
+  },
+  {
     version: '10.11',
     date: 'Noviembre 2026',
     changes: [
