@@ -5,6 +5,8 @@ import SwiftUI
 struct PestanasView: View {
     @Environment(AppModel.self) private var app
     @Environment(DatosStore.self) private var datos
+    /// Con el teclado abierto la barra se esconde: si no, sube con él y tapa lo que se está buscando.
+    @State private var teclado = false
 
     var body: some View {
         ZStack {
@@ -17,10 +19,12 @@ struct PestanasView: View {
         .overlay(alignment: .bottom) {
             VStack(spacing: 8) {
                 if let c = datos.deshacer { AvisoDeshacer(cobro: c).transition(.move(edge: .bottom).combined(with: .opacity)) }
-                BarraPestanas()
+                if !teclado { BarraPestanas() }
             }
             .animation(.snappy, value: datos.deshacer)
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in teclado = true }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in teclado = false }
         .task { await datos.cargar(app: app) }
         // Lector: alerta de emergencia a pantalla completa (por encima de todo, tras desbloquear con Face ID).
         .fullScreenCover(item: Binding(get: { datos.alertaActiva }, set: { datos.alertaActiva = $0 })) { a in
