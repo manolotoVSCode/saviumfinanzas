@@ -20,10 +20,14 @@ struct MovimientosView: View {
                     Button("Reintentar") { Task { await store.recargar() } }
                 }
             }
-            if store.conTotal && !store.filas.isEmpty {
+            if store.totalListo && !store.filas.isEmpty {
                 Section {
                     Linea(titulo: "Total · \(store.filas.count) movimiento\(store.filas.count == 1 ? "" : "s")",
                           valor: Movimientos.total(store.filas, moneda: app.divisa, tasas: app.tasas), divisa: app.divisa.rawValue, destacado: true)
+                } footer: {
+                    if store.filtro.tipo == .todos {
+                        Text("Ingresos menos gastos de lo que ves, incluidos pagos de tarjeta y traspasos entre tus cuentas; por eso no coincide con el balance de Inicio.")
+                    }
                 }
             }
             ForEach(Movimientos.agruparPorDia(store.filas), id: \.dia) { grupo in
@@ -51,23 +55,34 @@ struct MovimientosView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Picker("Cuenta", selection: $store.filtro.cuentaId) {
-                        Text("Todas las cuentas").tag(String?.none)
-                        ForEach(datos.cuentas.filter { !$0.vendida && datos.cuentasConMovimientos.contains($0.id) }) { Text($0.nombre).tag(Optional($0.id)) }
+                    Section("Cuenta") {
+                        Picker(selection: $store.filtro.cuentaId) {
+                            Text("Todas las cuentas").tag(String?.none)
+                            ForEach(datos.cuentas.filter { !$0.vendida && datos.cuentasConMovimientos.contains($0.id) }) { Text($0.nombre).tag(Optional($0.id)) }
+                        } label: {
+                            Text(store.filtro.cuentaId.flatMap(datos.cuenta)?.nombre ?? "Todas las cuentas")
+                        }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
-                    Picker("Tipo", selection: $store.filtro.tipo) {
-                        ForEach(TipoMovimientos.allCases, id: \.self) { Text($0.rawValue) }
+                    Section("Tipo") {
+                        Picker("Tipo", selection: $store.filtro.tipo) {
+                            ForEach(TipoMovimientos.allCases, id: \.self) { Text($0.rawValue) }
+                        }
+                        .pickerStyle(.inline)
                     }
-                    Picker("Periodo", selection: $store.filtro.periodo) {
-                        ForEach(PeriodoMovimientos.allCases, id: \.self) { Text($0.rawValue) }
+                    Section("Periodo") {
+                        Picker("Periodo", selection: $store.filtro.periodo) {
+                            ForEach(PeriodoMovimientos.allCases, id: \.self) { Text($0 == .todo ? "Todas las fechas" : $0.rawValue) }
+                        }
+                        .pickerStyle(.inline)
                     }
                     if store.filtro.hayFiltros {
-                        Divider()
-                        Button("Quitar filtros", systemImage: "xmark.circle") {
-                            let texto = store.filtro.texto
-                            store.filtro = FiltroMovimientos()
-                            store.filtro.texto = texto
+                        Section {
+                            Button("Quitar filtros", systemImage: "xmark.circle") {
+                                let texto = store.filtro.texto
+                                store.filtro = FiltroMovimientos()
+                                store.filtro.texto = texto
+                            }
                         }
                     }
                 } label: {
@@ -76,6 +91,7 @@ struct MovimientosView: View {
             }
         }
         // Cualquier cambio de filtro o de texto recarga; la espera corta junta las teclas de una palabra.
+        .onChange(of: store.filtro) { store.alCambiarFiltro() }
         .task(id: store.filtro) {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }

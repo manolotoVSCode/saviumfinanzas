@@ -14,9 +14,21 @@ final class MovimientosStore {
     var idsCategoria: [String] = []
     private var pagina = 0
     private var consulta = 0   // descarta respuestas de una búsqueda anterior
+    /// El filtro con el que se cargó `filas`: el total solo vale si coincide con el actual.
+    private(set) var filtroCargado: FiltroMovimientos?
 
     /// Con un periodo de un mes se carga todo de una vez y hay total; con «Todo», no (la lista va por páginas).
     var conTotal: Bool { filtro.periodo != .todo }
+    var totalListo: Bool { conTotal && filtroCargado == filtro && !cargando }
+
+    /// Si cambió algo más que el texto (cuenta, tipo, periodo), la lista anterior ya no vale: se vacía al momento,
+    /// sin esperar a la recarga, para no enseñar movimientos (ni un total) de otro filtro.
+    func alCambiarFiltro() {
+        guard let cargado = filtroCargado else { return }
+        var a = cargado, b = filtro
+        a.texto = ""; b.texto = ""
+        if a != b { consulta += 1; filas = []; filtroCargado = nil; hayMas = true; cargando = false }
+    }
 
     /// Quita la fila al momento; si el borrado falla, la repone y devuelve false.
     func borrar(_ t: Transaccion) async -> Bool {
@@ -39,7 +51,7 @@ final class MovimientosStore {
     /// Al cerrar sesión.
     func reiniciar() {
         consulta += 1
-        filas = []; pagina = 0; hayMas = true; cargando = false; error = nil; filtro = FiltroMovimientos(); idsCategoria = []
+        filas = []; pagina = 0; hayMas = true; cargando = false; error = nil; filtro = FiltroMovimientos(); idsCategoria = []; filtroCargado = nil
     }
 
     /// `limpiar`: vacía la lista al momento (cambió el filtro). Sin limpiar, la lista anterior sigue a la vista
@@ -57,6 +69,7 @@ final class MovimientosStore {
         if let s = ModoSenuelo.datos {
             let ids = Set(idsCategoria)
             filas = s.movimientos.filter { Movimientos.coincide($0, filtro: filtro, idsCategoria: ids, rango: rango) }
+            filtroCargado = filtro
             hayMas = false
             error = nil
             return
@@ -68,6 +81,7 @@ final class MovimientosStore {
             let nuevas = try await repo.movimientos(filtro: filtro, idsCategoria: idsCategoria, rango: rango, pagina: conTotal ? nil : pagina)
             guard mia == consulta else { return }
             filas = pagina == 0 ? nuevas : filas + nuevas
+            filtroCargado = filtro
             hayMas = !conTotal && nuevas.count == Repositorio.tamanoPagina
             pagina += 1
             error = nil

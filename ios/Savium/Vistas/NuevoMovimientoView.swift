@@ -89,7 +89,7 @@ struct NuevoMovimientoView: View {
                     NavigationLink {
                         SelectorCategoria(tipo: tipoCategoria, seleccion: $form.subcategoriaId)
                     } label: {
-                        LabeledContent("Categoría", value: form.subcategoriaId.flatMap(datos.categoria).map(\.subcategoria) ?? "Todas…")
+                        LabeledContent("Categoría", value: form.subcategoriaId.flatMap(datos.categoria).map(\.subcategoria) ?? "Elige una")
                     }
                     DatePicker("Fecha", selection: $form.fecha, displayedComponents: .date)
                     TextField("Comentario (opcional)", text: $form.comentario)
