@@ -6,7 +6,6 @@ import { esAdmin } from '@/lib/admin';
 /** Comentarios sin leer de «Ayúdanos a mejorar» por app (solo el administrador; para los demás, ceros). */
 export interface ComentariosApps {
   share: number;
-  piggy: number;
 }
 
 export const CLAVE_COMENTARIOS_APPS = ['apps_comentarios'];
@@ -24,10 +23,9 @@ export function useComentariosApps(): ComentariosApps & { total: number } {
       // Fuera de los tipos generados de Supabase, como los paneles de las apps.
       const { data, error } = await supabase.rpc('apps_comentarios_sin_leer' as never);
       if (error) throw new Error(error.message);
-      return data as ComentariosApps;
+      return { share: (data as { share?: number } | null)?.share ?? 0 } as ComentariosApps;
     },
   });
   const share = data?.share ?? 0;
-  const piggy = data?.piggy ?? 0;
-  return { share, piggy, total: share + piggy };
+  return { share, total: share };
 }

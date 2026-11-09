@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.9',
+    date: 'Noviembre 2026',
+    changes: [
+      { icon: <Zap className="h-4 w-4" />, text: 'Menú Apps: solo queda Savium Share; salen los paneles de Savium Rewards y Savium Piggy Bank', type: 'improvement' },
+    ],
+  },
+  {
     version: '10.8',
     date: 'Noviembre 2026',
     changes: [
