@@ -19,6 +19,7 @@ import { useFinanceDataSupabase } from '@/hooks/useFinanceDataSupabase';
 import { useAppConfig } from '@/hooks/useAppConfig';
 
 import { ExchangeRates } from '@/components/ExchangeRates';
+import { ChecklistManager } from '@/components/checklist/ChecklistManager';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { esAdmin } from '@/lib/admin';
@@ -117,6 +118,9 @@ const ConfiguracionTitular = () => {
               Reglas de Clasificación
             </Button>
           </>} />
+
+        {/* CHECKLIST: tareas sobre las transacciones; las vencidas pasan a Alertas */}
+        <ChecklistManager transactions={financeData.transactions} />
 
         {/* EDITOR DE PERFIL */}
         <ProfileEditor />

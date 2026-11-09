@@ -12,7 +12,7 @@ import { useAlerts } from '@/hooks/useAlerts';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import { Alert, AlertType, ALERT_RULES } from '@/lib/finance/alerts';
 import { DIAS_REVISION } from '@/lib/finance/familia';
-import { CalendarClock, CreditCard, TrendingUp, X, Undo2, BellOff, ArrowRight, HeartHandshake, Bitcoin } from 'lucide-react';
+import { CalendarClock, CreditCard, TrendingUp, X, Undo2, BellOff, ArrowRight, HeartHandshake, Bitcoin, ListChecks } from 'lucide-react';
 
 const TYPE_META: Record<AlertType, { label: string; icon: React.ReactNode }> = {
   pago_anual: { label: 'Pago anual', icon: <CalendarClock className="h-5 w-5" /> },
@@ -20,6 +20,7 @@ const TYPE_META: Record<AlertType, { label: string; icon: React.ReactNode }> = {
   categoria_disparada: { label: 'Gasto inusual', icon: <TrendingUp className="h-5 w-5" /> },
   familia_revision: { label: 'Familia', icon: <HeartHandshake className="h-5 w-5" /> },
   cripto_umbral: { label: 'Cripto', icon: <Bitcoin className="h-5 w-5" /> },
+  checklist: { label: 'Checklist', icon: <ListChecks className="h-5 w-5" /> },
 };
 
 const AlertRow = ({ alert, action, onAction, formatCurrency }: {
@@ -81,7 +82,7 @@ const Alertas = () => {
   return (
     <Layout>
       <div className="animate-fade-in space-y-6">
-        <PageHeader title="Alertas" subtitle={<>Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días o vencidos hasta 30 días antes del cierre del último mes importado, suscripciones que suben de precio, categorías cuyo gasto del último mes cerrado supera en un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% su media de los 12 meses anteriores, {esAdmin(datosId) && <>la información para tu familia si lleva más de {DIAS_REVISION} días sin revisar, </>}y las criptomonedas que llegan al % sobre tu precio de compra que pusiste en su alerta (Inversiones → Criptomonedas)</>} />
+        <PageHeader title="Alertas" subtitle={<>Pagos anuales a ≤{ALERT_RULES.annualDaysAhead} días o vencidos hasta 30 días antes del cierre del último mes importado, suscripciones que suben de precio, categorías cuyo gasto del último mes cerrado supera en un {Math.round((ALERT_RULES.categoryOverRatio - 1) * 100)}% su media de los 12 meses anteriores, {esAdmin(datosId) && <>la información para tu familia si lleva más de {DIAS_REVISION} días sin revisar, </>}las criptomonedas que llegan al % sobre tu precio de compra que pusiste en su alerta (Inversiones → Criptomonedas) y las tareas del Checklist cuya fecha pasó sin completarse</>} />
 
         {loading ? (
           <div className="flex items-center justify-center h-40">

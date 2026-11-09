@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.10',
+    date: 'Noviembre 2026',
+    changes: [
+      { icon: <Sparkles className="h-4 w-4" />, text: 'Checklist: apunta en Configuración lo que tienes que actualizar en tus transacciones, con fecha y transacción opcionales; consúltalo en la nueva página Checklist y, si pasa la fecha sin completarlo, aparece en Alertas', type: 'feature' },
+    ],
+  },
+  {
     version: '10.9',
     date: 'Noviembre 2026',
     changes: [

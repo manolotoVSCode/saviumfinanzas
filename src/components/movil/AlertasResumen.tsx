@@ -1,4 +1,4 @@
-import { CalendarClock, CreditCard, TrendingUp, HeartHandshake, Bitcoin } from 'lucide-react';
+import { CalendarClock, CreditCard, TrendingUp, HeartHandshake, Bitcoin, ListChecks } from 'lucide-react';
 import { useAlerts } from '@/hooks/useAlerts';
 import { AlertType } from '@/lib/finance/alerts';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +11,7 @@ const ICONO: Record<AlertType, typeof CalendarClock> = {
   categoria_disparada: TrendingUp,
   familia_revision: HeartHandshake,
   cripto_umbral: Bitcoin,
+  checklist: ListChecks,
 };
 
 /**

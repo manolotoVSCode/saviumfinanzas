@@ -21,6 +21,7 @@ export const TABLAS_RESPALDO = [
   { nombre: 'subscription_services', clave: 'id' },
   { nombre: 'transacciones', clave: 'id' },
   { nombre: 'transaction_pendings', clave: 'id' },
+  { nombre: 'checklist_items', clave: 'id' },
   { nombre: 'provisiones_cxp', clave: 'id' },
   { nombre: 'payment_skips', clave: 'id' },
   { nombre: 'alert_dismissals', clave: 'id' },

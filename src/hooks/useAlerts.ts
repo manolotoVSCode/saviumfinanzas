@@ -11,6 +11,7 @@ import { financeQueryKeys, STALE_TIME } from '@/lib/finance/queryKeys';
 import { Alert, computeAlerts, CriptoAlertasInput, RevisionFamilia } from '@/lib/finance/alerts';
 import { CurrencyCode } from '@/lib/finance/dashboardMetrics';
 import { readInactiveAnnualIds } from '@/lib/finance/annualPayments';
+import { fetchChecklist } from './useChecklist';
 
 const fetchDismissals = async (): Promise<string[]> => {
   const { data, error } = await supabase.from('alert_dismissals').select('alert_key');
@@ -27,7 +28,8 @@ export const fetchRevisionFamilia = async (): Promise<RevisionFamilia | null> =>
 
 /**
  * Alertas calculadas en cliente (pagos anuales próximos, suscripciones que
- * suben, categorías disparadas, revisión de la información familiar, criptos que pasan su umbral)
+ * suben, categorías disparadas, revisión de la información familiar, criptos que pasan su umbral,
+ * tareas del Checklist vencidas)
  * menos las descartadas por el usuario.
  */
 export const useAlerts = () => {
@@ -86,9 +88,19 @@ export const useAlerts = () => {
     };
   }, [umbrales, criptosQuery.data, preciosQuery.data, convertCurrency]);
 
+  // Checklist: misma clave que useChecklist (comparten caché). Un fallo no bloquea: sin tareas no hay alerta.
+  const checklistQuery = useQuery({
+    queryKey: QK.checklist,
+    queryFn: fetchChecklist,
+    staleTime: STALE_TIME,
+    enabled: !!user,
+    retry: false,
+  });
+  const checklist = checklistQuery.data;
+
   const allAlerts = useMemo(
-    () => computeAlerts({ categories, transactions, subscriptions, inactiveAnnualIds: inactiveAnnual, revisionFamilia, cripto }),
-    [categories, transactions, subscriptions, inactiveAnnual, revisionFamilia, cripto]
+    () => computeAlerts({ categories, transactions, subscriptions, inactiveAnnualIds: inactiveAnnual, revisionFamilia, cripto, checklist }),
+    [categories, transactions, subscriptions, inactiveAnnual, revisionFamilia, cripto, checklist]
   );
 
   const dismissed = useMemo(() => new Set(dismissalsQuery.data ?? []), [dismissalsQuery.data]);

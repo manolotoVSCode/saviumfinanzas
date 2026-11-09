@@ -3,8 +3,9 @@ import { groupAnnualPayments, isAnnualCategory } from './annualPayments';
 import { diasDesdeRevision, estadoRevision } from './familia';
 import { finMesAnterior, toFechaISO } from './fechas';
 import { agruparCiclos } from './subscriptions';
+import { ChecklistItem, checklistAlerts } from './checklist';
 
-export type AlertType = 'pago_anual' | 'suscripcion_sube' | 'categoria_disparada' | 'familia_revision' | 'cripto_umbral';
+export type AlertType = 'pago_anual' | 'suscripcion_sube' | 'categoria_disparada' | 'familia_revision' | 'cripto_umbral' | 'checklist';
 
 export interface Alert {
   /** Clave estable de la ocurrencia; un descarte se guarda por clave. */
@@ -44,6 +45,8 @@ export interface AlertsInput {
   revisionFamilia?: RevisionFamilia | null;
   /** null = sin umbrales, cargando o error (no alerta). */
   cripto?: CriptoAlertasInput | null;
+  /** Tareas del Checklist; avisan las que pasaron su fecha sin completarse. */
+  checklist?: ChecklistItem[];
   now?: Date;
 }
 
@@ -312,7 +315,8 @@ export const criptoAlerts = ({ criptos, precios, umbrales, aUSD }: CriptoAlertas
     });
 };
 
-export const computeAlerts = ({ categories, transactions, subscriptions, inactiveAnnualIds, revisionFamilia = null, cripto = null, now = new Date() }: AlertsInput): Alert[] => [
+export const computeAlerts = ({ categories, transactions, subscriptions, inactiveAnnualIds, revisionFamilia = null, cripto = null, checklist = [], now = new Date() }: AlertsInput): Alert[] => [
+  ...checklistAlerts(checklist, now),
   ...annualPaymentAlerts(categories, transactions, inactiveAnnualIds, now),
   ...subscriptionIncreaseAlerts(subscriptions, transactions),
   ...categorySpikeAlerts(categories, transactions, now),

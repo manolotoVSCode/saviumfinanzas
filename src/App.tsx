@@ -35,6 +35,7 @@ const PagosAnuales = lazy(() => import("./pages/PagosAnuales"));
 const CxP = lazy(() => import("./pages/CxP"));
 const ChangelogPage = lazy(() => import("./pages/ChangelogPage"));
 const Alertas = lazy(() => import("./pages/Alertas"));
+const Checklist = lazy(() => import("./pages/Checklist"));
 const Familia = lazy(() => import("./pages/Familia"));
 // Solo para el administrador (ProtectedRoute soloAdmin, el menú solo lo muestra a él y share_panel rechaza a los demás).
 const SaviumShare = lazy(() => import("./pages/SaviumShare"));
@@ -167,6 +168,11 @@ const App = () => (
               <Route path="/alertas" element={
                 <ProtectedRoute>
                   <Responsive desktop={Alertas} mobile={SoloEscritorio} />
+                </ProtectedRoute>
+              } />
+              <Route path="/checklist" element={
+                <ProtectedRoute>
+                  <Responsive desktop={Checklist} mobile={SoloEscritorio} />
                 </ProtectedRoute>
               } />
               <Route path="/changelog" element={

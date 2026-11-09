@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, ChevronDown } from 'lucide-react';
+import { BarChart3, ArrowUpDown, TrendingUp, Settings, FileText, LogOut, Wallet, Tag, Filter, Clock, Repeat, CalendarClock, CreditCard, Receipt, Bell, ChevronDown, ListChecks } from 'lucide-react';
 import { usePendings } from '@/hooks/usePendings';
 import { useAlerts } from '@/hooks/useAlerts';
+import { useChecklist } from '@/hooks/useChecklist';
+import { estaVencida } from '@/lib/finance/checklist';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
@@ -52,6 +54,8 @@ const Layout = ({ children }: LayoutProps) => {
   };
   const { activeCount, overdueCount } = usePendings();
   const { count: alertCount } = useAlerts();
+  const { items: checklist } = useChecklist();
+  const checklistVencidas = checklist.filter(i => estaVencida(i)).length;
   const comentarios = useComentariosApps();
 
   // «/» abre el Dashboard: su entrada del menú también se marca ahí.
@@ -80,6 +84,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/pagos-anuales', icon: CalendarClock, label: 'Pagos Anuales' },
     { path: '/informes', icon: FileText, label: 'Informes Financieros' },
     { path: '/alertas', icon: Bell, label: 'Alertas', badge: alertCount || undefined },
+    { path: '/checklist', icon: ListChecks, label: 'Checklist', badge: checklistVencidas || undefined },
   ];
 
   // Paneles de las otras apps de Savium: solo existen en el menú del administrador.

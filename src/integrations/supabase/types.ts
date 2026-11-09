@@ -98,6 +98,47 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist_items: {
+        Row: {
+          completada: boolean
+          completada_at: string | null
+          created_at: string
+          fecha: string | null
+          id: string
+          texto: string
+          transaccion_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completada?: boolean
+          completada_at?: string | null
+          created_at?: string
+          fecha?: string | null
+          id?: string
+          texto: string
+          transaccion_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completada?: boolean
+          completada_at?: string | null
+          created_at?: string
+          fecha?: string | null
+          id?: string
+          texto?: string
+          transaccion_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_items_transaccion_id_fkey"
+            columns: ["transaccion_id"]
+            isOneToOne: false
+            referencedRelation: "transacciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classification_rules: {
         Row: {
           active: boolean
