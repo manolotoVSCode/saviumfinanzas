@@ -9,12 +9,36 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Account, AccountType } from '@/types/finance';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, Search, Copy } from 'lucide-react';
-import { errorClabe, formatearClabe, limpiarClabe } from '@/lib/finance/clabe';
-
-/** Tipos sin número de cuenta: no se les pide CLABE. */
-const SIN_CLABE: AccountType[] = ['Efectivo', 'Bien Raíz'];
+import { Plus, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2, Search, Copy, Archive, ArchiveRestore } from 'lucide-react';
+import { formatearClabe, limpiarClabe } from '@/lib/finance/clabe';
+import {
+  CampoBancario, ETIQUETAS_CORTAS, PAISES_BANCARIOS, PAIS_POR_DEFECTO,
+  errorCampo, etiquetaCampo, formatearCampo, limpiarCodigo, paisBancario,
+} from '@/lib/finance/datosBancarios';
 import { toast } from 'sonner';
+
+/** Tipos sin cuenta en un banco: no se les piden datos bancarios. */
+const SIN_DATOS_BANCARIOS: AccountType[] = ['Efectivo', 'Bien Raíz'];
+
+/** Orden en que se muestran los datos bancarios en la lista. */
+const CAMPOS_LISTA: CampoBancario[] = ['clabe', 'numeroCuenta', 'routing', 'iban', 'swift'];
+
+const PLACEHOLDERS: Record<CampoBancario, string> = {
+  clabe: '18 dígitos',
+  numeroCuenta: 'Número de cuenta',
+  routing: '',
+  iban: 'Ej.: ES91 2100 0418 4502 0005 1332',
+  swift: '8 u 11 caracteres',
+};
+
+const copiar = async (valor: string, que: string) => {
+  try {
+    await navigator.clipboard.writeText(valor);
+    toast.success(`${que} copiado`);
+  } catch {
+    toast.error('No se pudo copiar');
+  }
+};
 
 interface AccountsManagerProps {
   accounts: Account[];
@@ -36,6 +60,7 @@ export const AccountsManager = ({
   const [filterType, setFilterType] = useState<string>('all');
   const [filterCurrency, setFilterCurrency] = useState<string>('all');
   const [filterPositiveBalance, setFilterPositiveBalance] = useState(false);
+  const [verArchivadas, setVerArchivadas] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Account | null;
@@ -48,6 +73,12 @@ export const AccountsManager = ({
     divisa: 'MXN' as 'MXN' | 'USD' | 'EUR',
     vendida: false,
     clabe: '',
+    pais: PAIS_POR_DEFECTO,
+    banco: '',
+    numeroCuenta: '',
+    routing: '',
+    iban: '',
+    swift: '',
     // Campos específicos de inversión
     tipo_inversion: '' as 'Interés fijo' | 'Fondo variable' | 'Criptomoneda' | '',
     modalidad: '' as 'Reinversión' | 'Pago mensual' | 'Pago trimestral' | '',
@@ -81,6 +112,12 @@ export const AccountsManager = ({
       divisa: 'MXN',
       vendida: false,
       clabe: '',
+      pais: PAIS_POR_DEFECTO,
+      banco: '',
+      numeroCuenta: '',
+      routing: '',
+      iban: '',
+      swift: '',
       tipo_inversion: '',
       modalidad: '',
       rendimiento_bruto: 0,
@@ -114,14 +151,35 @@ export const AccountsManager = ({
     toast.success('Propiedad marcada como vendida. El saldo se ha ajustado a 0.');
   };
 
+  const handleArchivar = (account: Account) => {
+    const archivar = !account.archivada;
+    onUpdateAccount(account.id, { archivada: archivar });
+    if (archivar && account.saldoActual !== 0) {
+      toast.success('Cuenta archivada. Tiene saldo: sigue contando en tus totales.');
+    } else {
+      toast.success(archivar ? 'Cuenta archivada' : 'Cuenta recuperada');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre || !formData.tipo || !formData.divisa) return;
-    const clabeError = SIN_CLABE.includes(formData.tipo) ? null : errorClabe(formData.clabe);
-    if (clabeError) {
-      toast.error(clabeError);
-      return;
+    const conBanco = !SIN_DATOS_BANCARIOS.includes(formData.tipo);
+    const pais = paisBancario(formData.pais);
+    if (conBanco) {
+      for (const campo of pais.campos) {
+        const error = errorCampo(campo, formData[campo], pais);
+        if (error) {
+          toast.error(error);
+          return;
+        }
+      }
     }
+    // Solo se guardan los datos que pide el país; '' borra los que hubiera.
+    const dato = (campo: CampoBancario) => {
+      if (!conBanco || !pais.campos.includes(campo)) return '';
+      return campo === 'clabe' ? limpiarClabe(formData.clabe) : limpiarCodigo(formData[campo]);
+    };
 
     // Preparar datos según el tipo de cuenta
     const accountData: any = {
@@ -129,8 +187,14 @@ export const AccountsManager = ({
       tipo: formData.tipo,
       saldoInicial: formData.saldoInicial,
       divisa: formData.divisa,
-      // '' borra la que hubiera; los tipos sin CLABE no la guardan.
-      clabe: SIN_CLABE.includes(formData.tipo) ? '' : limpiarClabe(formData.clabe),
+      clabe: dato('clabe'),
+      // Sin datos bancarios no hay país: se guarda vacío (México por defecto).
+      pais: conBanco && pais.codigo !== PAIS_POR_DEFECTO ? pais.codigo : '',
+      banco: conBanco ? formData.banco.trim().slice(0, 100) : '',
+      numeroCuenta: dato('numeroCuenta'),
+      routing: dato('routing'),
+      iban: dato('iban'),
+      swift: dato('swift'),
     };
 
     // Solo agregar campos de inversión si es una cuenta de inversión y están llenos
@@ -160,6 +224,12 @@ export const AccountsManager = ({
       divisa: account.divisa || 'MXN',
       vendida: account.vendida || false,
       clabe: account.clabe ? formatearClabe(account.clabe) : '',
+      pais: account.pais || PAIS_POR_DEFECTO,
+      banco: account.banco || '',
+      numeroCuenta: account.numeroCuenta || '',
+      routing: account.routing || '',
+      iban: account.iban ? formatearCampo('iban', account.iban) : '',
+      swift: account.swift || '',
       tipo_inversion: account.tipo_inversion || '',
       modalidad: account.modalidad || '',
       rendimiento_bruto: account.rendimiento_bruto || 0,
@@ -201,12 +271,23 @@ export const AccountsManager = ({
       <ArrowDown className="h-4 w-4" />;
   };
 
+  const busquedaCodigo = limpiarCodigo(searchQuery);
+  const coincideBusqueda = (account: Account) => {
+    const texto = searchQuery.toLowerCase();
+    if (account.nombre.toLowerCase().includes(texto)) return true;
+    if (account.banco?.toLowerCase().includes(texto)) return true;
+    if (!busquedaCodigo) return false;
+    return CAMPOS_LISTA.some(c => account[c]?.includes(busquedaCodigo));
+  };
+
+  const archivadas = accounts.filter(a => a.archivada).length;
+
   const filteredAccounts = accounts.filter((account) => {
+    if (account.archivada && !verArchivadas) return false;
     if (filterType !== 'all' && account.tipo !== filterType) return false;
     if (filterCurrency !== 'all' && (account.divisa || 'MXN') !== filterCurrency) return false;
     if (filterPositiveBalance && account.saldoActual !== 0) return false;
-    if (searchQuery.length >= 3 && !account.nombre.toLowerCase().includes(searchQuery.toLowerCase())
-      && !(account.clabe && limpiarClabe(searchQuery) && account.clabe.includes(limpiarClabe(searchQuery)))) return false;
+    if (searchQuery.length >= 3 && !coincideBusqueda(account)) return false;
     return true;
   });
 
@@ -246,6 +327,16 @@ export const AccountsManager = ({
             onCheckedChange={(checked) => setFilterPositiveBalance(checked === true)}
           />
           <Label htmlFor="positive-balance" className="text-sm cursor-pointer">Sin Saldo</Label>
+        </div>
+        <div className="flex items-center gap-2 h-9">
+          <Checkbox
+            id="ver-archivadas"
+            checked={verArchivadas}
+            onCheckedChange={(checked) => setVerArchivadas(checked === true)}
+          />
+          <Label htmlFor="ver-archivadas" className="text-sm cursor-pointer">
+            Ver archivadas{archivadas > 0 ? ` (${archivadas})` : ''}
+          </Label>
         </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Tipo</Label>
@@ -384,28 +475,71 @@ export const AccountsManager = ({
                 />
               </div>
 
-              {formData.tipo && !SIN_CLABE.includes(formData.tipo) && (
-                <div>
-                  <Label htmlFor="clabe">CLABE (opcional)</Label>
-                  <Input
-                    id="clabe"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    className="font-mono"
-                    value={formData.clabe}
-                    onChange={(e) => setFormData({ ...formData, clabe: e.target.value })}
-                    onBlur={() => {
-                      const limpia = limpiarClabe(formData.clabe);
-                      if (limpia.length === 18) setFormData(f => ({ ...f, clabe: formatearClabe(limpia) }));
-                    }}
-                    placeholder="18 dígitos"
-                    disabled={editingAccount?.vendida}
-                  />
-                  {formData.clabe && errorClabe(formData.clabe) && (
-                    <p className="text-xs text-destructive mt-1">{errorClabe(formData.clabe)}</p>
-                  )}
-                </div>
-              )}
+              {formData.tipo && !SIN_DATOS_BANCARIOS.includes(formData.tipo) && (() => {
+                const pais = paisBancario(formData.pais);
+                return (
+                  <div className="space-y-3 rounded-lg border p-3">
+                    <p className="text-sm font-medium">Datos bancarios (opcionales)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="pais">País del banco</Label>
+                        <Select
+                          value={pais.codigo}
+                          onValueChange={(value) => setFormData({ ...formData, pais: value })}
+                          disabled={editingAccount?.vendida}
+                        >
+                          <SelectTrigger id="pais">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PAISES_BANCARIOS.map(p => (
+                              <SelectItem key={p.codigo} value={p.codigo}>{p.nombre}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="banco">Banco</Label>
+                        <Input
+                          id="banco"
+                          value={formData.banco}
+                          maxLength={100}
+                          onChange={(e) => setFormData({ ...formData, banco: e.target.value })}
+                          placeholder={pais.codigo === 'US' ? 'Ej.: Bank of America' : 'Nombre del banco'}
+                          disabled={editingAccount?.vendida}
+                        />
+                      </div>
+                    </div>
+                    {pais.campos.map(campo => {
+                      const error = errorCampo(campo, formData[campo], pais);
+                      return (
+                        <div key={campo}>
+                          <Label htmlFor={`banco-${campo}`}>{etiquetaCampo(campo, pais)}</Label>
+                          <Input
+                            id={`banco-${campo}`}
+                            inputMode={campo === 'clabe' || (campo === 'routing' && pais.codigo === 'US') ? 'numeric' : 'text'}
+                            autoComplete="off"
+                            className="font-mono"
+                            value={formData[campo]}
+                            onChange={(e) => setFormData({ ...formData, [campo]: e.target.value })}
+                            onBlur={() => {
+                              if (campo === 'clabe') {
+                                const limpia = limpiarClabe(formData.clabe);
+                                if (limpia.length === 18) setFormData(f => ({ ...f, clabe: formatearClabe(limpia) }));
+                              } else if (formData[campo]) {
+                                setFormData(f => ({ ...f, [campo]: formatearCampo(campo, limpiarCodigo(f[campo])) }));
+                              }
+                            }}
+                            placeholder={campo === 'routing' && pais.codigo === 'US' ? '9 dígitos' : PLACEHOLDERS[campo]}
+                            disabled={editingAccount?.vendida}
+                          />
+                          {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               {/* Campos específicos de inversión */}
               {formData.tipo === 'Inversiones' && (
@@ -516,7 +650,7 @@ export const AccountsManager = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Cuentas ({sortedAccounts.length} de {accounts.length})</CardTitle>
+          <CardTitle>Cuentas ({sortedAccounts.length} de {verArchivadas ? accounts.length : accounts.length - archivadas})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -567,7 +701,7 @@ export const AccountsManager = ({
             </TableHeader>
             <TableBody>
               {sortedAccounts.map((account) => (
-                <TableRow key={account.id} className={account.vendida ? 'opacity-60' : ''}>
+                <TableRow key={account.id} className={account.vendida || account.archivada ? 'opacity-60' : ''}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       {account.nombre}
@@ -576,25 +710,35 @@ export const AccountsManager = ({
                           Vendida
                         </Badge>
                       )}
+                      {account.archivada && (
+                        <Badge variant="outline" className="text-xs">
+                          Archivada
+                        </Badge>
+                      )}
                     </div>
-                    {account.clabe && (
-                      <button
-                        type="button"
-                        className="mt-0.5 inline-flex items-center gap-1 whitespace-nowrap font-mono text-xs font-normal text-muted-foreground hover:text-foreground"
-                        title="Copiar CLABE"
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(account.clabe!);
-                            toast.success('CLABE copiada');
-                          } catch {
-                            toast.error('No se pudo copiar');
-                          }
-                        }}
-                      >
-                        CLABE {formatearClabe(account.clabe)}
-                        <Copy className="h-3 w-3" />
-                      </button>
+                    {(account.banco || (account.pais && account.pais !== PAIS_POR_DEFECTO)) && (
+                      <div className="mt-0.5 text-xs font-normal text-muted-foreground">
+                        {[account.banco, account.pais && account.pais !== PAIS_POR_DEFECTO ? paisBancario(account.pais).nombre : null]
+                          .filter(Boolean).join(' · ')}
+                      </div>
                     )}
+                    {CAMPOS_LISTA.filter(c => account[c]).map(campo => {
+                      const valor = account[campo]!;
+                      const pais = paisBancario(account.pais);
+                      const etiqueta = campo === 'routing' && pais.codigo === 'US' ? 'ABA' : ETIQUETAS_CORTAS[campo];
+                      return (
+                        <button
+                          key={campo}
+                          type="button"
+                          className="mt-0.5 mr-3 inline-flex items-center gap-1 whitespace-nowrap font-mono text-xs font-normal text-muted-foreground hover:text-foreground"
+                          title={`Copiar ${etiquetaCampo(campo, pais)}`}
+                          onClick={() => copiar(valor, etiquetaCampo(campo, pais))}
+                        >
+                          {etiqueta} {campo === 'clabe' ? formatearClabe(valor) : formatearCampo(campo, valor)}
+                          <Copy className="h-3 w-3" />
+                        </button>
+                      );
+                    })}
                   </TableCell>
                   <TableCell>
                     <Badge variant={getAccountTypeBadgeVariant(account.tipo)}>
@@ -632,6 +776,14 @@ export const AccountsManager = ({
                           <CheckCircle2 className="h-4 w-4" />
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleArchivar(account)}
+                        title={account.archivada ? 'Sacar del archivo' : 'Archivar (se oculta de la lista)'}
+                      >
+                        {account.archivada ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm"

@@ -92,6 +92,12 @@ export const useFinanceDataSupabase = () => {
         saldo_inicial: account.saldoInicial,
         divisa: account.divisa,
         clabe: account.clabe || null,
+        pais: account.pais || null,
+        banco: account.banco || null,
+        numero_cuenta: account.numeroCuenta || null,
+        routing: account.routing || null,
+        iban: account.iban || null,
+        swift: account.swift || null,
         user_id: user.id
       };
 
@@ -152,6 +158,13 @@ export const useFinanceDataSupabase = () => {
       if (updates.vendida !== undefined) updateData.vendida = updates.vendida;
       // '' borra la CLABE; undefined no la toca.
       if (updates.clabe !== undefined) updateData.clabe = updates.clabe || null;
+      if (updates.archivada !== undefined) updateData.archivada = updates.archivada;
+      if (updates.pais !== undefined) updateData.pais = updates.pais || null;
+      if (updates.banco !== undefined) updateData.banco = updates.banco || null;
+      if (updates.numeroCuenta !== undefined) updateData.numero_cuenta = updates.numeroCuenta || null;
+      if (updates.routing !== undefined) updateData.routing = updates.routing || null;
+      if (updates.iban !== undefined) updateData.iban = updates.iban || null;
+      if (updates.swift !== undefined) updateData.swift = updates.swift || null;
 
       // Mapear campos específicos de inversión
       if (updates.tipo_inversion) updateData.tipo_inversion = updates.tipo_inversion;

@@ -9,6 +9,21 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.14',
+    date: 'Noviembre 2026',
+    changes: [
+      { icon: <Wallet className="h-4 w-4" />, text: 'Cuentas: se pueden archivar; las archivadas no salen en la lista salvo con el filtro «Ver archivadas»', type: 'feature' },
+      { icon: <Globe className="h-4 w-4" />, text: 'Cuentas: datos bancarios por país del banco (CLABE en México, número de cuenta y routing ABA en EE. UU., IBAN en Europa, SWIFT en todos), validados y con botón para copiarlos', type: 'feature' },
+    ],
+  },
+  {
+    version: '10.13',
+    date: 'Noviembre 2026',
+    changes: [
+      { icon: <Zap className="h-4 w-4" />, text: 'Configuración: la lista de tareas del Checklist va plegada y se abre solo si la pides', type: 'improvement' },
+    ],
+  },
+  {
     version: '10.12',
     date: 'Noviembre 2026',
     changes: [

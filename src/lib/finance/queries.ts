@@ -19,6 +19,13 @@ export const mapAccounts = (cuentasData: Row[]): Account[] => {
     rendimientoMensual: cuenta.rendimiento_mensual ? Number(cuenta.rendimiento_mensual) : undefined,
     vendida: cuenta.vendida || false,
     clabe: cuenta.clabe || undefined,
+    archivada: cuenta.archivada || false,
+    pais: cuenta.pais || undefined,
+    banco: cuenta.banco || undefined,
+    numeroCuenta: cuenta.numero_cuenta || undefined,
+    routing: cuenta.routing || undefined,
+    iban: cuenta.iban || undefined,
+    swift: cuenta.swift || undefined,
     // Nuevos campos de inversión
     tipo_inversion: cuenta.tipo_inversion as 'Interés fijo' | 'Fondo variable' | 'Criptomoneda' | undefined,
     modalidad: cuenta.modalidad as 'Reinversión' | 'Pago mensual' | 'Pago trimestral' | undefined,

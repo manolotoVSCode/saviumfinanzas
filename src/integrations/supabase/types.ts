@@ -249,7 +249,14 @@ export type Database = {
       }
       cuentas: {
         Row: {
+          archivada: boolean
+          banco: string | null
           clabe: string | null
+          iban: string | null
+          numero_cuenta: string | null
+          pais: string | null
+          routing: string | null
+          swift: string | null
           created_at: string
           divisa: string
           fecha_inicio: string | null
@@ -269,7 +276,14 @@ export type Database = {
           vendida: boolean
         }
         Insert: {
+          archivada?: boolean
+          banco?: string | null
           clabe?: string | null
+          iban?: string | null
+          numero_cuenta?: string | null
+          pais?: string | null
+          routing?: string | null
+          swift?: string | null
           created_at?: string
           divisa?: string
           fecha_inicio?: string | null
@@ -289,7 +303,14 @@ export type Database = {
           vendida?: boolean
         }
         Update: {
+          archivada?: boolean
+          banco?: string | null
           clabe?: string | null
+          iban?: string | null
+          numero_cuenta?: string | null
+          pais?: string | null
+          routing?: string | null
+          swift?: string | null
           created_at?: string
           divisa?: string
           fecha_inicio?: string | null
@@ -954,7 +975,14 @@ export type Database = {
       }
       saldos_cuentas: {
         Row: {
+          archivada: boolean | null
+          banco: string | null
           clabe: string | null
+          iban: string | null
+          numero_cuenta: string | null
+          pais: string | null
+          routing: string | null
+          swift: string | null
           capital_neto: number
           created_at: string
           divisa: string

@@ -32,6 +32,16 @@ export interface Account {
   vendida?: boolean;
   /** CLABE interbancaria, 18 dígitos sin espacios. */
   clabe?: string;
+  /** Oculta en la lista de Cuentas salvo que se pida verla. */
+  archivada?: boolean;
+  /** País del banco (ISO de 2 letras); sin valor = México. 'ZZ' = otro país. */
+  pais?: string;
+  banco?: string;
+  numeroCuenta?: string;
+  /** Routing number ABA en EE. UU.; código del banco o sucursal en otros países. */
+  routing?: string;
+  iban?: string;
+  swift?: string;
 }
 
 export interface Transaction {
