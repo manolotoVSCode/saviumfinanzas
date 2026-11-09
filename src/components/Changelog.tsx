@@ -9,6 +9,13 @@ interface ChangelogEntry {
 
 const changelog: ChangelogEntry[] = [
   {
+    version: '10.15',
+    date: 'Noviembre 2026',
+    changes: [
+      { icon: <Globe className="h-4 w-4" />, text: 'Panel de Savium Share: versión publicada en la App Store, versión más alta en uso y versión mínima por separado para iPhone y Android', type: 'feature' },
+    ],
+  },
+  {
     version: '10.14',
     date: 'Noviembre 2026',
     changes: [

@@ -11,7 +11,6 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLe
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
@@ -20,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { esAdmin } from '@/lib/admin';
 import { formatNumber } from '@/lib/formatters';
 import { CLAVE_COMENTARIOS_APPS } from '@/hooks/useComentariosApps';
+import { VersionesApp } from '@/components/share/VersionesApp';
 
 /** Respuesta de la función share_panel (uso de la app Savium Share, sin nombres a propósito). */
 interface PanelShare {
@@ -291,7 +291,6 @@ const SaviumShare = () => {
   const { user } = useAuth();
   const admin = esAdmin(user?.id);
   const [dias, setDias] = useState<number>(90);
-  const [nuevaMinima, setNuevaMinima] = useState('');
   const [verLeidos, setVerLeidos] = useState(false);
   const queryClient = useQueryClient();
   const recargar = () => {
@@ -372,17 +371,6 @@ const SaviumShare = () => {
     try { await rpcAdmin('share_admin_borrar_comentario', { p_id: c.id }); recargar(); }
     catch (e) { toast({ title: 'No se pudo borrar', description: (e as Error).message, variant: 'destructive' }); }
   };
-  const guardarMinima = async () => {
-    const v = nuevaMinima.trim();
-    if (!/^[0-9]{1,3}(\.[0-9]{1,3}){0,2}$/.test(v)) {
-      toast({ title: 'Versión no válida', description: 'Usa el formato 2.0 o 2.0.1', variant: 'destructive' });
-      return;
-    }
-    if (!confirm(`Todos los teléfonos (iPhone y Android) con una versión anterior a la ${v} quedarán bloqueados hasta actualizar. ¿Seguro?`)) return;
-    try { await rpcAdmin('share_admin_version_minima', { p_version: v }); setNuevaMinima(''); recargar(); toast({ title: `Versión mínima: ${v}` }); }
-    catch (e) { toast({ title: 'No se pudo guardar', description: (e as Error).message, variant: 'destructive' }); }
-  };
-
   const categorias = useMemo(
     () =>
       (data?.categorias ?? [])
@@ -902,23 +890,8 @@ const SaviumShare = () => {
               </Card>
             )}
 
-            {/* ACTUALIZACIÓN OBLIGATORIA */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Versión mínima de la app</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Ahora: <strong className="text-foreground">v{data.version_minima ?? '1.0'}</strong>. Los teléfonos con una versión anterior
-                  muestran «Hay una nueva versión» y no dejan seguir hasta actualizar (desde la 2.0; la 1.0 no lo sabe hacer).
-                  Es la misma para iPhone y Android: súbela solo cuando la nueva versión ya esté publicada en la App Store y en Google Play.
-                </p>
-                <div className="flex gap-2 max-w-sm">
-                  <Input placeholder="2.0" value={nuevaMinima} onChange={e => setNuevaMinima(e.target.value)} />
-                  <Button onClick={guardarMinima} disabled={!nuevaMinima.trim()}>Guardar</Button>
-                </div>
-              </CardContent>
-            </Card>
+            {/* VERSIONES: tiendas, en uso y mínima por plataforma */}
+            <VersionesApp enUso={data.versiones ?? []} minimaComun={data.version_minima} />
 
             {/* GRUPOS RECIENTES (sin nombres a propósito) */}
             <Card>
