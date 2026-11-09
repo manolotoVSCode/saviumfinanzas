@@ -63,7 +63,7 @@ struct AjustesView: View {
                             Label("Panel de las apps", systemImage: "chart.bar")
                         }
                     } footer: {
-                        Text("Descargas y uso de Savium Share, Piggy Bank y Rewards.")
+                        Text("Descargas y uso de Savium Share.")
                     }
                 }
 

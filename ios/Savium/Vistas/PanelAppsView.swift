@@ -1,8 +1,8 @@
 import SwiftUI
 import SaviumCore
 
-// Lo esencial de los paneles de la web (Apps → Savium Share, Piggy Bank, Rewards): descargas y uso.
-// Las mismas funciones de la base; solo se piden los campos que se enseñan aquí.
+// Lo esencial del panel de la web (Apps → Savium Share): descargas y uso.
+// La misma función de la base; solo se piden los campos que se enseñan aquí.
 
 struct PanelShare: Decodable {
     struct Totales: Decodable { let grupos: Int; let activos_7d: Int }
@@ -21,26 +21,10 @@ struct PanelShare: Decodable {
     let comentarios_sin_leer: Int
 }
 
-struct PanelPiggy: Decodable {
-    struct Dispositivos: Decodable { let hoy: Int; let media_7d: Double }
-    /// Suma de 30 días; «familias» y «niños» serían familias·día, por eso no se piden.
-    struct Totales: Decodable { let tareas_aprobadas: Int?; let modo_nino: Int? }
-    let dispositivos: Dispositivos
-    let totales: Totales
-    let comentarios_sin_leer: Int
-}
-
-struct PanelRewards: Decodable {
-    struct Totales: Decodable { let familias: Int; let miembros: Int; let tarjetas: Int }
-    let totales: Totales
-}
-
 /// Panel de las apps, en Ajustes. AjustesView solo lo enseña a Config.adminId.
 struct PanelAppsView: View {
     private let repo = Repositorio(db: supabase)
     @State private var share: Result<PanelShare, Error>?
-    @State private var piggy: Result<PanelPiggy, Error>?
-    @State private var rewards: Result<PanelRewards, Error>?
 
     var body: some View {
         List {
@@ -63,24 +47,6 @@ struct PanelAppsView: View {
                     Text("App Store Connect llega con un día de retraso: último día \(fecha).")
                 }
             }
-
-            Section("Savium Piggy Bank") {
-                bloque(piggy) { p in
-                    Fila("iPhone activos hoy", p.dispositivos.hoy)
-                    Fila("iPhone activos, media 7 días", p.dispositivos.media_7d)
-                    Fila("Tareas aprobadas, 30 días", p.totales.tareas_aprobadas ?? 0)
-                    Fila("Entradas al modo niño, 30 días", p.totales.modo_nino ?? 0)
-                    comentarios(p.comentarios_sin_leer)
-                }
-            }
-
-            Section("Savium Rewards") {
-                bloque(rewards) { r in
-                    Fila("Familias", r.totales.familias)
-                    Fila("Miembros", r.totales.miembros)
-                    Fila("Tarjetas", r.totales.tarjetas)
-                }
-            }
         }
         .navigationTitle("Panel de las apps")
         .navigationBarTitleDisplayMode(.inline)
@@ -89,11 +55,7 @@ struct PanelAppsView: View {
     }
 
     private func cargar() async {
-        // Cada app por su lado: si una función falla, las otras se ven igual.
-        async let s = Result { try await repo.panelShare() }
-        async let p = Result { try await repo.panelPiggy() }
-        async let r = Result { try await repo.panelRewards() }
-        (share, piggy, rewards) = await (s, p, r)
+        do { share = .success(try await repo.panelShare()) } catch { share = .failure(error) }
     }
 
     @ViewBuilder
@@ -126,11 +88,5 @@ private struct Fila: View {
     }
     var body: some View {
         LabeledContent(titulo) { Text(valor).monospacedDigit() }
-    }
-}
-
-private extension Result where Failure == Error {
-    init(_ cuerpo: () async throws -> Success) async {
-        do { self = .success(try await cuerpo()) } catch { self = .failure(error) }
     }
 }
