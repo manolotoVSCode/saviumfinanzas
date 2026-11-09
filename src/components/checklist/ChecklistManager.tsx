@@ -11,7 +11,7 @@ import { agruparChecklist, ChecklistItem } from '@/lib/finance/checklist';
 import { Transaction } from '@/types/finance';
 import { ChecklistFila } from './ChecklistFila';
 import { TransaccionSelector } from './TransaccionSelector';
-import { ArrowRight, ListChecks, Plus, Save } from 'lucide-react';
+import { ArrowRight, ChevronDown, ChevronRight, ListChecks, Plus, Save } from 'lucide-react';
 
 interface Props {
   transactions: Transaction[];
@@ -30,6 +30,8 @@ export const ChecklistManager = ({ transactions }: Props) => {
   const [transaccionId, setTransaccionId] = useState<string | null>(null);
   const [repetir, setRepetir] = useState<'mensual' | null>(null);
   const [aBorrar, setABorrar] = useState<ChecklistItem | null>(null);
+  // La lista de tareas va plegada: solo se abre si se pide.
+  const [verLista, setVerLista] = useState(false);
 
   const porId = useMemo(() => new Map(transactions.map(t => [t.id, t])), [transactions]);
   const grupos = useMemo(() => agruparChecklist(items), [items]);
@@ -123,6 +125,20 @@ export const ChecklistManager = ({ transactions }: Props) => {
         ) : abiertas.length === 0 ? (
           <p className="text-sm text-muted-foreground">No tienes tareas pendientes.</p>
         ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="-ml-2 text-muted-foreground"
+            aria-expanded={verLista}
+            onClick={() => setVerLista(v => !v)}
+          >
+            {verLista ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
+            {verLista ? 'Ocultar' : 'Ver'} {abiertas.length} tarea{abiertas.length === 1 ? '' : 's'} pendiente{abiertas.length === 1 ? '' : 's'}
+          </Button>
+        )}
+
+        {verLista && !loading && !error && abiertas.length > 0 && (
           <div className="space-y-2">
             {abiertas.map(item => (
               <ChecklistFila
