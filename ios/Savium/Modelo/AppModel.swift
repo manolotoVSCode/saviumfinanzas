@@ -5,6 +5,9 @@ import SwiftUI
 
 enum Pestana: Hashable { case resumen, movimientos, patrimonio, pendientes, suscripciones }
 
+/// Lista que enseña la pestaña Pendientes. Vive aquí para que los avisos de Inicio abran la que toca.
+enum ModoPendientes: String, CaseIterable { case cobrar = "Por cobrar", pagar = "Por pagar" }
+
 enum Apariencia: String, CaseIterable, Identifiable {
     case sistema, claro, oscuro
     var id: Self { self }
@@ -19,6 +22,12 @@ enum Apariencia: String, CaseIterable, Identifiable {
 @Observable @MainActor
 final class AppModel {
     var pestana: Pestana = .resumen
+    var modoPendientes: ModoPendientes = .cobrar
+
+    func abrirPendientes(_ modo: ModoPendientes) {
+        modoPendientes = modo
+        pestana = .pendientes
+    }
     var divisa: Divisa {
         didSet { UserDefaults.standard.set(divisa.rawValue, forKey: "savium.divisa") }
     }

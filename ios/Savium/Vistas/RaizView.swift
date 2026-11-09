@@ -36,6 +36,11 @@ struct RaizView: View {
             if nueva == .active {
                 bloqueo.alVolver()
                 Task { await AlertaEmergencia.compartida.enviarPendiente(); await datos.comprobarAlertas() }
+                // Lo apuntado en la web mientras tanto: si los datos tienen más de 5 minutos, se recargan sin vaciar la pantalla.
+                // Bloqueada no hace falta: al desbloquear, las pestañas cargan de nuevo.
+                if !bloqueo.bloqueado, let t = datos.actualizado, Date.now.timeIntervalSince(t) > 300 {
+                    Task { await datos.cargar(app: app); await movimientos.recargar(limpiar: false) }
+                }
             }
         }
     }

@@ -24,15 +24,19 @@ struct SuscripcionesView: View {
                 Text("\(mensuales.cantidad) mensuales" + (otras > 0 ? " · \(otras) con otra frecuencia (no suman)" : ""))
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            Section("Activas") {
-                ForEach(subs) { s in
-                    let e = Suscripciones.estado(proximoPago: s.proximoPago, now: .now, calendario: .current)
-                    FilaImporte {
-                        Importe(valor: s.ultimoPagoMonto, divisa: d)
-                    } label: {
-                        VStack(alignment: .leading) {
-                            Text(s.serviceName)
-                            Text(texto(e, s)).font(.caption).foregroundStyle(e.estado == .sinCargo ? .orange : .secondary)
+            if subs.isEmpty {
+                ContentUnavailableView("Sin suscripciones activas", systemImage: "repeat", description: Text("Se dan de alta en la web."))
+            } else {
+                Section("Activas") {
+                    ForEach(subs) { s in
+                        let e = Suscripciones.estado(proximoPago: s.proximoPago, now: .now, calendario: .current)
+                        FilaImporte {
+                            Importe(valor: s.ultimoPagoMonto, divisa: d)
+                        } label: {
+                            VStack(alignment: .leading) {
+                                Text(s.serviceName)
+                                Text(texto(e, s)).font(.caption).foregroundStyle(e.estado == .sinCargo ? .orange : .secondary)
+                            }
                         }
                     }
                 }
@@ -44,7 +48,7 @@ struct SuscripcionesView: View {
         switch e.estado {
         case .sinCargo: "Sin cargo detectado (\(s.proximoPago)) · \(s.frecuencia)"
         case .esteMes: "Este mes · \(s.frecuencia)"
-        case .proxima: "En \(e.dias) días · \(s.frecuencia)"
+        case .proxima: "\(PendientesView.cuando(e.dias).capitalizadoPrimera) · \(s.frecuencia)"
         }
     }
 }

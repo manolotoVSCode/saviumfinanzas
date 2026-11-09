@@ -2,11 +2,10 @@ import SwiftUI
 import SaviumCore
 
 struct PendientesView: View {
-    enum Modo: String, CaseIterable { case cobrar = "Por cobrar", pagar = "Por pagar" }
     @Environment(DatosStore.self) private var datos
     @Environment(AppModel.self) private var app
-    @State private var modo: Modo = .cobrar
     @State private var horizonte = 30
+    @State private var detalle: Pendiente?
     @State private var aBorrar: Pendiente?
     @State private var fallo: String?
 
@@ -15,8 +14,9 @@ struct PendientesView: View {
             .navigationTitle("Pendientes")
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Picker("Vista", selection: $modo) { ForEach(Modo.allCases, id: \.self) { Text($0.rawValue) } }
-                        .pickerStyle(.segmented).frame(width: 240)
+                    @Bindable var app = app
+                    Picker("Vista", selection: $app.modoPendientes) { ForEach(ModoPendientes.allCases, id: \.self) { Text($0.rawValue) } }
+                        .pickerStyle(.segmented).fixedSize()
                 }
             }
             .refreshable { await datos.cargar(app: app) }
@@ -24,7 +24,7 @@ struct PendientesView: View {
 
     @ViewBuilder private var lista: some View {
         let d = app.divisa.rawValue
-        switch modo {
+        switch app.modoPendientes {
         case .cobrar:
             let r = datos.resumenPendientes(app)
             List {
@@ -35,18 +35,23 @@ struct PendientesView: View {
                 }
                 Section {
                     ForEach(r.filas) { f in
-                        FilaImporte {
-                            Importe(valor: f.restante, divisa: f.pendiente.divisa, color: f.vencido ? .red : nil)
-                        } label: {
-                            VStack(alignment: .leading) {
-                                Text(f.pendiente.concepto ?? "Pendiente").foregroundStyle(f.vencido ? .red : .primary)
-                                if let fe = f.pendiente.fechaEsperada {
-                                    let dia = Fechas.diaLocal(fe, calendario: .current)?.formatted(.dateTime.day().month().locale(Locale(identifier: "es_MX"))) ?? fe
-                                    Text(f.vencido ? "Vencido · \(dia)" : dia).font(.caption).foregroundStyle(.secondary)
+                        Button { detalle = f.pendiente } label: {
+                            FilaImporte {
+                                Importe(valor: f.restante, divisa: f.pendiente.divisa, color: f.vencido ? .red : nil)
+                            } label: {
+                                VStack(alignment: .leading) {
+                                    Text(f.pendiente.concepto ?? "Pendiente").foregroundStyle(f.vencido ? .red : .primary)
+                                    if let fe = f.pendiente.fechaEsperada {
+                                        let dia = Fechas.diaLocal(fe, calendario: .current)?.formatted(.dateTime.day().month().locale(Locale(identifier: "es_MX"))) ?? fe
+                                        Text(f.vencido ? "Vencido · \(dia)" : dia).font(.caption).foregroundStyle(.secondary)
+                                    }
                                 }
                             }
+                            .contentShape(.rect)
                         }
-                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                        .buttonStyle(.plain)
+                        // Sin deslizamiento completo: un gesto largo por accidente no debe cobrar nada.
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
                             if !datos.soloLectura {
                                 Button("Cobrar", systemImage: "checkmark.circle") { Task { await cobrar(f.pendiente) } }
                                     .tint(.green)
@@ -57,13 +62,26 @@ struct PendientesView: View {
                                 Button("Borrar", systemImage: "trash", role: .destructive) { aBorrar = f.pendiente }
                             }
                         }
+                        .contextMenu {
+                            if !datos.soloLectura {
+                                Button("Cobrar todo hoy", systemImage: "checkmark.circle") { Task { await cobrar(f.pendiente) } }
+                                Button("Cobrar otra cantidad…", systemImage: "pencil") { detalle = f.pendiente }
+                                Button("Borrar", systemImage: "trash", role: .destructive) { aBorrar = f.pendiente }
+                            }
+                        }
                     }
                 } footer: {
                     if !r.filas.isEmpty && !datos.soloLectura {
-                        Text("Desliza a la derecha para marcarlo como cobrado hoy, o a la izquierda para borrarlo.")
+                        Text("Toca uno para cobrarlo, también solo una parte.")
                     }
                 }
             }
+            .overlay {
+                if r.filas.isEmpty {
+                    ContentUnavailableView("Nada por cobrar", systemImage: "checkmark.circle", description: Text("Los pendientes se crean en la web."))
+                }
+            }
+            .sheet(item: $detalle) { p in DetallePendienteView(pendiente: p) }
             // Aviso centrado: un confirmationDialog sale como globo anclado arriba de la lista, lejos de la fila.
             .alert("¿Borrar «\(aBorrar?.concepto ?? "Pendiente")»?",
                    isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }), presenting: aBorrar) { p in
@@ -75,7 +93,7 @@ struct PendientesView: View {
                 Text("No se puede deshacer.")
             }
             .alert(fallo ?? "", isPresented: Binding(get: { fallo != nil }, set: { if !$0 { fallo = nil } })) {
-                Button("OK", role: .cancel) {}
+                Button("Aceptar", role: .cancel) {}
             }
         case .pagar:
             let filas = datos.porPagar(app, horizonte: horizonte)
@@ -101,6 +119,9 @@ struct PendientesView: View {
                             }
                         }
                     }
+                }
+                if filas.isEmpty && datos.provisiones.isEmpty {
+                    ContentUnavailableView("Nada por pagar en \(horizonte) días", systemImage: "checkmark.circle")
                 }
                 // Todas las provisiones pendientes, aunque caigan fuera del horizonte (como «Mis provisiones» en la web).
                 if !datos.provisiones.isEmpty {
@@ -129,15 +150,102 @@ struct PendientesView: View {
     }
 
     private func cobrar(_ p: Pendiente) async {
-        if !(await datos.cobrar(p)) { fallo = "No se pudo marcar como cobrado. Revisa la conexión y vuelve a intentarlo." }
+        fallo = await datos.cobrar(p)
     }
 
     static func cuando(_ dias: Int) -> String {
         switch dias {
-        case ..<0: "vencido hace \(-dias) d"
+        case -1: "venció ayer"
+        case ..<0: "venció hace \(-dias) días"
         case 0: "hoy"
         case 1: "mañana"
-        default: "en \(dias) d"
+        default: "en \(dias) días"
         }
+    }
+}
+
+/// Cobrar un pendiente: todo o una parte, en la fecha que se elija. También se borra desde aquí.
+struct DetallePendienteView: View {
+    @Environment(DatosStore.self) private var datos
+    @Environment(\.dismiss) private var cerrar
+    let pendiente: Pendiente
+    @State private var importeTexto = ""
+    @State private var fecha = Date.now
+    @State private var guardando = false
+    @State private var fallo: String?
+    @State private var confirmarBorrado = false
+
+    private var restante: Double { pendiente.montoEsperado - (pendiente.montoCobrado ?? 0) }
+    private var importe: Double? { Formato.parsearImporte(importeTexto).flatMap { $0 > 0 ? $0 : nil } }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    LabeledContent("Esperado") { Importe(valor: pendiente.montoEsperado, divisa: pendiente.divisa) }
+                    if let c = pendiente.montoCobrado, c > 0 {
+                        LabeledContent("Ya cobrado") { Importe(valor: c, divisa: pendiente.divisa) }
+                    }
+                    LabeledContent("Falta") { Importe(valor: restante, divisa: pendiente.divisa).bold() }
+                    if let fe = pendiente.fechaEsperada, let d = Fechas.diaLocal(fe, calendario: .current) {
+                        LabeledContent("Fecha esperada", value: d.formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "es_MX"))))
+                    }
+                }
+                if !datos.soloLectura {
+                    Section {
+                        HStack {
+                            TextField("Importe", text: $importeTexto).keyboardType(.decimalPad)
+                            Text(pendiente.divisa).foregroundStyle(.secondary)
+                        }
+                        DatePicker("Fecha de cobro", selection: $fecha, in: ...Date.now, displayedComponents: .date)
+                    } header: {
+                        Text("Cobrar")
+                    } footer: {
+                        if let importe, importe < restante - 0.005 {
+                            Text("Quedará pendiente \(Formato.importe(restante - importe, pendiente.divisa)).")
+                        } else {
+                            Text("No crea ningún movimiento: el ingreso real llega al importar el estado de cuenta.")
+                        }
+                    }
+                    Section {
+                        Button("Borrar pendiente", role: .destructive) { confirmarBorrado = true }
+                    }
+                }
+            }
+            .navigationTitle(pendiente.concepto ?? "Pendiente")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancelar", role: .cancel) { cerrar() } }
+                if !datos.soloLectura {
+                    ToolbarItem(placement: .confirmationAction) {
+                        if guardando { ProgressView() } else {
+                            Button("Cobrar") { Task { await cobrar() } }.disabled(importe == nil)
+                        }
+                    }
+                }
+            }
+            .onAppear { importeTexto = String(format: "%.2f", restante) }
+            .alert("¿Borrar «\(pendiente.concepto ?? "Pendiente")»?", isPresented: $confirmarBorrado) {
+                Button("Borrar", role: .destructive) {
+                    Task {
+                        if await datos.borrar(pendiente) { cerrar() } else { fallo = "No se pudo borrar. Revisa la conexión y vuelve a intentarlo." }
+                    }
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text("No se puede deshacer.")
+            }
+            .alert(fallo ?? "", isPresented: Binding(get: { fallo != nil }, set: { if !$0 { fallo = nil } })) {
+                Button("Aceptar", role: .cancel) {}
+            }
+            .interactiveDismissDisabled(guardando)
+        }
+    }
+
+    private func cobrar() async {
+        guard let importe, !guardando else { return }
+        guardando = true
+        defer { guardando = false }
+        if let motivo = await datos.cobrar(pendiente, monto: importe, fecha: fecha) { fallo = motivo } else { cerrar() }
     }
 }

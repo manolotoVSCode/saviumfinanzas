@@ -7,12 +7,25 @@ struct MovimientosView: View {
     @State private var aBorrar: Transaccion?
     @State private var aEditar: Transaccion?
     @State private var aVer: Transaccion?
+    @State private var fallo: String?
     @Environment(AppModel.self) private var app
 
     var body: some View {
         @Bindable var store = store
         List {
-            if let error = store.error { Label(error, systemImage: "wifi.slash").foregroundStyle(.secondary) }
+            if let error = store.error {
+                HStack {
+                    Label(error, systemImage: "wifi.slash").foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Reintentar") { Task { await store.recargar() } }
+                }
+            }
+            if store.conTotal && !store.filas.isEmpty {
+                Section {
+                    Linea(titulo: "Total · \(store.filas.count) movimiento\(store.filas.count == 1 ? "" : "s")",
+                          valor: Movimientos.total(store.filas, moneda: app.divisa, tasas: app.tasas), divisa: app.divisa.rawValue, destacado: true)
+                }
+            }
             ForEach(Movimientos.agruparPorDia(store.filas), id: \.dia) { grupo in
                 Section(titulo(grupo.dia)) {
                     ForEach(grupo.movimientos) { t in
@@ -28,42 +41,79 @@ struct MovimientosView: View {
                 }
             }
             if store.cargando { ProgressView().frame(maxWidth: .infinity) }
-            if !store.cargando && store.filas.isEmpty && store.error == nil {
-                ContentUnavailableView.search(text: store.texto)
-            }
+        }
+        .overlay {
+            if !store.cargando && store.filas.isEmpty && store.error == nil { vacio }
         }
         .navigationTitle("Movimientos")
-        .searchable(text: $store.texto, prompt: "Buscar en comentarios")
-        .onSubmit(of: .search) { Task { await store.recargar() } }
-        .onChange(of: store.texto) { _, nuevo in if nuevo.isEmpty { Task { await store.recargar() } } }
+        // Arriba, bajo el título: abajo (lo normal en iOS 26) queda tapado por la barra de pestañas propia.
+        .searchable(text: $store.filtro.texto, placement: .navigationBarDrawer(displayMode: .always), prompt: "Comentario, categoría o importe")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Picker("Cuenta", selection: $store.cuentaId) {
+                    Picker("Cuenta", selection: $store.filtro.cuentaId) {
                         Text("Todas las cuentas").tag(String?.none)
                         ForEach(datos.cuentas.filter { !$0.vendida && datos.cuentasConMovimientos.contains($0.id) }) { Text($0.nombre).tag(Optional($0.id)) }
                     }
+                    .pickerStyle(.menu)
+                    Picker("Tipo", selection: $store.filtro.tipo) {
+                        ForEach(TipoMovimientos.allCases, id: \.self) { Text($0.rawValue) }
+                    }
+                    Picker("Periodo", selection: $store.filtro.periodo) {
+                        ForEach(PeriodoMovimientos.allCases, id: \.self) { Text($0.rawValue) }
+                    }
+                    if store.filtro.hayFiltros {
+                        Divider()
+                        Button("Quitar filtros", systemImage: "xmark.circle") {
+                            let texto = store.filtro.texto
+                            store.filtro = FiltroMovimientos()
+                            store.filtro.texto = texto
+                        }
+                    }
                 } label: {
-                    Label("Filtrar", systemImage: store.cuentaId == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                    Label("Filtrar", systemImage: store.filtro.hayFiltros ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                 }
             }
         }
-        .onChange(of: store.cuentaId) { Task { await store.recargar() } }
+        // Cualquier cambio de filtro o de texto recarga; la espera corta junta las teclas de una palabra.
+        .task(id: store.filtro) {
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            store.idsCategoria = Movimientos.categoriasQueCoinciden(store.filtro.texto, en: datos.categorias)
+            await store.recargar()
+        }
         .sheet(item: $aEditar) { t in
             NuevoMovimientoView(editando: t, tipoCategoria: datos.categoria(t.subcategoriaId)?.tipo)
         }
         .sheet(item: $aVer) { t in DetalleMovimientoView(t: t) }
-        .refreshable { await store.recargar() }
-        .task { if store.filas.isEmpty { await store.recargar() } }
+        .refreshable { await store.recargar(limpiar: false) }
         // Aviso centrado: un confirmationDialog sale como globo anclado arriba de la lista, lejos de la fila.
         .alert(aBorrar.map(textoConfirmacion) ?? "", isPresented: Binding(get: { aBorrar != nil }, set: { if !$0 { aBorrar = nil } }),
                presenting: aBorrar) { t in
             Button("Borrar", role: .destructive) {
-                Task { if await store.borrar(t) { await datos.cargar(app: app) } }
+                Task {
+                    if await store.borrar(t) { await datos.cargar(app: app) } else { fallo = "No se pudo borrar. Revisa la conexión y vuelve a intentarlo." }
+                }
             }
             Button("Cancelar", role: .cancel) {}
         } message: { _ in
             Text("No se puede deshacer.")
+        }
+        .alert(fallo ?? "", isPresented: Binding(get: { fallo != nil }, set: { if !$0 { fallo = nil } })) {
+            Button("Aceptar", role: .cancel) {}
+        }
+    }
+
+    @ViewBuilder private var vacio: some View {
+        let texto = store.filtro.textoLimpio
+        if !texto.isEmpty {
+            ContentUnavailableView.search(text: texto)
+        } else if store.filtro.hayFiltros {
+            ContentUnavailableView("Sin movimientos con estos filtros", systemImage: "line.3.horizontal.decrease.circle",
+                                   description: Text("Prueba con otra cuenta, otro tipo u otro periodo."))
+        } else {
+            ContentUnavailableView("Sin movimientos", systemImage: "list.bullet.rectangle",
+                                   description: Text("Apunta uno con el botón +."))
         }
     }
 

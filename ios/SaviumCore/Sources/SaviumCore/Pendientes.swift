@@ -47,4 +47,11 @@ public enum Pendientes {
         }
         return Resumen(filas: ordenadas, total: total, vencidos: ordenadas.filter(\.vencido).count)
     }
+
+    /// Lo que queda tras cobrar `monto` (como markAsPaid en la web): se suma a lo ya cobrado y,
+    /// si llega a lo esperado, pasa a «cobrado».
+    public static func cobro(_ p: Pendiente, monto: Double) -> (montoCobrado: Double, estado: String) {
+        let total = (p.montoCobrado ?? 0) + monto
+        return (total, total >= p.montoEsperado ? "cobrado" : "cobrado_parcial")
+    }
 }

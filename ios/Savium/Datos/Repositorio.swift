@@ -112,7 +112,7 @@ struct Repositorio: Sendable {
     }
 
     func pendientes() async throws -> [Pendiente] {
-        try await db.from("transaction_pendings").select("id, concepto, tipo, monto_esperado, monto_cobrado, divisa, fecha_esperada, estado").execute().value
+        try await db.from("transaction_pendings").select("id, concepto, tipo, monto_esperado, monto_cobrado, divisa, fecha_esperada, estado, fecha_cobro").execute().value
     }
     /// Provisiones de CxP (se crean en la web). Un error de la base (la tabla aún no existe
     /// o el lector no tiene permiso) cuenta como «ninguna»; uno de red, no.
@@ -136,13 +136,54 @@ struct Repositorio: Sendable {
     }
 
     /// Una página de la lista de movimientos (fecha desc, desempate por id como la web).
-    func movimientos(pagina: Int, cuentaId: String?, texto: String?) async throws -> [Transaccion] {
-        var q = db.from("transacciones").select(Self.columnasMovimiento)
-        if let cuentaId { q = q.eq("cuenta_id", value: cuentaId) }
-        if let texto, !texto.isEmpty { q = q.ilike("comentario", pattern: "%\(texto)%") }
+    /// `pagina` nil: todas las que cumplen el filtro (para un periodo de un mes, con su total).
+    func movimientos(filtro f: FiltroMovimientos, idsCategoria: [String], rango: (desde: String, hasta: String)?, pagina: Int?) async throws -> [Transaccion] {
+        func consulta() -> PostgrestFilterBuilder {
+            var q = db.from("transacciones").select(Self.columnasMovimiento)
+            if let c = f.cuentaId { q = q.eq("cuenta_id", value: c) }
+            if f.tipo == .gastos { q = q.gt("gasto", value: 0) }
+            if f.tipo == .ingresos { q = q.gt("ingreso", value: 0) }
+            if let r = rango { q = q.gte("fecha", value: r.desde).lte("fecha", value: r.hasta) }
+            if let o = Movimientos.condicionBusqueda(f.texto, idsCategoria: idsCategoria) { q = q.or(o) }
+            return q
+        }
+        guard let pagina else {
+            return try await todas { a, b in
+                try await consulta().order("fecha", ascending: false).order("id", ascending: true).range(from: a, to: b).execute().value
+            }
+        }
         let desde = pagina * Self.tamanoPagina
-        return try await q.order("fecha", ascending: false).order("id", ascending: true)
+        return try await consulta().order("fecha", ascending: false).order("id", ascending: true)
             .range(from: desde, to: desde + Self.tamanoPagina - 1).execute().value
+    }
+
+    func movimiento(id: String) async throws -> Transaccion? {
+        let filas: [Transaccion] = try await db.from("transacciones").select(Self.columnasMovimiento).eq("id", value: id).limit(1).execute().value
+        return filas.first
+    }
+
+    // MARK: Checklist (se crea y se edita en la web; aquí solo se marca)
+
+    /// Sin la tabla o sin la columna `repetir` (migraciones aún no aplicadas) no se rompe la carga:
+    /// sin `repetir` se piden las demás columnas, y sin tabla no hay tareas. Cualquier otro error se propaga.
+    func checklist() async throws -> [TareaChecklist] {
+        let falta: Set<String> = ["42703", "42P01", "PGRST204", "PGRST205"]
+        func pedir(_ columnas: String) async throws -> [TareaChecklist] {
+            try await db.from("checklist_items").select(columnas).eq("completada", value: false).order("created_at").execute().value
+        }
+        do {
+            return try await pedir("id, texto, fecha, transaccion_id, repetir, completada")
+        } catch let e as PostgrestError where falta.contains(e.code ?? "") {
+            do {
+                return try await pedir("id, texto, fecha, transaccion_id, completada")
+            } catch let e as PostgrestError where falta.contains(e.code ?? "") {
+                return []
+            }
+        }
+    }
+
+    func marcarTarea(id: String, _ cambio: CambioChecklist) async throws {
+        try await db.from("checklist_items").update(cambio).eq("id", value: id).execute()
     }
 
     /// Todos los movimientos entre dos días (incluidos), paginando de 1000 en 1000.
@@ -174,12 +215,44 @@ struct Repositorio: Sendable {
         try await db.from("transacciones").update(cambio).eq("id", value: id).execute()
     }
 
-    /// Como «Cobrar» en la web pero siempre por el total: no crea ningún movimiento.
-    func cobrarPendiente(_ p: Pendiente, fecha: String) async throws {
+    /// El update solo se aplica si la fila sigue como `p` (otro cobro hecho entretanto en la web no se pisa).
+    struct CambioEnOtroSitio: Error {}
+
+    private func siSigueIgual(_ q: PostgrestFilterBuilder, _ p: Pendiente) -> PostgrestFilterBuilder {
+        var q = q.eq("id", value: p.id).eq("estado", value: p.estado)
+        if let c = p.montoCobrado { q = q.gte("monto_cobrado", value: c - 0.005).lte("monto_cobrado", value: c + 0.005) }
+        else { q = q.is("monto_cobrado", value: nil) }
+        return q
+    }
+
+    private func comprobarUnaFila(_ q: PostgrestFilterBuilder) async throws {
+        struct Fila: Decodable { let id: String }
+        let filas: [Fila] = try await q.select("id").execute().value
+        if filas.isEmpty { throw CambioEnOtroSitio() }
+    }
+
+    /// Como «Cobrar» en la web (markAsPaid): suma `monto` a lo cobrado; no crea ningún movimiento.
+    func cobrarPendiente(_ p: Pendiente, monto: Double, fecha: String) async throws {
         struct Cobro: Encodable { let monto_cobrado: Double; let fecha_cobro: String; let estado: String }
-        try await db.from("transaction_pendings")
-            .update(Cobro(monto_cobrado: p.montoEsperado, fecha_cobro: fecha, estado: "cobrado"))
-            .eq("id", value: p.id).execute()
+        let r = Pendientes.cobro(p, monto: monto)
+        try await comprobarUnaFila(siSigueIgual(db.from("transaction_pendings")
+            .update(Cobro(monto_cobrado: r.montoCobrado, fecha_cobro: fecha, estado: r.estado)), p))
+    }
+
+    /// Deshacer: `despues` (lo que dejó el cobro) vuelve a `antes`, solo si nadie lo cambió entretanto.
+    func reponerPendiente(_ antes: Pendiente, desde despues: Pendiente) async throws {
+        struct Estado: Encodable {
+            let monto_cobrado: Double?; let fecha_cobro: String?; let estado: String
+            func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(monto_cobrado, forKey: .monto_cobrado)
+                try c.encode(fecha_cobro, forKey: .fecha_cobro)
+                try c.encode(estado, forKey: .estado)
+            }
+            enum CodingKeys: String, CodingKey { case monto_cobrado, fecha_cobro, estado }
+        }
+        try await comprobarUnaFila(siSigueIgual(db.from("transaction_pendings")
+            .update(Estado(monto_cobrado: antes.montoCobrado, fecha_cobro: antes.fechaCobro, estado: antes.estado)), despues))
     }
 
     func borrarPendiente(id: String) async throws {

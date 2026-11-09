@@ -23,10 +23,8 @@ struct AlertaRecibidaView: View {
             if let mensaje = alerta.mensaje {
                 Text("«\(mensaje)»").font(.title3).foregroundStyle(.white).multilineTextAlignment(.center)
             }
-            Text(alerta.creada, format: .dateTime.day().month().hour().minute().locale(Locale(identifier: "es_MX")))
+            Text("\(Text(alerta.creada, format: .dateTime.day().month().hour().minute().locale(Locale(identifier: "es_MX")))) · \(Text(alerta.creada, style: .relative))")
                 .font(.headline).foregroundStyle(.white.opacity(0.9))
-            + Text(" · ") .foregroundStyle(.white.opacity(0.9))
-            + Text(alerta.creada, style: .relative).font(.headline).foregroundStyle(.white.opacity(0.9))
 
             if let punto {
                 Map(initialPosition: .region(MKCoordinateRegion(center: punto, latitudinalMeters: 600, longitudinalMeters: 600))) {

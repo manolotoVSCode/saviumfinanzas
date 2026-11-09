@@ -124,9 +124,16 @@ public struct Pendiente: Codable, Sendable, Identifiable, Hashable {
     public let divisa: String
     public let fechaEsperada: String?
     public let estado: String
+    /// Para deshacer un cobro: se repone tal cual estaba.
+    public let fechaCobro: String?
     enum CodingKeys: String, CodingKey {
         case id, concepto, tipo, divisa, estado
-        case montoEsperado = "monto_esperado", montoCobrado = "monto_cobrado", fechaEsperada = "fecha_esperada"
+        case montoEsperado = "monto_esperado", montoCobrado = "monto_cobrado", fechaEsperada = "fecha_esperada", fechaCobro = "fecha_cobro"
+    }
+    public init(id: String, concepto: String? = nil, tipo: String? = nil, montoEsperado: Double, montoCobrado: Double? = nil,
+                divisa: String = "MXN", fechaEsperada: String? = nil, estado: String = "pendiente", fechaCobro: String? = nil) {
+        self.id = id; self.concepto = concepto; self.tipo = tipo; self.montoEsperado = montoEsperado; self.montoCobrado = montoCobrado
+        self.divisa = divisa; self.fechaEsperada = fechaEsperada; self.estado = estado; self.fechaCobro = fechaCobro
     }
 }
 

@@ -26,6 +26,10 @@ final class DatosStore {
     private(set) var comprasCripto: [CompraCripto] = []
     private(set) var preciosCripto: [String: Double] = [:]
     private(set) var alertasDescartadas: Set<String> = []
+    /// Tareas abiertas del Checklist (se crean en la web). Personales: el lector no las ve.
+    private(set) var tareas: [TareaChecklist] = []
+    /// Aviso con «Deshacer» tras cobrar un pendiente; lo enseña la barra de pestañas unos segundos.
+    var deshacer: CobroHecho?
     /// Lector de la cuenta de otro (p. ej. la familia): ve todo y no puede apuntar, editar, cobrar ni borrar.
     /// La base lo impide igualmente; esto solo quita los botones.
     private(set) var soloLectura = false
@@ -37,6 +41,8 @@ final class DatosStore {
     /// Sube en cada reiniciar (cerrar sesión, entrar o salir del señuelo): una carga que empezó antes descarta su
     /// resultado, para que una respuesta tardía no pinte datos reales encima del señuelo (ni los de otra cuenta).
     private var generacion = 0
+    /// Sube con cada cambio optimista (cobrar, borrar, marcar): una carga que empezó antes no pisa pendientes ni tareas.
+    private var cambiosLocales = 0
     private(set) var error: String?
     private(set) var actualizado: Date?
 
@@ -46,7 +52,7 @@ final class DatosStore {
     func reiniciar() {
         cuentas = []; cuentasConMovimientos = []; filasPatrimonio = []; categorias = []; pendientes = []; suscripciones = []; provisiones = []
         inversiones = []; valuaciones = []; movimientosPorPagar = []; movimientosMesAnterior = []; recientes = []
-        umbralesCripto = []; comprasCripto = []; preciosCripto = [:]; alertasDescartadas = []
+        umbralesCripto = []; comprasCripto = []; preciosCripto = [:]; alertasDescartadas = []; tareas = []; deshacer = nil
         error = nil; actualizado = nil; soloLectura = false; tieneLectores = false; alertaActiva = nil
         generacion += 1
     }
@@ -57,6 +63,8 @@ final class DatosStore {
         if let s = ModoSenuelo.datos { cargarSenuelo(s); return }
         guard !cargando else { return }
         let mia = generacion
+        let cambiosAlEmpezar = cambiosLocales
+        var repetir = false
         cargando = true
         defer { cargando = false }
         async let tasas: Void = app.cargarTasas()
@@ -79,19 +87,23 @@ final class DatosStore {
             let yo = supabase.auth.currentUser?.id.uuidString.lowercased() ?? ""
             async let accesos = repo.accesos(yo)
             async let codigo = repo.hashCodigoEmergencia()
+            async let ch = repo.checklist()
             let cats = try await repo.categorias()
             let pp = try await repo.movimientos(deSubcategorias: PorPagar.subcategoriasRelevantes(cats))
             let (nc, np, npe, ns, ni, nv) = try await (c, p, pe, s, i, v)
             let (nma, nre, npr) = try await (ma, re, pr)
             let nuevoPerfil = try await perfil
             let nuevosAccesos = try await accesos
+            let nuevasTareas = try await ch
             CodigoGuardado.guardar(try await codigo)
             let divisaPerfil = nuevoPerfil?.divisaPreferida
             let conMovs = try await repo.cuentasConMovimientos(nc.map(\.id))
             guard mia == generacion, !ModoSenuelo.activo else { return }
-            cuentas = nc; cuentasConMovimientos = conMovs; filasPatrimonio = np; categorias = cats; pendientes = npe
+            cuentas = nc; cuentasConMovimientos = conMovs; filasPatrimonio = np; categorias = cats
             suscripciones = ns; provisiones = npr; inversiones = ni; valuaciones = nv
             movimientosMesAnterior = nma; recientes = nre; movimientosPorPagar = pp
+            // Si algo se cobró, borró o marcó mientras cargaba, esta respuesta es anterior: se pide otra.
+            if cambiosAlEmpezar == cambiosLocales { pendientes = npe; tareas = nuevasTareas } else { repetir = true }
             soloLectura = nuevosAccesos.titular != nil
             tieneLectores = nuevosAccesos.tieneLectores
             app.usarDivisaDelPerfil(divisaPerfil)
@@ -109,6 +121,10 @@ final class DatosStore {
         }
         await tasas
         await cripto
+        if repetir, mia == generacion {
+            cargando = false
+            await cargar(app: app)
+        }
     }
 
     /// Aparte de la carga principal: si falla (CoinGecko, sin red…) se quedan las alertas de antes
@@ -154,7 +170,7 @@ final class DatosStore {
         cuentas = s.cuentas; cuentasConMovimientos = Set(s.cuentas.map(\.id)); filasPatrimonio = s.filasPatrimonio
         categorias = s.categorias; pendientes = []; suscripciones = s.suscripciones; provisiones = []; inversiones = []; valuaciones = []
         movimientosPorPagar = []; recientes = s.movimientos
-        umbralesCripto = []; comprasCripto = []; preciosCripto = [:]; alertasDescartadas = []
+        umbralesCripto = []; comprasCripto = []; preciosCripto = [:]; alertasDescartadas = []; tareas = []
         movimientosMesAnterior = s.movimientos.filter { $0.fecha >= mes.desde && $0.fecha <= mes.hasta }
         soloLectura = false; error = nil; actualizado = .now
     }
@@ -180,25 +196,108 @@ final class DatosStore {
 
     // MARK: Pendientes
 
-    /// Lo quita de la lista al momento; si falla, lo repone y devuelve false.
-    func cobrar(_ p: Pendiente) async -> Bool {
-        await quitarPendiente(p) { try await self.repo.cobrarPendiente(p, fecha: Fechas.isoLocal(.now, calendario: self.cal)) }
+    struct CobroHecho: Identifiable, Equatable {
+        let id = UUID()
+        /// El pendiente tal como estaba antes de cobrar, y como quedó.
+        let antes: Pendiente
+        let despues: Pendiente
+        let mensaje: String
+        var enCurso = false
+        var fallo: String?
+    }
+
+    /// Cobra `monto` (por defecto lo que falta) en `fecha`. Cambia la lista al momento; si falla, la repone y devuelve el motivo.
+    func cobrar(_ p: Pendiente, monto: Double? = nil, fecha: Date = .now) async -> String? {
+        guard !ModoSenuelo.activo, let i = pendientes.firstIndex(where: { $0.id == p.id }) else { return nil }
+        let mia = generacion
+        cambiosLocales += 1
+        let importe = monto ?? (p.montoEsperado - (p.montoCobrado ?? 0))
+        let r = Pendientes.cobro(p, monto: importe)
+        let dia = Fechas.isoLocal(fecha, calendario: cal)
+        let nuevo = Pendiente(id: p.id, concepto: p.concepto, tipo: p.tipo, montoEsperado: p.montoEsperado, montoCobrado: r.montoCobrado,
+                              divisa: p.divisa, fechaEsperada: p.fechaEsperada, estado: r.estado, fechaCobro: dia)
+        pendientes[i] = nuevo
+        do {
+            try await repo.cobrarPendiente(p, monto: importe, fecha: dia)
+            guard mia == generacion else { return nil }
+            let nombre = p.concepto ?? "Pendiente"
+            deshacer = CobroHecho(antes: p, despues: nuevo, mensaje: r.estado == "cobrado" ? "«\(nombre)» cobrado" : "Cobro parcial de «\(nombre)»")
+            return nil
+        } catch {
+            guard mia == generacion else { return nil }
+            if let j = pendientes.firstIndex(where: { $0.id == p.id }) { pendientes[j] = p }
+            return Self.motivo(error, "No se pudo marcar como cobrado")
+        }
+    }
+
+    /// Deshace el último cobro: el pendiente vuelve a como estaba. El aviso sigue a la vista hasta saber el resultado.
+    func deshacerCobro() async {
+        guard !ModoSenuelo.activo, var c = deshacer, !c.enCurso else { return }
+        let mia = generacion
+        cambiosLocales += 1
+        c.enCurso = true; c.fallo = nil
+        deshacer = c
+        do {
+            try await repo.reponerPendiente(c.antes, desde: c.despues)
+            guard mia == generacion else { return }
+            if let i = pendientes.firstIndex(where: { $0.id == c.antes.id }) { pendientes[i] = c.antes }
+            if deshacer?.id == c.id { deshacer = nil }
+        } catch {
+            guard mia == generacion, deshacer?.id == c.id else { return }
+            c.enCurso = false
+            c.fallo = Self.motivo(error, "No se pudo deshacer")
+            deshacer = c
+        }
     }
 
     func borrar(_ p: Pendiente) async -> Bool {
-        await quitarPendiente(p) { try await self.repo.borrarPendiente(id: p.id) }
-    }
-
-    private func quitarPendiente(_ p: Pendiente, _ accion: () async throws -> Void) async -> Bool {
-        guard let i = pendientes.firstIndex(where: { $0.id == p.id }) else { return false }
+        guard !ModoSenuelo.activo, let i = pendientes.firstIndex(where: { $0.id == p.id }) else { return false }
+        let mia = generacion
+        cambiosLocales += 1
         pendientes.remove(at: i)
         do {
-            try await accion()
+            try await repo.borrarPendiente(id: p.id)
             return true
         } catch {
-            pendientes.insert(p, at: min(i, pendientes.count))
+            if mia == generacion { pendientes.insert(p, at: min(i, pendientes.count)) }
             return false
         }
+    }
+
+    private static func motivo(_ error: Error, _ base: String) -> String {
+        error is Repositorio.CambioEnOtroSitio
+            ? "\(base): cambió en otro sitio mientras tanto. Tira hacia abajo para ver cómo quedó."
+            : "\(base). Revisa la conexión y vuelve a intentarlo."
+    }
+
+    // MARK: Checklist
+
+    func tareasParaHoy() -> [TareaChecklist] { Checklist.paraHoy(tareas, now: .now, calendario: cal) }
+
+    func tareasDe(movimiento id: String) -> [TareaChecklist] { tareas.filter { $0.transaccionId == id } }
+
+    /// Marca como hecha (una mensual avanza un mes). Optimista; si falla, la repone y devuelve false.
+    func marcarHecha(_ t: TareaChecklist) async -> Bool {
+        guard !ModoSenuelo.activo, let i = tareas.firstIndex(where: { $0.id == t.id }) else { return false }
+        let mia = generacion
+        cambiosLocales += 1
+        let cambio = Checklist.cambiosAlMarcar(t, completada: true, ahora: .now, calendario: cal)
+        let nueva = Checklist.aplicar(cambio, a: t)
+        if nueva.completada { tareas.remove(at: i) } else { tareas[i] = nueva }
+        do {
+            try await repo.marcarTarea(id: t.id, cambio)
+            return true
+        } catch {
+            guard mia == generacion else { return false }
+            if let j = tareas.firstIndex(where: { $0.id == t.id }) { tareas[j] = t } else { tareas.insert(t, at: min(i, tareas.count)) }
+            return false
+        }
+    }
+
+    /// Pendientes de pagar ya vencidos (para el globo de la pestaña).
+    func pagosVencidos(_ app: AppModel) -> Int {
+        let hoy = cal.startOfDay(for: .now)
+        return porPagar(app, horizonte: 30).filter { $0.fechaEstimada < hoy }.count
     }
 
     // MARK: Derivados (siempre en la divisa elegida)

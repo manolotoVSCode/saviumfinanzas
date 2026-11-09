@@ -135,3 +135,8 @@ extension Bundle {
     /// «1.2»
     var versionCorta: String { infoDictionary?["CFBundleShortVersionString"] as? String ?? "?" }
 }
+
+extension String {
+    /// «en 3 días» → «En 3 días».
+    var capitalizadoPrimera: String { prefix(1).uppercased() + dropFirst() }
+}

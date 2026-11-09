@@ -11,10 +11,21 @@ struct NuevoMovimientoView: View {
     @State private var guardando = false
     @State private var error: String?
     @State private var exito = 0
+    @State private var confirmarBorrado = false
+    @State private var apuntados = 0
+    @State private var falloTarea: String?
+    /// Tareas ligadas, tal como estaban al abrir la hoja; las marcadas aquí quedan como hechas y no se pueden volver
+    /// a marcar (una mensual avanzaría otro mes cada vez).
+    @State private var tareasLigadas: [TareaChecklist] = []
+    @State private var hechas: Set<String> = []
     @FocusState private var importeEnfocado: Bool
+    @ScaledMetric(relativeTo: .largeTitle) private var tamImporte: CGFloat = 40
+    /// El movimiento que se edita (nil al apuntar uno nuevo).
+    private let original: Transaccion?
 
     /// Sin movimiento: apuntar uno nuevo. Con movimiento: editarlo (mismo formulario, ya relleno).
     init(editando t: Transaccion? = nil, tipoCategoria: String? = nil) {
+        original = t
         _form = State(initialValue: t.map { FormularioMovimiento(editando: $0, tipoCategoria: tipoCategoria, calendario: .current) }
                       ?? FormularioMovimiento(fecha: .now, cuentaId: UserDefaults.standard.string(forKey: "savium.ultimaCuenta")))
     }
@@ -43,8 +54,31 @@ struct NuevoMovimientoView: View {
                     }
                     HStack {
                         TextField("0.00", text: $form.importeTexto).keyboardType(.decimalPad).focused($importeEnfocado)
-                            .font(.system(size: 40, weight: .semibold, design: .rounded)).monospacedDigit()
+                            .font(.system(size: tamImporte, weight: .semibold, design: .rounded)).monospacedDigit()
                         Text(cuenta?.divisa ?? app.divisa.rawValue).font(.title2).foregroundStyle(.secondary)
+                    }
+                }
+                let frecuentes = categoriasFrecuentes
+                if !frecuentes.isEmpty {
+                    Section {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(frecuentes) { c in
+                                    let elegida = form.subcategoriaId == c.id
+                                    Button { form.subcategoriaId = elegida ? nil : c.id } label: {
+                                        Text(c.subcategoria).font(.subheadline).padding(.horizontal, 12).padding(.vertical, 7)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .foregroundStyle(elegida ? Color.white : Color.primary)
+                                    .background(elegida ? Color.accentColor : Color(.tertiarySystemFill), in: .capsule)
+                                    .accessibilityAddTraits(elegida ? .isSelected : [])
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    } header: {
+                        Text("Frecuentes")
                     }
                 }
                 Section {
@@ -55,13 +89,46 @@ struct NuevoMovimientoView: View {
                     NavigationLink {
                         SelectorCategoria(tipo: tipoCategoria, seleccion: $form.subcategoriaId)
                     } label: {
-                        LabeledContent("Categoría", value: form.subcategoriaId.flatMap(datos.categoria).map(\.subcategoria) ?? "Elige una")
+                        LabeledContent("Categoría", value: form.subcategoriaId.flatMap(datos.categoria).map(\.subcategoria) ?? "Todas…")
                     }
                     DatePicker("Fecha", selection: $form.fecha, displayedComponents: .date)
                     TextField("Comentario (opcional)", text: $form.comentario)
                 }
+                if !tareasLigadas.isEmpty {
+                    Section {
+                        ForEach(tareasLigadas) { t in
+                            let hecha = hechas.contains(t.id)
+                            Button { Task { await marcar(t) } } label: {
+                                Label {
+                                    VStack(alignment: .leading) {
+                                        Text(t.texto).foregroundStyle(hecha ? .secondary : .primary).strikethrough(hecha && !t.esMensual)
+                                        if hecha {
+                                            Text(t.esMensual ? "Hecha este mes" : "Hecha").font(.caption).foregroundStyle(.green)
+                                        } else if let f = t.fecha {
+                                            Text(PendientesView.cuando(Fechas.diasHasta(f, now: .now, calendario: .current)).capitalizadoPrimera + (t.esMensual ? " · cada mes" : ""))
+                                                .font(.caption).foregroundStyle(.secondary)
+                                        }
+                                    }
+                                } icon: {
+                                    Image(systemName: hecha ? "checkmark.circle.fill" : "circle").foregroundStyle(hecha ? .green : .accentColor)
+                                }
+                            }
+                            .disabled(hecha)
+                            .accessibilityHint(hecha ? "" : "Marcar como hecha")
+                        }
+                    } header: {
+                        Text("Tareas")
+                    } footer: {
+                        Text("Toca una para marcarla como hecha. Se crean y se editan en la web, en Checklist.")
+                    }
+                }
                 if let error {
                     Section { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red) }
+                }
+                if original != nil {
+                    Section {
+                        Button("Borrar movimiento", role: .destructive) { confirmarBorrado = true }
+                    }
                 }
             }
             .scrollDismissesKeyboard(.interactively)
@@ -75,19 +142,87 @@ struct NuevoMovimientoView: View {
                     Button("Listo") { importeEnfocado = false }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    if guardando { ProgressView() } else {
+                    if guardando { ProgressView() } else if form.editando || error != nil {
                         Button(error == nil ? "Guardar" : "Reintentar") { Task { await guardar() } }
                             .disabled(!form.esValido)
+                    } else {
+                        // Mantener pulsado: guardar y dejar la hoja lista para otro (tandas de tickets).
+                        Menu {
+                            Button("Guardar y apuntar otro", systemImage: "plus") { Task { await guardar(otro: true) } }
+                        } label: {
+                            Text("Guardar")
+                        } primaryAction: {
+                            Task { await guardar() }
+                        }
+                        .disabled(!form.esValido)
                     }
                 }
             }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if apuntados > 0 {
+                    Label("\(apuntados) apuntado\(apuntados == 1 ? "" : "s")", systemImage: "checkmark.circle.fill")
+                        .font(.footnote).foregroundStyle(.green).padding(.vertical, 4)
+                }
+            }
+            .alert(falloTarea ?? "", isPresented: Binding(get: { falloTarea != nil }, set: { if !$0 { falloTarea = nil } })) {
+                Button("Aceptar", role: .cancel) {}
+            }
+            .alert("¿Borrar este movimiento?", isPresented: $confirmarBorrado) {
+                Button("Borrar", role: .destructive) { Task { await borrar() } }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text("No se puede deshacer.")
+            }
             .sensoryFeedback(.success, trigger: exito)
-            .onAppear { if !form.editando { importeEnfocado = true } }
+            .onAppear {
+                if !form.editando { importeEnfocado = true }
+                if let original, tareasLigadas.isEmpty { tareasLigadas = datos.tareasDe(movimiento: original.id) }
+            }
             .interactiveDismissDisabled(guardando)
         }
     }
 
-    private func guardar() async {
+    /// Las 5 subcategorías más usadas en los últimos 90 días, del tipo que toca.
+    private var categoriasFrecuentes: [Categoria] {
+        let ids = Set(datos.categorias.filter { $0.tipo == tipoCategoria }.map(\.id))
+        return Movimientos.frecuentes(datos.recientes.filter { ids.contains($0.subcategoriaId) }, limite: 5).compactMap(datos.categoria)
+    }
+
+    private func marcar(_ t: TareaChecklist) async {
+        guard !hechas.contains(t.id) else { return }
+        hechas.insert(t.id)
+        if !(await datos.marcarHecha(t)) {
+            hechas.remove(t.id)
+            falloTarea = "No se pudo marcar la tarea. Revisa la conexión y vuelve a intentarlo."
+        }
+    }
+
+    private func borrar() async {
+        guard let original else { return }
+        guardando = true
+        defer { guardando = false }
+        if await movimientos.borrar(original) {
+            dismiss()
+            Task { await datos.cargar(app: app) }
+        } else {
+            error = "No se pudo borrar. Revisa la conexión y vuelve a intentarlo."
+        }
+    }
+
+    /// Tras guardar: cierra la hoja o, con `otro`, la deja en blanco para el siguiente.
+    private func terminar(otro: Bool) {
+        exito += 1
+        if otro {
+            form = form.siguiente()
+            apuntados += 1
+            importeEnfocado = true
+        } else {
+            dismiss()
+        }
+        Task { await datos.cargar(app: app); await movimientos.recargar(limpiar: false) }
+    }
+
+    private func guardar(otro: Bool = false) async {
         // Review Focus 2: un solo envío a la vez; el botón desaparece mientras guarda.
         guard !guardando, let userId = sesion.userId else { return }
         guardando = true
@@ -100,9 +235,7 @@ struct NuevoMovimientoView: View {
                 ModoSenuelo.apuntar(nueva)
             }
             try? await Task.sleep(for: .milliseconds(400))
-            exito += 1
-            dismiss()
-            Task { await datos.cargar(app: app); await movimientos.recargar() }
+            terminar(otro: otro)
             return
         }
         do {
@@ -114,9 +247,8 @@ struct NuevoMovimientoView: View {
                 try await datos.repo.crear(nueva)
                 UserDefaults.standard.set(nueva.cuentaId, forKey: "savium.ultimaCuenta")
             }
-            exito += 1
-            dismiss()
-            Task { await datos.cargar(app: app); await movimientos.recargar() }
+            error = nil
+            terminar(otro: otro)
         } catch {
             self.error = "No se pudo guardar. Revisa la conexión y vuelve a intentarlo."
         }

@@ -15,9 +15,36 @@ struct ResumenView: View {
         Group {
             if datos.hayDatos { lista } else { SinDatos() }
         }
-        .navigationTitle("Resumen")
+        .navigationTitle("Inicio")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { BotonAjustes() } }
         .refreshable { await datos.cargar(app: app) }
+        .alert(fallo ?? "", isPresented: Binding(get: { fallo != nil }, set: { if !$0 { fallo = nil } })) {
+            Button("Aceptar", role: .cancel) {}
+        }
+        .sheet(item: $movimientoTarea) { t in
+            NuevoMovimientoView(editando: t, tipoCategoria: datos.categoria(t.subcategoriaId)?.tipo)
+        }
+    }
+
+    @State private var fallo: String?
+    /// Movimiento de una tarea, abierto para editarlo. La hoja cuelga de la lista y no de la fila:
+    /// al marcar la tarea dentro de la hoja la fila desaparece, y la hoja no debe cerrarse con ella.
+    @State private var movimientoTarea: Transaccion?
+    @State private var abriendoTarea: String?
+
+    private func abrir(_ t: TareaChecklist) async {
+        guard let id = t.transaccionId, !ModoSenuelo.activo, abriendoTarea == nil else { return }
+        abriendoTarea = t.id
+        defer { abriendoTarea = nil }
+        do {
+            if let m = try await datos.repo.movimiento(id: id) { movimientoTarea = m } else { fallo = "Ese movimiento ya no existe." }
+        } catch {
+            fallo = "No se pudo abrir el movimiento. Revisa la conexión y vuelve a intentarlo."
+        }
+    }
+
+    private func marcar(_ t: TareaChecklist) async {
+        if !(await datos.marcarHecha(t)) { fallo = "No se pudo marcar la tarea. Revisa la conexión y vuelve a intentarlo." }
     }
 
     private var lista: some View {
@@ -34,6 +61,7 @@ struct ResumenView: View {
         }
         let mes = datos.mesAnterior(app)
         let cripto = datos.alertasCripto(app)
+        let tareas = datos.soloLectura ? [] : datos.tareasParaHoy()
         let d = app.divisa.rawValue
         return List {
             AvisoEstado()
@@ -53,10 +81,10 @@ struct ResumenView: View {
                 Button { app.pestana = .patrimonio } label: { Linea(titulo: "Activos", valor: p.activos, divisa: d) }.tint(.primary)
                 Button { app.pestana = .patrimonio } label: { Linea(titulo: "Pasivos", valor: p.pasivos, divisa: d) }.tint(.primary)
             }
-            if !vencidos.isEmpty || !proximos.isEmpty || !cripto.isEmpty || !grandes.isEmpty {
+            if !vencidos.isEmpty || !proximos.isEmpty || !cripto.isEmpty || !grandes.isEmpty || !tareas.isEmpty {
                 Section("Atención") {
                     ForEach(grandes) { p in
-                        Button { app.pestana = .pendientes } label: { FilaPagoGrande(provision: p) }.tint(.primary)
+                        Button { app.abrirPendientes(.pagar) } label: { FilaPagoGrande(provision: p) }.tint(.primary)
                     }
                     ForEach(cripto) { a in
                         FilaAlertaCripto(alerta: a, valor: app.convertir(a.valorUSD, de: "USD"), divisa: d)
@@ -66,8 +94,17 @@ struct ResumenView: View {
                                 }
                             }
                     }
+                    ForEach(tareas) { t in
+                        FilaTarea(tarea: t, abriendo: abriendoTarea == t.id) { Task { await abrir(t) } }
+                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                Button("Hecha", systemImage: "checkmark") { Task { await marcar(t) } }.tint(.green)
+                            }
+                            .contextMenu {
+                                Button("Marcar como hecha", systemImage: "checkmark.circle") { Task { await marcar(t) } }
+                            }
+                    }
                     ForEach(vencidos) { f in
-                        Button { app.pestana = .pendientes } label: {
+                        Button { app.abrirPendientes(.cobrar) } label: {
                             FilaImporte {
                                 Importe(valor: f.restante, divisa: f.pendiente.divisa, color: .red)
                             } label: {
@@ -76,7 +113,7 @@ struct ResumenView: View {
                         }
                     }
                     ForEach(proximos) { f in
-                        Button { app.pestana = .pendientes } label: {
+                        Button { app.abrirPendientes(.pagar) } label: {
                             FilaImporte {
                                 Importe(valor: f.monto, divisa: f.divisa.rawValue)
                             } label: {
@@ -110,6 +147,36 @@ struct ResumenView: View {
                     }
                 }
             }
+        }
+    }
+}
+
+/// Tarea del Checklist con fecha de hoy o vencida. Si va ligada a un movimiento, tocarla lo abre.
+private struct FilaTarea: View {
+    let tarea: TareaChecklist
+    let abriendo: Bool
+    let abrir: () -> Void
+
+    var body: some View {
+        let dias = tarea.fecha.map { Fechas.diasHasta($0, now: .now, calendario: .current) } ?? 0
+        let contenido = Label {
+            VStack(alignment: .leading) {
+                Text(tarea.texto)
+                Text((dias < 0 ? "Tarea · " + PendientesView.cuando(dias) : "Tarea · hoy") + (tarea.esMensual ? " · cada mes" : ""))
+                    .font(.caption).foregroundStyle(dias < 0 ? .red : .secondary)
+            }
+        } icon: {
+            Image(systemName: "checklist").foregroundStyle(dias < 0 ? .red : .orange)
+        }
+        if tarea.transaccionId != nil {
+            Button(action: abrir) {
+                HStack { contenido; Spacer(); if abriendo { ProgressView() } else { Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary) } }
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Abre el movimiento")
+        } else {
+            contenido
         }
     }
 }

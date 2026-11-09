@@ -37,6 +37,79 @@ public enum Movimientos {
     }
 }
 
+/// Filtros de la pestaña Movimientos.
+public enum PeriodoMovimientos: String, CaseIterable, Sendable { case todo = "Todo", esteMes = "Este mes", mesAnterior = "Mes anterior" }
+public enum TipoMovimientos: String, CaseIterable, Sendable { case todos = "Todos", gastos = "Gastos", ingresos = "Ingresos" }
+
+public struct FiltroMovimientos: Equatable, Sendable {
+    public var texto = ""
+    public var cuentaId: String?
+    public var tipo: TipoMovimientos = .todos
+    public var periodo: PeriodoMovimientos = .todo
+    public init() {}
+    /// Algo distinto de «todo»: cuenta, tipo o periodo (el texto va aparte, en la búsqueda).
+    public var hayFiltros: Bool { cuentaId != nil || tipo != .todos || periodo != .todo }
+    public var textoLimpio: String { texto.trimmingCharacters(in: .whitespaces) }
+}
+
+extension Movimientos {
+    /// Días (incluidos) del periodo; nil = sin límite.
+    public static func rango(_ p: PeriodoMovimientos, now: Date, calendario cal: Calendar) -> (desde: String, hasta: String)? {
+        let inicioMes = cal.date(from: cal.dateComponents([.year, .month], from: now))!
+        switch p {
+        case .todo: return nil
+        case .esteMes:
+            let fin = cal.date(byAdding: DateComponents(month: 1, day: -1), to: inicioMes)!
+            return (Fechas.isoLocal(inicioMes, calendario: cal), Fechas.isoLocal(fin, calendario: cal))
+        case .mesAnterior:
+            let inicio = cal.date(byAdding: .month, value: -1, to: inicioMes)!
+            let fin = cal.date(byAdding: .day, value: -1, to: inicioMes)!
+            return (Fechas.isoLocal(inicio, calendario: cal), Fechas.isoLocal(fin, calendario: cal))
+        }
+    }
+
+    /// Subcategorías cuyo nombre (o el de su categoría) contiene el texto. Desde 2 letras y como mucho 40:
+    /// los ids van en la URL y una sola letra coincidiría con casi todas.
+    public static func categoriasQueCoinciden(_ texto: String, en categorias: [Categoria]) -> [String] {
+        let t = texto.trimmingCharacters(in: .whitespaces)
+        guard t.count >= 2 else { return [] }
+        return Array(categorias.filter { "\($0.categoria) \($0.subcategoria)".localizedStandardContains(t) }.map(\.id).prefix(40))
+    }
+
+    /// El mismo criterio que la consulta del servidor, para el modo señuelo: comentario, categoría o importe exacto.
+    public static func coincide(_ t: Transaccion, filtro f: FiltroMovimientos, idsCategoria: Set<String>, rango: (desde: String, hasta: String)?) -> Bool {
+        if let c = f.cuentaId, t.cuentaId != c { return false }
+        if f.tipo == .gastos && t.gasto <= 0 { return false }
+        if f.tipo == .ingresos && t.ingreso <= 0 { return false }
+        if let r = rango, t.fecha < r.desde || t.fecha > r.hasta { return false }
+        let texto = f.textoLimpio
+        guard !texto.isEmpty else { return true }
+        if t.comentario.localizedStandardContains(texto) || idsCategoria.contains(t.subcategoriaId) { return true }
+        if let n = Formato.parsearImporte(texto) { return abs(t.gasto - n) < 0.005 || abs(t.ingreso - n) < 0.005 }
+        return false
+    }
+
+    /// Condición `or` de PostgREST para la búsqueda: comentario, subcategorías e importe exacto.
+    /// Comas, paréntesis, comillas y barras romperían la lista: se cambian por `_` (comodín de un carácter en ilike).
+    public static func condicionBusqueda(_ texto: String, idsCategoria: [String]) -> String? {
+        let t = texto.trimmingCharacters(in: .whitespaces)
+        guard !t.isEmpty else { return nil }
+        let comodin = String(t.map { ",()\"\\:".contains($0) ? "_" : $0 })
+        var partes = ["comentario.ilike.*\(comodin)*"]
+        if !idsCategoria.isEmpty { partes.append("subcategoria_id.in.(\(idsCategoria.joined(separator: ",")))") }
+        if let n = Formato.parsearImporte(t) {
+            let s = String(format: "%.2f", n)
+            partes += ["gasto.eq.\(s)", "ingreso.eq.\(s)"]
+        }
+        return partes.joined(separator: ",")
+    }
+
+    /// Suma de ingreso − gasto en la divisa elegida.
+    public static func total(_ txs: [Transaccion], moneda: Divisa, tasas: Tasas) -> Double {
+        txs.reduce(0) { $0 + Conversion.convertir($1.importe, de: Divisa(codigo: $1.divisa, fallback: moneda), a: moneda, tasas: tasas) }
+    }
+}
+
 /// Estado de la hoja «Apuntar» y la transacción que produce.
 public struct FormularioMovimiento: Sendable, Equatable {
     /// Id de la transacción: al apuntar, uno nuevo que se repite en todos los reintentos; al editar, el del movimiento.
@@ -72,6 +145,13 @@ public struct FormularioMovimiento: Sendable, Equatable {
         case "Retiro": esGasto = true; tipoFijo = "Retiro"
         default: esGasto = t.gasto > 0
         }
+    }
+
+    /// «Guardar y apuntar otro»: uno nuevo con la misma cuenta, fecha y tipo; importe, categoría y comentario en blanco.
+    public func siguiente() -> FormularioMovimiento {
+        var f = FormularioMovimiento(fecha: fecha, cuentaId: cuentaId)
+        f.esGasto = esGasto
+        return f
     }
 
     /// Tipo de las categorías que se ofrecen.

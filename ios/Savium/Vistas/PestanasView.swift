@@ -14,7 +14,13 @@ struct PestanasView: View {
             pestana(.pendientes) { PendientesView() }
             pestana(.suscripciones) { SuscripcionesView() }
         }
-        .overlay(alignment: .bottom) { BarraPestanas() }
+        .overlay(alignment: .bottom) {
+            VStack(spacing: 8) {
+                if let c = datos.deshacer { AvisoDeshacer(cobro: c).transition(.move(edge: .bottom).combined(with: .opacity)) }
+                BarraPestanas()
+            }
+            .animation(.snappy, value: datos.deshacer)
+        }
         .task { await datos.cargar(app: app) }
         // Lector: alerta de emergencia a pantalla completa (por encima de todo, tras desbloquear con Face ID).
         .fullScreenCover(item: Binding(get: { datos.alertaActiva }, set: { datos.alertaActiva = $0 })) { a in
@@ -52,17 +58,21 @@ struct BarraPestanas: View {
     static let alto: CGFloat = 64
     @Environment(AppModel.self) private var app
     @Environment(DatosStore.self) private var datos
+    // Crecen con el tamaño de letra del sistema, con tope para que la barra no se desborde.
+    @ScaledMetric(relativeTo: .body) private var tamIcono: CGFloat = 20
+    @ScaledMetric(relativeTo: .caption2) private var tamTexto: CGFloat = 10
 
     private let items: [(pestana: Pestana, titulo: String, icono: String)] = [
         (.resumen, "Inicio", "chart.pie"),
         (.movimientos, "Movimientos", "list.bullet.rectangle"),
         (.patrimonio, "Patrimonio", "building.columns"),
         (.pendientes, "Pendientes", "clock"),
-        (.suscripciones, "Suscrip.", "repeat"),
+        (.suscripciones, "Suscripciones", "repeat"),
     ]
 
     var body: some View {
-        let vencidos = datos.resumenPendientes(app).vencidos
+        // Lo vencido de las dos listas: cobros que no llegaron y pagos que ya pasaron su fecha.
+        let vencidos = datos.resumenPendientes(app).vencidos + datos.pagosVencidos(app)
         HStack(spacing: 0) {
             ForEach(items, id: \.pestana) { item in
                 let activa = app.pestana == item.pestana
@@ -70,15 +80,16 @@ struct BarraPestanas: View {
                     VStack(spacing: 3) {
                         Image(systemName: item.icono)
                             .symbolVariant(activa ? .fill : .none)
-                            .font(.system(size: 20, weight: .medium))
-                            .frame(height: 24)
+                            .font(.system(size: min(tamIcono, 26), weight: .medium))
+                            .frame(height: min(tamIcono, 26) + 4)
                             .overlay(alignment: .topTrailing) {
                                 if item.pestana == .pendientes && vencidos > 0 {
                                     Text("\(vencidos)").font(.caption2.bold()).foregroundStyle(.white)
                                         .padding(.horizontal, 5).background(.red, in: .capsule).offset(x: 10, y: -6)
                                 }
                             }
-                        Text(item.titulo).font(.system(size: 10, weight: activa ? .semibold : .medium)).lineLimit(1)
+                        Text(item.titulo).font(.system(size: min(tamTexto, 13), weight: activa ? .semibold : .medium))
+                            .lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity, minHeight: 48)
                     .contentShape(.rect)
@@ -86,6 +97,7 @@ struct BarraPestanas: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(item.titulo)
+                .accessibilityValue(item.pestana == .pendientes && vencidos > 0 ? "\(vencidos) vencido\(vencidos == 1 ? "" : "s")" : "")
                 .accessibilityAddTraits(activa ? .isSelected : [])
             }
         }
@@ -95,5 +107,36 @@ struct BarraPestanas: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 2)
         .sensoryFeedback(.selection, trigger: app.pestana)
+    }
+}
+
+/// «Cobrado · Deshacer» unos segundos tras cobrar un pendiente. Si deshacer falla, el aviso se queda con el motivo.
+private struct AvisoDeshacer: View {
+    @Environment(DatosStore.self) private var datos
+    let cobro: DatosStore.CobroHecho
+
+    var body: some View {
+        HStack {
+            Label(cobro.fallo ?? cobro.mensaje, systemImage: cobro.fallo == nil ? "checkmark.circle.fill" : "exclamationmark.triangle")
+                .lineLimit(3)
+            Spacer()
+            if cobro.enCurso {
+                ProgressView()
+            } else if cobro.fallo != nil {
+                Button("Cerrar") { datos.deshacer = nil }
+            } else {
+                Button("Deshacer") { Task { await datos.deshacerCobro() } }.bold()
+            }
+        }
+        .font(.subheadline)
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .glassEffect(.regular, in: .rect(cornerRadius: 24))
+        .padding(.horizontal, 20)
+        // Se va solo a los 6 s, salvo mientras deshace o si mostró un fallo.
+        .task(id: cobro.id) {
+            try? await Task.sleep(for: .seconds(6))
+            if let d = datos.deshacer, d.id == cobro.id, !d.enCurso, d.fallo == nil { datos.deshacer = nil }
+        }
+        .accessibilityElement(children: .combine)
     }
 }

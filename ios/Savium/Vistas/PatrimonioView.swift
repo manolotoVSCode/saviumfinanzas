@@ -5,6 +5,7 @@ import SaviumCore
 struct PatrimonioView: View {
     @Environment(DatosStore.self) private var datos
     @Environment(AppModel.self) private var app
+    @Environment(MovimientosStore.self) private var movimientos
 
     static let ordenTipos = ["Efectivo", "Banco", "Ahorros", "Tarjeta de Crédito", "Inversiones", "Empresa Propia", "Bien Raíz", "Hipoteca"]
 
@@ -40,7 +41,12 @@ struct PatrimonioView: View {
                             .foregroundStyle(by: .value("Rubro", r.nombre))
                     }
                     .frame(height: 180)
+                    .accessibilityElement(children: .ignore)
                     .accessibilityLabel("Distribución de activos")
+                    .accessibilityValue(activos.map { r in
+                        let parte = p.activos > 0 ? (p.porRubro[r] ?? 0) / p.activos : 0
+                        return "\(r.nombre) \(parte.formatted(.percent.precision(.fractionLength(0))))"
+                    }.joined(separator: ", "))
                 }
             }
             Section("Activos · \(Formato.importe(p.activos, d))") {
@@ -51,11 +57,26 @@ struct PatrimonioView: View {
                     ForEach(pasivos) { Linea(titulo: $0.nombre, valor: p.porRubro[$0] ?? 0, divisa: d) }
                 }
             }
-            ForEach(Self.ordenTipos, id: \.self) { tipo in
-                let cuentas = visibles.filter { $0.tipo == tipo }
+            // Un tipo que no esté en la lista sale en «Otras»: ninguna cuenta con saldo desaparece sin aviso.
+            ForEach(Self.ordenTipos + ["Otras"], id: \.self) { tipo in
+                let cuentas = tipo == "Otras" ? visibles.filter { !Self.ordenTipos.contains($0.tipo) } : visibles.filter { $0.tipo == tipo }
                 if !cuentas.isEmpty {
                     Section(tipo) {
-                        ForEach(cuentas) { Linea(titulo: $0.nombre, valor: $0.saldoActual, divisa: $0.divisa) }
+                        ForEach(cuentas) { c in
+                            if datos.cuentasConMovimientos.contains(c.id) {
+                                Button { verMovimientos(c) } label: {
+                                    HStack {
+                                        Linea(titulo: c.nombre, valor: c.saldoActual, divisa: c.divisa)
+                                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                                    }
+                                    .contentShape(.rect)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityHint("Ver sus movimientos")
+                            } else {
+                                Linea(titulo: c.nombre, valor: c.saldoActual, divisa: c.divisa)
+                            }
+                        }
                     }
                 }
             }
@@ -74,5 +95,13 @@ struct PatrimonioView: View {
                 }
             }
         }
+    }
+
+    /// Abre Movimientos filtrado por la cuenta, sin búsqueda ni otros filtros.
+    private func verMovimientos(_ c: Cuenta) {
+        var f = FiltroMovimientos()
+        f.cuentaId = c.id
+        movimientos.filtro = f
+        app.pestana = .movimientos
     }
 }
